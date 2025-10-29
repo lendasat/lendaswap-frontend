@@ -278,7 +278,7 @@ export default function App() {
             <div className="flex items-center gap-3">
               {hasCode ? (
                 <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
-                  <Check className="h-4 w-4 text-green-600 dark:text-green-400"/>
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                   <span className="hidden sm:inline text-sm font-bold text-green-600 dark:text-green-400">
                     NO-FEE
                   </span>
@@ -290,7 +290,7 @@ export default function App() {
                   onClick={() => setDialogOpen(true)}
                   className="gap-2"
                 >
-                  <Tag className="h-4 w-4"/>
+                  <Tag className="h-4 w-4" />
                   <span className="hidden sm:inline">Add your code</span>
                 </Button>
               )}
@@ -336,7 +336,9 @@ export default function App() {
                               onClick={openConnectModal}
                             >
                               <span className="sm:hidden">Connect</span>
-                              <span className="hidden sm:inline">Connect Wallet</span>
+                              <span className="hidden sm:inline">
+                                Connect Wallet
+                              </span>
                             </Button>
                           );
                         }
