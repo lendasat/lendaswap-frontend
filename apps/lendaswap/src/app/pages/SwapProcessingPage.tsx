@@ -72,7 +72,7 @@ export function SwapProcessingPage() {
       } catch (error) {
         console.error("Failed to auto-claim:", error);
         setClaimError(
-          error instanceof Error ? error.message : "Failed to claim USDC"
+          error instanceof Error ? error.message : "Failed to claim USDC",
         );
         // Remove the localStorage flag on error to allow retry
         localStorage.removeItem(claimKey);

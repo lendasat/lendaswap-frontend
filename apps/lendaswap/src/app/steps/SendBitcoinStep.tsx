@@ -69,9 +69,7 @@ export function SendBitcoinStep({
               <p className="text-muted-foreground text-xs font-medium">
                 Swap ID
               </p>
-              <p className="font-mono text-sm truncate">
-                {swapData.id}
-              </p>
+              <p className="font-mono text-sm truncate">{swapData.id}</p>
             </div>
             <Button
               variant="outline"

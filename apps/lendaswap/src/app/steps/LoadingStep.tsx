@@ -71,9 +71,7 @@ export function LoadingStep({ status, swapId }: LoadingStepProps) {
                 <p className="text-muted-foreground text-xs font-medium">
                   Swap ID
                 </p>
-                <p className="font-mono text-sm truncate">
-                  {swapId}
-                </p>
+                <p className="font-mono text-sm truncate">{swapId}</p>
               </div>
               <Button
                 variant="outline"

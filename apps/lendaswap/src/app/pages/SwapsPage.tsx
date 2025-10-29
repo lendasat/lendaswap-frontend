@@ -1,9 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "#/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "#/components/ui/card";
 import { Button } from "#/components/ui/button";
 import { Alert, AlertDescription } from "#/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "#/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "#/components/ui/table";
 import { Copy, Check } from "lucide-react";
 
 interface SwapData {
@@ -50,7 +63,11 @@ export function SwapsPage() {
         if (!key) continue;
 
         // Skip non-UUID keys (like referral code, global private key, etc.)
-        if (!key.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        if (
+          !key.match(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+          )
+        ) {
           continue;
         }
 
@@ -87,7 +104,8 @@ export function SwapsPage() {
           {swaps.length === 0 ? (
             <Alert>
               <AlertDescription>
-                No swaps found in local storage. Create a swap first to see it here.
+                No swaps found in local storage. Create a swap first to see it
+                here.
               </AlertDescription>
             </Alert>
           ) : (
@@ -104,7 +122,9 @@ export function SwapsPage() {
                     <TableRow key={swap.id}>
                       <TableCell className="font-mono text-sm">
                         <div className="flex items-center gap-2">
-                          <span>{swap.id.slice(0, 8)}...{swap.id.slice(-8)}</span>
+                          <span>
+                            {swap.id.slice(0, 8)}...{swap.id.slice(-8)}
+                          </span>
                           <button
                             onClick={() => handleCopyId(swap.id)}
                             className="inline-flex items-center justify-center rounded-md p-1 hover:bg-accent hover:text-accent-foreground transition-colors"
