@@ -3,7 +3,7 @@ import { Routes, Route, useLocation, useNavigate } from "react-router";
 import "../assets/styles.css";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
-import { Shield, PiggyBank, Zap, Tag, Wrench } from "lucide-react";
+import { Shield, PiggyBank, Zap, Tag, Check, Wrench } from "lucide-react";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -277,8 +277,9 @@ export default function App() {
             </button>
             <div className="flex items-center gap-3">
               {hasCode ? (
-                <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-3 py-1.5">
-                  <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400"/>
+                  <span className="hidden sm:inline text-sm font-bold text-green-600 dark:text-green-400">
                     NO-FEE
                   </span>
                 </div>
@@ -289,8 +290,8 @@ export default function App() {
                   onClick={() => setDialogOpen(true)}
                   className="gap-2"
                 >
-                  <Tag className="h-4 w-4" />
-                  Add your code
+                  <Tag className="h-4 w-4"/>
+                  <span className="hidden sm:inline">Add your code</span>
                 </Button>
               )}
               <Button
@@ -334,7 +335,8 @@ export default function App() {
                               size="sm"
                               onClick={openConnectModal}
                             >
-                              Connect Wallet
+                              <span className="sm:hidden">Connect</span>
+                              <span className="hidden sm:inline">Connect Wallet</span>
                             </Button>
                           );
                         }
