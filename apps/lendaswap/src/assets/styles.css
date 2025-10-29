@@ -67,6 +67,10 @@
   .animate-fade-in {
     animation: fade-in 0.3s ease-in;
   }
+
+  .animate-shimmer {
+    animation: shimmer 3s ease-in-out infinite;
+  }
 }
 
 @keyframes slide-in {
@@ -86,5 +90,14 @@
   }
   100% {
     opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
