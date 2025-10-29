@@ -49,6 +49,15 @@ export interface SwapResponse {
   usd_amount: number;
   usd_per_sat: number;
   hash_lock: string;
+  // VHTLC parameters for refunding
+  sender_pk: string;
+  receiver_pk: string;
+  server_pk: string;
+  refund_locktime: number;
+  unilateral_claim_delay: number;
+  unilateral_refund_delay: number;
+  unilateral_refund_without_receiver_delay: number;
+  network: string;
 }
 
 export interface GetSwapResponse {
@@ -68,6 +77,15 @@ export interface GetSwapResponse {
   polygon_address: string;
   onchain_swap_id: string | null; // The actual on-chain swap ID used by the HTLC contract
   fee_sats?: number; // Optional fee in satoshis
+  // VHTLC parameters for refunding
+  sender_pk: string;
+  receiver_pk: string;
+  server_pk: string;
+  refund_locktime: number;
+  unilateral_claim_delay: number;
+  unilateral_refund_delay: number;
+  unilateral_refund_without_receiver_delay: number;
+  network: string;
 }
 
 export const api = {
