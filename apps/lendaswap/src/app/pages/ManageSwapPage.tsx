@@ -20,7 +20,7 @@ import {
 } from "@frontend/browser-wallet";
 
 const ARK_SERVER_URL =
-  import.meta.env.VITE_ARKADE_URL || "https://arkade-signet.ark-os.dev";
+  import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
 
 interface SwapData {
   secret: string;
