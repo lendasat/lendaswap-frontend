@@ -1,8 +1,15 @@
 {
   "extends": "./tsconfig.base.json",
-  "files": [], // intentionally empty
+  "files": [],
   "references": [
-    // UPDATED BY PROJECT GENERATORS
-    // All projects in the repository
+    {
+      "path": "./apps/lendaswap"
+    },
+    {
+      "path": "./packages/shadcn"
+    },
+    {
+      "path": "./packages/browser-wallet"
+    }
   ]
 }
