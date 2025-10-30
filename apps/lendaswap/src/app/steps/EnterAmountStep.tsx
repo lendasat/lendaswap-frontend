@@ -4,7 +4,8 @@ import { Button } from "#/components/ui/button";
 import { CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectKitButton } from "connectkit";
+import { useAccount } from "wagmi";
 import { isAddress } from "ethers";
 
 interface EnterAmountStepProps {
@@ -37,6 +38,7 @@ export function EnterAmountStep({
   swapError,
 }: EnterAmountStepProps) {
   const [addressError, setAddressError] = useState<string | null>(null);
+  const { address, isConnected } = useAccount();
 
   const onAddressChange = (address: string) => {
     setReceiveAddress(address);
@@ -168,78 +170,40 @@ export function EnterAmountStep({
             value={receiveAddress}
             onChange={(e) => onAddressChange(e.target.value)}
             className="h-12 pr-36 font-mono text-sm"
+            data-1p-ignore
+            data-lpignore="true"
+            autoComplete="off"
           />
 
           {/* Get Address Button */}
           <div className="absolute right-2">
-            <ConnectButton.Custom>
-              {({
-                account,
-                chain,
-                openChainModal,
-                openConnectModal,
-                mounted,
-              }) => {
-                const ready = mounted;
-                const connected = ready && account && chain;
-
-                return (
-                  <div
-                    {...(!ready && {
-                      "aria-hidden": true,
-                      style: {
-                        opacity: 0,
-                        pointerEvents: "none",
-                        userSelect: "none",
-                      },
-                    })}
+            {isConnected && !receiveAddress ? (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  if (address) {
+                    onAddressChange(address);
+                  }
+                }}
+                type="button"
+              >
+                Get Address
+              </Button>
+            ) : !isConnected ? (
+              <ConnectKitButton.Custom>
+                {({ show }) => (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={show}
+                    type="button"
                   >
-                    {(() => {
-                      if (!connected) {
-                        return (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={openConnectModal}
-                            type="button"
-                          >
-                            Connect Wallet
-                          </Button>
-                        );
-                      }
-
-                      if (chain.unsupported) {
-                        return (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={openChainModal}
-                            type="button"
-                          >
-                            Wrong network
-                          </Button>
-                        );
-                      }
-
-                      return (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => {
-                            if (account.address) {
-                              onAddressChange(account.address);
-                            }
-                          }}
-                          type="button"
-                        >
-                          Get Address
-                        </Button>
-                      );
-                    })()}
-                  </div>
-                );
-              }}
-            </ConnectButton.Custom>
+                    Connect Wallet
+                  </Button>
+                )}
+              </ConnectKitButton.Custom>
+            ) : null}
           </div>
         </div>
 

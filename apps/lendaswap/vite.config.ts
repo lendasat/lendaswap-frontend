@@ -8,7 +8,7 @@ export default defineConfig({
   envDir: "../../../",
   server: {
     port: 4205,
-    host: "localhost",
+    host: "0.0.0.0",
     cors: true,
   },
 

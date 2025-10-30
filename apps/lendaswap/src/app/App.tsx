@@ -6,8 +6,7 @@ import { Card, CardContent } from "#/components/ui/card";
 import { Shield, PiggyBank, Zap, Tag, Check, Wrench } from "lucide-react";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import "@rainbow-me/rainbowkit/styles.css";
+import { ConnectKitButton } from "connectkit";
 import { api } from "./api";
 import { EnterAmountStep } from "./steps";
 import {
@@ -304,71 +303,24 @@ export default function App() {
                 <Wrench className="h-4 w-4" />
               </Button>
               <ThemeToggle />
-              <ConnectButton.Custom>
-                {({
-                  account,
-                  chain,
-                  openAccountModal,
-                  openChainModal,
-                  openConnectModal,
-                  mounted,
-                }) => {
-                  const ready = mounted;
-                  const connected = ready && account && chain;
-
+              <ConnectKitButton.Custom>
+                {({ isConnected, show, truncatedAddress, ensName }) => {
                   return (
-                    <div
-                      {...(!ready && {
-                        "aria-hidden": true,
-                        style: {
-                          opacity: 0,
-                          pointerEvents: "none",
-                          userSelect: "none",
-                        },
-                      })}
-                    >
-                      {(() => {
-                        if (!connected) {
-                          return (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={openConnectModal}
-                            >
-                              <span className="sm:hidden">Connect</span>
-                              <span className="hidden sm:inline">
-                                Connect Wallet
-                              </span>
-                            </Button>
-                          );
-                        }
-
-                        if (chain.unsupported) {
-                          return (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={openChainModal}
-                            >
-                              Wrong network
-                            </Button>
-                          );
-                        }
-
-                        return (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={openAccountModal}
-                          >
-                            {account.displayName}
-                          </Button>
-                        );
-                      })()}
-                    </div>
+                    <Button variant="outline" size="sm" onClick={show}>
+                      {isConnected ? (
+                        (ensName ?? truncatedAddress)
+                      ) : (
+                        <>
+                          <span className="sm:hidden">Connect</span>
+                          <span className="hidden sm:inline">
+                            Connect Wallet
+                          </span>
+                        </>
+                      )}
+                    </Button>
                   );
                 }}
-              </ConnectButton.Custom>
+              </ConnectKitButton.Custom>
             </div>
           </div>
         </div>
