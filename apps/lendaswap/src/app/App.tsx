@@ -143,6 +143,7 @@ function HomePage() {
       const swap = await api.createSwap({
         polygon_address: receiveAddress,
         usd_amount: parseFloat(usdcAmount),
+        target_token: "usdc_pol",
         hash_lock,
         refund_pk,
       });

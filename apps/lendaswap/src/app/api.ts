@@ -4,13 +4,26 @@ import { getReferralCode } from "./utils/referralCode";
 const API_BASE_URL =
   import.meta.env.VITE_LENDASWAP_API_URL || "http://localhost:3333";
 
+// Token types
+export type TokenId = "btc_lightning" | "btc_arkade" | "usdc_pol" | "usdt_pol";
+
+export type Chain = "Bitcoin" | "Polygon";
+
+export interface TokenInfo {
+  token_id: TokenId;
+  symbol: string;
+  chain: Chain;
+  name: string;
+  decimals: number;
+}
+
 export interface PriceResponse {
   usd_per_sat: number;
   usd_per_btc: number;
 }
 
 /**
- * Atomic swap state machine for BTC --> USDC swaps using HTLCs.
+ * Atomic swap state machine for BTC --> Token swaps using HTLCs.
  *
  * Normal flow:
  *   pending → clientfunded → serverfunded → clientredeemed → serverredeemed
@@ -25,7 +38,7 @@ export type SwapStatus =
   | "clientfunded" // Client funded BTC, waiting for server to create HTLC
   | "clientrefunded" // Client refunded before server created HTLC (terminal)
   | "serverfunded" // Server locked WBTC in HTLC, waiting for client to claim
-  | "clientredeemed" // Client claimed USDC by revealing secret
+  | "clientredeemed" // Client claimed token by revealing secret
   | "serverredeemed" // Server claimed BTC using revealed secret (success - terminal)
   | "clientfundedserverrefunded" // HTLC timed out, both refunded (terminal)
   | "clientrefundedserverfunded" // ERROR: Client refunded while server locked (should never happen)
@@ -37,7 +50,8 @@ export interface SwapRequest {
   refund_pk: string;
   hash_lock: string;
   usd_amount: number;
-  referral_code?: string; // Optional referral code for fee exemption
+  target_token: TokenId; // Token to receive (e.g., USDC_POL, USDT_POL)
+  referral_code?: string; // Optional referral code for tracking
 }
 
 export interface SwapResponse {
@@ -93,6 +107,14 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/price`);
     if (!response.ok) {
       throw new Error(`Failed to fetch price: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async getTokens(): Promise<TokenInfo[]> {
+    const response = await fetch(`${API_BASE_URL}/tokens`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch tokens: ${response.statusText}`);
     }
     return response.json();
   },
