@@ -10,7 +10,7 @@ function getTokenSymbol(tokenId: TokenId): string {
     case "usdc_pol":
       return "USDC";
     case "usdt_pol":
-      return "USDT";
+      return "USDT0";
     default:
       return "USDC";
   }

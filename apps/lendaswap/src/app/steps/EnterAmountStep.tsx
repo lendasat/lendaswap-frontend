@@ -16,7 +16,7 @@ import { useAccount } from "wagmi";
 import { isAddress } from "ethers";
 import type { TokenId } from "../api";
 import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
-import { ReactComponent as TetherIcon } from "../../assets/tether.svg";
+import { ReactComponent as TetherIcon } from "../../assets/usdt0.svg";
 
 interface EnterAmountStepProps {
   usdcAmount: string;
@@ -60,7 +60,7 @@ export function EnterAmountStep({
       case "usdc_pol":
         return { symbol: "USDC", name: "USD Coin", icon: UsdcIcon };
       case "usdt_pol":
-        return { symbol: "USDT", name: "Tether USD", icon: TetherIcon };
+        return { symbol: "USDT0", name: "Tether USD", icon: TetherIcon };
       default:
         return { symbol: "USDC", name: "USD Coin", icon: UsdcIcon };
     }
@@ -129,7 +129,7 @@ export function EnterAmountStep({
                 <SelectItem value="usdt_pol">
                   <div className="flex items-center gap-2">
                     <TetherIcon className="h-4 w-4" />
-                    <span className="font-medium">USDT</span>
+                    <span className="font-medium">USDT0</span>
                   </div>
                 </SelectItem>
               </SelectContent>
