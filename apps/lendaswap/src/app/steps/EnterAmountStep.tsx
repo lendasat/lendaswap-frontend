@@ -4,9 +4,17 @@ import { Button } from "#/components/ui/button";
 import { CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Skeleton } from "#/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "#/components/ui/select";
 import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
 import { isAddress } from "ethers";
+import type { TokenId } from "../api";
 
 interface EnterAmountStepProps {
   usdcAmount: string;
@@ -15,6 +23,8 @@ interface EnterAmountStepProps {
   isLoadingPrice: boolean;
   priceError: string | null;
   receiveAddress: string;
+  selectedToken: TokenId;
+  setSelectedToken: (token: TokenId) => void;
   setReceiveAddress: (value: string) => void;
   handleUsdcChange: (value: string) => void;
   handleBitcoinChange: (value: string) => void;
@@ -30,6 +40,8 @@ export function EnterAmountStep({
   isLoadingPrice,
   priceError,
   receiveAddress,
+  selectedToken,
+  setSelectedToken,
   setReceiveAddress,
   handleUsdcChange,
   handleBitcoinChange,
@@ -39,6 +51,20 @@ export function EnterAmountStep({
 }: EnterAmountStepProps) {
   const [addressError, setAddressError] = useState<string | null>(null);
   const { address, isConnected } = useAccount();
+
+  // Get display info for selected token
+  const getTokenDisplay = (tokenId: TokenId) => {
+    switch (tokenId) {
+      case "usdc_pol":
+        return { symbol: "USDC", name: "USD Coin" };
+      case "usdt_pol":
+        return { symbol: "USDT", name: "Tether USD" };
+      default:
+        return { symbol: "USDC", name: "USD Coin" };
+    }
+  };
+
+  const tokenDisplay = getTokenDisplay(selectedToken);
 
   const onAddressChange = (address: string) => {
     setReceiveAddress(address);
@@ -61,13 +87,13 @@ export function EnterAmountStep({
 
   return (
     <CardContent className="space-y-4 pt-6">
-      {/* USDC Input */}
+      {/* Amount Input with Token Selector */}
       <div className="space-y-2">
         <label
           htmlFor="usdc-input"
           className="text-muted-foreground text-sm font-medium"
         >
-          How much do you want to receive? (USDC, Polygon)
+          How much do you want to receive? (Polygon)
         </label>
         <div className="relative">
           <Input
@@ -78,11 +104,33 @@ export function EnterAmountStep({
             onChange={(e) => handleUsdcChange(e.target.value)}
             className="h-14 pr-32 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
-          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
-            <div className="flex items-center gap-2 rounded-lg bg-blue-500/10 px-3 py-1.5">
-              <CircleDollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-semibold">USDC</span>
-            </div>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Select value={selectedToken} onValueChange={setSelectedToken}>
+              <SelectTrigger className="h-9 w-[110px] border-0 bg-blue-500/10 hover:bg-blue-500/20 focus:ring-0 focus:ring-offset-0">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <CircleDollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-semibold">
+                      {tokenDisplay.symbol}
+                    </span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="usdc_pol">
+                  <div className="flex items-center gap-2">
+                    <CircleDollarSign className="h-4 w-4" />
+                    <span className="font-medium">USDC</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="usdt_pol">
+                  <div className="flex items-center gap-2">
+                    <CircleDollarSign className="h-4 w-4" />
+                    <span className="font-medium">USDT</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         {usdcAmount && (
@@ -140,7 +188,7 @@ export function EnterAmountStep({
               {exchangeRate?.toLocaleString("en-US", {
                 maximumFractionDigits: 0,
               })}{" "}
-              USDC
+              {tokenDisplay.symbol}
             </span>
           )}
         </div>
@@ -160,7 +208,7 @@ export function EnterAmountStep({
           htmlFor="polygon-address-input"
           className="text-muted-foreground text-sm font-medium"
         >
-          Polygon Address (where you want to receive USDC)
+          Polygon Address (where you want to receive {tokenDisplay.symbol})
         </label>
         <div className="relative flex w-full items-center gap-2">
           <Input

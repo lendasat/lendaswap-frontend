@@ -61,6 +61,9 @@ function HomePage() {
   const [bitcoinAmount, setBitcoinAmount] = useState("");
   const [usdcAmount, setUsdcAmount] = useState("");
   const [receiveAddress, setReceiveAddress] = useState("");
+  const [selectedToken, setSelectedToken] = useState<"usdc_pol" | "usdt_pol">(
+    "usdc_pol",
+  );
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
 
@@ -143,7 +146,7 @@ function HomePage() {
       const swap = await api.createSwap({
         polygon_address: receiveAddress,
         usd_amount: parseFloat(usdcAmount),
-        target_token: "usdc_pol",
+        target_token: selectedToken,
         hash_lock,
         refund_pk,
       });
@@ -203,6 +206,8 @@ function HomePage() {
       isLoadingPrice={isLoadingPrice}
       priceError={priceError}
       receiveAddress={receiveAddress}
+      selectedToken={selectedToken}
+      setSelectedToken={setSelectedToken}
       setReceiveAddress={setReceiveAddress}
       handleUsdcChange={handleUsdcChange}
       handleBitcoinChange={handleBitcoinChange}
