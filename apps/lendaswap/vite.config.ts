@@ -42,6 +42,8 @@ export default defineConfig({
       ),
       "#/lib": path.resolve(__dirname, "../../packages/shadcn/src/lib"),
       "#/hooks": path.resolve(__dirname, "../../packages/shadcn/src/hooks"),
+      // Fix for ConnectKit trying to import zod/mini which doesn't exist
+      "zod/mini": "zod",
     },
   },
 
