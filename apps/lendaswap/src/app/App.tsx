@@ -3,7 +3,14 @@ import { Routes, Route, useLocation, useNavigate } from "react-router";
 import "../assets/styles.css";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
-import { Shield, PiggyBank, Zap, Tag, Check, Wrench } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
+import { Shield, PiggyBank, Zap, Tag, Check, Wrench, Menu } from "lucide-react";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ConnectKitButton } from "connectkit";
@@ -275,52 +282,105 @@ export default function App() {
               <h1 className="text-xl font-semibold">LendaSwap</h1>
             </button>
             <div className="flex items-center gap-3">
-              {hasCode ? (
-                <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
-                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="hidden sm:inline text-sm font-bold text-green-600 dark:text-green-400">
-                    NO-FEE
-                  </span>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDialogOpen(true)}
-                  className="gap-2"
-                >
-                  <Tag className="h-4 w-4" />
-                  <span className="hidden sm:inline">Add your code</span>
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/swaps")}
-                className="gap-2"
-                title="Manage Swaps"
-              >
-                <Wrench className="h-4 w-4" />
-              </Button>
-              <ThemeToggle />
-              <ConnectKitButton.Custom>
-                {({ isConnected, show, truncatedAddress, ensName }) => {
-                  return (
-                    <Button variant="outline" size="sm" onClick={show}>
-                      {isConnected ? (
-                        (ensName ?? truncatedAddress)
-                      ) : (
-                        <>
-                          <span className="sm:hidden">Connect</span>
-                          <span className="hidden sm:inline">
-                            Connect Wallet
-                          </span>
-                        </>
-                      )}
+              {/* Mobile Dropdown Menu */}
+              <div className="md:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <Menu className="h-4 w-4" />
                     </Button>
-                  );
-                }}
-              </ConnectKitButton.Custom>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {hasCode ? (
+                      <DropdownMenuItem disabled className="gap-2">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <span className="text-green-600 dark:text-green-400 font-bold">
+                          NO-FEE
+                        </span>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={() => setDialogOpen(true)}
+                        className="gap-2"
+                      >
+                        <Tag className="h-4 w-4" />
+                        Add your code
+                      </DropdownMenuItem>
+                    )}
+
+                    <DropdownMenuItem
+                      onClick={() => navigate("/swaps")}
+                      className="gap-2"
+                    >
+                      <Wrench className="h-4 w-4" />
+                      Manage Swaps
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <ConnectKitButton.Custom>
+                      {({ isConnected, show, truncatedAddress, ensName }) => {
+                        return (
+                          <DropdownMenuItem onClick={show}>
+                            {isConnected
+                              ? (ensName ?? truncatedAddress)
+                              : "Connect Wallet"}
+                          </DropdownMenuItem>
+                        );
+                      }}
+                    </ConnectKitButton.Custom>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem asChild>
+                      <ThemeToggle />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Desktop Buttons */}
+              <div className="hidden md:flex items-center gap-3">
+                {hasCode ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
+                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                      NO-FEE
+                    </span>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDialogOpen(true)}
+                    className="gap-2"
+                  >
+                    <Tag className="h-4 w-4" />
+                    <span>Add your code</span>
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/swaps")}
+                  className="gap-2"
+                  title="Manage Swaps"
+                >
+                  <Wrench className="h-4 w-4" />
+                </Button>
+                <ThemeToggle />
+                <ConnectKitButton.Custom>
+                  {({ isConnected, show, truncatedAddress, ensName }) => {
+                    return (
+                      <Button variant="outline" size="sm" onClick={show}>
+                        {isConnected
+                          ? (ensName ?? truncatedAddress)
+                          : "Connect Wallet"}
+                      </Button>
+                    );
+                  }}
+                </ConnectKitButton.Custom>
+              </div>
             </div>
           </div>
         </div>
