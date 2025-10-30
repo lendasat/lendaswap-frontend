@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowDownUp, Bitcoin, CircleDollarSign } from "lucide-react";
+import { ArrowDownUp, Bitcoin } from "lucide-react";
 import { Button } from "#/components/ui/button";
 import { CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
@@ -15,6 +15,8 @@ import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
 import { isAddress } from "ethers";
 import type { TokenId } from "../api";
+import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
+import { ReactComponent as TetherIcon } from "../../assets/tether.svg";
 
 interface EnterAmountStepProps {
   usdcAmount: string;
@@ -56,15 +58,16 @@ export function EnterAmountStep({
   const getTokenDisplay = (tokenId: TokenId) => {
     switch (tokenId) {
       case "usdc_pol":
-        return { symbol: "USDC", name: "USD Coin" };
+        return { symbol: "USDC", name: "USD Coin", icon: UsdcIcon };
       case "usdt_pol":
-        return { symbol: "USDT", name: "Tether USD" };
+        return { symbol: "USDT", name: "Tether USD", icon: TetherIcon };
       default:
-        return { symbol: "USDC", name: "USD Coin" };
+        return { symbol: "USDC", name: "USD Coin", icon: UsdcIcon };
     }
   };
 
   const tokenDisplay = getTokenDisplay(selectedToken);
+  const TokenIcon = tokenDisplay.icon;
 
   const onAddressChange = (address: string) => {
     setReceiveAddress(address);
@@ -109,7 +112,7 @@ export function EnterAmountStep({
               <SelectTrigger className="h-9 w-[110px] border-0 bg-blue-500/10 hover:bg-blue-500/20 focus:ring-0 focus:ring-offset-0">
                 <SelectValue>
                   <div className="flex items-center gap-2">
-                    <CircleDollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <TokenIcon className="h-4 w-4" />
                     <span className="text-sm font-semibold">
                       {tokenDisplay.symbol}
                     </span>
@@ -119,13 +122,13 @@ export function EnterAmountStep({
               <SelectContent>
                 <SelectItem value="usdc_pol">
                   <div className="flex items-center gap-2">
-                    <CircleDollarSign className="h-4 w-4" />
+                    <UsdcIcon className="h-4 w-4" />
                     <span className="font-medium">USDC</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="usdt_pol">
                   <div className="flex items-center gap-2">
-                    <CircleDollarSign className="h-4 w-4" />
+                    <TetherIcon className="h-4 w-4" />
                     <span className="font-medium">USDT</span>
                   </div>
                 </SelectItem>
