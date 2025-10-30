@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import confetti from "canvas-confetti";
-import { api, type SwapResponse } from "../api";
+import { api, type SwapResponse, type TokenId } from "../api";
 import { SuccessStep } from "../steps";
 import {
   isDebugMode,
@@ -9,6 +9,18 @@ import {
   mockPolygonAddress,
   mockTxId,
 } from "../utils/debugMode";
+
+// Get display symbol for a token
+function getTokenSymbol(tokenId: TokenId): string {
+  switch (tokenId) {
+    case "usdc_pol":
+      return "USDC";
+    case "usdt_pol":
+      return "USDT";
+    default:
+      return "USDC";
+  }
+}
 
 export function SwapSuccessPage() {
   const { swapId } = useParams<{ swapId: string }>();
@@ -19,6 +31,7 @@ export function SwapSuccessPage() {
   const [redeemTx, setRedeemTx] = useState<string | null>(null);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [tokenSymbol, setTokenSymbol] = useState("USDC");
   const [swapDurationSeconds, setSwapDurationSeconds] = useState<number | null>(
     null,
   );
@@ -88,6 +101,7 @@ export function SwapSuccessPage() {
         setSwapData(swapResponse);
         setUsdcAmount(swap.usd_amount.toFixed(2));
         setReceiveAddress(swap.polygon_address);
+        setTokenSymbol(getTokenSymbol(swap.target_token));
 
         if (swap.polygon_htlc_claim_txid) {
           setRedeemTx(swap.polygon_htlc_claim_txid);
@@ -182,6 +196,7 @@ export function SwapSuccessPage() {
       copiedAddress={copiedAddress}
       handleCopyAddress={handleCopyAddress}
       swapDurationSeconds={swapDurationSeconds}
+      tokenSymbol={tokenSymbol}
     />
   );
 }

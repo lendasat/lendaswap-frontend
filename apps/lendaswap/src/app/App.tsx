@@ -224,7 +224,7 @@ function useStepInfo() {
 
   if (location.pathname === "/") {
     return {
-      title: "Swap Bitcoin to USDC",
+      title: "Swap Bitcoin to USDC/USDT",
       description:
         "Fast, secure, and transparent swapping with the lowest rates on the market",
     };

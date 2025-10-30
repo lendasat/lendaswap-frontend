@@ -15,6 +15,7 @@ interface SendBitcoinStepProps {
   usdcAmount: string;
   copiedAddress: string | null;
   handleCopyAddress: (address: string) => void;
+  tokenSymbol?: string; // e.g., "USDC", "USDT"
 }
 
 export function SendBitcoinStep({
@@ -25,6 +26,7 @@ export function SendBitcoinStep({
   usdcAmount,
   copiedAddress,
   handleCopyAddress,
+  tokenSymbol = "USDC",
 }: SendBitcoinStepProps) {
   const navigate = useNavigate();
   const { swapId } = useParams<{ swapId: string }>();
@@ -172,7 +174,9 @@ export function SendBitcoinStep({
         )}
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">You Receive</span>
-          <span className="font-medium">{usdcAmount} USDC</span>
+          <span className="font-medium">
+            {usdcAmount} {tokenSymbol}
+          </span>
         </div>
       </div>
 

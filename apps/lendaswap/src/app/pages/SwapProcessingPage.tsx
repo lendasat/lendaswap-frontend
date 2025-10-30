@@ -1,9 +1,21 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
-import { api, type GetSwapResponse } from "../api";
+import { api, type GetSwapResponse, type TokenId } from "../api";
 import { LoadingStep } from "../steps";
 import { isDebugMode } from "../utils/debugMode";
 import { CardContent } from "#/components/ui/card";
+
+// Get display symbol for a token
+function getTokenSymbol(tokenId: TokenId): string {
+  switch (tokenId) {
+    case "usdc_pol":
+      return "USDC";
+    case "usdt_pol":
+      return "USDT";
+    default:
+      return "USDC";
+  }
+}
 
 export function SwapProcessingPage() {
   const { swapId } = useParams<{ swapId: string }>();
@@ -71,8 +83,11 @@ export function SwapProcessingPage() {
         console.log("Claim request sent successfully");
       } catch (error) {
         console.error("Failed to auto-claim:", error);
+        const tokenSymbol = swap ? getTokenSymbol(swap.target_token) : "tokens";
         setClaimError(
-          error instanceof Error ? error.message : "Failed to claim USDC",
+          error instanceof Error
+            ? error.message
+            : `Failed to claim ${tokenSymbol}`,
         );
         // Remove the localStorage flag on error to allow retry
         localStorage.removeItem(claimKey);
@@ -132,8 +147,16 @@ export function SwapProcessingPage() {
   }, [swapId, navigate]);
 
   if (!swap) {
-    return <LoadingStep status="pending" swapId={swapId || undefined} />;
+    return (
+      <LoadingStep
+        status="pending"
+        swapId={swapId || undefined}
+        tokenSymbol="USDC"
+      />
+    );
   }
+
+  const tokenSymbol = getTokenSymbol(swap.target_token);
 
   console.log("Render check:", {
     status: swap.status,
@@ -145,12 +168,18 @@ export function SwapProcessingPage() {
   if (swap.status === "serverfunded" && secret) {
     return (
       <CardContent className="space-y-6 py-12">
-        <LoadingStep status={swap.status} swapId={swap.id} />
+        <LoadingStep
+          status={swap.status}
+          swapId={swap.id}
+          tokenSymbol={tokenSymbol}
+        />
         <div className="mx-auto max-w-md">
           <div className="from-primary/5 to-card space-y-4 rounded-lg border bg-gradient-to-t p-6">
             <div className="space-y-2 text-center">
               <h3 className="text-lg font-semibold">
-                {isClaiming ? "Claiming Your USDC..." : "Claim Submitted"}
+                {isClaiming
+                  ? `Claiming Your ${tokenSymbol}...`
+                  : "Claim Submitted"}
               </h3>
               <p className="text-muted-foreground text-sm">
                 {isClaiming
@@ -172,5 +201,11 @@ export function SwapProcessingPage() {
     );
   }
 
-  return <LoadingStep status={swap.status} swapId={swap.id} />;
+  return (
+    <LoadingStep
+      status={swap.status}
+      swapId={swap.id}
+      tokenSymbol={tokenSymbol}
+    />
+  );
 }

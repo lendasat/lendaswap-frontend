@@ -6,9 +6,14 @@ import { type SwapStatus } from "../api";
 interface LoadingStepProps {
   status: SwapStatus;
   swapId?: string;
+  tokenSymbol?: string; // e.g., "USDC", "USDT"
 }
 
-export function LoadingStep({ status, swapId }: LoadingStepProps) {
+export function LoadingStep({
+  status,
+  swapId,
+  tokenSymbol = "USDC",
+}: LoadingStepProps) {
   const [copySuccess, setCopySuccess] = useState(false);
 
   const handleCopy = async () => {
@@ -59,7 +64,7 @@ export function LoadingStep({ status, swapId }: LoadingStepProps) {
               ? "Your swap has been completed successfully"
               : isPending
                 ? "Waiting for BTC payment"
-                : "Verifying payment and preparing USDC transfer"}
+                : `Verifying payment and preparing ${tokenSymbol} transfer`}
           </p>
         </div>
 
@@ -132,7 +137,7 @@ export function LoadingStep({ status, swapId }: LoadingStepProps) {
                 className={`h-5 w-5 rounded-full border-2 ${isServerFunded && !isClientRedeemed ? "border-foreground animate-pulse" : "border-muted"}`}
               />
             )}
-            <span>USDC claimed</span>
+            <span>{tokenSymbol} claimed</span>
           </div>
 
           {/* Step 4: Server Redeemed */}

@@ -91,6 +91,7 @@ export interface GetSwapResponse {
   polygon_address: string;
   onchain_swap_id: string | null; // The actual on-chain swap ID used by the HTLC contract
   fee_sats?: number; // Optional fee in satoshis
+  target_token: TokenId; // The token being received
   // VHTLC parameters for refunding
   sender_pk: string;
   receiver_pk: string;

@@ -13,6 +13,7 @@ interface SuccessStepProps {
   copiedAddress: string | null;
   handleCopyAddress: (address: string) => void;
   swapDurationSeconds: number | null;
+  tokenSymbol?: string; // e.g., "USDC", "USDT"
 }
 
 export function SuccessStep({
@@ -23,6 +24,7 @@ export function SuccessStep({
   copiedAddress,
   handleCopyAddress,
   swapDurationSeconds,
+  tokenSymbol = "USDC",
 }: SuccessStepProps) {
   const navigate = useNavigate();
 
@@ -32,7 +34,7 @@ export function SuccessStep({
   };
 
   const handleShareOnTwitter = () => {
-    const tweetText = `Just swapped ${swapData?.sats_required.toLocaleString()} sats to ${usdcAmount} USDC in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`;
+    const tweetText = `Just swapped ${swapData?.sats_required.toLocaleString()} sats to ${usdcAmount} ${tokenSymbol} in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
@@ -49,7 +51,7 @@ export function SuccessStep({
         <div className="space-y-2 text-center">
           <h3 className="text-2xl font-semibold">Swap Complete!</h3>
           <p className="text-muted-foreground text-sm">
-            Your USDC has been successfully sent to your address
+            Your {tokenSymbol} has been successfully sent to your address
           </p>
         </div>
 
@@ -126,7 +128,9 @@ export function SuccessStep({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Amount Received</span>
-            <span className="font-medium">{usdcAmount} USDC</span>
+            <span className="font-medium">
+              {usdcAmount} {tokenSymbol}
+            </span>
           </div>
           <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
             <span className="text-muted-foreground">Sent to Address</span>

@@ -93,7 +93,7 @@ export function EnterAmountStep({
           htmlFor="usdc-input"
           className="text-muted-foreground text-sm font-medium"
         >
-          How much do you want to receive? (Polygon)
+          How much do you want to receive?
         </label>
         <div className="relative">
           <Input

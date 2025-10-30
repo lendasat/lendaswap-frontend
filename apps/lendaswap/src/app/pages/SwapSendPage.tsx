@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import { api, type SwapResponse } from "../api";
+import { api, type SwapResponse, type TokenId } from "../api";
 import { SendBitcoinStep } from "../steps";
 import { isDebugMode, mockSwapData } from "../utils/debugMode";
+
+// Get display symbol for a token
+function getTokenSymbol(tokenId: TokenId): string {
+  switch (tokenId) {
+    case "usdc_pol":
+      return "USDC";
+    case "usdt_pol":
+      return "USDT";
+    default:
+      return "USDC";
+  }
+}
 
 export function SwapSendPage() {
   const { swapId } = useParams<{ swapId: string }>();
@@ -11,6 +23,7 @@ export function SwapSendPage() {
   const [usdcAmount, setUsdcAmount] = useState("");
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [tokenSymbol, setTokenSymbol] = useState("USDC");
 
   // Fetch swap data initially
   useEffect(() => {
@@ -44,6 +57,7 @@ export function SwapSendPage() {
         };
         setSwapData(swapResponse);
         setUsdcAmount(swap.usd_amount.toFixed(2));
+        setTokenSymbol(getTokenSymbol(swap.target_token));
 
         // Redirect to correct step based on status
         if (
@@ -140,6 +154,7 @@ export function SwapSendPage() {
       usdcAmount={usdcAmount}
       copiedAddress={copiedAddress}
       handleCopyAddress={handleCopyAddress}
+      tokenSymbol={tokenSymbol}
     />
   );
 }
