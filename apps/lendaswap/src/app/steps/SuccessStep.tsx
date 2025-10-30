@@ -32,7 +32,7 @@ export function SuccessStep({
   };
 
   const handleShareOnTwitter = () => {
-    const tweetText = `Just swapped ${swapData?.sats_required.toLocaleString()} sats to ${usdcAmount} USDC in ${swapDurationSeconds}s on @LendaSwap! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: lendaswap.com`;
+    const tweetText = `Just swapped ${swapData?.sats_required.toLocaleString()} sats to ${usdcAmount} USDC in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
