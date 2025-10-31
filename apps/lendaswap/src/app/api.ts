@@ -125,14 +125,6 @@ export interface GetSwapResponse {
 }
 
 export const api = {
-  async getPrice(): Promise<PriceResponse> {
-    const response = await fetch(`${API_BASE_URL}/price`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch price: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
   async getTokens(): Promise<TokenInfo[]> {
     const response = await fetch(`${API_BASE_URL}/tokens`);
     if (!response.ok) {
