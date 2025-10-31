@@ -92,13 +92,49 @@ export function EnterAmountStep({
 
   return (
     <CardContent className="space-y-4 pt-6">
-      {/* Amount Input with Token Selector */}
+      {/* Bitcoin Input - You Send */}
+      <div className="space-y-2">
+        <label
+          htmlFor="bitcoin-input"
+          className="text-muted-foreground text-sm font-medium"
+        >
+          You Send
+        </label>
+        <div className="relative">
+          <Input
+            id="bitcoin-input"
+            type="number"
+            placeholder="0.00"
+            value={bitcoinAmount}
+            onChange={(e) => handleBitcoinChange(e.target.value)}
+            className="h-14 pr-32 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
+            <div className="flex items-center gap-2 rounded-lg bg-orange-500/10 px-3 py-1.5">
+              <Bitcoin className="h-5 w-5 text-orange-500 dark:text-orange-400" />
+              <span className="text-sm font-semibold">BTC</span>
+            </div>
+          </div>
+        </div>
+        {bitcoinAmount && exchangeRate && (
+          <p className="text-muted-foreground text-xs">
+            ≈ ${(parseFloat(bitcoinAmount) * exchangeRate).toLocaleString()}
+          </p>
+        )}
+      </div>
+
+      {/* Swap Icon */}
+      <div className="-my-2 flex justify-center">
+        <ArrowDownUp className="text-muted-foreground h-4 w-4 opacity-50" />
+      </div>
+
+      {/* Token Output - You Receive */}
       <div className="space-y-2">
         <label
           htmlFor="usdc-input"
           className="text-muted-foreground text-sm font-medium"
         >
-          How much do you want to receive?
+          You Receive
         </label>
         <div className="relative">
           <Input
@@ -141,42 +177,6 @@ export function EnterAmountStep({
         {usdcAmount && (
           <p className="text-muted-foreground text-xs">
             ≈ ${parseFloat(usdcAmount).toLocaleString()}
-          </p>
-        )}
-      </div>
-
-      {/* Swap Icon */}
-      <div className="-my-2 flex justify-center">
-        <ArrowDownUp className="text-muted-foreground h-4 w-4 opacity-50" />
-      </div>
-
-      {/* Bitcoin Output */}
-      <div className="space-y-2">
-        <label
-          htmlFor="bitcoin-input"
-          className="text-muted-foreground text-sm font-medium"
-        >
-          You Send
-        </label>
-        <div className="relative">
-          <Input
-            id="bitcoin-input"
-            type="number"
-            placeholder="0.00"
-            value={bitcoinAmount}
-            onChange={(e) => handleBitcoinChange(e.target.value)}
-            className="h-14 pr-32 text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
-            <div className="flex items-center gap-2 rounded-lg bg-orange-500/10 px-3 py-1.5">
-              <Bitcoin className="h-5 w-5 text-orange-500 dark:text-orange-400" />
-              <span className="text-sm font-semibold">BTC</span>
-            </div>
-          </div>
-        </div>
-        {bitcoinAmount && exchangeRate && (
-          <p className="text-muted-foreground text-xs">
-            ≈ ${(parseFloat(bitcoinAmount) * exchangeRate).toLocaleString()}
           </p>
         )}
       </div>
