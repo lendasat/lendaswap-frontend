@@ -4,6 +4,9 @@ import { getReferralCode } from "./utils/referralCode";
 const API_BASE_URL =
   import.meta.env.VITE_LENDASWAP_API_URL || "http://localhost:3333";
 
+// WebSocket URL (replace http with ws)
+const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
+
 // Token types
 export type TokenId = "btc_lightning" | "btc_arkade" | "usdc_pol" | "usdt_pol";
 
@@ -20,6 +23,24 @@ export interface TokenInfo {
 export interface PriceResponse {
   usd_per_sat: number;
   usd_per_btc: number;
+}
+
+// WebSocket price feed types (matching backend message format)
+export interface PriceTiers {
+  usd_1: number;
+  usd_100: number;
+  usd_1000: number;
+  usd_5000: number;
+}
+
+export interface TradingPairPrices {
+  pair: string; // e.g., "USDC_POL-BTC" or "USDT_POL-BTC"
+  tiers: PriceTiers;
+}
+
+export interface PriceUpdateMessage {
+  timestamp: number;
+  pairs: TradingPairPrices[];
 }
 
 /**
@@ -178,3 +199,129 @@ export const api = {
     }
   },
 };
+
+/**
+ * WebSocket price feed service
+ * Manages connection to /ws/prices endpoint with auto-reconnect
+ */
+export class PriceFeedService {
+  private ws: WebSocket | null = null;
+  private reconnectTimer: number | null = null;
+  private listeners: Set<(update: PriceUpdateMessage) => void> = new Set();
+  private reconnectDelay = 1000; // Start with 1 second
+  private maxReconnectDelay = 30000; // Max 30 seconds
+  private isManualClose = false;
+
+  /**
+   * Subscribe to price updates
+   * @param callback Function to call when prices are updated
+   * @returns Unsubscribe function
+   */
+  subscribe(callback: (update: PriceUpdateMessage) => void): () => void {
+    this.listeners.add(callback);
+
+    // Connect if not already connected
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      this.connect();
+    }
+
+    // Return unsubscribe function
+    return () => {
+      this.listeners.delete(callback);
+      // Close connection if no more listeners
+      if (this.listeners.size === 0) {
+        this.close();
+      }
+    };
+  }
+
+  /**
+   * Connect to WebSocket price feed
+   */
+  private connect(): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    this.isManualClose = false;
+
+    try {
+      this.ws = new WebSocket(`${WS_BASE_URL}/ws/prices`);
+
+      this.ws.onopen = () => {
+        console.log("Price feed WebSocket connected");
+        // Reset reconnect delay on successful connection
+        this.reconnectDelay = 1000;
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const update: PriceUpdateMessage = JSON.parse(event.data);
+          // Notify all listeners
+          this.listeners.forEach((callback) => callback(update));
+        } catch (error) {
+          console.error("Failed to parse price update:", error);
+        }
+      };
+
+      this.ws.onerror = (error) => {
+        console.error("Price feed WebSocket error:", error);
+      };
+
+      this.ws.onclose = () => {
+        console.log("Price feed WebSocket closed");
+        this.ws = null;
+
+        // Only reconnect if we have listeners and it wasn't a manual close
+        if (this.listeners.size > 0 && !this.isManualClose) {
+          this.scheduleReconnect();
+        }
+      };
+    } catch (error) {
+      console.error("Failed to create WebSocket:", error);
+      if (this.listeners.size > 0 && !this.isManualClose) {
+        this.scheduleReconnect();
+      }
+    }
+  }
+
+  /**
+   * Schedule reconnection with exponential backoff
+   */
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer !== null) {
+      return;
+    }
+
+    console.log(`Reconnecting in ${this.reconnectDelay}ms...`);
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect();
+      // Exponential backoff
+      this.reconnectDelay = Math.min(
+        this.reconnectDelay * 2,
+        this.maxReconnectDelay,
+      );
+    }, this.reconnectDelay);
+  }
+
+  /**
+   * Close WebSocket connection
+   */
+  private close(): void {
+    this.isManualClose = true;
+
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+  }
+}
+
+// Singleton instance
+export const priceFeedService = new PriceFeedService();

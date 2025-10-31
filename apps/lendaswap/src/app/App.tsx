@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
-import { Routes, Route, useLocation, useNavigate } from "react-router";
+import { useState } from "react";
+import { Route, Routes, useLocation, useNavigate } from "react-router";
 import "../assets/styles.css";
+import { ConnectKitButton } from "connectkit";
+import { Check, Menu, PiggyBank, Shield, Tag, Wrench, Zap } from "lucide-react";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import {
@@ -10,23 +12,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import { Shield, PiggyBank, Zap, Tag, Check, Wrench, Menu } from "lucide-react";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
-import { ConnectKitButton } from "connectkit";
-import { api } from "./api";
-import { EnterAmountStep } from "./steps";
-import {
-  SwapSendPage,
-  SwapProcessingPage,
-  SwapSuccessPage,
-  SwapsPage,
-  ManageSwapPage,
-} from "./pages";
+import { api, type TokenId } from "./api";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
-import { hasReferralCode } from "./utils/referralCode";
+import { usePriceFeed } from "./PriceFeedContext";
+import {
+  ManageSwapPage,
+  SwapProcessingPage,
+  SwapSendPage,
+  SwapSuccessPage,
+  SwapsPage,
+} from "./pages";
+import { EnterAmountStep } from "./steps";
 import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
+import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 
@@ -61,50 +62,24 @@ function HomePage() {
   const [bitcoinAmount, setBitcoinAmount] = useState("");
   const [usdcAmount, setUsdcAmount] = useState("");
   const [receiveAddress, setReceiveAddress] = useState("");
-  const [selectedToken, setSelectedToken] = useState<"usdc_pol" | "usdt_pol">(
-    "usdc_pol",
-  );
+  const [selectedToken, setSelectedToken] = useState<TokenId>("usdc_pol");
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
 
-  // Real exchange rate from backend
-  const [exchangeRate, setExchangeRate] = useState<number | null>();
-  const [isLoadingPrice, setIsLoadingPrice] = useState(true);
-  const [priceError, setPriceError] = useState<string | null>(null);
-
-  // Fetch price on component mount
-  useEffect(() => {
-    const fetchPrice = async () => {
-      try {
-        setIsLoadingPrice(true);
-        setPriceError(null);
-        const price = await api.getPrice();
-        setExchangeRate(price.usd_per_btc);
-      } catch (error) {
-        console.error("Failed to fetch price:", error);
-        setPriceError(
-          error instanceof Error ? error.message : "Failed to fetch price",
-        );
-      } finally {
-        setIsLoadingPrice(false);
-      }
-    };
-
-    fetchPrice();
-    // Refresh price every 30 seconds
-    const interval = setInterval(fetchPrice, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  // Get price feed from context
+  const { getExchangeRate } = usePriceFeed();
 
   const handleBitcoinChange = (value: string) => {
     setBitcoinAmount(value);
     const btcValue = parseFloat(value);
-    if (
-      !Number.isNaN(btcValue) &&
-      exchangeRate !== null &&
-      exchangeRate !== undefined
-    ) {
-      setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+    if (!Number.isNaN(btcValue)) {
+      const usdAmount = parseFloat(usdcAmount) || 1;
+      const exchangeRate = getExchangeRate(selectedToken, usdAmount);
+      if (exchangeRate !== null && exchangeRate !== undefined) {
+        setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+      } else {
+        setUsdcAmount("");
+      }
     } else {
       setUsdcAmount("");
     }
@@ -113,12 +88,13 @@ function HomePage() {
   const handleUsdcChange = (value: string) => {
     setUsdcAmount(value);
     const usdcValue = parseFloat(value);
-    if (
-      !Number.isNaN(usdcValue) &&
-      exchangeRate !== null &&
-      exchangeRate !== undefined
-    ) {
-      setBitcoinAmount((usdcValue / exchangeRate).toFixed(8));
+    if (!Number.isNaN(usdcValue)) {
+      const exchangeRate = getExchangeRate(selectedToken, usdcValue);
+      if (exchangeRate !== null && exchangeRate !== undefined) {
+        setBitcoinAmount((usdcValue / exchangeRate).toFixed(8));
+      } else {
+        setBitcoinAmount("");
+      }
     } else {
       setBitcoinAmount("");
     }
@@ -202,9 +178,6 @@ function HomePage() {
     <EnterAmountStep
       usdcAmount={usdcAmount}
       bitcoinAmount={bitcoinAmount}
-      exchangeRate={exchangeRate}
-      isLoadingPrice={isLoadingPrice}
-      priceError={priceError}
       receiveAddress={receiveAddress}
       selectedToken={selectedToken}
       setSelectedToken={setSelectedToken}

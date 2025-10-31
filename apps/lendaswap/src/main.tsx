@@ -10,6 +10,7 @@ import { polygon } from "viem/chains";
 import { WalletBridgeProvider } from "./app/WalletBridgeContext";
 import App from "./app/App";
 import { ThemeProvider } from "./app/utils/theme-provider";
+import { PriceFeedProvider } from "./app/PriceFeedContext";
 
 const config = createConfig(
   getDefaultConfig({
@@ -31,9 +32,11 @@ root.render(
           <ConnectKitProvider mode="auto">
             <Theme>
               <ThemeProvider>
-                <WalletBridgeProvider>
-                  <App />
-                </WalletBridgeProvider>
+                <PriceFeedProvider>
+                  <WalletBridgeProvider>
+                    <App />
+                  </WalletBridgeProvider>
+                </PriceFeedProvider>
               </ThemeProvider>
             </Theme>
           </ConnectKitProvider>

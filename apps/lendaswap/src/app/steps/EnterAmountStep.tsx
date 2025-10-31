@@ -15,15 +15,13 @@ import { ConnectKitButton } from "connectkit";
 import { useAccount } from "wagmi";
 import { isAddress } from "ethers";
 import type { TokenId } from "../api";
+import { usePriceFeed } from "../PriceFeedContext";
 import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
 import { ReactComponent as TetherIcon } from "../../assets/usdt0.svg";
 
 interface EnterAmountStepProps {
   usdcAmount: string;
   bitcoinAmount: string;
-  exchangeRate: number | null | undefined;
-  isLoadingPrice: boolean;
-  priceError: string | null;
   receiveAddress: string;
   selectedToken: TokenId;
   setSelectedToken: (token: TokenId) => void;
@@ -38,9 +36,6 @@ interface EnterAmountStepProps {
 export function EnterAmountStep({
   usdcAmount,
   bitcoinAmount,
-  exchangeRate,
-  isLoadingPrice,
-  priceError,
   receiveAddress,
   selectedToken,
   setSelectedToken,
@@ -53,6 +48,13 @@ export function EnterAmountStep({
 }: EnterAmountStepProps) {
   const [addressError, setAddressError] = useState<string | null>(null);
   const { address, isConnected } = useAccount();
+
+  // Get price feed from context
+  const { getExchangeRate, isLoadingPrice, priceError } = usePriceFeed();
+
+  // Calculate exchange rate based on selected token and USD amount
+  const usdAmount = parseFloat(usdcAmount) || 1;
+  const exchangeRate = getExchangeRate(selectedToken, usdAmount);
 
   // Get display info for selected token
   const getTokenDisplay = (tokenId: TokenId) => {
