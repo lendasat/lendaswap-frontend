@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router";
 import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
@@ -60,17 +60,52 @@ function HomePage() {
 
   // State for home page
   const [bitcoinAmount, setBitcoinAmount] = useState("");
-  const [usdcAmount, setUsdcAmount] = useState("");
+  const [usdcAmount, setUsdcAmount] = useState("50");
   const [receiveAddress, setReceiveAddress] = useState("");
   const [selectedToken, setSelectedToken] = useState<TokenId>("usdc_pol");
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
+  const [lastEditedField, setLastEditedField] = useState<"usd" | "btc">("usd");
 
   // Get price feed from context
-  const { getExchangeRate } = usePriceFeed();
+  const { getExchangeRate, isLoadingPrice } = usePriceFeed();
+
+  // Calculate the other amount when price becomes available or changes
+  useEffect(() => {
+    if (!isLoadingPrice) {
+      if (lastEditedField === "usd" && usdcAmount) {
+        // User edited USD, update BTC amount
+        const usdcValue = parseFloat(usdcAmount);
+        if (!Number.isNaN(usdcValue)) {
+          const exchangeRate = getExchangeRate(selectedToken, usdcValue);
+          if (exchangeRate !== null && exchangeRate !== undefined) {
+            setBitcoinAmount((usdcValue / exchangeRate).toFixed(8));
+          }
+        }
+      } else if (lastEditedField === "btc" && bitcoinAmount) {
+        // User edited BTC, update USD amount
+        const btcValue = parseFloat(bitcoinAmount);
+        if (!Number.isNaN(btcValue)) {
+          const usdAmount = parseFloat(usdcAmount) || 1;
+          const exchangeRate = getExchangeRate(selectedToken, usdAmount);
+          if (exchangeRate !== null && exchangeRate !== undefined) {
+            setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+          }
+        }
+      }
+    }
+  }, [
+    isLoadingPrice,
+    getExchangeRate,
+    selectedToken,
+    lastEditedField,
+    usdcAmount,
+    bitcoinAmount,
+  ]);
 
   const handleBitcoinChange = (value: string) => {
     setBitcoinAmount(value);
+    setLastEditedField("btc");
     const btcValue = parseFloat(value);
     if (!Number.isNaN(btcValue)) {
       const usdAmount = parseFloat(usdcAmount) || 1;
@@ -87,6 +122,7 @@ function HomePage() {
 
   const handleUsdcChange = (value: string) => {
     setUsdcAmount(value);
+    setLastEditedField("usd");
     const usdcValue = parseFloat(value);
     if (!Number.isNaN(usdcValue)) {
       const exchangeRate = getExchangeRate(selectedToken, usdcValue);
