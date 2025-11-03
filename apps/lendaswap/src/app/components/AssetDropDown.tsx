@@ -173,9 +173,11 @@ interface AssetDropDownProps {
   availableAssets?: TokenId[];
 }
 
-export function AssetDropDown({ value, onChange, availableAssets }: AssetDropDownProps) {
-  console.log(`Selected Value is ${value}`);
-
+export function AssetDropDown({
+  value,
+  onChange,
+  availableAssets,
+}: AssetDropDownProps) {
   let selectedAsset = ASSETS[0];
   switch (value) {
     case "usdc_pol":
@@ -197,7 +199,7 @@ export function AssetDropDown({ value, onChange, availableAssets }: AssetDropDow
 
   // Filter assets based on availableAssets if provided
   const filteredAssets = availableAssets
-    ? ASSETS.filter(asset => availableAssets.includes(asset.id as TokenId))
+    ? ASSETS.filter((asset) => availableAssets.includes(asset.id as TokenId))
     : ASSETS;
 
   return (
@@ -205,7 +207,9 @@ export function AssetDropDown({ value, onChange, availableAssets }: AssetDropDow
     //   <div className="w-full max-w-md">
     <DropdownMenu>
       <DropdownMenuTrigger className="w-full">
-        <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-2xl transition-colors ${selectedAsset.bgColor}`}>
+        <div
+          className={`flex items-center gap-1.5 px-2 py-1.5 rounded-2xl transition-colors ${selectedAsset.bgColor}`}
+        >
           {/* Primary Icon - Asset */}
           <div className="flex items-center justify-center w-7 h-7 bg-white rounded-full shrink-0">
             <div className="w-4 h-4">{selectedAsset.icon}</div>
@@ -219,7 +223,9 @@ export function AssetDropDown({ value, onChange, availableAssets }: AssetDropDow
               </span>
               <div className="flex items-center gap-0.5 px-1 py-0.5 bg-slate-100 rounded-full w-fit">
                 {typeof selectedAsset.network.icon === "string" ? (
-                  <span className="text-[10px]">{selectedAsset.network.icon}</span>
+                  <span className="text-[10px]">
+                    {selectedAsset.network.icon}
+                  </span>
                 ) : (
                   <div className="w-2 h-2">{selectedAsset.network.icon}</div>
                 )}
