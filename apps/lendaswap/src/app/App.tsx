@@ -533,6 +533,14 @@ function HomePage() {
                             </>
                         )}
                     </Button>
+
+                    {/* Swap Error Display */}
+                    {swapError && (
+                        <div
+                            className="bg-destructive/10 border-destructive/20 text-destructive rounded-lg border p-3 text-sm">
+                            {swapError}
+                        </div>
+                    )}
                 </div>
             </div>
         </>
