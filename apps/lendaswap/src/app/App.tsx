@@ -62,7 +62,8 @@ function HomePage() {
   const [bitcoinAmount, setBitcoinAmount] = useState("");
   const [usdcAmount, setUsdcAmount] = useState("50");
   const [receiveAddress, setReceiveAddress] = useState("");
-  const [selectedToken, setSelectedToken] = useState<TokenId>("usdc_pol");
+  const [sourceToken, setSourceToken] = useState<TokenId>("btc_lightning");
+  const [targetToken, setTargetToken] = useState<TokenId>("usdc_pol");
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
   const [lastEditedField, setLastEditedField] = useState<"usd" | "btc">("usd");
@@ -77,7 +78,7 @@ function HomePage() {
         // User edited USD, update BTC amount
         const usdcValue = parseFloat(usdcAmount);
         if (!Number.isNaN(usdcValue)) {
-          const exchangeRate = getExchangeRate(selectedToken, usdcValue);
+          const exchangeRate = getExchangeRate(targetToken, usdcValue);
           if (exchangeRate !== null && exchangeRate !== undefined) {
             setBitcoinAmount((usdcValue / exchangeRate).toFixed(8));
           }
@@ -87,7 +88,7 @@ function HomePage() {
         const btcValue = parseFloat(bitcoinAmount);
         if (!Number.isNaN(btcValue)) {
           const usdAmount = parseFloat(usdcAmount) || 1;
-          const exchangeRate = getExchangeRate(selectedToken, usdAmount);
+          const exchangeRate = getExchangeRate(targetToken, usdAmount);
           if (exchangeRate !== null && exchangeRate !== undefined) {
             setUsdcAmount((btcValue * exchangeRate).toFixed(2));
           }
@@ -97,7 +98,7 @@ function HomePage() {
   }, [
     isLoadingPrice,
     getExchangeRate,
-    selectedToken,
+    targetToken,
     lastEditedField,
     usdcAmount,
     bitcoinAmount,
@@ -109,7 +110,7 @@ function HomePage() {
     const btcValue = parseFloat(value);
     if (!Number.isNaN(btcValue)) {
       const usdAmount = parseFloat(usdcAmount) || 1;
-      const exchangeRate = getExchangeRate(selectedToken, usdAmount);
+      const exchangeRate = getExchangeRate(targetToken, usdAmount);
       if (exchangeRate !== null && exchangeRate !== undefined) {
         setUsdcAmount((btcValue * exchangeRate).toFixed(2));
       } else {
@@ -125,7 +126,7 @@ function HomePage() {
     setLastEditedField("usd");
     const usdcValue = parseFloat(value);
     if (!Number.isNaN(usdcValue)) {
-      const exchangeRate = getExchangeRate(selectedToken, usdcValue);
+      const exchangeRate = getExchangeRate(targetToken, usdcValue);
       if (exchangeRate !== null && exchangeRate !== undefined) {
         setBitcoinAmount((usdcValue / exchangeRate).toFixed(8));
       } else {
@@ -158,7 +159,7 @@ function HomePage() {
       const swap = await api.createSwap({
         polygon_address: receiveAddress,
         usd_amount: parseFloat(usdcAmount),
-        target_token: selectedToken,
+        target_token: targetToken,
         hash_lock,
         refund_pk,
       });
@@ -215,8 +216,10 @@ function HomePage() {
       usdcAmount={usdcAmount}
       bitcoinAmount={bitcoinAmount}
       receiveAddress={receiveAddress}
-      selectedToken={selectedToken}
-      setSelectedToken={setSelectedToken}
+      sourceToken={sourceToken}
+      targetToken={targetToken}
+      setSourceToken={setSourceToken}
+      setTargetToken={setTargetToken}
       setReceiveAddress={setReceiveAddress}
       handleUsdcChange={handleUsdcChange}
       handleBitcoinChange={handleBitcoinChange}

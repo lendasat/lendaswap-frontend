@@ -20,6 +20,11 @@ export interface TokenInfo {
   decimals: number;
 }
 
+export interface AssetPair {
+  source: TokenId;
+  target: TokenId;
+}
+
 export interface PriceResponse {
   usd_per_sat: number;
   usd_per_btc: number;
@@ -129,6 +134,14 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/tokens`);
     if (!response.ok) {
       throw new Error(`Failed to fetch tokens: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async getAssetPairs(): Promise<AssetPair[]> {
+    const response = await fetch(`${API_BASE_URL}/asset-pairs`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch asset pairs: ${response.statusText}`);
     }
     return response.json();
   },
