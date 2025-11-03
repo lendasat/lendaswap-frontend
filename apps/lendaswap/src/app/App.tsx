@@ -354,118 +354,109 @@ function HomePage() {
     console.log(`BTC Amount ${bitcoinAmount} , USD Amount ${usdAmount}`);
     return (
         <>
-            <div className={"flex flex-col gap-2"}>
-                <div className="relative">
-                    {sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol" ? (
-                        <UsdInput
-                            value={usdAmount}
-                            onChange={setUsdAmount}
-                            className="pr-52"
-                        />
-                    ) : (
-                        <BtcInput
-                            value={bitcoinAmount}
-                            onChange={setBitcoinAmount}
-                            className="pr-52"
-                        />
-                    )}
-                    <div
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-48"
-                        id={"sourceAsset"}
-                    >
-                        <AssetDropDown
-                            value={sourceAsset}
-                            onChange={(asset) => {
-                                if (
-                                    (asset === "usdc_pol" || asset === "usdt_pol") &&
-                                    (targetAsset === "btc_arkade" ||
-                                        targetAsset === "btc_lightning")
-                                ) {
-                                    setSourceAsset(asset);
-                                    setTargetAsset(targetAsset);
-                                    navigate(`/${asset}/${targetAsset}`, {replace: true});
-                                    return;
-                                }
+            <div className="flex flex-col gap-2 px-4 md:px-4">
+                <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">You send</label>
+                    <div className="relative">
+                        {sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol" ? (
+                            <UsdInput
+                                value={usdAmount}
+                                onChange={setUsdAmount}
+                                className="pr-52"
+                            />
+                        ) : (
+                            <BtcInput
+                                value={bitcoinAmount}
+                                onChange={setBitcoinAmount}
+                                className="pr-52"
+                            />
+                        )}
+                        <div
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-48"
+                            id={"sourceAsset"}
+                        >
+                            <AssetDropDown
+                                value={sourceAsset}
+                                onChange={(asset) => {
+                                    if (
+                                        (asset === "usdc_pol" || asset === "usdt_pol") &&
+                                        (targetAsset === "btc_arkade" ||
+                                            targetAsset === "btc_lightning")
+                                    ) {
+                                        setSourceAsset(asset);
+                                        setTargetAsset(targetAsset);
+                                        navigate(`/${asset}/${targetAsset}`, {replace: true});
+                                        return;
+                                    }
 
-                                if (
-                                    (asset === "btc_arkade" || asset === "btc_lightning") &&
-                                    (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
-                                ) {
-                                    setSourceAsset(asset);
-                                    setTargetAsset(targetAsset);
-                                    navigate(`/${asset}/${targetAsset}`, {replace: true});
-                                    return;
-                                }
+                                    if (
+                                        (asset === "btc_arkade" || asset === "btc_lightning") &&
+                                        (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
+                                    ) {
+                                        setSourceAsset(asset);
+                                        setTargetAsset(targetAsset);
+                                        navigate(`/${asset}/${targetAsset}`, {replace: true});
+                                        return;
+                                    }
 
-                                if (
-                                    (asset === "usdc_pol" || asset === "usdt_pol") &&
-                                    (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
-                                ) {
-                                    setSourceAsset(asset);
-                                    setTargetAsset("btc_arkade");
-                                    navigate(`/${asset}/btc_arkade`, {replace: true});
-                                    return;
-                                }
+                                    if (
+                                        (asset === "usdc_pol" || asset === "usdt_pol") &&
+                                        (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
+                                    ) {
+                                        setSourceAsset(asset);
+                                        setTargetAsset("btc_arkade");
+                                        navigate(`/${asset}/btc_arkade`, {replace: true});
+                                        return;
+                                    }
 
-                                if (
-                                    (asset === "btc_arkade" || asset === "btc_lightning") &&
-                                    (targetAsset === "btc_arkade" ||
-                                        targetAsset === "btc_lightning")
-                                ) {
-                                    setSourceAsset(asset);
-                                    setTargetAsset("usdc_pol");
-                                    navigate(`/${asset}/usdc_pol`, {replace: true});
-                                    return;
-                                }
-                            }}
-                            availableAssets={availableSourceAssets}
-                        />
+                                    if (
+                                        (asset === "btc_arkade" || asset === "btc_lightning") &&
+                                        (targetAsset === "btc_arkade" ||
+                                            targetAsset === "btc_lightning")
+                                    ) {
+                                        setSourceAsset(asset);
+                                        setTargetAsset("usdc_pol");
+                                        navigate(`/${asset}/usdc_pol`, {replace: true});
+                                        return;
+                                    }
+                                }}
+                                availableAssets={availableSourceAssets}
+                            />
+                        </div>
                     </div>
                 </div>
-                <div className="relative">
-                    {targetAsset === "usdc_pol" || targetAsset === "usdt_pol" ? (
-                        <UsdInput
-                            value={usdAmount}
-                            onChange={setUsdAmount}
-                            className="pr-52"
-                        />
-                    ) : (
-                        <BtcInput
-                            value={bitcoinAmount}
-                            onChange={setBitcoinAmount}
-                            className="pr-52"
-                        />
-                    )}
-                    <div
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-48"
-                        id={"targetAsset"}
-                    >
-                        <AssetDropDown
-                            value={targetAsset}
-                            onChange={(asset) => {
-                                navigate(`/${sourceAsset}/${asset}`, {replace: true});
-                                setTargetAsset(asset);
-                            }}
-                            availableAssets={availableTargetAssets}
-                        />
+                <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">You receive</label>
+                    <div className="relative">
+                        {targetAsset === "usdc_pol" || targetAsset === "usdt_pol" ? (
+                            <UsdInput
+                                value={usdAmount}
+                                onChange={setUsdAmount}
+                                className="pr-52"
+                            />
+                        ) : (
+                            <BtcInput
+                                value={bitcoinAmount}
+                                onChange={setBitcoinAmount}
+                                className="pr-52"
+                            />
+                        )}
+                        <div
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-48"
+                            id={"targetAsset"}
+                        >
+                            <AssetDropDown
+                                value={targetAsset}
+                                onChange={(asset) => {
+                                    navigate(`/${sourceAsset}/${asset}`, {replace: true});
+                                    setTargetAsset(asset);
+                                }}
+                                availableAssets={availableTargetAssets}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-            {/*<EnterAmountStep*/}
-            {/*  usdcAmount={usdAmount}*/}
-            {/*  bitcoinAmount={bitcoinAmount}*/}
-            {/*  receiveAddress={receiveAddress}*/}
-            {/*  sourceToken={sourceToken}*/}
-            {/*  targetToken={targetToken}*/}
-            {/*  setSourceToken={setSourceToken}*/}
-            {/*  setTargetToken={setTargetToken}*/}
-            {/*  setReceiveAddress={setReceiveAddress}*/}
-            {/*  handleUsdcChange={handleUsdcChange}*/}
-            {/*  handleBitcoinChange={handleBitcoinChange}*/}
-            {/*  handleContinueToAddress={handleContinueToAddress}*/}
-            {/*  isCreatingSwap={isCreatingSwap}*/}
-            {/*  swapError={swapError}*/}
-            {/*/>*/}
         </>
     );
 }
