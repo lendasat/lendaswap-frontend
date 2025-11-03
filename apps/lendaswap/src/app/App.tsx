@@ -104,6 +104,7 @@ function HomePage() {
     );
     const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd")
     const [targetAddress, setTargetAddress] = useState("")
+    const [addressValid, setAddressValid] = useState(false);
 
     // Get price feed from context
     const {getExchangeRate, isLoadingPrice, priceUpdate} = usePriceFeed();
@@ -294,79 +295,79 @@ function HomePage() {
     //   }
     // };
 
-    // const handleContinueToAddress = async () => {
-    //   // Create swap and navigate to send bitcoin step
-    //   if (!receiveAddress || !usdAmount) {
-    //     return;
-    //   }
-    //
-    //   try {
-    //     setIsCreatingSwap(true);
-    //     setSwapError(null);
-    //
-    //     // Generate random secret and hash it
-    //     const secret = generateSecret();
-    //     const hash_lock = await hashSecret(secret);
-    //
-    //     // Get or create Bitcoin keys
-    //     const { publicKey: refund_pk, privateKey: own_sk } =
-    //       getOrCreateBitcoinKeys();
-    //
-    //     // Create swap with backend
-    //     const swap = await api.createSwap({
-    //       polygon_address: receiveAddress,
-    //       usd_amount: parseFloat(usdAmount),
-    //       target_token: targetToken,
-    //       hash_lock,
-    //       refund_pk,
-    //     });
-    //
-    //     console.log(
-    //       "Persisting swap data",
-    //       JSON.stringify({
-    //         secret,
-    //         own_sk,
-    //         lendaswap_pk: swap.receiver_pk,
-    //         arkade_server_pk: swap.server_pk,
-    //         refund_locktime: swap.refund_locktime,
-    //         unilateral_claim_delay: swap.unilateral_claim_delay,
-    //         unilateral_refund_delay: swap.unilateral_refund_delay,
-    //         unilateral_refund_without_receiver_delay:
-    //           swap.unilateral_refund_without_receiver_delay,
-    //         network: swap.network,
-    //         vhtlc_address: swap.arkade_address,
-    //       }),
-    //     );
-    //
-    //     // Store complete swap data in browser storage for potential refunding
-    //     localStorage.setItem(
-    //       swap.id,
-    //       JSON.stringify({
-    //         secret,
-    //         own_sk,
-    //         lendaswap_pk: swap.receiver_pk,
-    //         arkade_server_pk: swap.server_pk,
-    //         refund_locktime: swap.refund_locktime,
-    //         unilateral_claim_delay: swap.unilateral_claim_delay,
-    //         unilateral_refund_delay: swap.unilateral_refund_delay,
-    //         unilateral_refund_without_receiver_delay:
-    //           swap.unilateral_refund_without_receiver_delay,
-    //         network: swap.network,
-    //         vhtlc_address: swap.arkade_address,
-    //       }),
-    //     );
-    //
-    //     // Navigate to send step with swap ID
-    //     navigate(`/swap/${swap.id}/send`);
-    //   } catch (error) {
-    //     console.error("Failed to create swap:", error);
-    //     setSwapError(
-    //       error instanceof Error ? error.message : "Failed to create swap",
-    //     );
-    //   } finally {
-    //     setIsCreatingSwap(false);
-    //   }
-    // };
+    const handleContinueToAddress = async () => {
+        // Create swap and navigate to send bitcoin step
+        if (!targetAddress || !usdAmount) {
+            return;
+        }
+
+        // try {
+        //     setIsCreatingSwap(true);
+        //     setSwapError(null);
+        //
+        //     // Generate random secret and hash it
+        //     const secret = generateSecret();
+        //     const hash_lock = await hashSecret(secret);
+        //
+        //     // Get or create Bitcoin keys
+        //     const {publicKey: refund_pk, privateKey: own_sk} =
+        //         getOrCreateBitcoinKeys();
+        //
+        //     // Create swap with backend
+        //     const swap = await api.createSwap({
+        //         polygon_address: receiveAddress,
+        //         usd_amount: parseFloat(usdAmount),
+        //         target_token: targetToken,
+        //         hash_lock,
+        //         refund_pk,
+        //     });
+        //
+        //     console.log(
+        //         "Persisting swap data",
+        //         JSON.stringify({
+        //             secret,
+        //             own_sk,
+        //             lendaswap_pk: swap.receiver_pk,
+        //             arkade_server_pk: swap.server_pk,
+        //             refund_locktime: swap.refund_locktime,
+        //             unilateral_claim_delay: swap.unilateral_claim_delay,
+        //             unilateral_refund_delay: swap.unilateral_refund_delay,
+        //             unilateral_refund_without_receiver_delay:
+        //             swap.unilateral_refund_without_receiver_delay,
+        //             network: swap.network,
+        //             vhtlc_address: swap.arkade_address,
+        //         }),
+        //     );
+        //
+        //     // Store complete swap data in browser storage for potential refunding
+        //     localStorage.setItem(
+        //         swap.id,
+        //         JSON.stringify({
+        //             secret,
+        //             own_sk,
+        //             lendaswap_pk: swap.receiver_pk,
+        //             arkade_server_pk: swap.server_pk,
+        //             refund_locktime: swap.refund_locktime,
+        //             unilateral_claim_delay: swap.unilateral_claim_delay,
+        //             unilateral_refund_delay: swap.unilateral_refund_delay,
+        //             unilateral_refund_without_receiver_delay:
+        //             swap.unilateral_refund_without_receiver_delay,
+        //             network: swap.network,
+        //             vhtlc_address: swap.arkade_address,
+        //         }),
+        //     );
+        //
+        //     // Navigate to send step with swap ID
+        //     navigate(`/swap/${swap.id}/send`);
+        // } catch (error) {
+        //     console.error("Failed to create swap:", error);
+        //     setSwapError(
+        //         error instanceof Error ? error.message : "Failed to create swap",
+        //     );
+        // } finally {
+        //     setIsCreatingSwap(false);
+        // }
+    };
 
     const availableSourceAssets: TokenId[] = [
         "usdc_pol",
@@ -508,8 +509,19 @@ function HomePage() {
                             })} {targetAsset === "btc_lightning" || targetAsset === "btc_arkade" ? "BTC" : "USD"}
                         </div>
                     )}
-                    <AddressInput value={targetAddress} onChange={setTargetAddress} targetToken={targetAsset}
+                    <AddressInput
+                        value={targetAddress}
+                        onChange={setTargetAddress}
+                        targetToken={targetAsset}
+                        setAddressIsValid={setAddressValid}
                     />
+                    <Button
+                        onClick={handleContinueToAddress}
+                        disabled={!targetAddress || !exchangeRate || isLoadingPrice || !addressValid}
+                        className="w-full min-h-[4.25rem]"
+                    >
+                        Continue
+                    </Button>
                 </div>
             </div>
         </>

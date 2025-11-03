@@ -14,6 +14,7 @@ interface AddressInputProps {
     onChange: (value: string) => void;
     targetToken: TokenId;
     className?: string;
+    setAddressIsValid: (valid: boolean) => void;
 }
 
 export function AddressInput({
@@ -21,6 +22,7 @@ export function AddressInput({
                                  onChange,
                                  targetToken,
                                  className = "",
+                                 setAddressIsValid
                              }: AddressInputProps) {
     const isPolygonTarget = targetToken === "usdc_pol" || targetToken === "usdt_pol";
     const {address, isConnected} = useAccount();
@@ -33,9 +35,12 @@ export function AddressInput({
             return;
         }
 
+        setAddressIsValid(true);
+
         if (isPolygonTarget) {
             if (!isAddress(value)) {
                 setValidationError("Invalid Ethereum/Polygon address");
+                setAddressIsValid(false);
             } else {
                 setValidationError("");
             }
@@ -50,17 +55,20 @@ export function AddressInput({
                         const amount = Number.parseInt(section.value);
                         if (amount > 0) {
                             setValidationError("Invoice cannot have an amount. Please provide a different invoice.");
+                            setAddressIsValid(false);
                         }
                     }
                 }
             } catch (e) {
                 setValidationError("Invalid Lightning invoice");
+                setAddressIsValid(false);
             }
 
         } else if (targetToken === "btc_arkade") {
             // Basic Arkade address validation (starts with ark1)
             if (!value.toLowerCase().startsWith("ark1") && !value.toLowerCase().startsWith("tark1")) {
                 setValidationError("Invalid Arkade address (must start with 'ark1')");
+                setAddressIsValid(false);
             } else {
                 setValidationError("");
             }
