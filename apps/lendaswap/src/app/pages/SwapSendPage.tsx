@@ -52,7 +52,6 @@ export function SwapSendPage() {
           arkade_address: swap.arkade_address,
           sats_required: swap.sats_required,
           usd_amount: swap.usd_amount,
-          usd_per_sat: swap.usd_per_sat,
           hash_lock: swap.hash_lock,
         };
         setSwapData(swapResponse);

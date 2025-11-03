@@ -26,7 +26,6 @@ export interface AssetPair {
 }
 
 export interface PriceResponse {
-  usd_per_sat: number;
   usd_per_btc: number;
 }
 
@@ -87,7 +86,6 @@ export interface SwapResponse {
   sats_required: number;
   fee_sats?: number; // Optional - not displayed in UI
   usd_amount: number;
-  usd_per_sat: number;
   hash_lock: string;
   // VHTLC parameters for refunding
   sender_pk: string;
@@ -108,7 +106,6 @@ export interface GetSwapResponse {
   sats_required: number;
   sats_received: number | null;
   usd_amount: number;
-  usd_per_sat: number;
   bitcoin_htlc_claim_txid: string | null;
   bitcoin_htlc_fund_txid: string | null;
   polygon_htlc_claim_txid: string | null;

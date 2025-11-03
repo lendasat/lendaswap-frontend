@@ -11,7 +11,6 @@ export const mockSwapData: SwapResponse = {
   arkade_address: "DEBUG_MODE_ADDRESS",
   sats_required: 0,
   usd_amount: 0,
-  usd_per_sat: 0,
   hash_lock: "0x0",
 };
 
