@@ -72,7 +72,7 @@ export function BtcInput({
       value={value}
       onChange={handleChange}
       onBlur={handleBlur}
-      className={className}
+      className={`px-4 py-3 min-h-[4.25rem] bg-white border-2 border-blue-200 rounded-2xl hover:border-blue-300 transition-colors shadow-sm ${className}`}
       disabled={disabled}
       data-1p-ignore
       data-lpignore="true"

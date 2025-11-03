@@ -341,19 +341,57 @@ function HomePage() {
     <>
       {sourceToken === "usdc_pol" || sourceToken === "usdt_pol" ? (
         <>
-          <div className={"flex flex-row gap-2"}>
-            <UsdInput value={usdcAmount} onChange={setUsdcAmount} />
-            <AssetDropDown value={usdAsset} onChange={setUsdAsset} />
+          <div className="relative">
+            <UsdInput
+              value={usdcAmount}
+              onChange={setUsdcAmount}
+              className="pr-52"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-48">
+              <AssetDropDown
+                value={usdAsset}
+                onChange={setUsdAsset}
+                availableAssets={["usdc_pol", "usdt_pol"]}
+              />
+            </div>
           </div>
-          <div className={"flex flex-row gap-2"}>
-            <BtcInput value={bitcoinAmount} onChange={setBitcoinAmount} />
-            <AssetDropDown value={btcAsset} onChange={setBtcAsset} />
+          <div className="relative">
+            <BtcInput
+              value={bitcoinAmount}
+              onChange={setBitcoinAmount}
+              className="pr-52"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-48">
+              <AssetDropDown
+                value={btcAsset}
+                onChange={setBtcAsset}
+                availableAssets={["btc_arkade", "btc_lightning"]}
+              />
+            </div>
           </div>
         </>
       ) : (
         <>
-          <BtcInput value={bitcoinAmount} onChange={setBitcoinAmount} />
-          <UsdInput value={usdcAmount} onChange={setUsdcAmount} />
+          <div className="relative">
+            <BtcInput
+              value={bitcoinAmount}
+              onChange={setBitcoinAmount}
+              className="pr-52"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-48">
+              <AssetDropDown value={btcAsset} onChange={setBtcAsset} />
+            </div>
+          </div>
+          <div className="relative">
+            <UsdInput
+              value={usdcAmount}
+              onChange={setUsdcAmount}
+              className="pr-52"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-48">
+              <AssetDropDown value={usdAsset} onChange={setUsdAsset} />
+            </div>
+          </div>
         </>
       )}
       <EnterAmountStep

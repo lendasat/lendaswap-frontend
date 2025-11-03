@@ -122,6 +122,7 @@ const ASSETS = [
     symbol: "USDC",
     name: "USD Coin",
     icon: <USDCIcon />,
+    bgColor: "bg-blue-50 hover:bg-blue-100",
     network: {
       name: "Polygon",
       symbol: "Polygon",
@@ -133,6 +134,7 @@ const ASSETS = [
     symbol: "USDT0",
     name: "Tether",
     icon: <USDTIcon />,
+    bgColor: "bg-green-50 hover:bg-green-100",
     network: {
       name: "Polygon",
       symbol: "Polygon",
@@ -144,6 +146,7 @@ const ASSETS = [
     symbol: "BTC",
     name: "Bitcoin",
     icon: <BitcoinIcon />,
+    bgColor: "bg-orange-50 hover:bg-orange-100",
     network: {
       name: "Lightning",
       symbol: "Lightning",
@@ -155,6 +158,7 @@ const ASSETS = [
     symbol: "BTC",
     name: "Bitcoin",
     icon: <BitcoinIcon />,
+    bgColor: "bg-orange-50 hover:bg-orange-100",
     network: {
       name: "Arkade",
       symbol: "Arkade",
@@ -166,9 +170,10 @@ const ASSETS = [
 interface AssetDropDownProps {
   value: TokenId;
   onChange: (selectedAsset: TokenId) => void;
+  availableAssets?: TokenId[];
 }
 
-export function AssetDropDown({ value, onChange }: AssetDropDownProps) {
+export function AssetDropDown({ value, onChange, availableAssets }: AssetDropDownProps) {
   console.log(`Selected Value is ${value}`);
 
   let selectedAsset = ASSETS[0];
@@ -190,30 +195,35 @@ export function AssetDropDown({ value, onChange }: AssetDropDownProps) {
     onChange(asset);
   };
 
+  // Filter assets based on availableAssets if provided
+  const filteredAssets = availableAssets
+    ? ASSETS.filter(asset => availableAssets.includes(asset.id as TokenId))
+    : ASSETS;
+
   return (
     // <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
     //   <div className="w-full max-w-md">
     <DropdownMenu>
       <DropdownMenuTrigger className="w-full">
-        <div className="flex items-center gap-3 px-4 py-3 bg-white border-2 border-blue-200 rounded-2xl hover:border-blue-300 transition-colors shadow-sm">
+        <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-2xl transition-colors ${selectedAsset.bgColor}`}>
           {/* Primary Icon - Asset */}
-          <div className="flex items-center justify-center w-10 h-10 bg-white rounded-full shrink-0 border-2 border-blue-100">
-            <div className="w-7 h-7">{selectedAsset.icon}</div>
+          <div className="flex items-center justify-center w-7 h-7 bg-white rounded-full shrink-0">
+            <div className="w-4 h-4">{selectedAsset.icon}</div>
           </div>
 
           {/* Text Content */}
           <div className="flex-1 text-left">
-            <div className="flex flex-col gap-1">
-              <span className="font-bold text-lg text-slate-900">
+            <div className="flex flex-col">
+              <span className="font-bold text-sm text-slate-900">
                 {selectedAsset.symbol}
               </span>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-full w-fit">
+              <div className="flex items-center gap-0.5 px-1 py-0.5 bg-slate-100 rounded-full w-fit">
                 {typeof selectedAsset.network.icon === "string" ? (
-                  <span className="text-xs">{selectedAsset.network.icon}</span>
+                  <span className="text-[10px]">{selectedAsset.network.icon}</span>
                 ) : (
-                  <div className="w-3 h-3">{selectedAsset.network.icon}</div>
+                  <div className="w-2 h-2">{selectedAsset.network.icon}</div>
                 )}
-                <span className="text-xs font-medium text-slate-700">
+                <span className="text-[10px] font-medium text-slate-700">
                   {selectedAsset.network.symbol}
                 </span>
               </div>
@@ -221,7 +231,7 @@ export function AssetDropDown({ value, onChange }: AssetDropDownProps) {
           </div>
 
           {/* Dropdown Arrow */}
-          <ChevronDown className="w-5 h-5 text-blue-600 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-blue-600 shrink-0" />
         </div>
       </DropdownMenuTrigger>
 
@@ -229,7 +239,7 @@ export function AssetDropDown({ value, onChange }: AssetDropDownProps) {
         className="w-[var(--radix-dropdown-menu-trigger-width)] p-2"
         align="start"
       >
-        {ASSETS.map((asset) => (
+        {filteredAssets.map((asset) => (
           <DropdownMenuItem
             key={asset.id}
             onClick={() => setSelectedAsset(asset.id as TokenId)}
