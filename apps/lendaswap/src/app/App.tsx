@@ -101,6 +101,35 @@ function HomePage() {
     const [targetAsset, setTargetAsset] = useState<TokenId>(
         urlTargetToken || "btc_arkade",
     );
+    const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd")
+
+    // Get price feed from context
+    const {getExchangeRate, isLoadingPrice, priceUpdate} = usePriceFeed();
+
+    const exchangeRate = getExchangeRate(sourceAsset, targetAsset, Number.parseFloat(usdAmount));
+
+    let displayedExchangeRate = exchangeRate;
+    if (exchangeRate && (sourceAsset === 'usdc_pol' || sourceAsset === 'usdt_pol')) {
+        displayedExchangeRate = 1 / exchangeRate;
+    }
+
+    useEffect(() => {
+        if (isLoadingPrice || !exchangeRate) {
+            return;
+        }
+        if (lastFieldEdited === "usd") {
+            const usdAmountNumber = Number.parseFloat(usdAmount);
+            const calculatedBtcAmount = exchangeRate && !Number.isNaN(usdAmountNumber) ? (usdAmountNumber / exchangeRate).toFixed(8) : "";
+            setBitcoinAmount(calculatedBtcAmount);
+
+        }
+        if (lastFieldEdited === "btc") {
+            const bitcoinAmountNumber = Number.parseFloat(bitcoinAmount);
+            const calculatedUsdAmount = exchangeRate && !Number.isNaN(bitcoinAmountNumber) ? (bitcoinAmountNumber * exchangeRate).toFixed(2) : "";
+            setUsdAmount(calculatedUsdAmount);
+        }
+    }, [exchangeRate, isLoadingPrice, lastFieldEdited, bitcoinAmount, usdAmount, priceUpdate]);
+
 
     // const [receiveAddress, setReceiveAddress] = useState("");
     // const [sourceToken, setSourceTokenState] = useState<TokenId>(
@@ -113,8 +142,6 @@ function HomePage() {
     // const [swapError, setSwapError] = useState<string | null>(null);
     // const [lastEditedField, setLastEditedField] = useState<"usd" | "btc">("usd");
 
-    // Get price feed from context
-    const {getExchangeRate, isLoadingPrice} = usePriceFeed();
 
     // Update URL when tokens change
     // const setSourceToken = (token: TokenId) => {
@@ -362,13 +389,19 @@ function HomePage() {
                         {sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol" ? (
                             <UsdInput
                                 value={usdAmount}
-                                onChange={setUsdAmount}
+                                onChange={(v) => {
+                                    setLastFieldEdited("usd");
+                                    setUsdAmount(v);
+                                }}
                                 className="pr-52"
                             />
                         ) : (
                             <BtcInput
                                 value={bitcoinAmount}
-                                onChange={setBitcoinAmount}
+                                onChange={(v) => {
+                                    setLastFieldEdited("btc");
+                                    setBitcoinAmount(v);
+                                }}
                                 className="pr-52"
                             />
                         )}
@@ -432,14 +465,20 @@ function HomePage() {
                         {targetAsset === "usdc_pol" || targetAsset === "usdt_pol" ? (
                             <UsdInput
                                 value={usdAmount}
-                                onChange={setUsdAmount}
+                                onChange={(v) => {
+                                    setLastFieldEdited("usd");
+                                    setUsdAmount(v);
+                                }}
                                 className="pr-52"
                                 isLoading={isLoadingPrice}
                             />
                         ) : (
                             <BtcInput
                                 value={bitcoinAmount}
-                                onChange={setBitcoinAmount}
+                                onChange={(v) => {
+                                    setLastFieldEdited("btc");
+                                    setBitcoinAmount(v);
+                                }}
                                 className="pr-52"
                                 isLoading={isLoadingPrice}
                             />
@@ -458,6 +497,15 @@ function HomePage() {
                             />
                         </div>
                     </div>
+                    {displayedExchangeRate && !isLoadingPrice && (
+                        <div className="text-sm text-muted-foreground text-center mt-2">
+                            1 {sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade" ? "BTC" : "USD"} = {
+                            displayedExchangeRate.toLocaleString("en-US", {
+                                minimumFractionDigits: sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade" ? 2 : 8,
+                                maximumFractionDigits: sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade" ? 2 : 8,
+                            })} {targetAsset === "btc_lightning" || targetAsset === "btc_arkade" ? "BTC" : "USD"}
+                        </div>
+                    )}
                 </div>
             </div>
         </>
