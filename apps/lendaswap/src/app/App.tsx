@@ -162,7 +162,12 @@ function HomePage() {
 
 
             // Create swap with backend
-            const swap = await api.createSwap({
+            // TODO: call the correct url
+            // /swap/arkade/polygon or
+            // /swap/lighting/polygon or
+            // /swap/polygon/arkade or
+            // /swap/polygon/lightning or
+            const swap = await api.createArkadeToPolygonSwap({
                 target_address: targetAddress,
                 target_amount: targetAmount,
                 target_token: targetAsset,

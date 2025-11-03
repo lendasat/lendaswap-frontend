@@ -73,10 +73,10 @@ export type SwapStatus =
 
 export interface SwapRequest {
     target_address: string;
-    refund_pk: string;
-    hash_lock: string;
     target_amount: number;
     target_token: TokenId; // Token to receive (e.g., USDC_POL, USDT_POL)
+    hash_lock: string;
+    refund_pk: string;
     referral_code?: string; // Optional referral code for tracking
 }
 
@@ -146,7 +146,8 @@ export const api = {
         return response.json();
     },
 
-    async createSwap(request: SwapRequest): Promise<SwapResponse> {
+
+    async createArkadeToPolygonSwap(request: SwapRequest): Promise<SwapResponse> {
         // Automatically include referral code from localStorage if present
         const referralCode = getReferralCode();
         const requestWithReferral = {
@@ -154,7 +155,7 @@ export const api = {
             ...(referralCode ? {referral_code: referralCode} : {}),
         };
 
-        const response = await fetch(`${API_BASE_URL}/swap`, {
+        const response = await fetch(`${API_BASE_URL}/swap/arkade/polygon`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
