@@ -22,7 +22,7 @@ import {
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { api, type TokenId } from "./api";
-import AssetNetworkDropdown from "./components/AssetDropDown";
+import { AssetDropDown } from "./components/AssetDropDown";
 import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
@@ -97,6 +97,9 @@ function HomePage() {
   // State for home page
   const [bitcoinAmount, setBitcoinAmount] = useState("");
   const [usdcAmount, setUsdcAmount] = useState("50");
+  const [usdAsset, setUsdAsset] = useState<TokenId>("usdc_pol");
+  const [btcAsset, setBtcAsset] = useState<TokenId>("btc_arkade");
+
   const [receiveAddress, setReceiveAddress] = useState("");
   const [sourceToken, setSourceTokenState] = useState<TokenId>(
     urlSourceToken || "btc_lightning",
@@ -340,10 +343,11 @@ function HomePage() {
         <>
           <div className={"flex flex-row gap-2"}>
             <UsdInput value={usdcAmount} onChange={setUsdcAmount} />
-            <AssetNetworkDropdown />
+            <AssetDropDown value={usdAsset} onChange={setUsdAsset} />
           </div>
-          <div>
+          <div className={"flex flex-row gap-2"}>
             <BtcInput value={bitcoinAmount} onChange={setBitcoinAmount} />
+            <AssetDropDown value={btcAsset} onChange={setBtcAsset} />
           </div>
         </>
       ) : (
