@@ -136,21 +136,49 @@ export function EnterAmountStep({
 
   // Calculate exchange rate based on selected token and USD amount
   const usdAmount = parseFloat(usdcAmount) || 1;
-  const exchangeRate = getExchangeRate(targetToken, usdAmount);
+  console.log(
+    `Calling get exchange rate for source ${sourceToken}-${targetToken} and ${usdAmount}`,
+  );
+  const exchangeRate = getExchangeRate(sourceToken, targetToken, usdAmount);
 
   // Get display info for any token
   const getTokenDisplay = (tokenId: TokenId) => {
     switch (tokenId) {
       case "btc_lightning":
-        return { symbol: "BTC", network: "Lightning", name: "Bitcoin Lightning", icon: LightningIcon };
+        return {
+          symbol: "BTC",
+          network: "Lightning",
+          name: "Bitcoin Lightning",
+          icon: LightningIcon,
+        };
       case "btc_arkade":
-        return { symbol: "BTC", network: "Arkade", name: "Bitcoin Arkade", icon: BitcoinIcon };
+        return {
+          symbol: "BTC",
+          network: "Arkade",
+          name: "Bitcoin Arkade",
+          icon: BitcoinIcon,
+        };
       case "usdc_pol":
-        return { symbol: "USDC", network: "Polygon", name: "USD Coin", icon: UsdcIcon };
+        return {
+          symbol: "USDC",
+          network: "Polygon",
+          name: "USD Coin",
+          icon: UsdcIcon,
+        };
       case "usdt_pol":
-        return { symbol: "USDT0", network: "Polygon", name: "Tether USD", icon: TetherIcon };
+        return {
+          symbol: "USDT0",
+          network: "Polygon",
+          name: "Tether USD",
+          icon: TetherIcon,
+        };
       default:
-        return { symbol: "USDC", network: "Polygon", name: "USD Coin", icon: UsdcIcon };
+        return {
+          symbol: "USDC",
+          network: "Polygon",
+          name: "USD Coin",
+          icon: UsdcIcon,
+        };
     }
   };
 
@@ -247,8 +275,12 @@ export function EnterAmountStep({
                         <div className="flex items-center gap-2">
                           <Icon className="h-6 w-6" />
                           <div className="flex flex-col">
-                            <span className="font-bold text-sm">{display.symbol}</span>
-                            <span className="text-xs text-muted-foreground">{display.network}</span>
+                            <span className="font-bold text-sm">
+                              {display.symbol}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {display.network}
+                            </span>
                           </div>
                         </div>
                       </SelectItem>
@@ -319,8 +351,12 @@ export function EnterAmountStep({
                         <div className="flex items-center gap-2">
                           <Icon className="h-6 w-6" />
                           <div className="flex flex-col">
-                            <span className="font-bold text-sm">{display.symbol}</span>
-                            <span className="text-xs text-muted-foreground">{display.network}</span>
+                            <span className="font-bold text-sm">
+                              {display.symbol}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {display.network}
+                            </span>
                           </div>
                         </div>
                       </SelectItem>

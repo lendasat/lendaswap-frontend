@@ -22,8 +22,11 @@ import {
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { api, type TokenId } from "./api";
+import AssetNetworkDropdown from "./components/AssetDropDown";
+import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
+import { UsdInput } from "./components/UsdInput";
 import { usePriceFeed } from "./PriceFeedContext";
 import {
   ManageSwapPage,
@@ -148,21 +151,25 @@ function HomePage() {
   // Calculate the other amount when price becomes available or changes
   useEffect(() => {
     if (!isLoadingPrice) {
-      const isBtcTarget =
-        targetToken === "btc_lightning" || targetToken === "btc_arkade";
+      const isBtcSource =
+        sourceToken === "btc_lightning" || sourceToken === "btc_arkade";
 
       if (lastEditedField === "usd" && usdcAmount) {
         // User edited USD amount, calculate the other side
         const usdValue = parseFloat(usdcAmount);
         if (!Number.isNaN(usdValue)) {
-          const exchangeRate = getExchangeRate(targetToken, usdValue);
+          const exchangeRate = getExchangeRate(
+            sourceToken,
+            targetToken,
+            usdValue,
+          );
           if (exchangeRate !== null && exchangeRate !== undefined) {
-            if (isBtcTarget) {
-              // USD -> BTC: rate is BTC per USD, so multiply
-              setBitcoinAmount((usdValue * exchangeRate).toFixed(8));
-            } else {
-              // BTC -> USD: rate is USD per BTC, so divide
+            if (isBtcSource) {
+              // BTC -> USD: exchangeRate is USD per BTC, so divide USD by rate to get BTC
               setBitcoinAmount((usdValue / exchangeRate).toFixed(8));
+            } else {
+              // USD -> BTC: exchangeRate is BTC per USD, so multiply USD by rate to get BTC
+              setBitcoinAmount((usdValue * exchangeRate).toFixed(8));
             }
           }
         }
@@ -171,14 +178,18 @@ function HomePage() {
         const btcValue = parseFloat(bitcoinAmount);
         if (!Number.isNaN(btcValue)) {
           const usdAmount = parseFloat(usdcAmount) || 1;
-          const exchangeRate = getExchangeRate(targetToken, usdAmount);
+          const exchangeRate = getExchangeRate(
+            sourceToken,
+            targetToken,
+            usdAmount,
+          );
           if (exchangeRate !== null && exchangeRate !== undefined) {
-            if (isBtcTarget) {
-              // USD -> BTC: rate is BTC per USD, so divide
-              setUsdcAmount((btcValue / exchangeRate).toFixed(2));
-            } else {
-              // BTC -> USD: rate is USD per BTC, so multiply
+            if (isBtcSource) {
+              // BTC -> USD: exchangeRate is USD per BTC, so multiply BTC by rate to get USD
               setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+            } else {
+              // USD -> BTC: exchangeRate is BTC per USD, so divide BTC by rate to get USD
+              setUsdcAmount((btcValue / exchangeRate).toFixed(2));
             }
           }
         }
@@ -187,6 +198,7 @@ function HomePage() {
   }, [
     isLoadingPrice,
     getExchangeRate,
+    sourceToken,
     targetToken,
     lastEditedField,
     usdcAmount,
@@ -197,19 +209,19 @@ function HomePage() {
     setBitcoinAmount(value);
     setLastEditedField("btc");
     const btcValue = parseFloat(value);
-    const isBtcTarget =
-      targetToken === "btc_lightning" || targetToken === "btc_arkade";
+    const isBtcSource =
+      sourceToken === "btc_lightning" || sourceToken === "btc_arkade";
 
     if (!Number.isNaN(btcValue)) {
       const usdAmount = parseFloat(usdcAmount) || 1;
-      const exchangeRate = getExchangeRate(targetToken, usdAmount);
+      const exchangeRate = getExchangeRate(sourceToken, targetToken, usdAmount);
       if (exchangeRate !== null && exchangeRate !== undefined) {
-        if (isBtcTarget) {
-          // USD -> BTC: rate is BTC per USD, so divide to get USD
-          setUsdcAmount((btcValue / exchangeRate).toFixed(2));
-        } else {
-          // BTC -> USD: rate is USD per BTC, so multiply to get USD
+        if (isBtcSource) {
+          // BTC -> USD: exchangeRate is USD per BTC, so multiply BTC by rate to get USD
           setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+        } else {
+          // USD -> BTC: exchangeRate is BTC per USD, so divide BTC by rate to get USD
+          setUsdcAmount((btcValue / exchangeRate).toFixed(2));
         }
       } else {
         setUsdcAmount("");
@@ -223,20 +235,22 @@ function HomePage() {
     setUsdcAmount(value);
     setLastEditedField("usd");
     const usdValue = parseFloat(value);
-    const isBtcTarget =
-      targetToken === "btc_lightning" || targetToken === "btc_arkade";
+    const isBtcSource =
+      sourceToken === "btc_lightning" || sourceToken === "btc_arkade";
 
     if (!Number.isNaN(usdValue)) {
-      const exchangeRate = getExchangeRate(targetToken, usdValue);
-      console.log(`Exchange rate: ${exchangeRate} for token ${targetToken}`);
+      const exchangeRate = getExchangeRate(sourceToken, targetToken, usdValue);
+      console.log(
+        `Exchange rate: ${exchangeRate} for ${sourceToken} -> ${targetToken}`,
+      );
 
       if (exchangeRate !== null && exchangeRate !== undefined) {
-        if (isBtcTarget) {
-          // USD -> BTC: rate is BTC per USD, so multiply to get BTC
-          setBitcoinAmount((usdValue * exchangeRate).toFixed(8));
-        } else {
-          // BTC -> USD: rate is USD per BTC, so divide to get BTC
+        if (isBtcSource) {
+          // BTC -> USD: exchangeRate is USD per BTC, so divide USD by rate to get BTC
           setBitcoinAmount((usdValue / exchangeRate).toFixed(8));
+        } else {
+          // USD -> BTC: exchangeRate is BTC per USD, so multiply USD by rate to get BTC
+          setBitcoinAmount((usdValue * exchangeRate).toFixed(8));
         }
       } else {
         setBitcoinAmount("");
@@ -321,21 +335,39 @@ function HomePage() {
   };
 
   return (
-    <EnterAmountStep
-      usdcAmount={usdcAmount}
-      bitcoinAmount={bitcoinAmount}
-      receiveAddress={receiveAddress}
-      sourceToken={sourceToken}
-      targetToken={targetToken}
-      setSourceToken={setSourceToken}
-      setTargetToken={setTargetToken}
-      setReceiveAddress={setReceiveAddress}
-      handleUsdcChange={handleUsdcChange}
-      handleBitcoinChange={handleBitcoinChange}
-      handleContinueToAddress={handleContinueToAddress}
-      isCreatingSwap={isCreatingSwap}
-      swapError={swapError}
-    />
+    <>
+      {sourceToken === "usdc_pol" || sourceToken === "usdt_pol" ? (
+        <>
+          <div className={"flex flex-row gap-2"}>
+            <UsdInput value={usdcAmount} onChange={setUsdcAmount} />
+            <AssetNetworkDropdown />
+          </div>
+          <div>
+            <BtcInput value={bitcoinAmount} onChange={setBitcoinAmount} />
+          </div>
+        </>
+      ) : (
+        <>
+          <BtcInput value={bitcoinAmount} onChange={setBitcoinAmount} />
+          <UsdInput value={usdcAmount} onChange={setUsdcAmount} />
+        </>
+      )}
+      <EnterAmountStep
+        usdcAmount={usdcAmount}
+        bitcoinAmount={bitcoinAmount}
+        receiveAddress={receiveAddress}
+        sourceToken={sourceToken}
+        targetToken={targetToken}
+        setSourceToken={setSourceToken}
+        setTargetToken={setTargetToken}
+        setReceiveAddress={setReceiveAddress}
+        handleUsdcChange={handleUsdcChange}
+        handleBitcoinChange={handleBitcoinChange}
+        handleContinueToAddress={handleContinueToAddress}
+        isCreatingSwap={isCreatingSwap}
+        swapError={swapError}
+      />
+    </>
   );
 }
 

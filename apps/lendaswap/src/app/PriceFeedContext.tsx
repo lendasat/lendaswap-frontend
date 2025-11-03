@@ -15,7 +15,11 @@ interface PriceFeedContextValue {
   // Error state
   priceError: string | null;
   // Helper to get exchange rate for a specific token and amount
-  getExchangeRate: (token: TokenId, usdAmount: number) => number | null;
+  getExchangeRate: (
+    sourceToken: TokenId,
+    targetToken: TokenId,
+    usdAmount: number,
+  ) => number | null;
 }
 
 const PriceFeedContext = createContext<PriceFeedContextValue | undefined>(
@@ -56,33 +60,55 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
     };
   }, []);
 
-  // Helper function to get exchange rate for a specific token and USD amount
-  // For BTC->USD swaps: returns USD per BTC (e.g., 95000 USDC per 1 BTC)
-  // For USD->BTC swaps: returns BTC per USD (e.g., 0.00001053 BTC per 1 USDC)
+  // Helper function to get exchange rate for a specific token pair and USD amount
+  // Returns the exchange rate as: 1 sourceToken = X targetToken
   const getExchangeRate = (
-    token: TokenId,
+    sourceToken: TokenId,
+    targetToken: TokenId,
     usdAmount: number,
   ): number | null => {
     if (!priceUpdate) return null;
 
-    // Determine which token pair to use based on target token
+    const isBtcSource =
+      sourceToken === "btc_lightning" || sourceToken === "btc_arkade";
+    const isBtcTarget =
+      targetToken === "btc_lightning" || targetToken === "btc_arkade";
+    const isUsdSource =
+      sourceToken === "usdc_pol" || sourceToken === "usdt_pol";
+    const isUsdTarget =
+      targetToken === "usdc_pol" || targetToken === "usdt_pol";
+
+    // Determine which token pair to use
     let pairName: string;
     let needsInversion = false;
 
-    if (token === "btc_lightning" || token === "btc_arkade") {
-      // USD -> BTC swap: use BTC-USDC_POL pair (already in correct direction)
-      pairName = "BTC-USDC_POL";
+    if (isBtcSource && isUsdTarget) {
+      // BTC -> USD swap: use USDC_POL-BTC or USDT_POL-BTC pair
+      if (targetToken === "usdc_pol") {
+        pairName = "USDC_POL-BTC";
+      } else {
+        pairName = "USDT_POL-BTC";
+      }
+      // Rate is already in USD per BTC, which is what we want
+    } else if (isUsdSource && isBtcTarget) {
+      // USD -> BTC swap: use BTC-USDC_POL or BTC-USDT_POL pair
+      if (sourceToken === "usdc_pol") {
+        pairName = "BTC-USDC_POL";
+      } else {
+        pairName = "BTC-USDT_POL";
+      }
       needsInversion = true; // Backend sends USD per BTC, we need BTC per USD
-    } else if (token === "usdc_pol") {
-      // BTC -> USDC swap: use USDC_POL-BTC pair
-      pairName = "USDC_POL-BTC";
     } else {
-      // BTC -> USDT swap: use USDT_POL-BTC pair
-      pairName = "USDT_POL-BTC";
+      // Unsupported pair (e.g., BTC->BTC or USD->USD)
+      console.warn(`Unsupported token pair: ${sourceToken} -> ${targetToken}`);
+      return null;
     }
 
     const pair = priceUpdate.pairs.find((p) => p.pair === pairName);
-    if (!pair) return null;
+    if (!pair) {
+      console.warn(`Price pair not found: ${pairName}`);
+      return null;
+    }
 
     // Select tier based on USD amount
     let rate: number;
