@@ -25,6 +25,7 @@ export function SwapProcessingPage() {
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const hasClaimedRef = useRef(false);
+  const [isPolygonToArkade, setIsPolygonToArkade] = useState(false);
 
   // Load secret from localStorage
   useEffect(() => {
@@ -124,6 +125,12 @@ export function SwapProcessingPage() {
       try {
         const swapData = await api.getSwap(swapId);
         console.log("Polling swap status:", swapData);
+
+        // Detect Polygon → Arkade by checking for create_swap_tx field
+        if ("create_swap_tx" in swapData) {
+          setIsPolygonToArkade(true);
+        }
+
         setSwap(swapData);
 
         // Transition to success page when complete
@@ -166,6 +173,42 @@ export function SwapProcessingPage() {
 
   // Show claiming status when HTLC is funded
   if (swap.status === "serverfunded" && secret) {
+    // Different UI for Polygon → Arkade swaps
+    if (isPolygonToArkade) {
+      return (
+        <CardContent className="space-y-6 py-12">
+          <LoadingStep
+            status={swap.status}
+            swapId={swap.id}
+            tokenSymbol={tokenSymbol}
+          />
+          <div className="mx-auto max-w-md">
+            <div className="from-primary/5 to-card space-y-4 rounded-lg border bg-gradient-to-t p-6">
+              <div className="space-y-2 text-center">
+                <h3 className="text-lg font-semibold">
+                  Waiting for BTC on Arkade
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  Your transaction has been executed. Waiting for BTC to arrive
+                  in the Arkade VHTLC...
+                </p>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded dark:bg-yellow-950">
+                <p className="font-medium text-sm">
+                  FIXME: Client-side BTC Claiming
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Need to implement Arkade VHTLC claiming logic here. Similar to
+                  the manual refund flow but for claiming received BTC.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      );
+    }
+
+    // Original UI for BTC → Polygon swaps
     return (
       <CardContent className="space-y-6 py-12">
         <LoadingStep

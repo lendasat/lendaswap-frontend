@@ -124,6 +124,56 @@ export interface GetSwapResponse {
   unilateral_refund_delay: number;
   unilateral_refund_without_receiver_delay: number;
   network: string;
+  // Polygon → Arkade swap specific fields (matches CreateSwapResponse naming)
+  create_swap_tx?: string;
+  approve_tx?: string;
+  gelato_forwarder_address?: string;
+  gelato_user_nonce?: string;
+  gelato_user_deadline?: string;
+  sats_receive?: number; // For Polygon → Arkade: net sats user will receive
+  source_token_address?: string; // ERC20 token address for approve target
+}
+
+// Polygon → Arkade swap types
+export interface PolygonToArkadeSwapRequest {
+  target_address: string;
+  source_amount: number;
+  source_token: TokenId;
+  hash_lock: string;
+  receiver_pk: string;
+  user_polygon_address: string;
+  referral_code?: string;
+}
+
+export interface PolygonToArkadeSwapResponse {
+  id: string;
+  polygon_address: string;
+  arkade_address: string;
+  approve_tx?: string;
+  create_swap_tx: string;
+  sats_receive: number;
+  fee_sats: number;
+  usd_amount: number;
+  hash_lock: string;
+  sender_pk: string;
+  receiver_pk: string;
+  server_pk: string;
+  refund_locktime: number;
+  unilateral_claim_delay: number;
+  unilateral_refund_delay: number;
+  unilateral_refund_without_receiver_delay: number;
+  network: string;
+  // Gelato signing parameters
+  gelato_forwarder_address: string;
+  gelato_user_nonce: string;
+  gelato_user_deadline: string;
+}
+
+export interface GelatoSubmitRequest {
+  approve_signature: string | null;
+  create_swap_signature: string;
+  user_nonce: string;
+  user_deadline: string;
 }
 
 export const api = {
@@ -198,6 +248,56 @@ export const api = {
         .json()
         .catch(() => ({ error: response.statusText }));
       throw new Error(error.error || `Failed to claim: ${response.statusText}`);
+    }
+  },
+
+  async createPolygonToArkadeSwap(
+    request: PolygonToArkadeSwapRequest,
+  ): Promise<PolygonToArkadeSwapResponse> {
+    const referralCode = getReferralCode();
+    const requestWithReferral = {
+      ...request,
+      ...(referralCode ? { referral_code: referralCode } : {}),
+    };
+
+    const response = await fetch(`${API_BASE_URL}/swap/polygon/arkade`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestWithReferral),
+    });
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(
+        error.error || `Failed to create swap: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  },
+
+  async submitToGelato(
+    swapId: string,
+    request: GelatoSubmitRequest,
+  ): Promise<void> {
+    const response = await fetch(
+      `${API_BASE_URL}/swap/${swapId}/gelato-submit`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(
+        error.error || `Failed to submit to Gelato: ${response.statusText}`,
+      );
     }
   },
 };

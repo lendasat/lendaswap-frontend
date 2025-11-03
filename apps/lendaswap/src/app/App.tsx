@@ -9,6 +9,7 @@ import {
 } from "react-router";
 import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
+import { useAccount } from "wagmi";
 import {
   Check,
   Loader,
@@ -40,6 +41,7 @@ import {
   ManageSwapPage,
   SwapProcessingPage,
   SwapSendPage,
+  SwapSignPolygonPage,
   SwapSuccessPage,
   SwapsPage,
 } from "./pages";
@@ -87,6 +89,7 @@ function isValidTokenId(token: string | undefined): token is TokenId {
 function HomePage() {
   const navigate = useNavigate();
   const params = useParams<{ sourceToken?: string; targetToken?: string }>();
+  const { address: connectedAddress, isConnected } = useAccount();
 
   // Read tokens from URL params, validate them
   const urlSourceToken = isValidTokenId(params.sourceToken)
@@ -117,6 +120,19 @@ function HomePage() {
   const [addressValid, setAddressValid] = useState(false);
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
   const [swapError, setSwapError] = useState<string>("");
+  const [userPolygonAddress, setUserPolygonAddress] = useState<string>("");
+  const [isPolygonAddressValid, setIsPolygonAddressValid] = useState(false);
+
+  // Auto-populate Polygon address from connected wallet
+  useEffect(() => {
+    if (isConnected && connectedAddress) {
+      setUserPolygonAddress(connectedAddress);
+      setIsPolygonAddressValid(true);
+    } else {
+      setUserPolygonAddress("");
+      setIsPolygonAddressValid(false);
+    }
+  }, [isConnected, connectedAddress]);
 
   // Get price feed from context
   const { getExchangeRate, isLoadingPrice, priceUpdate } = usePriceFeed();
@@ -174,70 +190,114 @@ function HomePage() {
       setIsCreatingSwap(true);
       setSwapError("");
 
-      // Generate random secret and hash it
-      const secret = generateSecret();
-      const hash_lock = await hashSecret(secret);
+      // Detect swap direction
+      const isBtcSource =
+        sourceAsset === "btc_arkade" || sourceAsset === "btc_lightning";
+      const isPolygonSource =
+        sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol";
 
-      // Get or create Bitcoin keys
-      const { publicKey: refund_pk, privateKey: own_sk } =
-        getOrCreateBitcoinKeys();
+      if (isBtcSource) {
+        // EXISTING FLOW: BTC → Polygon
+        const secret = generateSecret();
+        const hash_lock = await hashSecret(secret);
+        const { publicKey: refund_pk, privateKey: own_sk } =
+          getOrCreateBitcoinKeys();
 
-      let targetAmount = parseFloat(usdAmount);
-      if (targetAsset === "btc_arkade" || targetAsset === "btc_lightning") {
-        targetAmount = parseFloat(bitcoinAmount);
+        let targetAmount = parseFloat(usdAmount);
+        if (targetAsset === "btc_arkade" || targetAsset === "btc_lightning") {
+          targetAmount = parseFloat(bitcoinAmount);
+        }
+
+        const swap = await api.createArkadeToPolygonSwap({
+          target_address: targetAddress,
+          target_amount: targetAmount,
+          target_token: targetAsset,
+          hash_lock,
+          refund_pk,
+        });
+
+        console.log(
+          "Persisting swap data",
+          JSON.stringify({
+            secret,
+            own_sk,
+            lendaswap_pk: swap.receiver_pk,
+            arkade_server_pk: swap.server_pk,
+            refund_locktime: swap.refund_locktime,
+            unilateral_claim_delay: swap.unilateral_claim_delay,
+            unilateral_refund_delay: swap.unilateral_refund_delay,
+            unilateral_refund_without_receiver_delay:
+              swap.unilateral_refund_without_receiver_delay,
+            network: swap.network,
+            vhtlc_address: swap.arkade_address,
+          }),
+        );
+
+        localStorage.setItem(
+          swap.id,
+          JSON.stringify({
+            secret,
+            own_sk,
+            lendaswap_pk: swap.receiver_pk,
+            arkade_server_pk: swap.server_pk,
+            refund_locktime: swap.refund_locktime,
+            unilateral_claim_delay: swap.unilateral_claim_delay,
+            unilateral_refund_delay: swap.unilateral_refund_delay,
+            unilateral_refund_without_receiver_delay:
+              swap.unilateral_refund_without_receiver_delay,
+            network: swap.network,
+            vhtlc_address: swap.arkade_address,
+          }),
+        );
+
+        navigate(`/swap/${swap.id}/send`);
+      } else if (isPolygonSource) {
+        // NEW FLOW: Polygon → Arkade
+
+        // Validate Polygon address
+        if (!isPolygonAddressValid) {
+          setSwapError("Please provide a valid Polygon wallet address");
+          return;
+        }
+
+        // Generate secret and keys
+        const secret = generateSecret();
+        const hash_lock = await hashSecret(secret);
+        const { publicKey: receiver_pk, privateKey: own_sk } =
+          getOrCreateBitcoinKeys();
+
+        // Call Polygon → Arkade API
+        const swap = await api.createPolygonToArkadeSwap({
+          target_address: targetAddress, // Arkade address
+          source_amount: parseFloat(usdAmount),
+          source_token: sourceAsset,
+          hash_lock,
+          receiver_pk,
+          user_polygon_address: userPolygonAddress,
+        });
+
+        // Store swap data (needed for claiming BTC later)
+        localStorage.setItem(
+          swap.id,
+          JSON.stringify({
+            secret,
+            own_sk,
+            receiver_pk,
+            lendaswap_pk: swap.sender_pk,
+            arkade_server_pk: swap.server_pk,
+            refund_locktime: swap.refund_locktime,
+            unilateral_claim_delay: swap.unilateral_claim_delay,
+            unilateral_refund_delay: swap.unilateral_refund_delay,
+            unilateral_refund_without_receiver_delay:
+              swap.unilateral_refund_without_receiver_delay,
+            network: swap.network,
+            vhtlc_address: swap.arkade_address,
+          }),
+        );
+
+        // Navigate to Polygon signing page
+        navigate(`/swap/${swap.id}/sign-polygon`);
       }
-
-      // Create swap with backend
-      // TODO: call the correct url
-      // /swap/arkade/polygon or
-      // /swap/lighting/polygon or
-      // /swap/polygon/arkade or
-      // /swap/polygon/lightning or
-      const swap = await api.createArkadeToPolygonSwap({
-        target_address: targetAddress,
-        target_amount: targetAmount,
-        target_token: targetAsset,
-        hash_lock,
-        refund_pk,
-      });
-
-      console.log(
-        "Persisting swap data",
-        JSON.stringify({
-          secret,
-          own_sk,
-          lendaswap_pk: swap.receiver_pk,
-          arkade_server_pk: swap.server_pk,
-          refund_locktime: swap.refund_locktime,
-          unilateral_claim_delay: swap.unilateral_claim_delay,
-          unilateral_refund_delay: swap.unilateral_refund_delay,
-          unilateral_refund_without_receiver_delay:
-            swap.unilateral_refund_without_receiver_delay,
-          network: swap.network,
-          vhtlc_address: swap.arkade_address,
-        }),
-      );
-
-      // Store complete swap data in browser storage for potential refunding
-      localStorage.setItem(
-        swap.id,
-        JSON.stringify({
-          secret,
-          own_sk,
-          lendaswap_pk: swap.receiver_pk,
-          arkade_server_pk: swap.server_pk,
-          refund_locktime: swap.refund_locktime,
-          unilateral_claim_delay: swap.unilateral_claim_delay,
-          unilateral_refund_delay: swap.unilateral_refund_delay,
-          unilateral_refund_without_receiver_delay:
-            swap.unilateral_refund_without_receiver_delay,
-          network: swap.network,
-          vhtlc_address: swap.arkade_address,
-        }),
-      );
-
-      // Navigate to send step with swap ID
-      navigate(`/swap/${swap.id}/send`);
     } catch (error) {
       console.error("Failed to create swap:", error);
       setSwapError(
@@ -408,6 +468,51 @@ function HomePage() {
             targetToken={targetAsset}
             setAddressIsValid={setAddressValid}
           />
+
+          {/* Polygon Wallet Address - only shown when source is Polygon stablecoin */}
+          {(sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol") && (
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">
+                Your Polygon Wallet Address
+              </label>
+              {isConnected && userPolygonAddress ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={userPolygonAddress}
+                    readOnly
+                    className="w-full rounded-md border border-input px-3 py-2 text-sm bg-muted cursor-not-allowed"
+                  />
+                  <ConnectKitButton.Custom>
+                    {({ show }) => (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={show}
+                        className="shrink-0"
+                      >
+                        Change
+                      </Button>
+                    )}
+                  </ConnectKitButton.Custom>
+                </div>
+              ) : (
+                <ConnectKitButton.Custom>
+                  {({ show }) => (
+                    <Button variant="outline" onClick={show} className="w-full">
+                      Connect Wallet
+                    </Button>
+                  )}
+                </ConnectKitButton.Custom>
+              )}
+              {!isConnected && (
+                <p className="text-xs text-muted-foreground">
+                  Connect your Polygon wallet to continue
+                </p>
+              )}
+            </div>
+          )}
+
           <Button
             onClick={handleContinueToAddress}
             disabled={
@@ -415,7 +520,9 @@ function HomePage() {
               !exchangeRate ||
               isLoadingPrice ||
               !addressValid ||
-              isCreatingSwap
+              isCreatingSwap ||
+              ((sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol") &&
+                !isPolygonAddressValid)
             }
             className="w-full min-h-[4.25rem]"
           >
@@ -646,6 +753,10 @@ export default function App() {
               />
               <Route path="/:sourceToken/:targetToken" element={<HomePage />} />
               <Route path="/swap/:swapId/send" element={<SwapSendPage />} />
+              <Route
+                path="/swap/:swapId/sign-polygon"
+                element={<SwapSignPolygonPage />}
+              />
               <Route
                 path="/swap/:swapId/processing"
                 element={<SwapProcessingPage />}
