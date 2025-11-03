@@ -9,7 +9,7 @@ import {
 } from "react-router";
 import "../assets/styles.css";
 import {ConnectKitButton} from "connectkit";
-import {Check, Menu, PiggyBank, Shield, Tag, Wrench, Zap} from "lucide-react";
+import {Check, Loader, Menu, PiggyBank, Shield, Tag, Wrench, Zap} from "lucide-react";
 import {Button} from "#/components/ui/button";
 import {Card, CardContent} from "#/components/ui/card";
 import {
@@ -21,7 +21,7 @@ import {
 } from "#/components/ui/dropdown-menu";
 import {ReactComponent as LendasatBlack} from "../assets/lendasat_black.svg";
 import {ReactComponent as LendasatGrey} from "../assets/lendasat_grey.svg";
-import {type TokenId} from "./api";
+import {api, type TokenId} from "./api";
 import {AssetDropDown} from "./components/AssetDropDown";
 import {BtcInput} from "./components/BtcInput";
 import {DebugNavigation} from "./components/DebugNavigation";
@@ -39,29 +39,30 @@ import {useTheme} from "./utils/theme-provider";
 import {ThemeToggle} from "./utils/theme-toggle";
 import {usePriceFeed} from "./PriceFeedContext";
 import {AddressInput} from "./components/AddressInput";
+import {getOrCreateBitcoinKeys} from "./utils/bitcoinKeys";
 
 // Generate a random 32-byte secret
-// function generateSecret(): string {
-//   const array = new Uint8Array(32);
-//   crypto.getRandomValues(array);
-//   return Array.from(array)
-//     .map((b) => b.toString(16).padStart(2, "0"))
-//     .join("");
-// }
+function generateSecret(): string {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return Array.from(array)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+}
 
 // Generate SHA-256 hash of the secret
-// async function hashSecret(secret: string): Promise<string> {
-//   // Decode hex string to bytes
-//   const bytes = new Uint8Array(
-//     secret.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
-//   );
-//   const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
-//   const hashArray = Array.from(new Uint8Array(hashBuffer));
-//   const hashHex = hashArray
-//     .map((b) => b.toString(16).padStart(2, "0"))
-//     .join("");
-//   return `0x${hashHex}`;
-// }
+async function hashSecret(secret: string): Promise<string> {
+    // Decode hex string to bytes
+    const bytes = new Uint8Array(
+        secret.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
+    );
+    const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    return `0x${hashHex}`;
+}
 
 // Validate that the URL tokens are valid
 function isValidTokenId(token: string | undefined): token is TokenId {
@@ -105,6 +106,8 @@ function HomePage() {
     const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd")
     const [targetAddress, setTargetAddress] = useState("")
     const [addressValid, setAddressValid] = useState(false);
+    const [isCreatingSwap, setIsCreatingSwap] = useState(false);
+    const [swapError, setSwapError] = useState<string>("");
 
     // Get price feed from context
     const {getExchangeRate, isLoadingPrice, priceUpdate} = usePriceFeed();
@@ -297,76 +300,76 @@ function HomePage() {
 
     const handleContinueToAddress = async () => {
         // Create swap and navigate to send bitcoin step
-        if (!targetAddress || !usdAmount) {
+        if (!targetAddress || !usdAmount || !addressValid) {
             return;
         }
 
-        // try {
-        //     setIsCreatingSwap(true);
-        //     setSwapError(null);
-        //
-        //     // Generate random secret and hash it
-        //     const secret = generateSecret();
-        //     const hash_lock = await hashSecret(secret);
-        //
-        //     // Get or create Bitcoin keys
-        //     const {publicKey: refund_pk, privateKey: own_sk} =
-        //         getOrCreateBitcoinKeys();
-        //
-        //     // Create swap with backend
-        //     const swap = await api.createSwap({
-        //         polygon_address: receiveAddress,
-        //         usd_amount: parseFloat(usdAmount),
-        //         target_token: targetToken,
-        //         hash_lock,
-        //         refund_pk,
-        //     });
-        //
-        //     console.log(
-        //         "Persisting swap data",
-        //         JSON.stringify({
-        //             secret,
-        //             own_sk,
-        //             lendaswap_pk: swap.receiver_pk,
-        //             arkade_server_pk: swap.server_pk,
-        //             refund_locktime: swap.refund_locktime,
-        //             unilateral_claim_delay: swap.unilateral_claim_delay,
-        //             unilateral_refund_delay: swap.unilateral_refund_delay,
-        //             unilateral_refund_without_receiver_delay:
-        //             swap.unilateral_refund_without_receiver_delay,
-        //             network: swap.network,
-        //             vhtlc_address: swap.arkade_address,
-        //         }),
-        //     );
-        //
-        //     // Store complete swap data in browser storage for potential refunding
-        //     localStorage.setItem(
-        //         swap.id,
-        //         JSON.stringify({
-        //             secret,
-        //             own_sk,
-        //             lendaswap_pk: swap.receiver_pk,
-        //             arkade_server_pk: swap.server_pk,
-        //             refund_locktime: swap.refund_locktime,
-        //             unilateral_claim_delay: swap.unilateral_claim_delay,
-        //             unilateral_refund_delay: swap.unilateral_refund_delay,
-        //             unilateral_refund_without_receiver_delay:
-        //             swap.unilateral_refund_without_receiver_delay,
-        //             network: swap.network,
-        //             vhtlc_address: swap.arkade_address,
-        //         }),
-        //     );
-        //
-        //     // Navigate to send step with swap ID
-        //     navigate(`/swap/${swap.id}/send`);
-        // } catch (error) {
-        //     console.error("Failed to create swap:", error);
-        //     setSwapError(
-        //         error instanceof Error ? error.message : "Failed to create swap",
-        //     );
-        // } finally {
-        //     setIsCreatingSwap(false);
-        // }
+        try {
+            setIsCreatingSwap(true);
+            setSwapError("");
+
+            // Generate random secret and hash it
+            const secret = generateSecret();
+            const hash_lock = await hashSecret(secret);
+
+            // Get or create Bitcoin keys
+            const {publicKey: refund_pk, privateKey: own_sk} =
+                getOrCreateBitcoinKeys();
+
+            // Create swap with backend
+            const swap = await api.createSwap({
+                polygon_address: targetAddress,
+                usd_amount: parseFloat(usdAmount),
+                target_token: targetAsset,
+                hash_lock,
+                refund_pk,
+            });
+
+            console.log(
+                "Persisting swap data",
+                JSON.stringify({
+                    secret,
+                    own_sk,
+                    lendaswap_pk: swap.receiver_pk,
+                    arkade_server_pk: swap.server_pk,
+                    refund_locktime: swap.refund_locktime,
+                    unilateral_claim_delay: swap.unilateral_claim_delay,
+                    unilateral_refund_delay: swap.unilateral_refund_delay,
+                    unilateral_refund_without_receiver_delay:
+                    swap.unilateral_refund_without_receiver_delay,
+                    network: swap.network,
+                    vhtlc_address: swap.arkade_address,
+                }),
+            );
+
+            // Store complete swap data in browser storage for potential refunding
+            localStorage.setItem(
+                swap.id,
+                JSON.stringify({
+                    secret,
+                    own_sk,
+                    lendaswap_pk: swap.receiver_pk,
+                    arkade_server_pk: swap.server_pk,
+                    refund_locktime: swap.refund_locktime,
+                    unilateral_claim_delay: swap.unilateral_claim_delay,
+                    unilateral_refund_delay: swap.unilateral_refund_delay,
+                    unilateral_refund_without_receiver_delay:
+                    swap.unilateral_refund_without_receiver_delay,
+                    network: swap.network,
+                    vhtlc_address: swap.arkade_address,
+                }),
+            );
+
+            // Navigate to send step with swap ID
+            navigate(`/swap/${swap.id}/send`);
+        } catch (error) {
+            console.error("Failed to create swap:", error);
+            setSwapError(
+                error instanceof Error ? error.message : "Failed to create swap",
+            );
+        } finally {
+            setIsCreatingSwap(false);
+        }
     };
 
     const availableSourceAssets: TokenId[] = [
@@ -382,7 +385,6 @@ function HomePage() {
         availableTargetAssets = ["btc_arkade", "btc_lightning"];
     }
 
-    console.log(`BTC Amount ${bitcoinAmount} , USD Amount ${usdAmount}`);
     return (
         <>
             <div className="flex flex-col gap-2 px-4 md:px-4">
@@ -517,10 +519,19 @@ function HomePage() {
                     />
                     <Button
                         onClick={handleContinueToAddress}
-                        disabled={!targetAddress || !exchangeRate || isLoadingPrice || !addressValid}
+                        disabled={!targetAddress || !exchangeRate || isLoadingPrice || !addressValid || isCreatingSwap}
                         className="w-full min-h-[4.25rem]"
                     >
-                        Continue
+                        {isCreatingSwap ? (
+                            <>
+                                <Loader className="animate-spin h-4 w-4"/>
+                                Please Wait
+                            </>
+                        ) : (
+                            <>
+                                Continue
+                            </>
+                        )}
                     </Button>
                 </div>
             </div>
