@@ -155,10 +155,16 @@ function HomePage() {
             const {publicKey: refund_pk, privateKey: own_sk} =
                 getOrCreateBitcoinKeys();
 
+            let targetAmount = parseFloat(usdAmount);
+            if (targetAsset === "btc_arkade" || targetAsset === "btc_lightning") {
+                targetAmount = parseFloat(bitcoinAmount);
+            }
+
+
             // Create swap with backend
             const swap = await api.createSwap({
-                polygon_address: targetAddress,
-                usd_amount: parseFloat(usdAmount),
+                target_address: targetAddress,
+                target_amount: targetAmount,
                 target_token: targetAsset,
                 hash_lock,
                 refund_pk,
