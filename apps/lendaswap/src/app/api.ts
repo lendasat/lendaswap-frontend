@@ -1,8 +1,8 @@
-import {getReferralCode} from "./utils/referralCode";
+import { getReferralCode } from "./utils/referralCode";
 
 // API client for Lendaswap backend
 const API_BASE_URL =
-    import.meta.env.VITE_LENDASWAP_API_URL || "http://localhost:3333";
+  import.meta.env.VITE_LENDASWAP_API_URL || "http://localhost:3333";
 
 // WebSocket URL (replace http with ws)
 const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
@@ -13,39 +13,39 @@ export type TokenId = "btc_lightning" | "btc_arkade" | "usdc_pol" | "usdt_pol";
 export type Chain = "Bitcoin" | "Polygon";
 
 export interface TokenInfo {
-    token_id: TokenId;
-    symbol: string;
-    chain: Chain;
-    name: string;
-    decimals: number;
+  token_id: TokenId;
+  symbol: string;
+  chain: Chain;
+  name: string;
+  decimals: number;
 }
 
 export interface AssetPair {
-    source: TokenId;
-    target: TokenId;
+  source: TokenId;
+  target: TokenId;
 }
 
 export interface PriceResponse {
-    usd_per_sat: number;
-    usd_per_btc: number;
+  usd_per_sat: number;
+  usd_per_btc: number;
 }
 
 // WebSocket price feed types (matching backend message format)
 export interface PriceTiers {
-    usd_1: number;
-    usd_100: number;
-    usd_1000: number;
-    usd_5000: number;
+  usd_1: number;
+  usd_100: number;
+  usd_1000: number;
+  usd_5000: number;
 }
 
 export interface TradingPairPrices {
-    pair: string; // e.g., "USDC_POL-BTC" or "USDT_POL-BTC"
-    tiers: PriceTiers;
+  pair: string; // e.g., "USDC_POL-BTC" or "USDT_POL-BTC"
+  tiers: PriceTiers;
 }
 
 export interface PriceUpdateMessage {
-    timestamp: number;
-    pairs: TradingPairPrices[];
+  timestamp: number;
+  pairs: TradingPairPrices[];
 }
 
 /**
@@ -60,150 +60,149 @@ export interface PriceUpdateMessage {
  *   serverfunded → clientfundedserverrefunded (HTLC timeout)
  */
 export type SwapStatus =
-    | "pending" // Initial state, waiting for client to fund BTC
-    | "clientfunded" // Client funded BTC, waiting for server to create HTLC
-    | "clientrefunded" // Client refunded before server created HTLC (terminal)
-    | "serverfunded" // Server locked WBTC in HTLC, waiting for client to claim
-    | "clientredeemed" // Client claimed token by revealing secret
-    | "serverredeemed" // Server claimed BTC using revealed secret (success - terminal)
-    | "clientfundedserverrefunded" // HTLC timed out, both refunded (terminal)
-    | "clientrefundedserverfunded" // ERROR: Client refunded while server locked (should never happen)
-    | "clientrefundedserverrefunded" // Both refunded after error state (terminal)
-    | "expired"; // Swap expired before client funded (terminal)
+  | "pending" // Initial state, waiting for client to fund BTC
+  | "clientfunded" // Client funded BTC, waiting for server to create HTLC
+  | "clientrefunded" // Client refunded before server created HTLC (terminal)
+  | "serverfunded" // Server locked WBTC in HTLC, waiting for client to claim
+  | "clientredeemed" // Client claimed token by revealing secret
+  | "serverredeemed" // Server claimed BTC using revealed secret (success - terminal)
+  | "clientfundedserverrefunded" // HTLC timed out, both refunded (terminal)
+  | "clientrefundedserverfunded" // ERROR: Client refunded while server locked (should never happen)
+  | "clientrefundedserverrefunded" // Both refunded after error state (terminal)
+  | "expired"; // Swap expired before client funded (terminal)
 
 export interface SwapRequest {
-    target_address: string;
-    target_amount: number;
-    target_token: TokenId; // Token to receive (e.g., USDC_POL, USDT_POL)
-    hash_lock: string;
-    refund_pk: string;
-    referral_code?: string; // Optional referral code for tracking
+  target_address: string;
+  target_amount: number;
+  target_token: TokenId; // Token to receive (e.g., USDC_POL, USDT_POL)
+  hash_lock: string;
+  refund_pk: string;
+  referral_code?: string; // Optional referral code for tracking
 }
 
 export interface SwapResponse {
-    id: string;
-    ln_invoice: string;
-    arkade_address: string;
-    sats_required: number;
-    fee_sats?: number; // Optional - not displayed in UI
-    usd_amount: number;
-    usd_per_sat: number;
-    hash_lock: string;
-    // VHTLC parameters for refunding
-    sender_pk: string;
-    receiver_pk: string;
-    server_pk: string;
-    refund_locktime: number;
-    unilateral_claim_delay: number;
-    unilateral_refund_delay: number;
-    unilateral_refund_without_receiver_delay: number;
-    network: string;
+  id: string;
+  ln_invoice: string;
+  arkade_address: string;
+  sats_required: number;
+  fee_sats?: number; // Optional - not displayed in UI
+  usd_amount: number;
+  usd_per_sat: number;
+  hash_lock: string;
+  // VHTLC parameters for refunding
+  sender_pk: string;
+  receiver_pk: string;
+  server_pk: string;
+  refund_locktime: number;
+  unilateral_claim_delay: number;
+  unilateral_refund_delay: number;
+  unilateral_refund_without_receiver_delay: number;
+  network: string;
 }
 
 export interface GetSwapResponse {
-    id: string;
-    status: SwapStatus;
-    arkade_address: string;
-    ln_invoice: string;
-    sats_required: number;
-    sats_received: number | null;
-    usd_amount: number;
-    usd_per_sat: number;
-    bitcoin_htlc_claim_txid: string | null;
-    bitcoin_htlc_fund_txid: string | null;
-    polygon_htlc_claim_txid: string | null;
-    polygon_htlc_fund_txid: string | null;
-    hash_lock: string;
-    polygon_address: string;
-    onchain_swap_id: string | null; // The actual on-chain swap ID used by the HTLC contract
-    fee_sats?: number; // Optional fee in satoshis
-    target_token: TokenId; // The token being received
-    // VHTLC parameters for refunding
-    sender_pk: string;
-    receiver_pk: string;
-    server_pk: string;
-    refund_locktime: number;
-    unilateral_claim_delay: number;
-    unilateral_refund_delay: number;
-    unilateral_refund_without_receiver_delay: number;
-    network: string;
+  id: string;
+  status: SwapStatus;
+  arkade_address: string;
+  ln_invoice: string;
+  sats_required: number;
+  sats_received: number | null;
+  usd_amount: number;
+  usd_per_sat: number;
+  bitcoin_htlc_claim_txid: string | null;
+  bitcoin_htlc_fund_txid: string | null;
+  polygon_htlc_claim_txid: string | null;
+  polygon_htlc_fund_txid: string | null;
+  hash_lock: string;
+  polygon_address: string;
+  onchain_swap_id: string | null; // The actual on-chain swap ID used by the HTLC contract
+  fee_sats?: number; // Optional fee in satoshis
+  target_token: TokenId; // The token being received
+  // VHTLC parameters for refunding
+  sender_pk: string;
+  receiver_pk: string;
+  server_pk: string;
+  refund_locktime: number;
+  unilateral_claim_delay: number;
+  unilateral_refund_delay: number;
+  unilateral_refund_without_receiver_delay: number;
+  network: string;
 }
 
 export const api = {
-    async getTokens(): Promise<TokenInfo[]> {
-        const response = await fetch(`${API_BASE_URL}/tokens`);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch tokens: ${response.statusText}`);
-        }
-        return response.json();
-    },
+  async getTokens(): Promise<TokenInfo[]> {
+    const response = await fetch(`${API_BASE_URL}/tokens`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch tokens: ${response.statusText}`);
+    }
+    return response.json();
+  },
 
-    async getAssetPairs(): Promise<AssetPair[]> {
-        const response = await fetch(`${API_BASE_URL}/asset-pairs`);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch asset pairs: ${response.statusText}`);
-        }
-        return response.json();
-    },
+  async getAssetPairs(): Promise<AssetPair[]> {
+    const response = await fetch(`${API_BASE_URL}/asset-pairs`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch asset pairs: ${response.statusText}`);
+    }
+    return response.json();
+  },
 
+  async createArkadeToPolygonSwap(request: SwapRequest): Promise<SwapResponse> {
+    // Automatically include referral code from localStorage if present
+    const referralCode = getReferralCode();
+    const requestWithReferral = {
+      ...request,
+      ...(referralCode ? { referral_code: referralCode } : {}),
+    };
 
-    async createArkadeToPolygonSwap(request: SwapRequest): Promise<SwapResponse> {
-        // Automatically include referral code from localStorage if present
-        const referralCode = getReferralCode();
-        const requestWithReferral = {
-            ...request,
-            ...(referralCode ? {referral_code: referralCode} : {}),
-        };
+    const response = await fetch(`${API_BASE_URL}/swap/arkade/polygon`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestWithReferral),
+    });
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(
+        error.error || `Failed to create swap: ${response.statusText}`,
+      );
+    }
+    return response.json();
+  },
 
-        const response = await fetch(`${API_BASE_URL}/swap/arkade/polygon`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(requestWithReferral),
-        });
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({error: response.statusText}));
-            throw new Error(
-                error.error || `Failed to create swap: ${response.statusText}`,
-            );
-        }
-        return response.json();
-    },
+  async healthCheck(): Promise<string> {
+    const response = await fetch(`${API_BASE_URL}/health`);
+    if (!response.ok) {
+      throw new Error(`Health check failed: ${response.statusText}`);
+    }
+    return response.text();
+  },
 
-    async healthCheck(): Promise<string> {
-        const response = await fetch(`${API_BASE_URL}/health`);
-        if (!response.ok) {
-            throw new Error(`Health check failed: ${response.statusText}`);
-        }
-        return response.text();
-    },
+  async getSwap(id: string): Promise<GetSwapResponse> {
+    const response = await fetch(`${API_BASE_URL}/swap/${id}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch swap: ${response.statusText}`);
+    }
+    return response.json();
+  },
 
-    async getSwap(id: string): Promise<GetSwapResponse> {
-        const response = await fetch(`${API_BASE_URL}/swap/${id}`);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch swap: ${response.statusText}`);
-        }
-        return response.json();
-    },
-
-    async claimGelato(id: string, secret: string): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/swap/${id}/claim-gelato`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({secret}),
-        });
-        if (!response.ok) {
-            const error = await response
-                .json()
-                .catch(() => ({error: response.statusText}));
-            throw new Error(error.error || `Failed to claim: ${response.statusText}`);
-        }
-    },
+  async claimGelato(id: string, secret: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/swap/${id}/claim-gelato`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ secret }),
+    });
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `Failed to claim: ${response.statusText}`);
+    }
+  },
 };
 
 /**
@@ -211,122 +210,122 @@ export const api = {
  * Manages connection to /ws/prices endpoint with auto-reconnect
  */
 export class PriceFeedService {
-    private ws: WebSocket | null = null;
-    private reconnectTimer: number | null = null;
-    private listeners: Set<(update: PriceUpdateMessage) => void> = new Set();
-    private reconnectDelay = 1000; // Start with 1 second
-    private maxReconnectDelay = 30000; // Max 30 seconds
-    private isManualClose = false;
+  private ws: WebSocket | null = null;
+  private reconnectTimer: number | null = null;
+  private listeners: Set<(update: PriceUpdateMessage) => void> = new Set();
+  private reconnectDelay = 1000; // Start with 1 second
+  private maxReconnectDelay = 30000; // Max 30 seconds
+  private isManualClose = false;
 
-    /**
-     * Subscribe to price updates
-     * @param callback Function to call when prices are updated
-     * @returns Unsubscribe function
-     */
-    subscribe(callback: (update: PriceUpdateMessage) => void): () => void {
-        this.listeners.add(callback);
+  /**
+   * Subscribe to price updates
+   * @param callback Function to call when prices are updated
+   * @returns Unsubscribe function
+   */
+  subscribe(callback: (update: PriceUpdateMessage) => void): () => void {
+    this.listeners.add(callback);
 
-        // Connect if not already connected
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            this.connect();
-        }
-
-        // Return unsubscribe function
-        return () => {
-            this.listeners.delete(callback);
-            // Close connection if no more listeners
-            if (this.listeners.size === 0) {
-                this.close();
-            }
-        };
+    // Connect if not already connected
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      this.connect();
     }
 
-    /**
-     * Connect to WebSocket price feed
-     */
-    private connect(): void {
-        if (this.ws?.readyState === WebSocket.OPEN) {
-            return;
-        }
+    // Return unsubscribe function
+    return () => {
+      this.listeners.delete(callback);
+      // Close connection if no more listeners
+      if (this.listeners.size === 0) {
+        this.close();
+      }
+    };
+  }
 
-        this.isManualClose = false;
+  /**
+   * Connect to WebSocket price feed
+   */
+  private connect(): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      return;
+    }
 
+    this.isManualClose = false;
+
+    try {
+      this.ws = new WebSocket(`${WS_BASE_URL}/ws/prices`);
+
+      this.ws.onopen = () => {
+        console.log("Price feed WebSocket connected");
+        // Reset reconnect delay on successful connection
+        this.reconnectDelay = 1000;
+      };
+
+      this.ws.onmessage = (event) => {
         try {
-            this.ws = new WebSocket(`${WS_BASE_URL}/ws/prices`);
-
-            this.ws.onopen = () => {
-                console.log("Price feed WebSocket connected");
-                // Reset reconnect delay on successful connection
-                this.reconnectDelay = 1000;
-            };
-
-            this.ws.onmessage = (event) => {
-                try {
-                    const update: PriceUpdateMessage = JSON.parse(event.data);
-                    // Notify all listeners
-                    this.listeners.forEach((callback) => callback(update));
-                } catch (error) {
-                    console.error("Failed to parse price update:", error);
-                }
-            };
-
-            this.ws.onerror = (error) => {
-                console.error("Price feed WebSocket error:", error);
-            };
-
-            this.ws.onclose = () => {
-                console.log("Price feed WebSocket closed");
-                this.ws = null;
-
-                // Only reconnect if we have listeners and it wasn't a manual close
-                if (this.listeners.size > 0 && !this.isManualClose) {
-                    this.scheduleReconnect();
-                }
-            };
+          const update: PriceUpdateMessage = JSON.parse(event.data);
+          // Notify all listeners
+          this.listeners.forEach((callback) => callback(update));
         } catch (error) {
-            console.error("Failed to create WebSocket:", error);
-            if (this.listeners.size > 0 && !this.isManualClose) {
-                this.scheduleReconnect();
-            }
+          console.error("Failed to parse price update:", error);
         }
+      };
+
+      this.ws.onerror = (error) => {
+        console.error("Price feed WebSocket error:", error);
+      };
+
+      this.ws.onclose = () => {
+        console.log("Price feed WebSocket closed");
+        this.ws = null;
+
+        // Only reconnect if we have listeners and it wasn't a manual close
+        if (this.listeners.size > 0 && !this.isManualClose) {
+          this.scheduleReconnect();
+        }
+      };
+    } catch (error) {
+      console.error("Failed to create WebSocket:", error);
+      if (this.listeners.size > 0 && !this.isManualClose) {
+        this.scheduleReconnect();
+      }
+    }
+  }
+
+  /**
+   * Schedule reconnection with exponential backoff
+   */
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer !== null) {
+      return;
     }
 
-    /**
-     * Schedule reconnection with exponential backoff
-     */
-    private scheduleReconnect(): void {
-        if (this.reconnectTimer !== null) {
-            return;
-        }
+    console.log(`Reconnecting in ${this.reconnectDelay}ms...`);
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect();
+      // Exponential backoff
+      this.reconnectDelay = Math.min(
+        this.reconnectDelay * 2,
+        this.maxReconnectDelay,
+      );
+    }, this.reconnectDelay);
+  }
 
-        console.log(`Reconnecting in ${this.reconnectDelay}ms...`);
-        this.reconnectTimer = window.setTimeout(() => {
-            this.reconnectTimer = null;
-            this.connect();
-            // Exponential backoff
-            this.reconnectDelay = Math.min(
-                this.reconnectDelay * 2,
-                this.maxReconnectDelay,
-            );
-        }, this.reconnectDelay);
+  /**
+   * Close WebSocket connection
+   */
+  private close(): void {
+    this.isManualClose = true;
+
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
 
-    /**
-     * Close WebSocket connection
-     */
-    private close(): void {
-        this.isManualClose = true;
-
-        if (this.reconnectTimer !== null) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = null;
-        }
-
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
-        }
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
     }
+  }
 }
 
 // Singleton instance
