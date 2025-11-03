@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Route, Routes, useLocation, useNavigate } from "react-router";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router";
 import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
 import { Check, Menu, PiggyBank, Shield, Tag, Wrench, Zap } from "lucide-react";
@@ -54,16 +61,46 @@ async function hashSecret(secret: string): Promise<string> {
   return `0x${hashHex}`;
 }
 
+// Validate that the URL tokens are valid
+function isValidTokenId(token: string | undefined): token is TokenId {
+  return (
+    token === "btc_lightning" ||
+    token === "btc_arkade" ||
+    token === "usdc_pol" ||
+    token === "usdt_pol"
+  );
+}
+
 // Home page component (enter-amount step)
 function HomePage() {
   const navigate = useNavigate();
+  const params = useParams<{ sourceToken?: string; targetToken?: string }>();
+
+  // Read tokens from URL params, validate them
+  const urlSourceToken = isValidTokenId(params.sourceToken)
+    ? params.sourceToken
+    : null;
+  const urlTargetToken = isValidTokenId(params.targetToken)
+    ? params.targetToken
+    : null;
+
+  // Redirect to default if invalid tokens in URL
+  useEffect(() => {
+    if (!urlSourceToken || !urlTargetToken) {
+      navigate("/btc_lightning/usdc_pol", { replace: true });
+    }
+  }, [urlSourceToken, urlTargetToken, navigate]);
 
   // State for home page
   const [bitcoinAmount, setBitcoinAmount] = useState("");
   const [usdcAmount, setUsdcAmount] = useState("50");
   const [receiveAddress, setReceiveAddress] = useState("");
-  const [sourceToken, setSourceToken] = useState<TokenId>("btc_lightning");
-  const [targetToken, setTargetToken] = useState<TokenId>("usdc_pol");
+  const [sourceToken, setSourceTokenState] = useState<TokenId>(
+    urlSourceToken || "btc_lightning",
+  );
+  const [targetToken, setTargetTokenState] = useState<TokenId>(
+    urlTargetToken || "usdc_pol",
+  );
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
   const [swapError, setSwapError] = useState<string | null>(null);
   const [lastEditedField, setLastEditedField] = useState<"usd" | "btc">("usd");
@@ -71,26 +108,78 @@ function HomePage() {
   // Get price feed from context
   const { getExchangeRate, isLoadingPrice } = usePriceFeed();
 
+  // Update URL when tokens change
+  const setSourceToken = (token: TokenId) => {
+    setSourceTokenState(token);
+    if (
+      (token === "btc_arkade" || token === "btc_lightning") &&
+      (targetToken === "usdc_pol" || targetToken === "usdt_pol")
+    ) {
+      navigate(`/${token}/${targetToken}`, { replace: true });
+    } else if (
+      (token === "usdc_pol" || token === "usdt_pol") &&
+      (targetToken === "btc_arkade" || targetToken === "btc_lightning")
+    ) {
+      navigate(`/${token}/${targetToken}`, { replace: true });
+    } else if (token === "btc_arkade" || token === "btc_lightning") {
+      setTargetToken("usdc_pol");
+      navigate(`/${token}/usdc_pol`, { replace: true });
+    } else if (token === "usdc_pol" || token === "usdt_pol") {
+      setTargetToken("btc_arkade");
+      navigate(`/${token}/btc_arkade`, { replace: true });
+    }
+  };
+
+  const setTargetToken = (token: TokenId) => {
+    setTargetTokenState(token);
+    navigate(`/${sourceToken}/${token}`, { replace: true });
+  };
+
+  // Sync state when URL params change (for browser back/forward)
+  useEffect(() => {
+    if (urlSourceToken && urlSourceToken !== sourceToken) {
+      setSourceTokenState(urlSourceToken);
+    }
+    if (urlTargetToken && urlTargetToken !== targetToken) {
+      setTargetTokenState(urlTargetToken);
+    }
+  }, [urlSourceToken, urlTargetToken, sourceToken, targetToken]);
+
   // Calculate the other amount when price becomes available or changes
   useEffect(() => {
     if (!isLoadingPrice) {
+      const isBtcTarget =
+        targetToken === "btc_lightning" || targetToken === "btc_arkade";
+
       if (lastEditedField === "usd" && usdcAmount) {
-        // User edited USD, update BTC amount
-        const usdcValue = parseFloat(usdcAmount);
-        if (!Number.isNaN(usdcValue)) {
-          const exchangeRate = getExchangeRate(targetToken, usdcValue);
+        // User edited USD amount, calculate the other side
+        const usdValue = parseFloat(usdcAmount);
+        if (!Number.isNaN(usdValue)) {
+          const exchangeRate = getExchangeRate(targetToken, usdValue);
           if (exchangeRate !== null && exchangeRate !== undefined) {
-            setBitcoinAmount((usdcValue / exchangeRate).toFixed(8));
+            if (isBtcTarget) {
+              // USD -> BTC: rate is BTC per USD, so multiply
+              setBitcoinAmount((usdValue * exchangeRate).toFixed(8));
+            } else {
+              // BTC -> USD: rate is USD per BTC, so divide
+              setBitcoinAmount((usdValue / exchangeRate).toFixed(8));
+            }
           }
         }
       } else if (lastEditedField === "btc" && bitcoinAmount) {
-        // User edited BTC, update USD amount
+        // User edited BTC amount, calculate the other side
         const btcValue = parseFloat(bitcoinAmount);
         if (!Number.isNaN(btcValue)) {
           const usdAmount = parseFloat(usdcAmount) || 1;
           const exchangeRate = getExchangeRate(targetToken, usdAmount);
           if (exchangeRate !== null && exchangeRate !== undefined) {
-            setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+            if (isBtcTarget) {
+              // USD -> BTC: rate is BTC per USD, so divide
+              setUsdcAmount((btcValue / exchangeRate).toFixed(2));
+            } else {
+              // BTC -> USD: rate is USD per BTC, so multiply
+              setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+            }
           }
         }
       }
@@ -108,11 +197,20 @@ function HomePage() {
     setBitcoinAmount(value);
     setLastEditedField("btc");
     const btcValue = parseFloat(value);
+    const isBtcTarget =
+      targetToken === "btc_lightning" || targetToken === "btc_arkade";
+
     if (!Number.isNaN(btcValue)) {
       const usdAmount = parseFloat(usdcAmount) || 1;
       const exchangeRate = getExchangeRate(targetToken, usdAmount);
       if (exchangeRate !== null && exchangeRate !== undefined) {
-        setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+        if (isBtcTarget) {
+          // USD -> BTC: rate is BTC per USD, so divide to get USD
+          setUsdcAmount((btcValue / exchangeRate).toFixed(2));
+        } else {
+          // BTC -> USD: rate is USD per BTC, so multiply to get USD
+          setUsdcAmount((btcValue * exchangeRate).toFixed(2));
+        }
       } else {
         setUsdcAmount("");
       }
@@ -124,11 +222,22 @@ function HomePage() {
   const handleUsdcChange = (value: string) => {
     setUsdcAmount(value);
     setLastEditedField("usd");
-    const usdcValue = parseFloat(value);
-    if (!Number.isNaN(usdcValue)) {
-      const exchangeRate = getExchangeRate(targetToken, usdcValue);
+    const usdValue = parseFloat(value);
+    const isBtcTarget =
+      targetToken === "btc_lightning" || targetToken === "btc_arkade";
+
+    if (!Number.isNaN(usdValue)) {
+      const exchangeRate = getExchangeRate(targetToken, usdValue);
+      console.log(`Exchange rate: ${exchangeRate} for token ${targetToken}`);
+
       if (exchangeRate !== null && exchangeRate !== undefined) {
-        setBitcoinAmount((usdcValue / exchangeRate).toFixed(8));
+        if (isBtcTarget) {
+          // USD -> BTC: rate is BTC per USD, so multiply to get BTC
+          setBitcoinAmount((usdValue * exchangeRate).toFixed(8));
+        } else {
+          // BTC -> USD: rate is USD per BTC, so divide to get BTC
+          setBitcoinAmount((usdValue / exchangeRate).toFixed(8));
+        }
       } else {
         setBitcoinAmount("");
       }
@@ -234,7 +343,11 @@ function HomePage() {
 function useStepInfo() {
   const location = useLocation();
 
-  if (location.pathname === "/") {
+  // Check if on home page (token pair route like /btc_lightning/usdc_pol)
+  const isHomePage =
+    location.pathname === "/" || /^\/[^/]+\/[^/]+$/.test(location.pathname);
+
+  if (isHomePage) {
     return {
       title: "Swap Bitcoin to USDC/USDT",
       description:
@@ -276,9 +389,14 @@ function useStepInfo() {
 export default function App() {
   const { theme } = useTheme();
   const stepInfo = useStepInfo();
+  const location = useLocation();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
+
+  // Check if on home page (token pair route like /btc_lightning/usdc_pol)
+  const isHomePage =
+    location.pathname === "/" || /^\/[^/]+\/[^/]+$/.test(location.pathname);
 
   return (
     <div className="bg-background min-h-screen">
@@ -287,6 +405,7 @@ export default function App() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <button
+              type="button"
               onClick={() => navigate("/")}
               className="flex items-center gap-2 transition-opacity hover:opacity-80"
             >
@@ -419,7 +538,11 @@ export default function App() {
           {/* Step Card */}
           <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route
+                path="/"
+                element={<Navigate to="/btc_lightning/usdc_pol" replace />}
+              />
+              <Route path="/:sourceToken/:targetToken" element={<HomePage />} />
               <Route path="/swap/:swapId/send" element={<SwapSendPage />} />
               <Route
                 path="/swap/:swapId/processing"
@@ -435,7 +558,7 @@ export default function App() {
           </Card>
 
           {/* Info Cards - Only show on home page */}
-          {location.pathname === "/" && (
+          {isHomePage && (
             <div className="grid gap-4 md:grid-cols-3">
               <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
                 <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">

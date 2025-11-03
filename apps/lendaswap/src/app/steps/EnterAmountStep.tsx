@@ -351,9 +351,14 @@ export function EnterAmountStep({
           ) : (
             <span className="font-medium">
               1 {sourceDisplay.symbol} ≈{" "}
-              {exchangeRate?.toLocaleString("en-US", {
-                maximumFractionDigits: 0,
-              })}{" "}
+              {targetToken === "btc_lightning" || targetToken === "btc_arkade"
+                ? exchangeRate?.toLocaleString("en-US", {
+                    minimumFractionDigits: 8,
+                    maximumFractionDigits: 8,
+                  })
+                : exchangeRate?.toLocaleString("en-US", {
+                    maximumFractionDigits: 0,
+                  })}{" "}
               {targetDisplay.symbol}
             </span>
           )}
