@@ -38,6 +38,7 @@ import {hasReferralCode} from "./utils/referralCode";
 import {useTheme} from "./utils/theme-provider";
 import {ThemeToggle} from "./utils/theme-toggle";
 import {usePriceFeed} from "./PriceFeedContext";
+import {AddressInput} from "./components/AddressInput";
 
 // Generate a random 32-byte secret
 // function generateSecret(): string {
@@ -102,6 +103,7 @@ function HomePage() {
         urlTargetToken || "btc_arkade",
     );
     const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd")
+    const [targetAddress, setTargetAddress] = useState("")
 
     // Get price feed from context
     const {getExchangeRate, isLoadingPrice, priceUpdate} = usePriceFeed();
@@ -506,6 +508,8 @@ function HomePage() {
                             })} {targetAsset === "btc_lightning" || targetAsset === "btc_arkade" ? "BTC" : "USD"}
                         </div>
                     )}
+                    <AddressInput value={targetAddress} onChange={setTargetAddress} targetToken={targetAsset}
+                    />
                 </div>
             </div>
         </>
