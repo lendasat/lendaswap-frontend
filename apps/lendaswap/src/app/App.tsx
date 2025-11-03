@@ -37,6 +37,7 @@ import {
 import {hasReferralCode} from "./utils/referralCode";
 import {useTheme} from "./utils/theme-provider";
 import {ThemeToggle} from "./utils/theme-toggle";
+import {usePriceFeed} from "./PriceFeedContext";
 
 // Generate a random 32-byte secret
 // function generateSecret(): string {
@@ -113,7 +114,7 @@ function HomePage() {
     // const [lastEditedField, setLastEditedField] = useState<"usd" | "btc">("usd");
 
     // Get price feed from context
-    // const { getExchangeRate, isLoadingPrice } = usePriceFeed();
+    const {getExchangeRate, isLoadingPrice} = usePriceFeed();
 
     // Update URL when tokens change
     // const setSourceToken = (token: TokenId) => {
@@ -433,12 +434,14 @@ function HomePage() {
                                 value={usdAmount}
                                 onChange={setUsdAmount}
                                 className="pr-52"
+                                isLoading={isLoadingPrice}
                             />
                         ) : (
                             <BtcInput
                                 value={bitcoinAmount}
                                 onChange={setBitcoinAmount}
                                 className="pr-52"
+                                isLoading={isLoadingPrice}
                             />
                         )}
                         <div

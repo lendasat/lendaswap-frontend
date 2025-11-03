@@ -1,4 +1,5 @@
 import {Input} from "#/components/ui/input";
+import {Skeleton} from "#/components/ui/skeleton";
 
 interface BtcInputProps {
     value: string;
@@ -7,6 +8,7 @@ interface BtcInputProps {
     className?: string;
     id?: string;
     disabled?: boolean;
+    isLoading?: boolean;
 }
 
 export function BtcInput({
@@ -16,6 +18,7 @@ export function BtcInput({
                              className = "",
                              id,
                              disabled = false,
+                             isLoading = false,
                          }: BtcInputProps) {
     // Format to always show 8 decimal places
     const formatBtcDisplay = (val: string): string => {
@@ -62,6 +65,15 @@ export function BtcInput({
             }
         }
     };
+
+    if (isLoading) {
+        return (
+            <div
+                className={`px-4 py-3 min-h-[4.25rem] bg-white border-2 rounded-lg shadow-sm flex items-center ${className}`}>
+                <Skeleton className="h-6 w-32"/>
+            </div>
+        );
+    }
 
     return (
         <Input

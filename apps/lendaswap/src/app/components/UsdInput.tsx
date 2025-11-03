@@ -1,4 +1,5 @@
 import {Input} from "#/components/ui/input";
+import {Skeleton} from "#/components/ui/skeleton";
 
 interface UsdInputProps {
     value: string;
@@ -7,6 +8,7 @@ interface UsdInputProps {
     className?: string;
     id?: string;
     disabled?: boolean;
+    isLoading?: boolean;
 }
 
 export function UsdInput({
@@ -16,6 +18,7 @@ export function UsdInput({
                              className = "",
                              id,
                              disabled = false,
+                             isLoading = false,
                          }: UsdInputProps) {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const input = e.target.value;
@@ -40,6 +43,15 @@ export function UsdInput({
         }
         // If input doesn't match, don't update (ignore the invalid character)
     };
+
+    if (isLoading) {
+        return (
+            <div
+                className={`px-4 py-3 min-h-[4.25rem] bg-white border-2  rounded-lg shadow-sm flex items-center ${className}`}>
+                <Skeleton className="h-6 w-24"/>
+            </div>
+        );
+    }
 
     return (
         <Input
