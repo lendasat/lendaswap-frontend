@@ -82,7 +82,7 @@ export interface SwapRequest {
 export interface SwapResponse {
   id: string;
   ln_invoice: string;
-  arkade_address: string;
+  htlc_address_arkade: string;
   sats_required: number;
   fee_sats?: number; // Optional - not displayed in UI
   usd_amount: number;
@@ -104,7 +104,7 @@ export interface SwapResponse {
 export interface GetSwapResponse {
   id: string;
   status: SwapStatus;
-  arkade_address: string;
+  htlc_address_arkade: string;
   ln_invoice: string;
   sats_required: number;
   sats_received: number | null;
@@ -114,7 +114,9 @@ export interface GetSwapResponse {
   polygon_htlc_claim_txid: string | null;
   polygon_htlc_fund_txid: string | null;
   hash_lock: string;
-  polygon_address: string;
+  htlc_address_polygon: string;
+  user_address_polygon: string;
+  user_address_arkade: string;
   onchain_swap_id: string | null; // The actual on-chain swap ID used by the HTLC contract
   fee_sats?: number; // Optional fee in satoshis
   // VHTLC parameters for refunding
@@ -153,8 +155,8 @@ export interface PolygonToArkadeSwapRequest {
 
 export interface PolygonToArkadeSwapResponse {
   id: string;
-  polygon_address: string;
-  arkade_address: string;
+  htlc_address_polygon: string;
+  htlc_address_arkade: string;
   approve_tx?: string;
   create_swap_tx: string;
   sats_receive: number;

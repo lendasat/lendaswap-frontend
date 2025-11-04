@@ -19,7 +19,7 @@ import {
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 
-const ARK_SERVER_URL =
+export const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
 
 interface SwapData {

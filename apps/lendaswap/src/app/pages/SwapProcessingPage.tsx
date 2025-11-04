@@ -1,9 +1,15 @@
+import {
+  claimVhtlc,
+  getAmountsForSwap,
+  initBrowserWallet,
+} from "@frontend/browser-wallet";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { CardContent } from "#/components/ui/card";
 import { api, type GetSwapResponse, type TokenId } from "../api";
 import { LoadingStep } from "../steps";
 import { isDebugMode } from "../utils/debugMode";
+import { ARK_SERVER_URL } from "./ManageSwapPage";
 
 // Swap direction types
 type SwapDirection = "BTC_TO_POLYGON" | "POLYGON_TO_BTC";
@@ -59,6 +65,18 @@ export function SwapProcessingPage() {
   const [swapDirection, setSwapDirection] = useState<SwapDirection | null>(
     null,
   );
+  const [wasmInitialized, setWasmInitialized] = useState(false);
+  // Initialize WASM module on mount
+  useEffect(() => {
+    initBrowserWallet()
+      .then(() => {
+        console.log("Browser wallet WASM initialized");
+        setWasmInitialized(true);
+      })
+      .catch((error) => {
+        console.error("Failed to initialize browser wallet:", error);
+      });
+  }, []);
 
   // Load secret from localStorage
   useEffect(() => {
@@ -133,18 +151,79 @@ export function SwapProcessingPage() {
 
     if (swapDirection === "BTC_TO_POLYGON") {
       autoClaimBtcToPolygonSwaps();
+      return;
     }
 
+    const autoClaimBtcToArkadeSwaps = async () => {
+      if (!swap || !secret || !swapId || !swapDirection) return;
+      if (swap.status !== "serverfunded") return;
+      if (!wasmInitialized) return;
+      if (!swap.user_address_arkade) {
+        console.error("No user address for arkade provided ");
+        // todo, instead of failing, we could show a new input field
+        return;
+      }
+      const claimKey = `swap_${swapId}_claim_attempted`;
+
+      try {
+        // FIXME: DO NOT HARDCODE URL, use the env file
+        const fetchedAmounts = await getAmountsForSwap(
+          "https://mutinynet.arkade.sh",
+          swapId,
+        );
+        console.log(`Fetched amounts for swap`, fetchedAmounts);
+
+        // Check if we've already attempted to claim this swap (persists across refreshes)
+
+        if (localStorage.getItem(claimKey)) {
+          console.log("Claim already attempted for this swap, skipping");
+          return;
+        }
+
+        if (hasClaimedRef.current || isClaiming) return;
+
+        hasClaimedRef.current = true;
+        setIsClaiming(true);
+        setClaimError(null);
+
+        const cleanSecret = secret.startsWith("0x") ? secret.slice(2) : secret;
+
+        console.log("Auto-claiming with parameters:", {
+          swapId,
+          secret: cleanSecret,
+        });
+
+        // Mark that we've attempted to claim BEFORE making the API call
+        localStorage.setItem(claimKey, Date.now().toString());
+
+        const txid = await claimVhtlc(
+          ARK_SERVER_URL,
+          swapId,
+          swap.user_address_arkade,
+        );
+        console.log(`Claim request sent successfully ${txid}`);
+      } catch (error) {
+        console.error("Failed to auto-claim:", error);
+        setClaimError(
+          error instanceof Error
+            ? error.message
+            : `Failed to refund swap. Check the logs or try again later.`,
+        );
+        // Remove the localStorage flag on error to allow retry
+        localStorage.removeItem(claimKey);
+        hasClaimedRef.current = false;
+      } finally {
+        setIsClaiming(false);
+      }
+    };
+
     if (swapDirection === "POLYGON_TO_BTC") {
-      console.warn(
-        "Skipping auto-claim for non BTC → Polygon swap:",
-        swapDirection,
-      );
+      autoClaimBtcToArkadeSwaps();
       return;
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swap, secret, swapId, swapDirection, isClaiming]);
+  }, [swap, secret, swapId, swapDirection, isClaiming, wasmInitialized]);
 
   // Poll swap status
   useEffect(() => {
