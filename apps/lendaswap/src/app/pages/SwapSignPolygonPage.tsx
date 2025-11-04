@@ -6,7 +6,7 @@ import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { api, type PolygonToArkadeSwapResponse } from "../api";
 
-// ERC20 ABI - only the approve function
+// ERC20 ABI - approve and allowance functions
 const ERC20_ABI = [
   {
     inputs: [
@@ -16,6 +16,16 @@ const ERC20_ABI = [
     name: "approve",
     outputs: [{ name: "", type: "bool" }],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    name: "allowance",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
     type: "function",
   },
 ] as const;
@@ -103,32 +113,59 @@ export function SwapSignPolygonPage() {
       const htlcAddress = swap.polygon_address as `0x${string}`;
       const tokenAddress = swap.source_token_address as `0x${string}`;
 
-      // Parse amounts - assuming USD amount with 6 decimals for USDC/USDT
-      const amountToApprove = BigInt(Math.floor(swap.usd_amount * 1_000_000));
+      // Parse the amount needed for this swap (from the amount_in field)
+      const amountNeeded = BigInt(swap.amount_in);
 
-      console.log("Step 1: Approving HTLC to spend tokens (user pays gas)");
+      console.log("Checking current allowance...");
+      console.log("Amount needed:", amountNeeded.toString());
 
-      // Execute regular approve transaction (user pays gas)
-      const approveTxHash = await walletClient.writeContract({
+      // Check current allowance
+      const currentAllowance = await publicClient.readContract({
         address: tokenAddress,
         abi: ERC20_ABI,
-        functionName: "approve",
-        args: [htlcAddress, amountToApprove],
-        account: address,
+        functionName: "allowance",
+        args: [address, htlcAddress],
       });
 
-      console.log("Approve transaction hash:", approveTxHash);
-      console.log("Waiting for approval transaction to be mined...");
+      console.log("Current allowance:", currentAllowance.toString());
 
-      // Wait for the approve transaction to be confirmed
-      const approveReceipt = await publicClient.waitForTransactionReceipt({
-        hash: approveTxHash,
-      });
+      // Only approve if allowance is insufficient
+      if (currentAllowance < amountNeeded) {
+        console.log(
+          "Step 1: Allowance insufficient, approving max amount (user pays gas)",
+        );
 
-      console.log("Approve transaction confirmed:", approveReceipt.status);
+        // Approve max uint256 to avoid future approvals
+        const maxUint256 = BigInt(
+          "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        );
 
-      if (approveReceipt.status !== "success") {
-        throw new Error("Approve transaction failed");
+        // Execute approve transaction for max amount (user pays gas)
+        const approveTxHash = await walletClient.writeContract({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [htlcAddress, maxUint256],
+          account: address,
+        });
+
+        console.log("Approve transaction hash:", approveTxHash);
+        console.log("Waiting for approval transaction to be mined...");
+
+        // Wait for the approve transaction to be confirmed
+        const approveReceipt = await publicClient.waitForTransactionReceipt({
+          hash: approveTxHash,
+        });
+
+        console.log("Approve transaction confirmed:", approveReceipt.status);
+
+        if (approveReceipt.status !== "success") {
+          throw new Error("Approve transaction failed");
+        }
+      } else {
+        console.log(
+          "Step 1: Allowance sufficient, skipping approval transaction",
+        );
       }
 
       console.log("Step 2: Executing createSwap transaction (user pays gas)");
@@ -165,7 +202,7 @@ export function SwapSignPolygonPage() {
       console.log("CreateSwap tx:", createSwapTxHash);
 
       // Navigate to status page
-      navigate(`/swap/${swapId}/status`);
+      navigate(`/swap/${swapId}/processing`);
     } catch (err) {
       console.error("Transaction error:", err);
       setError(
@@ -201,11 +238,11 @@ export function SwapSignPolygonPage() {
           </div>
 
           <div className="bg-blue-50 p-3 rounded text-sm dark:bg-blue-950">
-            <p className="font-medium">Two Transactions Required</p>
+            <p className="font-medium">Transactions Required</p>
             <p className="text-gray-600 dark:text-gray-400">
-              You'll need to approve two transactions: (1) Approve the HTLC
-              contract to spend your tokens, and (2) Create the swap. You'll pay
-              gas for both.
+              You'll need to sign one or two transactions: (1) Approve the HTLC
+              contract to spend your tokens (if not already approved), and (2)
+              Create the swap. You'll pay gas for each transaction.
             </p>
           </div>
 
