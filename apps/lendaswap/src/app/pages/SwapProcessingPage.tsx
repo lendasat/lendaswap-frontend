@@ -154,7 +154,7 @@ export function SwapProcessingPage() {
       return;
     }
 
-    const autoClaimBtcToArkadeSwaps = async () => {
+    const autoClaimPolygonToArkadeSwaps = async () => {
       if (!swap || !secret || !swapId || !swapDirection) return;
       if (swap.status !== "serverfunded") return;
       if (!wasmInitialized) return;
@@ -214,7 +214,7 @@ export function SwapProcessingPage() {
     };
 
     if (swapDirection === "POLYGON_TO_BTC") {
-      autoClaimBtcToArkadeSwaps();
+      autoClaimPolygonToArkadeSwaps();
       return;
     }
 
