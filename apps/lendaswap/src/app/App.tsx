@@ -171,14 +171,7 @@ function HomePage() {
           : "";
       setUsdAmount(calculatedUsdAmount);
     }
-  }, [
-    exchangeRate,
-    isLoadingPrice,
-    lastFieldEdited,
-    bitcoinAmount,
-    usdAmount,
-    priceUpdate,
-  ]);
+  }, [exchangeRate, isLoadingPrice, lastFieldEdited, bitcoinAmount, usdAmount]);
 
   const handleContinueToAddress = async () => {
     // Create swap and navigate to send bitcoin step
@@ -229,7 +222,7 @@ function HomePage() {
             unilateral_refund_without_receiver_delay:
               swap.unilateral_refund_without_receiver_delay,
             network: swap.network,
-            vhtlc_address: swap.arkade_address,
+            vhtlc_address: swap.htlc_address_arkade,
           }),
         );
 
@@ -246,7 +239,7 @@ function HomePage() {
             unilateral_refund_without_receiver_delay:
               swap.unilateral_refund_without_receiver_delay,
             network: swap.network,
-            vhtlc_address: swap.arkade_address,
+            vhtlc_address: swap.htlc_address_arkade,
             created_at: swap.created_at,
             source_token: swap.source_token,
             target_token: swap.target_token,
@@ -296,7 +289,7 @@ function HomePage() {
             unilateral_refund_without_receiver_delay:
               swap.unilateral_refund_without_receiver_delay,
             network: swap.network,
-            vhtlc_address: swap.arkade_address,
+            vhtlc_address: swap.htlc_address_arkade,
             created_at: swap.created_at,
             source_token: swap.source_token,
             target_token: swap.target_token,
