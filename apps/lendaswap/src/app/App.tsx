@@ -247,6 +247,7 @@ function HomePage() {
               swap.unilateral_refund_without_receiver_delay,
             network: swap.network,
             vhtlc_address: swap.arkade_address,
+            created_at: swap.created_at,
           }),
         );
 
@@ -294,6 +295,7 @@ function HomePage() {
               swap.unilateral_refund_without_receiver_delay,
             network: swap.network,
             vhtlc_address: swap.arkade_address,
+            created_at: swap.created_at,
           }),
         );
 

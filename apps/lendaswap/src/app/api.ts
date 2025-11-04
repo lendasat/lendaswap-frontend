@@ -96,6 +96,9 @@ export interface SwapResponse {
   unilateral_refund_delay: number;
   unilateral_refund_without_receiver_delay: number;
   network: string;
+  created_at: string;
+  source_token: TokenId;
+  target_token: TokenId;
 }
 
 export interface GetSwapResponse {
@@ -114,7 +117,6 @@ export interface GetSwapResponse {
   polygon_address: string;
   onchain_swap_id: string | null; // The actual on-chain swap ID used by the HTLC contract
   fee_sats?: number; // Optional fee in satoshis
-  target_token: TokenId; // The token being received
   // VHTLC parameters for refunding
   sender_pk: string;
   receiver_pk: string;
@@ -132,6 +134,9 @@ export interface GetSwapResponse {
   gelato_user_deadline?: string;
   sats_receive?: number; // For Polygon → Arkade: net sats user will receive
   source_token_address?: string; // ERC20 token address for approve target
+  created_at: string;
+  source_token: TokenId;
+  target_token: TokenId;
 }
 
 // Polygon → Arkade swap types
@@ -168,6 +173,9 @@ export interface PolygonToArkadeSwapResponse {
   gelato_forwarder_address: string;
   gelato_user_deadline: string;
   source_token_address?: string;
+  created_at: string;
+  source_token: TokenId;
+  target_token: TokenId;
 }
 
 export interface GelatoSubmitRequest {
