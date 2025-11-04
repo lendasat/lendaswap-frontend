@@ -131,7 +131,7 @@ export function SwapSendPage() {
   }
 
   const lightningAddress = swapData.ln_invoice || null;
-  const arkadeAddress = swapData.arkade_address || null;
+  const arkadeAddress = swapData.htlc_address_arkade || null;
   const btcRequired = swapData.sats_required / 100_000_000;
   const unifiedAddress = `bitcoin:?arkade=${arkadeAddress}&lightning=${lightningAddress}&amount=${btcRequired}`;
 

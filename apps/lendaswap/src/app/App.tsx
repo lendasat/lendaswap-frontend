@@ -135,7 +135,7 @@ function HomePage() {
   }, [isConnected, connectedAddress]);
 
   // Get price feed from context
-  const { getExchangeRate, isLoadingPrice, priceUpdate } = usePriceFeed();
+  const { getExchangeRate, isLoadingPrice } = usePriceFeed();
 
   const exchangeRate = getExchangeRate(
     sourceAsset,

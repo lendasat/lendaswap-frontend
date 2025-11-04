@@ -88,18 +88,19 @@ export function SwapSuccessPage() {
         setIsLoading(true);
         const swap = await api.getSwap(swapId);
 
-        // Reconstruct SwapResponse from GetSwapResponse
-        const swapResponse: SwapResponse = {
-          id: swap.id,
-          ln_invoice: swap.ln_invoice,
-          arkade_address: swap.arkade_address,
-          sats_required: swap.sats_required,
-          usd_amount: swap.usd_amount,
-          hash_lock: swap.hash_lock,
-        };
-        setSwapData(swapResponse);
+        setSwapData(swap);
         setUsdcAmount(swap.usd_amount.toFixed(2));
-        setReceiveAddress(swap.polygon_address);
+        // FIXME: this needs to be dynamic on wether it is is arkade or polygon swap
+        switch (swap.target_token) {
+          case "btc_lightning":
+          case "btc_arkade":
+            setReceiveAddress(swap.user_address_arkade);
+            break;
+          case "usdc_pol":
+          case "usdt_pol":
+            setReceiveAddress(swap.user_address_polygon);
+            break;
+        }
         setTokenSymbol(getTokenSymbol(swap.target_token));
 
         if (swap.polygon_htlc_claim_txid) {

@@ -5,15 +5,9 @@ import { useEffect, useState } from "react";
 
 const gf = new GiphyFetch(import.meta.env.VITE_GIPHY_API_KEY);
 
-interface SuccessMemeProps {
-  swapDurationSeconds: number | null;
-  usdcAmount: string;
-}
+interface SuccessMemeProps {}
 
-export function SuccessMeme({
-  swapDurationSeconds,
-  usdcAmount,
-}: SuccessMemeProps) {
+export function SuccessMeme({}: SuccessMemeProps) {
   const [gif, setGif] = useState<IGif | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
