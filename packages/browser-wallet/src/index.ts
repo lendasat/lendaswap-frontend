@@ -1,5 +1,6 @@
 import init, {
   refund_vhtlc,
+  claim_vhtlc,
   amounts_for_swap,
   type VhtlcAmounts as WasmVhtlcAmounts,
 } from "../wasm/browser_wallet.js";
@@ -76,4 +77,26 @@ export async function refundVhtlc(
   }
 
   return await refund_vhtlc(arkServerUrl, swapId, refundAddress);
+}
+
+/**
+ * Claim a VHTLC swap.
+ *
+ * @param arkServerUrl - The URL of the Arkade server
+ * @param swapId - The swap ID (UUID)
+ * @param claimAddress - The Arkade address to claim to
+ * @returns The transaction ID of the claim
+ */
+export async function claimVhtlc(
+  arkServerUrl: string,
+  swapId: string,
+  claimAddress: string,
+): Promise<string> {
+  if (!wasmInitPromise) {
+    throw new Error(
+      "Browser wallet not initialized. Call initBrowserWallet() first.",
+    );
+  }
+
+  return await claim_vhtlc(arkServerUrl, swapId, claimAddress);
 }
