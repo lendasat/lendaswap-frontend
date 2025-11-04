@@ -166,11 +166,7 @@ export function SwapProcessingPage() {
       const claimKey = `swap_${swapId}_claim_attempted`;
 
       try {
-        // FIXME: DO NOT HARDCODE URL, use the env file
-        const fetchedAmounts = await getAmountsForSwap(
-          "https://mutinynet.arkade.sh",
-          swapId,
-        );
+        const fetchedAmounts = await getAmountsForSwap(ARK_SERVER_URL, swapId);
         console.log(`Fetched amounts for swap`, fetchedAmounts);
 
         // Check if we've already attempted to claim this swap (persists across refreshes)
