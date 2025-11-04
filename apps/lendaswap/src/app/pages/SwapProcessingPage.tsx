@@ -5,16 +5,47 @@ import { api, type GetSwapResponse, type TokenId } from "../api";
 import { LoadingStep } from "../steps";
 import { isDebugMode } from "../utils/debugMode";
 
+// Swap direction types
+type SwapDirection = "BTC_TO_POLYGON" | "POLYGON_TO_BTC";
+
 // Get display symbol for a token
 function getTokenSymbol(tokenId: TokenId): string {
   switch (tokenId) {
     case "usdc_pol":
       return "USDC";
     case "usdt_pol":
-      return "USDT0";
+      return "USDT";
+    case "btc_arkade":
+      return "BTC";
+    case "btc_lightning":
+      return "BTC";
     default:
       return "USDC";
   }
+}
+
+// Determine swap direction based on source and target tokens
+function getSwapDirection(
+  sourceToken: TokenId,
+  targetToken: TokenId,
+): SwapDirection {
+  // BTC → Polygon (USDC/USDT)
+  if (
+    (sourceToken === "btc_arkade" || sourceToken === "btc_lightning") &&
+    (targetToken === "usdc_pol" || targetToken === "usdt_pol")
+  ) {
+    return "BTC_TO_POLYGON";
+  }
+
+  // Polygon (USDC/USDT) → BTC
+  if (
+    (sourceToken === "usdc_pol" || sourceToken === "usdt_pol") &&
+    (targetToken === "btc_arkade" || targetToken === "btc_lightning")
+  ) {
+    return "POLYGON_TO_BTC";
+  }
+
+  throw Error(`Unsupported token pair ${sourceToken}-${targetToken}`);
 }
 
 export function SwapProcessingPage() {
@@ -25,7 +56,9 @@ export function SwapProcessingPage() {
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const hasClaimedRef = useRef(false);
-  const [isPolygonToArkade, setIsPolygonToArkade] = useState(false);
+  const [swapDirection, setSwapDirection] = useState<SwapDirection | null>(
+    null,
+  );
 
   // Load secret from localStorage
   useEffect(() => {
@@ -49,10 +82,10 @@ export function SwapProcessingPage() {
     }
   }, [swapId]);
 
-  // Automatically claim when swap is serverfunded
+  // Automatically claim when swap is serverfunded (only for BTC → Polygon swaps)
   useEffect(() => {
-    const autoClaim = async () => {
-      if (!swap || !secret || !swapId) return;
+    const autoClaimBtcToPolygonSwaps = async () => {
+      if (!swap || !secret || !swapId || !swapDirection) return;
       if (swap.status !== "serverfunded") return;
 
       // Check if we've already attempted to claim this swap (persists across refreshes)
@@ -98,9 +131,20 @@ export function SwapProcessingPage() {
       }
     };
 
-    autoClaim();
+    if (swapDirection === "BTC_TO_POLYGON") {
+      autoClaimBtcToPolygonSwaps();
+    }
+
+    if (swapDirection === "POLYGON_TO_BTC") {
+      console.warn(
+        "Skipping auto-claim for non BTC → Polygon swap:",
+        swapDirection,
+      );
+      return;
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [swap?.status, secret, swapId]);
+  }, [swap, secret, swapId, swapDirection, isClaiming]);
 
   // Poll swap status
   useEffect(() => {
@@ -126,10 +170,13 @@ export function SwapProcessingPage() {
         const swapData = await api.getSwap(swapId);
         console.log("Polling swap status:", swapData);
 
-        // Detect Polygon → Arkade by checking for create_swap_tx field
-        if ("create_swap_tx" in swapData) {
-          setIsPolygonToArkade(true);
-        }
+        // Determine swap direction from source and target tokens
+        const direction = getSwapDirection(
+          swapData.source_token,
+          swapData.target_token,
+        );
+        setSwapDirection(direction);
+        console.log("Swap direction:", direction);
 
         setSwap(swapData);
 
@@ -172,9 +219,9 @@ export function SwapProcessingPage() {
   });
 
   // Show claiming status when HTLC is funded
-  if (swap.status === "serverfunded" && secret) {
-    // Different UI for Polygon → Arkade swaps
-    if (isPolygonToArkade) {
+  if (swap.status === "serverfunded" && secret && swapDirection) {
+    // Polygon → BTC: Show waiting for BTC UI
+    if (swapDirection === "POLYGON_TO_BTC") {
       return (
         <CardContent className="space-y-6 py-12">
           <LoadingStep
@@ -186,11 +233,10 @@ export function SwapProcessingPage() {
             <div className="from-primary/5 to-card space-y-4 rounded-lg border bg-gradient-to-t p-6">
               <div className="space-y-2 text-center">
                 <h3 className="text-lg font-semibold">
-                  Waiting for BTC on Arkade
+                  The VHTLC has been funded
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  Your transaction has been executed. Waiting for BTC to arrive
-                  in the Arkade VHTLC...
+                  Readming your sats
                 </p>
               </div>
               <div className="bg-yellow-50 p-4 rounded dark:bg-yellow-950">
@@ -208,7 +254,7 @@ export function SwapProcessingPage() {
       );
     }
 
-    // Original UI for BTC → Polygon swaps
+    // BTC → Polygon: Show auto-claim UI
     return (
       <CardContent className="space-y-6 py-12">
         <LoadingStep

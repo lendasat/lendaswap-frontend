@@ -45,16 +45,7 @@ export function SwapSendPage() {
         setIsLoading(true);
         const swap = await api.getSwap(swapId);
 
-        // Reconstruct SwapResponse from GetSwapResponse
-        const swapResponse: SwapResponse = {
-          id: swap.id,
-          ln_invoice: swap.ln_invoice,
-          arkade_address: swap.arkade_address,
-          sats_required: swap.sats_required,
-          usd_amount: swap.usd_amount,
-          hash_lock: swap.hash_lock,
-        };
-        setSwapData(swapResponse);
+        setSwapData(swap);
         setUsdcAmount(swap.usd_amount.toFixed(2));
         setTokenSymbol(getTokenSymbol(swap.target_token));
 
