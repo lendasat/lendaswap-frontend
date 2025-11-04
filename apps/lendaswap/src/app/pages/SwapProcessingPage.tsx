@@ -306,16 +306,7 @@ export function SwapProcessingPage() {
                   The VHTLC has been funded
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  Readming your sats
-                </p>
-              </div>
-              <div className="bg-yellow-50 p-4 rounded dark:bg-yellow-950">
-                <p className="font-medium text-sm">
-                  FIXME: Client-side BTC Claiming
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Need to implement Arkade VHTLC claiming logic here. Similar to
-                  the manual refund flow but for claiming received BTC.
+                  Redeeming your sats
                 </p>
               </div>
             </div>
