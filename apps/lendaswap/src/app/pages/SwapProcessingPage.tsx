@@ -182,12 +182,7 @@ export function SwapProcessingPage() {
         setIsClaiming(true);
         setClaimError(null);
 
-        const cleanSecret = secret.startsWith("0x") ? secret.slice(2) : secret;
-
-        console.log("Auto-claiming with parameters:", {
-          swapId,
-          secret: cleanSecret,
-        });
+        console.log("Auto-claiming with parameters:", { swapId });
 
         // Mark that we've attempted to claim BEFORE making the API call
         localStorage.setItem(claimKey, Date.now().toString());
