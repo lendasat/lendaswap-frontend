@@ -248,6 +248,8 @@ function HomePage() {
             network: swap.network,
             vhtlc_address: swap.arkade_address,
             created_at: swap.created_at,
+            source_token: swap.source_token,
+            target_token: swap.target_token,
           }),
         );
 
@@ -296,6 +298,8 @@ function HomePage() {
             network: swap.network,
             vhtlc_address: swap.arkade_address,
             created_at: swap.created_at,
+            source_token: swap.source_token,
+            target_token: swap.target_token,
           }),
         );
 
