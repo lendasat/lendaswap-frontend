@@ -110,7 +110,7 @@ export function SwapSignPolygonPage() {
     setError("");
 
     try {
-      const htlcAddress = swap.polygon_address as `0x${string}`;
+      const htlcAddress = swap.htlc_address_polygon as `0x${string}`;
       const tokenAddress = swap.source_token_address as `0x${string}`;
 
       // Parse the amount needed for this swap (from the amount_in field)
