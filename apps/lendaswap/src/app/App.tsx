@@ -274,6 +274,8 @@ function HomePage() {
           hash_lock,
           receiver_pk,
           user_polygon_address: userPolygonAddress,
+          // FIXME: not needed
+          user_polygon_address_nonce: 0,
         });
 
         // Store swap data (needed for claiming BTC later)

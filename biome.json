@@ -41,8 +41,7 @@
   "css": {
     "parser": {
       "cssModules": true,
-      "allowWrongLineComments": true,
-      "tailwindDirectives": true
+      "allowWrongLineComments": true
     }
   },
   "assist": {

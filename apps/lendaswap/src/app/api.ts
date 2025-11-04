@@ -143,6 +143,7 @@ export interface PolygonToArkadeSwapRequest {
   receiver_pk: string;
   user_polygon_address: string;
   referral_code?: string;
+  user_polygon_address_nonce: number;
 }
 
 export interface PolygonToArkadeSwapResponse {
@@ -165,8 +166,8 @@ export interface PolygonToArkadeSwapResponse {
   network: string;
   // Gelato signing parameters
   gelato_forwarder_address: string;
-  gelato_user_nonce: string;
   gelato_user_deadline: string;
+  source_token_address?: string;
 }
 
 export interface GelatoSubmitRequest {

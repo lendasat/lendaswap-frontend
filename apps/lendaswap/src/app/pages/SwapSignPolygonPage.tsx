@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import { useWalletClient, useAccount } from "wagmi";
+import { useWalletClient, useAccount, usePublicClient } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { api, type PolygonToArkadeSwapResponse } from "../api";
@@ -11,11 +11,27 @@ export function SwapSignPolygonPage() {
   const navigate = useNavigate();
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
 
   const [swap, setSwap] = useState<PolygonToArkadeSwapResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState("");
+
+  const [userPolygonNonce, setUserPolygonNonce] = useState(0);
+
+  useEffect(() => {
+    async function fetchNonce() {
+      if (address && publicClient) {
+        const count = await publicClient.getTransactionCount({
+          address: address,
+        });
+        setUserPolygonNonce(count);
+      }
+    }
+
+    fetchNonce();
+  }, [address, publicClient]);
 
   // Fetch swap data
   useEffect(() => {
@@ -60,7 +76,7 @@ export function SwapSignPolygonPage() {
       setError("");
 
       const chainId = 137; // Polygon mainnet
-      const userNonce = BigInt(swap.gelato_user_nonce);
+      const userNonce = BigInt(userPolygonNonce);
       const userDeadline = BigInt(swap.gelato_user_deadline);
 
       let approveSignature: string | null = null;
@@ -138,7 +154,7 @@ export function SwapSignPolygonPage() {
       await api.submitToGelato(swapId, {
         approve_signature: approveSignature,
         create_swap_signature: createSwapSignature,
-        user_nonce: swap.gelato_user_nonce,
+        user_nonce: userPolygonNonce.toString(),
         user_deadline: swap.gelato_user_deadline,
       });
 
