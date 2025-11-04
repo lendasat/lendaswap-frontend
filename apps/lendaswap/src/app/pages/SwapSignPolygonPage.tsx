@@ -114,7 +114,7 @@ export function SwapSignPolygonPage() {
       const tokenAddress = swap.source_token_address as `0x${string}`;
 
       // Parse the amount needed for this swap (from the amount_in field)
-      const amountNeeded = BigInt(swap.amount_in);
+      const amountNeeded = BigInt(swap.usd_amount);
 
       console.log("Checking current allowance...");
       console.log("Amount needed:", amountNeeded.toString());
@@ -158,6 +158,7 @@ export function SwapSignPolygonPage() {
         });
 
         console.log("Approve transaction confirmed:", approveReceipt.status);
+        console.log("Approve tx:", approveTxHash);
 
         if (approveReceipt.status !== "success") {
           throw new Error("Approve transaction failed");
@@ -198,7 +199,6 @@ export function SwapSignPolygonPage() {
       }
 
       console.log("Both transactions completed successfully!");
-      console.log("Approve tx:", approveTxHash);
       console.log("CreateSwap tx:", createSwapTxHash);
 
       // Navigate to status page
