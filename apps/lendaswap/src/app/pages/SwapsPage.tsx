@@ -1,6 +1,7 @@
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { format, parseISO, isValid } from "date-fns";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
@@ -30,6 +31,7 @@ interface SwapData {
   unilateral_refund_without_receiver_delay: number;
   network: string;
   vhtlc_address: string;
+  created_at?: string;
 }
 
 interface StoredSwap {
@@ -49,6 +51,20 @@ export function SwapsPage() {
       setTimeout(() => setCopiedId(null), 2000);
     } catch (error) {
       console.error("Failed to copy swap ID:", error);
+    }
+  };
+
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return "Unknown";
+
+    try {
+      const date = parseISO(dateString);
+      if (!isValid(date)) return "Unknown";
+
+      // Format as: Jan 15, 2025 10:30 AM
+      return format(date, "MMM d, yyyy h:mm a");
+    } catch {
+      return "Unknown";
     }
   };
 
@@ -85,6 +101,23 @@ export function SwapsPage() {
         }
       }
 
+      // Sort by creation date (newest first), with Unknown dates at the end
+      swapList.sort((a, b) => {
+        const dateA = a.data.created_at ? parseISO(a.data.created_at) : null;
+        const dateB = b.data.created_at ? parseISO(b.data.created_at) : null;
+
+        const isValidA = dateA && isValid(dateA);
+        const isValidB = dateB && isValid(dateB);
+
+        // If both dates are invalid/missing, maintain order
+        if (!isValidA && !isValidB) return 0;
+        // Put invalid/missing dates at the end
+        if (!isValidA) return 1;
+        if (!isValidB) return -1;
+        // Sort by date descending (newest first)
+        return dateB.getTime() - dateA.getTime();
+      });
+
       setSwaps(swapList);
     };
 
@@ -113,6 +146,7 @@ export function SwapsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Created</TableHead>
                     <TableHead>Swap ID</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -120,12 +154,16 @@ export function SwapsPage() {
                 <TableBody>
                   {swaps.map((swap) => (
                     <TableRow key={swap.id}>
+                      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        {formatDate(swap.data.created_at)}
+                      </TableCell>
                       <TableCell className="font-mono text-sm">
                         <div className="flex items-center gap-2">
                           <span>
                             {swap.id.slice(0, 8)}...{swap.id.slice(-8)}
                           </span>
                           <button
+                            type={"button"}
                             onClick={() => handleCopyId(swap.id)}
                             className="inline-flex items-center justify-center rounded-md p-1 hover:bg-accent hover:text-accent-foreground transition-colors"
                             title="Copy full swap ID"
