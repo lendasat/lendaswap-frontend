@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { api, type SwapResponse, type TokenId } from "../api";
 import { SendBitcoinStep } from "../steps";
 import { isDebugMode, mockSwapData } from "../utils/debugMode";

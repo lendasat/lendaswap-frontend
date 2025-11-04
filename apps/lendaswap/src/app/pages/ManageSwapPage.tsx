@@ -1,23 +1,23 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "#/components/ui/card";
-import { Button } from "#/components/ui/button";
-import { Input } from "#/components/ui/input";
-import { Label } from "#/components/ui/label";
-import { Alert, AlertDescription } from "#/components/ui/alert";
-import { Loader2 } from "lucide-react";
-import {
+  getAmountsForSwap,
   initBrowserWallet,
   refundVhtlc,
-  getAmountsForSwap,
   type VhtlcAmounts,
 } from "@frontend/browser-wallet";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router";
+import { Alert, AlertDescription } from "#/components/ui/alert";
+import { Button } from "#/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "#/components/ui/card";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";

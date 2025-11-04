@@ -9,7 +9,6 @@ import {
 } from "react-router";
 import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
-import { useAccount } from "wagmi";
 import {
   Check,
   Loader,
@@ -20,6 +19,7 @@ import {
   Wrench,
   Zap,
 } from "lucide-react";
+import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import {
@@ -32,11 +32,13 @@ import {
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { api, type TokenId } from "./api";
+import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
+import { usePriceFeed } from "./PriceFeedContext";
 import {
   ManageSwapPage,
   SwapProcessingPage,
@@ -45,12 +47,10 @@ import {
   SwapSuccessPage,
   SwapsPage,
 } from "./pages";
+import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
-import { usePriceFeed } from "./PriceFeedContext";
-import { AddressInput } from "./components/AddressInput";
-import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
 
 // Generate a random 32-byte secret
 function generateSecret(): string {

@@ -1,11 +1,11 @@
+import { LendasatClient } from "@lendasat/lendasat-wallet-bridge";
 import {
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useState,
-  ReactNode,
 } from "react";
-import { LendasatClient } from "@lendasat/lendasat-wallet-bridge";
 
 interface WalletBridgeContextType {
   client: LendasatClient | null;

@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { CardContent } from "#/components/ui/card";
 import { api, type GetSwapResponse, type TokenId } from "../api";
 import { LoadingStep } from "../steps";
 import { isDebugMode } from "../utils/debugMode";
-import { CardContent } from "#/components/ui/card";
 
 // Get display symbol for a token
 function getTokenSymbol(tokenId: TokenId): string {

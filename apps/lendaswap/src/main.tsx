@@ -5,12 +5,12 @@ import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
-import { createConfig, WagmiProvider } from "wagmi";
 import { polygon } from "viem/chains";
-import { WalletBridgeProvider } from "./app/WalletBridgeContext";
+import { createConfig, WagmiProvider } from "wagmi";
 import App from "./app/App";
-import { ThemeProvider } from "./app/utils/theme-provider";
 import { PriceFeedProvider } from "./app/PriceFeedContext";
+import { ThemeProvider } from "./app/utils/theme-provider";
+import { WalletBridgeProvider } from "./app/WalletBridgeContext";
 
 const config = createConfig(
   getDefaultConfig({

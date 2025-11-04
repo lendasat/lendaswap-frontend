@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { GiphyFetch } from "@giphy/js-fetch-api";
-import { Gif } from "@giphy/react-components";
 import type { IGif } from "@giphy/js-types";
+import { Gif } from "@giphy/react-components";
+import { useEffect, useState } from "react";
 
 const gf = new GiphyFetch(import.meta.env.VITE_GIPHY_API_KEY);
 

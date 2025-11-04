@@ -1,9 +1,9 @@
-import { CheckCheck, Copy, Wallet, Loader2 } from "lucide-react";
+import { CheckCheck, Copy, Loader2, Wallet } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { Button } from "#/components/ui/button";
 import { CardContent } from "#/components/ui/card";
-import { QRCodeSVG } from "qrcode.react";
-import { useNavigate, useParams } from "react-router";
-import { useState } from "react";
 import type { SwapResponse } from "../api";
 import { useWalletBridge } from "../WalletBridgeContext";
 

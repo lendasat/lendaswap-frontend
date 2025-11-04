@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { CardContent } from "#/components/ui/card";
 import { Button } from "#/components/ui/button";
+import { CardContent } from "#/components/ui/card";
 import { type SwapStatus } from "../api";
 
 interface LoadingStepProps {

@@ -1,4 +1,4 @@
 export { EnterAmountStep } from "./EnterAmountStep";
-export { SendBitcoinStep } from "./SendBitcoinStep";
 export { LoadingStep } from "./LoadingStep";
+export { SendBitcoinStep } from "./SendBitcoinStep";
 export { SuccessStep } from "./SuccessStep";

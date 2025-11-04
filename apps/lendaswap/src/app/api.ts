@@ -171,10 +171,14 @@ export interface PolygonToArkadeSwapResponse {
 }
 
 export interface GelatoSubmitRequest {
-  approve_signature: string | null;
   create_swap_signature: string;
   user_nonce: string;
   user_deadline: string;
+}
+
+export interface GelatoSubmitResponse {
+  create_swap_task_id: string;
+  message: string;
 }
 
 export const api = {
@@ -282,7 +286,7 @@ export const api = {
   async submitToGelato(
     swapId: string,
     request: GelatoSubmitRequest,
-  ): Promise<void> {
+  ): Promise<GelatoSubmitResponse> {
     const response = await fetch(
       `${API_BASE_URL}/swap/${swapId}/gelato-submit`,
       {
@@ -300,6 +304,8 @@ export const api = {
         error.error || `Failed to submit to Gelato: ${response.statusText}`,
       );
     }
+
+    return response.json();
   },
 };
 

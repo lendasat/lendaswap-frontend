@@ -1,7 +1,7 @@
-import { useNavigate, useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
-import { isDebugMode, DEBUG_SWAP_ID } from "../utils/debugMode";
+import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 
 export function DebugNavigation() {
   const navigate = useNavigate();

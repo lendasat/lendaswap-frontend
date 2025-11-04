@@ -1,7 +1,7 @@
 import { Check, CheckCheck, Copy, ExternalLink, Twitter } from "lucide-react";
+import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
 import { CardContent } from "#/components/ui/card";
-import { useNavigate } from "react-router";
 import type { SwapResponse } from "../api";
 import { SuccessMeme } from "../components/SuccessMeme";
 

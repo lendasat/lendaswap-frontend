@@ -1,10 +1,24 @@
+import { Loader } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
-import { useWalletClient, useAccount, usePublicClient } from "wagmi";
+import { useNavigate, useParams } from "react-router";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { api, type PolygonToArkadeSwapResponse } from "../api";
-import { Loader } from "lucide-react";
+
+// ERC20 ABI - only the approve function
+const ERC20_ABI = [
+  {
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
 
 export function SwapSignPolygonPage() {
   const { swapId } = useParams<{ swapId: string }>();
@@ -17,21 +31,6 @@ export function SwapSignPolygonPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState("");
-
-  const [userPolygonNonce, setUserPolygonNonce] = useState(0);
-
-  useEffect(() => {
-    async function fetchNonce() {
-      if (address && publicClient) {
-        const count = await publicClient.getTransactionCount({
-          address: address,
-        });
-        setUserPolygonNonce(count);
-      }
-    }
-
-    fetchNonce();
-  }, [address, publicClient]);
 
   // Fetch swap data
   useEffect(() => {
@@ -59,122 +58,6 @@ export function SwapSignPolygonPage() {
 
     fetchSwap();
   }, [swapId]);
-
-  const handleSign = async () => {
-    if (!swap || !walletClient || !address) {
-      setError("Wallet not connected");
-      return;
-    }
-
-    if (!swapId) {
-      setError("No swap ID");
-      return;
-    }
-
-    try {
-      setIsSigning(true);
-      setError("");
-
-      const chainId = 137; // Polygon mainnet
-      const userNonce = BigInt(userPolygonNonce);
-      const userDeadline = BigInt(swap.gelato_user_deadline);
-
-      let approveSignature: string | null = null;
-
-      // Sign approve transaction if needed
-      if (swap.approve_tx) {
-        const approveTypedData = {
-          domain: {
-            name: "GelatoRelay1BalanceERC2771",
-            version: "1",
-            chainId,
-            verifyingContract: swap.gelato_forwarder_address as `0x${string}`,
-          },
-          types: {
-            SponsoredCallERC2771: [
-              { name: "chainId", type: "uint256" },
-              { name: "target", type: "address" },
-              { name: "data", type: "bytes" },
-              { name: "user", type: "address" },
-              { name: "userNonce", type: "uint256" },
-              { name: "userDeadline", type: "uint256" },
-            ],
-          },
-          primaryType: "SponsoredCallERC2771" as const,
-          message: {
-            chainId: BigInt(chainId),
-            target: swap.source_token_address as `0x${string}`, // Use ERC20 token address for approve
-            data: swap.approve_tx as `0x${string}`,
-            user: address,
-            userNonce,
-            userDeadline,
-          },
-        };
-
-        approveSignature = await walletClient.signTypedData(approveTypedData);
-      }
-
-      // Sign createSwap transaction
-      const createSwapNonce = approveSignature
-        ? userNonce + BigInt(1)
-        : userNonce;
-
-      const createSwapTypedData = {
-        domain: {
-          name: "GelatoRelay1BalanceERC2771",
-          version: "1",
-          chainId,
-          verifyingContract: swap.gelato_forwarder_address as `0x${string}`,
-        },
-        types: {
-          SponsoredCallERC2771: [
-            { name: "chainId", type: "uint256" },
-            { name: "target", type: "address" },
-            { name: "data", type: "bytes" },
-            { name: "user", type: "address" },
-            { name: "userNonce", type: "uint256" },
-            { name: "userDeadline", type: "uint256" },
-          ],
-        },
-        primaryType: "SponsoredCallERC2771" as const,
-        message: {
-          chainId: BigInt(chainId),
-          target: swap.polygon_address as `0x${string}`,
-          data: swap.create_swap_tx as `0x${string}`,
-          user: address,
-          userNonce: createSwapNonce,
-          userDeadline,
-        },
-      };
-
-      const createSwapSignature =
-        await walletClient.signTypedData(createSwapTypedData);
-
-      // Submit signatures to backend
-      await api.submitToGelato(swapId, {
-        approve_signature: approveSignature,
-        create_swap_signature: createSwapSignature,
-        user_nonce: userPolygonNonce.toString(),
-        user_deadline: swap.gelato_user_deadline,
-      });
-
-      // Navigate to processing page
-      navigate(`/swap/${swapId}/processing`);
-    } catch (err) {
-      console.error("Failed to sign transaction:", err);
-
-      // Handle user rejection
-      if (err instanceof Error && err.message.includes("User rejected")) {
-        setError("Transaction signature was rejected");
-      } else {
-        setError(
-          err instanceof Error ? err.message : "Failed to sign transaction",
-        );
-      }
-    } finally {
-      setIsSigning(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -207,11 +90,97 @@ export function SwapSignPolygonPage() {
     return <div className="p-8 text-center">Swap not found</div>;
   }
 
+  const handleSign = async () => {
+    if (!walletClient || !address || !publicClient) {
+      setError("Please connect your wallet");
+      return;
+    }
+
+    setIsSigning(true);
+    setError("");
+
+    try {
+      const htlcAddress = swap.polygon_address as `0x${string}`;
+      const tokenAddress = swap.source_token_address as `0x${string}`;
+
+      // Parse amounts - assuming USD amount with 6 decimals for USDC/USDT
+      const amountToApprove = BigInt(Math.floor(swap.usd_amount * 1_000_000));
+
+      console.log("Step 1: Approving HTLC to spend tokens (user pays gas)");
+
+      // Execute regular approve transaction (user pays gas)
+      const approveTxHash = await walletClient.writeContract({
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [htlcAddress, amountToApprove],
+        account: address,
+      });
+
+      console.log("Approve transaction hash:", approveTxHash);
+      console.log("Waiting for approval transaction to be mined...");
+
+      // Wait for the approve transaction to be confirmed
+      const approveReceipt = await publicClient.waitForTransactionReceipt({
+        hash: approveTxHash,
+      });
+
+      console.log("Approve transaction confirmed:", approveReceipt.status);
+
+      if (approveReceipt.status !== "success") {
+        throw new Error("Approve transaction failed");
+      }
+
+      console.log("Step 2: Executing createSwap transaction (user pays gas)");
+
+      // Parse create_swap_tx calldata from swap data
+      const createSwapCalldata = swap.create_swap_tx as `0x${string}`;
+
+      // Send createSwap transaction directly (user pays gas)
+      const createSwapTxHash = await walletClient.sendTransaction({
+        to: htlcAddress,
+        data: createSwapCalldata,
+        account: address,
+      });
+
+      console.log("CreateSwap transaction hash:", createSwapTxHash);
+      console.log("Waiting for createSwap transaction to be mined...");
+
+      // Wait for the createSwap transaction to be confirmed
+      const createSwapReceipt = await publicClient.waitForTransactionReceipt({
+        hash: createSwapTxHash,
+      });
+
+      console.log(
+        "CreateSwap transaction confirmed:",
+        createSwapReceipt.status,
+      );
+
+      if (createSwapReceipt.status !== "success") {
+        throw new Error("CreateSwap transaction failed");
+      }
+
+      console.log("Both transactions completed successfully!");
+      console.log("Approve tx:", approveTxHash);
+      console.log("CreateSwap tx:", createSwapTxHash);
+
+      // Navigate to status page
+      navigate(`/swap/${swapId}/status`);
+    } catch (err) {
+      console.error("Transaction error:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to execute transaction",
+      );
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-md mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Sign Polygon Transaction</CardTitle>
+          <CardTitle>Execute Swap on Polygon</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -232,10 +201,11 @@ export function SwapSignPolygonPage() {
           </div>
 
           <div className="bg-blue-50 p-3 rounded text-sm dark:bg-blue-950">
-            <p className="font-medium">Gasless Transaction</p>
+            <p className="font-medium">Two Transactions Required</p>
             <p className="text-gray-600 dark:text-gray-400">
-              This transaction will be executed by Gelato Relay. You only need
-              to sign, no gas fees required.
+              You'll need to approve two transactions: (1) Approve the HTLC
+              contract to spend your tokens, and (2) Create the swap. You'll pay
+              gas for both.
             </p>
           </div>
 
@@ -253,10 +223,10 @@ export function SwapSignPolygonPage() {
             {isSigning ? (
               <>
                 <Loader className="animate-spin h-4 w-4 mr-2" />
-                Signing...
+                Processing Transactions...
               </>
             ) : (
-              "Sign Transaction"
+              "Execute Swap"
             )}
           </Button>
 

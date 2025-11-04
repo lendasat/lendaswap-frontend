@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
 import confetti from "canvas-confetti";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { api, type SwapResponse, type TokenId } from "../api";
 import { SuccessStep } from "../steps";
 import {
   isDebugMode,
-  mockSwapData,
   mockPolygonAddress,
+  mockSwapData,
   mockTxId,
 } from "../utils/debugMode";
 

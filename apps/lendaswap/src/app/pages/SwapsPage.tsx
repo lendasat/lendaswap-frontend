@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { Check, Copy } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { Alert, AlertDescription } from "#/components/ui/alert";
+import { Button } from "#/components/ui/button";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
 } from "#/components/ui/card";
-import { Button } from "#/components/ui/button";
-import { Alert, AlertDescription } from "#/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -17,7 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "#/components/ui/table";
-import { Copy, Check } from "lucide-react";
 
 interface SwapData {
   secret: string;
