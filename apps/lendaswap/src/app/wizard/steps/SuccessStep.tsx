@@ -68,7 +68,7 @@ export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
   };
 
   return (
-    <div className="py-12">
+    <div className="py-2">
       <div className="flex flex-col items-center space-y-6">
         {/* Success Icon */}
         <div className="bg-foreground flex h-16 w-16 items-center justify-center rounded-full">
@@ -123,29 +123,6 @@ export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
 
         {/* Transaction Details */}
         <div className="bg-muted/50 w-full max-w-md space-y-3 rounded-lg p-4">
-          <h4 className="mb-3 text-sm font-medium">Transaction Details</h4>
-          {swapData.id && (
-            <div className="border-border flex flex-col gap-2 border-b pb-2 text-sm">
-              <span className="text-muted-foreground">Swap ID</span>
-              <div className="flex items-center gap-2">
-                <span className="flex-1 break-all font-mono text-xs">
-                  {swapData.id}
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => handleCopyAddress(swapData.id)}
-                  className="h-8 w-8 shrink-0"
-                >
-                  {copiedAddress === swapData.id ? (
-                    <CheckCheck className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Amount Sent</span>
             <span className="font-medium">
