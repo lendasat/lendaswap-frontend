@@ -1,2 +1,2 @@
-export { ConfirmingDepositStep } from "./ConfirmingDepositStep";
-export { SuccessStep } from "./SuccessStep";
+export {ConfirmingDepositStep} from "./ConfirmingDepositStep";
+export {BtcToPolygonSuccessStep} from "./BtcToPolygonSuccessStep";
