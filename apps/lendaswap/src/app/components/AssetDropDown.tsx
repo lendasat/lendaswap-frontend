@@ -242,7 +242,7 @@ export function AssetDropDown({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-[var(--radix-dropdown-menu-trigger-width)] p-2"
+        className="w-64 md:w-[var(--radix-dropdown-menu-trigger-width)] p-2"
         align="start"
       >
         {filteredAssets.map((asset) => (
