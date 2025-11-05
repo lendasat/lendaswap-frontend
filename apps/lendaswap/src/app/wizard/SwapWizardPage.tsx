@@ -1,6 +1,6 @@
-import {useEffect, useRef, useState} from "react";
-import {useNavigate, useParams} from "react-router";
-import {Card, CardContent} from "#/components/ui/card";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { Card, CardContent } from "#/components/ui/card";
 import {
   api,
   getTokenSymbol,
@@ -8,15 +8,15 @@ import {
   TokenId,
   GetSwapResponse,
 } from "../api";
-import {WizardSteps} from "./WizardSteps";
-import {useAsyncRetry} from "react-use";
-import {SendBitcoinStep} from "../steps";
+import { WizardSteps } from "./WizardSteps";
+import { useAsyncRetry } from "react-use";
+import { SendBitcoinStep } from "../steps";
 import {
   SwapProcessingStep,
   BtcToPolygonSuccessStep,
   PolygonDepositStep,
 } from "./steps";
-import {AlertCircle} from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
@@ -84,7 +84,7 @@ function determineStepFromStatus(
 }
 
 export function SwapWizardPage() {
-  const {swapId} = useParams<{ swapId: string }>();
+  const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
   const lastStatusRef = useRef<SwapStatus | null>(null);
   const [displaySwapData, setDisplaySwapData] =
@@ -97,7 +97,7 @@ export function SwapWizardPage() {
     error,
   } = useAsyncRetry(async () => {
     if (!swapId) {
-      navigate("/", {replace: true});
+      navigate("/", { replace: true });
       return;
     }
     return await api.getSwap(swapId);
@@ -222,7 +222,7 @@ export function SwapWizardPage() {
   return (
     <div className="space-y-6">
       {/* Wizard Steps Navigation */}
-      <WizardSteps steps={steps}/>
+      <WizardSteps steps={steps} />
 
       {/* Step Content Card */}
       <Card className="border-0 shadow-none">
@@ -232,7 +232,7 @@ export function SwapWizardPage() {
             <Card className="border-destructive/50 bg-destructive/10">
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className="h-6 w-6 text-destructive"/>
+                  <AlertCircle className="h-6 w-6 text-destructive" />
                   <h3 className="text-xl font-semibold text-destructive">
                     Failed to Load Swap
                   </h3>
@@ -259,7 +259,7 @@ export function SwapWizardPage() {
           {/* Loading State */}
           {isLoading && !displaySwapData && (
             <div className="flex items-center justify-center py-12">
-              <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4"/>
+              <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
             </div>
           )}
 
@@ -280,7 +280,7 @@ export function SwapWizardPage() {
 
               {currentStep === "user-deposit" &&
                 swapDirection === "polygon-to-btc" && (
-                  <PolygonDepositStep swapData={displaySwapData}/>
+                  <PolygonDepositStep swapData={displaySwapData} />
                 )}
 
               {currentStep === "server-deposit" && (
@@ -291,7 +291,7 @@ export function SwapWizardPage() {
                     swap...
                   </p>
                   <div className="flex items-center justify-center py-12">
-                    <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4"/>
+                    <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
                   </div>
                 </div>
               )}
@@ -305,7 +305,7 @@ export function SwapWizardPage() {
 
               {currentStep === "success" &&
                 swapDirection === "btc-to-polygon" && (
-                  <BtcToPolygonSuccessStep swapData={displaySwapData}/>
+                  <BtcToPolygonSuccessStep swapData={displaySwapData} />
                 )}
 
               {currentStep === "expired" && (
