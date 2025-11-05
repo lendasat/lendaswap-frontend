@@ -19,9 +19,9 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
     .join(" ");
 
   return (
-    <div className={cn("w-full py-6", className)}>
+    <div className={cn("w-full", className)}>
       <div
-        className="grid items-center gap-2"
+        className="grid items-center gap-3"
         style={{ gridTemplateColumns: gridTemplate }}
       >
         {steps.map((step, index) => {
@@ -36,28 +36,35 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
               <div
                 key={index}
                 className={cn(
-                  "rounded-full border-2 px-3 py-2 text-center text-xs font-medium transition-all uppercase tracking-wide whitespace-nowrap",
+                  "relative rounded-xl border px-4 py-3 text-center text-xs font-semibold transition-all uppercase tracking-wider whitespace-nowrap overflow-hidden",
                   {
-                    "border-primary/20 bg-primary/10 text-primary": isCompleted,
-                    "border-primary bg-primary text-primary-foreground":
+                    "border-primary/30 bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-lg shadow-primary/20":
+                      isCompleted,
+                    "border-primary bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl shadow-primary/30 scale-105":
                       isCurrent,
-                    "border-muted bg-muted/50 text-muted-foreground":
+                    "border-border/50 bg-gradient-to-br from-muted/30 to-muted/20 text-muted-foreground":
                       isUpcoming,
                   },
                 )}
               >
-                {isCompleted && step.labelCompleted
-                  ? step.labelCompleted
-                  : step.label}
+                {isCurrent && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                )}
+                <div className="relative">
+                  {isCompleted && step.labelCompleted
+                    ? step.labelCompleted
+                    : step.label}
+                </div>
               </div>
 
               {/* Connector Line */}
               {!isLast && (
                 <div
                   key={`connector-${step.id}`}
-                  className={cn("h-0.5 w-8 transition-all", {
-                    "bg-primary/30": isCompleted,
-                    "bg-muted": !isCompleted,
+                  className={cn("h-[2px] w-12 transition-all rounded-full", {
+                    "bg-gradient-to-r from-primary/50 to-primary/30":
+                      isCompleted,
+                    "bg-border/30": !isCompleted,
                   })}
                 />
               )}

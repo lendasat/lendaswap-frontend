@@ -216,132 +216,149 @@ export function SwapWizardPage() {
   const steps = buildSteps();
 
   return (
-    <div className="space-y-6">
-      {/* Wizard Steps Navigation */}
-      <WizardSteps steps={steps} />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-6">
+      <div className="mx-auto max-w-3xl space-y-8">
+        {/* Swap ID Header */}
+        {displaySwapData && (
+          <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm px-4 py-3 flex items-center gap-3">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Swap ID:
+            </p>
+            <code className="text-xs font-mono text-foreground flex-1">
+              {displaySwapData.id}
+            </code>
+            <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+          </div>
+        )}
 
-      {/* Step Content Card */}
-      <Card className="border-0 shadow-none">
-        <CardContent className="space-y-6 p-0">
-          {/* Error State */}
-          {error && (
-            <Card className="border-destructive/50 bg-destructive/10">
-              <CardContent className="space-y-4 p-6">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-6 w-6 text-destructive" />
-                  <h3 className="text-xl font-semibold text-destructive">
-                    Failed to Load Swap
-                  </h3>
-                </div>
-                <p className="text-muted-foreground">{error.message}</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => retry()}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                  >
-                    Retry
-                  </button>
-                  <button
-                    onClick={() => navigate("/")}
-                    className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
-                  >
-                    Go Home
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Step Content Card */}
+        <Card className="border-border/50 shadow-xl backdrop-blur-sm bg-card/80">
+          <CardContent className="space-y-6 p-8">
+            {/* Error State */}
+            {error && (
+              <Card className="border-destructive/50 bg-destructive/10">
+                <CardContent className="space-y-4 p-6">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-6 w-6 text-destructive" />
+                    <h3 className="text-xl font-semibold text-destructive">
+                      Failed to Load Swap
+                    </h3>
+                  </div>
+                  <p className="text-muted-foreground">{error.message}</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => retry()}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      Retry
+                    </button>
+                    <button
+                      onClick={() => navigate("/")}
+                      className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+                    >
+                      Go Home
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Loading State */}
-          {isLoading && !displaySwapData && (
-            <div className="flex items-center justify-center py-12">
-              <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
-            </div>
-          )}
+            {/* Loading State */}
+            {isLoading && !displaySwapData && (
+              <div className="flex items-center justify-center py-12">
+                <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
+              </div>
+            )}
 
-          {/* Step-specific content */}
-          {displaySwapData && !error && (
-            <>
-              {currentStep === "user-deposit" &&
-                swapDirection === "btc-to-polygon" && (
-                  <SendBitcoinStep
-                    arkadeAddress={displaySwapData.htlc_address_arkade}
-                    lightningAddress={displaySwapData.ln_invoice}
-                    unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${displaySwapData.sats_required / 100_000_000}`}
+            {/* Step-specific content */}
+            {displaySwapData && !error && (
+              <>
+                {currentStep === "user-deposit" &&
+                  swapDirection === "btc-to-polygon" && (
+                    <SendBitcoinStep
+                      arkadeAddress={displaySwapData.htlc_address_arkade}
+                      lightningAddress={displaySwapData.ln_invoice}
+                      unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${displaySwapData.sats_required / 100_000_000}`}
+                      swapData={displaySwapData}
+                      usdcAmount={displaySwapData.usd_amount.toFixed(2)}
+                      tokenSymbol={getTokenSymbol(displaySwapData.target_token)}
+                    />
+                  )}
+
+                {currentStep === "user-deposit" &&
+                  swapDirection === "polygon-to-btc" && (
+                    <PolygonDepositStep swapData={displaySwapData} />
+                  )}
+
+                {currentStep === "server-deposit" && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold">Processing Swap</h3>
+                    <p className="text-muted-foreground">
+                      Please wait while we confirm your deposit and process the
+                      swap...
+                    </p>
+                    <div className="flex items-center justify-center py-12">
+                      <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+                    </div>
+                  </div>
+                )}
+
+                {swapDirection && currentStep === "server-depositing" && (
+                  <SwapProcessingStep
                     swapData={displaySwapData}
-                    usdcAmount={displaySwapData.usd_amount.toFixed(2)}
-                    tokenSymbol={getTokenSymbol(displaySwapData.target_token)}
+                    swapDirection={swapDirection}
                   />
                 )}
 
-              {currentStep === "user-deposit" &&
-                swapDirection === "polygon-to-btc" && (
-                  <PolygonDepositStep swapData={displaySwapData} />
+                {currentStep === "success" && swapDirection && (
+                  <SuccessStep
+                    swapData={displaySwapData}
+                    swapDirection={swapDirection}
+                  />
                 )}
 
-              {currentStep === "server-deposit" && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">Processing Swap</h3>
-                  <p className="text-muted-foreground">
-                    Please wait while we confirm your deposit and process the
-                    swap...
-                  </p>
-                  <div className="flex items-center justify-center py-12">
-                    <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+                {currentStep === "expired" && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold text-destructive">
+                      Swap Expired
+                    </h3>
+                    <p className="text-muted-foreground">
+                      This swap has expired. The time window to complete the
+                      swap has passed.
+                    </p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {swapDirection && currentStep === "server-depositing" && (
-                <SwapProcessingStep
-                  swapData={displaySwapData}
-                  swapDirection={swapDirection}
-                />
-              )}
+                {currentStep === "refundable" && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold text-orange-500">
+                      Refund Available
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Your deposit can be refunded. Please contact support or
+                      use the refund function.
+                    </p>
+                  </div>
+                )}
 
-              {currentStep === "success" && swapDirection && (
-                <SuccessStep
-                  swapData={displaySwapData}
-                  swapDirection={swapDirection}
-                />
-              )}
+                {currentStep === "refunded" && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold">Swap Refunded</h3>
+                    <p className="text-muted-foreground">
+                      Your funds have been refunded successfully.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-              {currentStep === "expired" && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-destructive">
-                    Swap Expired
-                  </h3>
-                  <p className="text-muted-foreground">
-                    This swap has expired. The time window to complete the swap
-                    has passed.
-                  </p>
-                </div>
-              )}
-
-              {currentStep === "refundable" && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold text-orange-500">
-                    Refund Available
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Your deposit can be refunded. Please contact support or use
-                    the refund function.
-                  </p>
-                </div>
-              )}
-
-              {currentStep === "refunded" && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">Swap Refunded</h3>
-                  <p className="text-muted-foreground">
-                    Your funds have been refunded successfully.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+        {/* Wizard Steps Navigation at Bottom */}
+        <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6">
+          <WizardSteps steps={steps} />
+        </div>
+      </div>
     </div>
   );
 }
