@@ -1,17 +1,18 @@
-import {useEffect, useRef, useState} from "react";
-import {useNavigate, useParams} from "react-router";
-import {Card, CardContent} from "#/components/ui/card";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { Card, CardContent } from "#/components/ui/card";
 import {
   api,
   getTokenSymbol,
   SwapStatus,
   TokenId,
-  GetSwapResponse
+  GetSwapResponse,
 } from "../api";
-import {WizardSteps} from "./WizardSteps";
-import {useAsyncRetry} from "react-use";
-import {SendBitcoinStep} from "../steps";
-import {AlertCircle} from "lucide-react";
+import { WizardSteps } from "./WizardSteps";
+import { useAsyncRetry } from "react-use";
+import { SendBitcoinStep } from "../steps";
+import { ConfirmingDepositStep } from "./steps";
+import { AlertCircle } from "lucide-react";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
@@ -78,14 +79,20 @@ function determineStepFromStatus(
 }
 
 export function SwapWizardPage() {
-  const {swapId} = useParams<{ swapId: string }>();
+  const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
   const lastStatusRef = useRef<SwapStatus | null>(null);
-  const [displaySwapData, setDisplaySwapData] = useState<GetSwapResponse | null>(null);
+  const [displaySwapData, setDisplaySwapData] =
+    useState<GetSwapResponse | null>(null);
 
-  const {loading: isLoading, value: swapData, retry, error} = useAsyncRetry(async () => {
+  const {
+    loading: isLoading,
+    value: swapData,
+    retry,
+    error,
+  } = useAsyncRetry(async () => {
     if (!swapId) {
-      navigate("/", {replace: true});
+      navigate("/", { replace: true });
       return;
     }
     return await api.getSwap(swapId);
@@ -94,7 +101,9 @@ export function SwapWizardPage() {
   // Update display data when swap data changes and status is different
   useEffect(() => {
     if (swapData && swapData.status !== lastStatusRef.current) {
-      console.log(`Status changed: ${lastStatusRef.current} -> ${swapData.status}`);
+      console.log(
+        `Status changed: ${lastStatusRef.current} -> ${swapData.status}`,
+      );
       lastStatusRef.current = swapData.status;
       setDisplaySwapData(swapData);
     } else if (swapData && !displaySwapData) {
@@ -134,11 +143,6 @@ export function SwapWizardPage() {
       "user-redeem",
       "success",
     ];
-    const confirmingSteps: StepId[] = [
-      "server-deposit",
-      "user-redeem",
-      "success",
-    ];
 
     if (swapDirection === "btc-to-polygon") {
       return [
@@ -157,16 +161,7 @@ export function SwapWizardPage() {
           label: "Confirming",
           status:
             currentStep === "server-depositing" ||
-            currentStep === "server-deposit"
-              ? "current"
-              : confirmingSteps.includes(currentStep)
-                ? "completed"
-                : "upcoming",
-        },
-        {
-          id: "user-redeem",
-          label: "Exchanging",
-          status:
+            currentStep === "server-deposit" ||
             currentStep === "user-redeem"
               ? "current"
               : currentStep === "success"
@@ -198,16 +193,7 @@ export function SwapWizardPage() {
         label: "Confirming",
         status:
           currentStep === "server-depositing" ||
-          currentStep === "server-deposit"
-            ? "current"
-            : confirmingSteps.includes(currentStep)
-              ? "completed"
-              : "upcoming",
-      },
-      {
-        id: "user-redeem",
-        label: "Exchanging",
-        status:
+          currentStep === "server-deposit" ||
           currentStep === "user-redeem"
             ? "current"
             : currentStep === "success"
@@ -227,7 +213,7 @@ export function SwapWizardPage() {
   return (
     <div className="space-y-6">
       {/* Wizard Steps Navigation */}
-      <WizardSteps steps={steps}/>
+      <WizardSteps steps={steps} />
 
       {/* Step Content Card */}
       <Card className="border-0 shadow-none">
@@ -237,7 +223,7 @@ export function SwapWizardPage() {
             <Card className="border-destructive/50 bg-destructive/10">
               <CardContent className="space-y-4 p-6">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className="h-6 w-6 text-destructive"/>
+                  <AlertCircle className="h-6 w-6 text-destructive" />
                   <h3 className="text-xl font-semibold text-destructive">
                     Failed to Load Swap
                   </h3>
@@ -268,7 +254,7 @@ export function SwapWizardPage() {
           {/* Loading State */}
           {isLoading && !displaySwapData && (
             <div className="flex items-center justify-center py-12">
-              <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4"/>
+              <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
             </div>
           )}
 
@@ -308,21 +294,16 @@ export function SwapWizardPage() {
                     swap...
                   </p>
                   <div className="flex items-center justify-center py-12">
-                    <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4"/>
+                    <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
                   </div>
                 </div>
               )}
 
-              {currentStep === "server-depositing" && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">Confirming Deposit</h3>
-                  <p className="text-muted-foreground">
-                    Your deposit has been received. Waiting for confirmations...
-                  </p>
-                  <div className="flex items-center justify-center py-12">
-                    <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4"/>
-                  </div>
-                </div>
+              {swapDirection && currentStep === "server-depositing" && (
+                <ConfirmingDepositStep
+                  swapData={displaySwapData}
+                  swapDirection={swapDirection}
+                />
               )}
 
               {currentStep === "success" && (
@@ -341,8 +322,8 @@ export function SwapWizardPage() {
                     Swap Expired
                   </h3>
                   <p className="text-muted-foreground">
-                    This swap has expired. The time window to complete the swap has
-                    passed.
+                    This swap has expired. The time window to complete the swap
+                    has passed.
                   </p>
                 </div>
               )}
@@ -353,8 +334,8 @@ export function SwapWizardPage() {
                     Refund Available
                   </h3>
                   <p className="text-muted-foreground">
-                    Your deposit can be refunded. Please contact support or use the
-                    refund function.
+                    Your deposit can be refunded. Please contact support or use
+                    the refund function.
                   </p>
                 </div>
               )}

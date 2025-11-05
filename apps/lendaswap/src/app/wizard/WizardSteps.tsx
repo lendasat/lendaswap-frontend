@@ -1,4 +1,4 @@
-import {cn} from "#/lib/utils";
+import { cn } from "#/lib/utils";
 
 interface Step {
   id: string;
@@ -11,7 +11,7 @@ interface WizardStepsProps {
   className?: string;
 }
 
-export function WizardSteps({steps, className}: WizardStepsProps) {
+export function WizardSteps({ steps, className }: WizardStepsProps) {
   // Build grid template: step (1fr), connector (auto), step (1fr), connector (auto), etc.
   const gridTemplate = steps
     .map((_, index) => (index === steps.length - 1 ? "1fr" : "1fr auto"))
@@ -21,7 +21,7 @@ export function WizardSteps({steps, className}: WizardStepsProps) {
     <div className={cn("w-full py-6", className)}>
       <div
         className="grid items-center gap-2"
-        style={{gridTemplateColumns: gridTemplate}}
+        style={{ gridTemplateColumns: gridTemplate }}
       >
         {steps.map((step, index) => {
           const isCompleted = step.status === "completed";
@@ -39,9 +39,9 @@ export function WizardSteps({steps, className}: WizardStepsProps) {
                   {
                     "border-primary/20 bg-primary/10 text-primary": isCompleted,
                     "border-primary bg-primary text-primary-foreground":
-                    isCurrent,
+                      isCurrent,
                     "border-muted bg-muted/50 text-muted-foreground":
-                    isUpcoming,
+                      isUpcoming,
                   },
                 )}
               >
