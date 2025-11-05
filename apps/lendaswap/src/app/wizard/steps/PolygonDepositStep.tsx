@@ -2,6 +2,7 @@ import { Loader } from "lucide-react";
 import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
+import { CardContent } from "#/components/ui/card";
 import type { GetSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
 
@@ -139,7 +140,9 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
       );
 
       if (createSwapReceipt.status !== "success") {
-        throw new Error("CreateSwap transaction failed");
+        throw new Error(
+          `CreateSwap transaction failed: ${createSwapReceipt.status}`,
+        );
       }
 
       console.log("Both transactions completed successfully!");
@@ -157,53 +160,59 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Fund Swap</h3>
-        <p className="text-muted-foreground text-sm">
-          Connect your wallet and approve the transactions to complete the swap
-        </p>
-      </div>
-
-      <div className="bg-muted/50 space-y-4 rounded-lg p-4">
-        <div>
-          <p className="text-sm text-muted-foreground">You're sending:</p>
-          <p className="text-xl font-bold">
+    <CardContent className="space-y-6 pt-2">
+      {/* Amount Reminder */}
+      <div className="bg-muted/50 space-y-2 rounded-lg p-4">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">You Send</span>
+          <span className="font-medium">
             ${swapData.usd_amount.toFixed(2)} {tokenSymbol}
-          </p>
+          </span>
         </div>
-
-        <div>
-          <p className="text-sm text-muted-foreground">You'll receive:</p>
-          <p className="text-xl font-bold">~{receiveAmount} BTC</p>
-          <p className="text-xs text-muted-foreground">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">You Receive</span>
+          <span className="font-medium">~{receiveAmount} BTC</span>
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-muted-foreground"></span>
+          <span className="text-muted-foreground">
             (~{swapData.sats_required.toLocaleString()} sats)
-          </p>
+          </span>
         </div>
       </div>
 
-      {!address && (
-        <p className="text-destructive text-sm">
-          Please connect your wallet to continue
-        </p>
+      {/* Error Display */}
+      {error && (
+        <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
+          {error}
+        </div>
       )}
 
-      <Button
-        onClick={handleSign}
-        disabled={isSigning || !address}
-        className="w-full h-12 text-base font-semibold"
-      >
-        {isSigning ? (
-          <>
-            <Loader className="animate-spin h-4 w-4 mr-2" />
-            Processing Transactions...
-          </>
-        ) : (
-          "Fund Swap"
-        )}
-      </Button>
+      {/* Wallet Connection Warning */}
+      {!address && (
+        <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20">
+          Please connect your wallet to continue
+        </div>
+      )}
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
-    </div>
+      {/* Action Buttons */}
+      <div className="flex flex-col gap-3">
+        {/* Fund Swap button - always first */}
+        <Button
+          onClick={handleSign}
+          disabled={isSigning || !address}
+          className="h-12 w-full text-base font-semibold"
+        >
+          {isSigning ? (
+            <>
+              <Loader className="animate-spin h-4 w-4 mr-2" />
+              Processing Transactions...
+            </>
+          ) : (
+            "Fund Swap"
+          )}
+        </Button>
+      </div>
+    </CardContent>
   );
 }

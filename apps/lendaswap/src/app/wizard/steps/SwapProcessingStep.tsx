@@ -9,7 +9,7 @@ import {
 import { Button } from "#/components/ui/button";
 
 const ARK_SERVER_URL =
-  import.meta.env.VITE_ARK_SERVER_URL || "https://arkade.lendasat.com";
+  import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
 
 interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;

@@ -128,13 +128,29 @@ export function SwapWizardPage() {
       return;
     }
 
+    // Stop polling if we've reached a terminal state
+    const terminalStates: SwapStatus[] = [
+      "serverredeemed",
+      "expired",
+      "clientrefundedserverfunded",
+      "clientrefundedserverrefunded",
+      "clientrefunded",
+    ];
+
+    if (displaySwapData && terminalStates.includes(displaySwapData.status)) {
+      console.log(
+        `Polling stopped: swap reached terminal state '${displaySwapData.status}'`,
+      );
+      return;
+    }
+
     const pollInterval = setInterval(async () => {
       console.log("Background polling swap status...");
       retry();
     }, 2000);
 
     return () => clearInterval(pollInterval);
-  }, [swapId, retry]);
+  }, [swapId, retry, displaySwapData]);
 
   // Determine step from swap status
 
