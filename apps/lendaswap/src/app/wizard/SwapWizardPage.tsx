@@ -1,8 +1,8 @@
-import { useNavigate, useParams } from "react-router";
-import { Card, CardContent } from "#/components/ui/card";
-import { api, SwapStatus, TokenId } from "../api";
-import { WizardSteps } from "./WizardSteps";
-import { useAsync } from "react-use";
+import {useNavigate, useParams} from "react-router";
+import {Card, CardContent} from "#/components/ui/card";
+import {api, getTokenSymbol, SwapStatus, TokenId} from "../api";
+import {WizardSteps} from "./WizardSteps";
+import {useAsync} from "react-use";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
@@ -69,12 +69,12 @@ function determineStepFromStatus(
 }
 
 export function SwapWizardPage() {
-  const { swapId } = useParams<{ swapId: string }>();
+  const {swapId} = useParams<{ swapId: string }>();
   const navigate = useNavigate();
 
-  const { loading: isLoading, value: swapData } = useAsync(async () => {
+  const {loading: isLoading, value: swapData} = useAsync(async () => {
     if (!swapId) {
-      navigate("/", { replace: true });
+      navigate("/", {replace: true});
       return;
     }
     return await api.getSwap(swapId);
@@ -187,7 +187,7 @@ export function SwapWizardPage() {
   if (isLoading || !swapData) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
+        <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4"/>
       </div>
     );
   }
@@ -197,7 +197,7 @@ export function SwapWizardPage() {
   return (
     <div className="space-y-6">
       {/* Wizard Steps Navigation */}
-      <WizardSteps steps={steps} />
+      <WizardSteps steps={steps}/>
 
       {/* Step Content Card */}
       <Card className="border-0 shadow-none">
@@ -208,7 +208,7 @@ export function SwapWizardPage() {
               <h3 className="text-xl font-semibold">
                 {swapDirection === "btc-to-polygon"
                   ? "Send Bitcoin"
-                  : "Deposit on Polygon"}
+                  : `Send ${getTokenSymbol(swapData.source_token)}`}
               </h3>
               <p className="text-muted-foreground">
                 {swapDirection === "btc-to-polygon"
@@ -227,7 +227,7 @@ export function SwapWizardPage() {
                 swap...
               </p>
               <div className="flex items-center justify-center py-12">
-                <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+                <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4"/>
               </div>
             </div>
           )}
@@ -239,7 +239,7 @@ export function SwapWizardPage() {
                 Your deposit has been received. Waiting for confirmations...
               </p>
               <div className="flex items-center justify-center py-12">
-                <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+                <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4"/>
               </div>
             </div>
           )}
