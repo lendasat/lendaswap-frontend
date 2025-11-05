@@ -1,13 +1,13 @@
-import {Check, Copy, ExternalLink, Loader2} from "lucide-react";
-import {api, GetSwapResponse} from "../../api";
-import {useEffect, useRef, useState} from "react";
+import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { api, GetSwapResponse } from "../../api";
+import { useEffect, useRef, useState } from "react";
 import {
   claimVhtlc,
   getAmountsForSwap,
   initBrowserWallet,
 } from "@frontend/browser-wallet";
-import {Button} from "#/components/ui/button";
-import {CardContent} from "#/components/ui/card";
+import { Button } from "#/components/ui/button";
+import { CardContent } from "#/components/ui/card";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
@@ -18,9 +18,9 @@ interface ConfirmingDepositStepProps {
 }
 
 export function SwapProcessingStep({
-                                     swapData,
-                                     swapDirection,
-                                   }: ConfirmingDepositStepProps) {
+  swapData,
+  swapDirection,
+}: ConfirmingDepositStepProps) {
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -163,7 +163,7 @@ export function SwapProcessingStep({
   useEffect(() => {
     const autoClaimPolygonToArkadeSwaps = async () => {
       if (swapDirection !== "polygon-to-btc") return;
-      if (swapData.target_token === 'btc_lightning') {
+      if (swapData.target_token === "btc_lightning") {
         // this will be claimed by the lightning client
         return;
       }
@@ -174,7 +174,6 @@ export function SwapProcessingStep({
         setClaimError("Missing Arkade address for claim");
         return;
       }
-
 
       const claimKey = `swap_${swapData.id}_claim_attempted`;
       const attemptTimestamp = localStorage.getItem(claimKey);
@@ -274,35 +273,35 @@ export function SwapProcessingStep({
   const config =
     swapDirection === "btc-to-polygon"
       ? {
-        step1Label: "User Funded",
-        step1TxId: swapData.bitcoin_htlc_fund_txid,
-        step1IsPolygon: false,
-        step2LabelActive: "Server Funding",
-        step2LabelComplete: "Server Funded",
-        step2TxId: swapData.polygon_htlc_fund_txid,
-        step2IsPolygon: true,
-        step3Label: "Client Redeeming",
-        step3TxId: swapData.polygon_htlc_claim_txid,
-        step3IsPolygon: true,
-        step4Label: "Server Redeemed",
-        step4TxId: swapData.bitcoin_htlc_claim_txid,
-        step4IsPolygon: false,
-      }
+          step1Label: "User Funded",
+          step1TxId: swapData.bitcoin_htlc_fund_txid,
+          step1IsPolygon: false,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.polygon_htlc_fund_txid,
+          step2IsPolygon: true,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.polygon_htlc_claim_txid,
+          step3IsPolygon: true,
+          step4Label: "Server Redeemed",
+          step4TxId: swapData.bitcoin_htlc_claim_txid,
+          step4IsPolygon: false,
+        }
       : {
-        step1Label: "User Funded",
-        step1TxId: swapData.polygon_htlc_fund_txid,
-        step1IsPolygon: true,
-        step2LabelActive: "Server Funding",
-        step2LabelComplete: "Server Funded",
-        step2TxId: swapData.bitcoin_htlc_fund_txid,
-        step2IsPolygon: false,
-        step3Label: "Client Redeeming",
-        step3TxId: swapData.bitcoin_htlc_claim_txid,
-        step3IsPolygon: false,
-        step4Label: "Server Redeemed",
-        step4TxId: swapData.polygon_htlc_claim_txid,
-        step4IsPolygon: true,
-      };
+          step1Label: "User Funded",
+          step1TxId: swapData.polygon_htlc_fund_txid,
+          step1IsPolygon: true,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.bitcoin_htlc_fund_txid,
+          step2IsPolygon: false,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.bitcoin_htlc_claim_txid,
+          step3IsPolygon: false,
+          step4Label: "Server Redeemed",
+          step4TxId: swapData.polygon_htlc_claim_txid,
+          step4IsPolygon: true,
+        };
 
   return (
     <CardContent className="space-y-6 pt-2">
@@ -310,7 +309,7 @@ export function SwapProcessingStep({
         {/* Step 1: User Funded */}
         <div className="flex items-start gap-3">
           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
-            <Check className="h-4 w-4 text-primary-foreground"/>
+            <Check className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="flex-1 space-y-1">
             <p className="font-medium">{config.step1Label}</p>
@@ -324,9 +323,9 @@ export function SwapProcessingStep({
                   className="text-muted-foreground hover:text-foreground"
                 >
                   {copiedTxId === config.step1TxId ? (
-                    <Check className="h-3 w-3"/>
+                    <Check className="h-3 w-3" />
                   ) : (
-                    <Copy className="h-3 w-3"/>
+                    <Copy className="h-3 w-3" />
                   )}
                 </button>
                 {config.step1IsPolygon && (
@@ -336,7 +335,7 @@ export function SwapProcessingStep({
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <ExternalLink className="h-3 w-3"/>
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
@@ -352,9 +351,9 @@ export function SwapProcessingStep({
             }`}
           >
             {config.step2TxId ? (
-              <Check className="h-4 w-4 text-primary-foreground"/>
+              <Check className="h-4 w-4 text-primary-foreground" />
             ) : (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </div>
           <div className="flex-1 space-y-1">
@@ -373,9 +372,9 @@ export function SwapProcessingStep({
                   className="text-muted-foreground hover:text-foreground"
                 >
                   {copiedTxId === config.step2TxId ? (
-                    <Check className="h-3 w-3"/>
+                    <Check className="h-3 w-3" />
                   ) : (
-                    <Copy className="h-3 w-3"/>
+                    <Copy className="h-3 w-3" />
                   )}
                 </button>
                 {config.step2IsPolygon && (
@@ -385,7 +384,7 @@ export function SwapProcessingStep({
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <ExternalLink className="h-3 w-3"/>
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
@@ -401,9 +400,9 @@ export function SwapProcessingStep({
             }`}
           >
             {config.step3TxId ? (
-              <Check className="h-4 w-4 text-primary-foreground"/>
+              <Check className="h-4 w-4 text-primary-foreground" />
             ) : (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </div>
           <div className="flex-1 space-y-1">
@@ -418,9 +417,9 @@ export function SwapProcessingStep({
                   className="text-muted-foreground hover:text-foreground"
                 >
                   {copiedTxId === config.step3TxId ? (
-                    <Check className="h-3 w-3"/>
+                    <Check className="h-3 w-3" />
                   ) : (
-                    <Copy className="h-3 w-3"/>
+                    <Copy className="h-3 w-3" />
                   )}
                 </button>
                 {config.step3IsPolygon && (
@@ -430,7 +429,7 @@ export function SwapProcessingStep({
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <ExternalLink className="h-3 w-3"/>
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
@@ -499,9 +498,9 @@ export function SwapProcessingStep({
             }`}
           >
             {config.step4TxId ? (
-              <Check className="h-4 w-4 text-primary-foreground"/>
+              <Check className="h-4 w-4 text-primary-foreground" />
             ) : (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </div>
           <div className="flex-1 space-y-1">
@@ -516,9 +515,9 @@ export function SwapProcessingStep({
                   className="text-muted-foreground hover:text-foreground"
                 >
                   {copiedTxId === config.step4TxId ? (
-                    <Check className="h-3 w-3"/>
+                    <Check className="h-3 w-3" />
                   ) : (
-                    <Copy className="h-3 w-3"/>
+                    <Copy className="h-3 w-3" />
                   )}
                 </button>
                 {config.step4IsPolygon && (
@@ -528,7 +527,7 @@ export function SwapProcessingStep({
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <ExternalLink className="h-3 w-3"/>
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
