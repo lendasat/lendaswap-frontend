@@ -1,29 +1,29 @@
-import {Loader} from "lucide-react";
-import {useState} from "react";
-import {useAccount, usePublicClient, useWalletClient} from "wagmi";
-import {Button} from "#/components/ui/button";
-import type {GetSwapResponse} from "../../api";
-import {getTokenSymbol} from "../../api";
+import { Loader } from "lucide-react";
+import { useState } from "react";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { Button } from "#/components/ui/button";
+import type { GetSwapResponse } from "../../api";
+import { getTokenSymbol } from "../../api";
 
 // ERC20 ABI - approve and allowance functions
 const ERC20_ABI = [
   {
     inputs: [
-      {name: "spender", type: "address"},
-      {name: "amount", type: "uint256"},
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
     ],
     name: "approve",
-    outputs: [{name: "", type: "bool"}],
+    outputs: [{ name: "", type: "bool" }],
     stateMutability: "nonpayable",
     type: "function",
   },
   {
     inputs: [
-      {name: "owner", type: "address"},
-      {name: "spender", type: "address"},
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
     ],
     name: "allowance",
-    outputs: [{name: "", type: "uint256"}],
+    outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
   },
@@ -33,9 +33,9 @@ interface PolygonDepositStepProps {
   swapData: GetSwapResponse;
 }
 
-export function PolygonDepositStep({swapData}: PolygonDepositStepProps) {
-  const {address} = useAccount();
-  const {data: walletClient} = useWalletClient();
+export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
+  const { address } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
 
   const [isSigning, setIsSigning] = useState(false);
@@ -195,7 +195,7 @@ export function PolygonDepositStep({swapData}: PolygonDepositStepProps) {
       >
         {isSigning ? (
           <>
-            <Loader className="animate-spin h-4 w-4 mr-2"/>
+            <Loader className="animate-spin h-4 w-4 mr-2" />
             Processing Transactions...
           </>
         ) : (
