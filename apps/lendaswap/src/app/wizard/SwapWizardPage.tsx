@@ -158,7 +158,7 @@ export function SwapWizardPage() {
         },
         {
           id: "server-deposit",
-          label: "Confirming",
+          label: "Swapping like it's popping",
           status:
             currentStep === "server-depositing" ||
             currentStep === "server-deposit" ||
@@ -190,7 +190,7 @@ export function SwapWizardPage() {
       },
       {
         id: "server-deposit",
-        label: "Confirming",
+        label: "Swapping like it's popping",
         status:
           currentStep === "server-depositing" ||
           currentStep === "server-deposit" ||
