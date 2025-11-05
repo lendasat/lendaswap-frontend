@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router";
 import { Card, CardContent } from "#/components/ui/card";
-import { api, TokenId } from "../api";
+import { api, SwapStatus, TokenId } from "../api";
 import { WizardSteps } from "./WizardSteps";
 import { useAsync } from "react-use";
 
@@ -8,10 +8,14 @@ type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
 type StepId =
   | "user-deposit"
+  | "server-depositing"
   | "server-deposit"
   | "user-redeem"
   | "server-redeem"
-  | "success";
+  | "success"
+  | "expired"
+  | "refundable"
+  | "refunded";
 
 interface Step {
   id: StepId;
@@ -33,6 +37,37 @@ const isBtcToPolygon = (
   return undefined;
 };
 
+function determineStepFromStatus(
+  status: undefined | SwapStatus,
+): StepId | undefined {
+  if (!status) {
+    return undefined;
+  }
+
+  switch (status) {
+    case "pending":
+      return "user-deposit";
+    case "clientfunded":
+      return "server-depositing";
+    case "serverfunded":
+      return "server-deposit";
+    case "serverredeemed":
+      return "success";
+    case "clientredeemed":
+      return "success";
+    case "expired":
+      return "expired";
+    case "clientfundedserverrefunded":
+    case "clientinvalidfunded":
+    case "clientfundedtoolate":
+      return "refundable";
+    case "clientrefundedserverfunded":
+    case "clientrefundedserverrefunded":
+    case "clientrefunded":
+      return "refunded";
+  }
+}
+
 export function SwapWizardPage() {
   const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
@@ -50,31 +85,22 @@ export function SwapWizardPage() {
   const currentStep = determineStepFromStatus(swapData?.status);
 
   // Determine step from swap status
-  function determineStepFromStatus(
-    status: undefined | string,
-  ): StepId | undefined {
-    if (!status) {
-      return undefined;
-    }
-
-    switch (status) {
-      case "pending":
-        return "user-deposit";
-      case "clientfunded":
-      case "serverfunded":
-        return "server-deposit";
-      case "serverredeemed":
-        return "success";
-      case "clientredeemed":
-        return "success";
-      default:
-        return "user-deposit";
-    }
-  }
 
   // Build steps based on swap direction
   const buildSteps = (): Step[] => {
     if (!swapDirection || !currentStep) return [];
+
+    const completedSteps: StepId[] = [
+      "server-depositing",
+      "server-deposit",
+      "user-redeem",
+      "success",
+    ];
+    const confirmingSteps: StepId[] = [
+      "server-deposit",
+      "user-redeem",
+      "success",
+    ];
 
     if (swapDirection === "btc-to-polygon") {
       return [
@@ -84,9 +110,7 @@ export function SwapWizardPage() {
           status:
             currentStep === "user-deposit"
               ? "current"
-              : ["server-deposit", "user-redeem", "success"].includes(
-                    currentStep,
-                  )
+              : completedSteps.includes(currentStep)
                 ? "completed"
                 : "upcoming",
         },
@@ -94,9 +118,10 @@ export function SwapWizardPage() {
           id: "server-deposit",
           label: "Confirming",
           status:
+            currentStep === "server-depositing" ||
             currentStep === "server-deposit"
               ? "current"
-              : ["user-redeem", "success"].includes(currentStep)
+              : confirmingSteps.includes(currentStep)
                 ? "completed"
                 : "upcoming",
         },
@@ -126,7 +151,7 @@ export function SwapWizardPage() {
         status:
           currentStep === "user-deposit"
             ? "current"
-            : ["server-deposit", "user-redeem", "success"].includes(currentStep)
+            : completedSteps.includes(currentStep)
               ? "completed"
               : "upcoming",
       },
@@ -134,9 +159,10 @@ export function SwapWizardPage() {
         id: "server-deposit",
         label: "Confirming",
         status:
+          currentStep === "server-depositing" ||
           currentStep === "server-deposit"
             ? "current"
-            : ["user-redeem", "success"].includes(currentStep)
+            : confirmingSteps.includes(currentStep)
               ? "completed"
               : "upcoming",
       },
@@ -206,6 +232,18 @@ export function SwapWizardPage() {
             </div>
           )}
 
+          {currentStep === "server-depositing" && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Confirming Deposit</h3>
+              <p className="text-muted-foreground">
+                Your deposit has been received. Waiting for confirmations...
+              </p>
+              <div className="flex items-center justify-center py-12">
+                <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+              </div>
+            </div>
+          )}
+
           {currentStep === "success" && (
             <div className="space-y-4">
               <h3 className="text-xl font-semibold">Swap Complete!</h3>
@@ -213,6 +251,39 @@ export function SwapWizardPage() {
                 Your swap has been completed successfully.
               </p>
               {/* Success UI will be integrated here */}
+            </div>
+          )}
+
+          {currentStep === "expired" && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-destructive">
+                Swap Expired
+              </h3>
+              <p className="text-muted-foreground">
+                This swap has expired. The time window to complete the swap has
+                passed.
+              </p>
+            </div>
+          )}
+
+          {currentStep === "refundable" && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold text-orange-500">
+                Refund Available
+              </h3>
+              <p className="text-muted-foreground">
+                Your deposit can be refunded. Please contact support or use the
+                refund function.
+              </p>
+            </div>
+          )}
+
+          {currentStep === "refunded" && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Swap Refunded</h3>
+              <p className="text-muted-foreground">
+                Your funds have been refunded successfully.
+              </p>
             </div>
           )}
         </CardContent>

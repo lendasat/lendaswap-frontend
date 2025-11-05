@@ -12,9 +12,17 @@ interface WizardStepsProps {
 }
 
 export function WizardSteps({ steps, className }: WizardStepsProps) {
+  // Build grid template: step (1fr), connector (auto), step (1fr), connector (auto), etc.
+  const gridTemplate = steps
+    .map((_, index) => (index === steps.length - 1 ? "1fr" : "1fr auto"))
+    .join(" ");
+
   return (
     <div className={cn("w-full py-6", className)}>
-      <div className="flex items-center justify-between gap-2">
+      <div
+        className="grid items-center gap-2"
+        style={{ gridTemplateColumns: gridTemplate }}
+      >
         {steps.map((step, index) => {
           const isCompleted = step.status === "completed";
           const isCurrent = step.status === "current";
@@ -22,11 +30,12 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
           const isLast = index === steps.length - 1;
 
           return (
-            <div key={step.id} className="flex flex-1 items-center">
+            <>
               {/* Step Button/Pill */}
               <div
+                key={step.id}
                 className={cn(
-                  "flex-1 rounded-full border-2 px-4 py-2 text-center text-sm font-medium transition-all uppercase tracking-wide",
+                  "rounded-full border-2 px-3 py-2 text-center text-xs font-medium transition-all uppercase tracking-wide whitespace-nowrap",
                   {
                     "border-primary/20 bg-primary/10 text-primary": isCompleted,
                     "border-primary bg-primary text-primary-foreground":
@@ -42,13 +51,14 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
               {/* Connector Line */}
               {!isLast && (
                 <div
-                  className={cn("mx-2 h-0.5 w-8 transition-all", {
+                  key={`connector-${step.id}`}
+                  className={cn("h-0.5 w-8 transition-all", {
                     "bg-primary/30": isCompleted,
                     "bg-muted": !isCompleted,
                   })}
                 />
               )}
-            </div>
+            </>
           );
         })}
       </div>

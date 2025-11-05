@@ -68,7 +68,9 @@ export type SwapStatus =
   | "clientfundedserverrefunded" // HTLC timed out, both refunded (terminal)
   | "clientrefundedserverfunded" // ERROR: Client refunded while server locked (should never happen)
   | "clientrefundedserverrefunded" // Both refunded after error state (terminal)
-  | "expired"; // Swap expired before client funded (terminal)
+  | "expired" // Swap expired before client funded (terminal)
+  | "clientinvalidfunded" // Client funded wrong and needs to refund
+  | "clientfundedtoolate"; // Client funded to late and needs to refund
 
 export interface SwapRequest {
   target_address: string;
