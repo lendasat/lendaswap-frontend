@@ -7,6 +7,7 @@ import {
   initBrowserWallet,
 } from "@frontend/browser-wallet";
 import { Button } from "#/components/ui/button";
+import { CardContent } from "#/components/ui/card";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
@@ -299,7 +300,7 @@ export function SwapProcessingStep({
         };
 
   return (
-    <div className="space-y-6">
+    <CardContent className="space-y-6 pt-2">
       <div className="space-y-4">
         {/* Step 1: User Funded */}
         <div className="flex items-start gap-3">
@@ -530,6 +531,6 @@ export function SwapProcessingStep({
           </div>
         </div>
       </div>
-    </div>
+    </CardContent>
   );
 }
