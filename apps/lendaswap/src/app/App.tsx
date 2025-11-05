@@ -47,6 +47,7 @@ import {
   SwapSuccessPage,
   SwapsPage,
 } from "./pages";
+import { SwapWizardPage } from "./wizard";
 import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
@@ -766,6 +767,7 @@ export default function App() {
                 path="/swap/:swapId/success"
                 element={<SwapSuccessPage />}
               />
+              <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
               <Route path="/swaps" element={<SwapsPage />} />
               <Route path="/manage/:swapId" element={<ManageSwapPage />} />
             </Routes>

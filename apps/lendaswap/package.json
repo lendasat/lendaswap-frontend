@@ -34,6 +34,7 @@
     "react-dom": "19.0.0",
     "react-hook-form": "^7.56.1",
     "react-router": "^7.9.4",
+    "react-use": "^17.6.0",
     "tailwindcss-animate": "^1.0.7",
     "tslib": "^2.8.1",
     "viem": "^2.38.5",
