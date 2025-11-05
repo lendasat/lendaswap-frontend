@@ -8,9 +8,10 @@ import { SuccessMeme } from "../../components/SuccessMeme";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
+  swapDirection: "btc-to-polygon" | "polygon-to-btc";
 }
 
-export function BtcToPolygonSuccessStep({ swapData }: SuccessStepProps) {
+export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
   const navigate = useNavigate();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
@@ -35,14 +36,34 @@ export function BtcToPolygonSuccessStep({ swapData }: SuccessStepProps) {
       )
     : null;
 
-  const tokenSymbol = getTokenSymbol(swapData.target_token);
-  const usdcAmount = swapData.usd_amount.toFixed(2);
-  const receiveAddress = swapData.user_address_polygon;
-  const swapTxId = swapData.polygon_htlc_claim_txid;
+  // Define config based on swap direction
+  const config =
+    swapDirection === "btc-to-polygon"
+      ? {
+          sentTokenSymbol: "sats",
+          sentAmount: swapData.sats_required.toLocaleString(),
+          receivedTokenSymbol: getTokenSymbol(swapData.target_token),
+          receivedAmount: swapData.usd_amount.toFixed(2),
+          receiveAddress: swapData.user_address_polygon,
+          receiveAddressIsPolygon: true,
+          swapTxId: swapData.polygon_htlc_claim_txid,
+          swapTxIdIsPolygon: true,
+          tweetText: `Just swapped ${swapData.sats_required.toLocaleString()} sats to ${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`,
+        }
+      : {
+          sentTokenSymbol: getTokenSymbol(swapData.source_token),
+          sentAmount: swapData.usd_amount.toFixed(2),
+          receivedTokenSymbol: "sats",
+          receivedAmount: swapData.sats_required.toLocaleString(),
+          receiveAddress: swapData.user_address_arkade,
+          receiveAddressIsPolygon: false,
+          swapTxId: swapData.bitcoin_htlc_claim_txid,
+          swapTxIdIsPolygon: false,
+          tweetText: `Just swapped ${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} to ${swapData.sats_required.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`,
+        };
 
   const handleShareOnTwitter = () => {
-    const tweetText = `Just swapped ${swapData.sats_required.toLocaleString()} sats to ${usdcAmount} ${tokenSymbol} in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`;
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(config.tweetText)}`;
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -58,7 +79,8 @@ export function BtcToPolygonSuccessStep({ swapData }: SuccessStepProps) {
         <div className="space-y-2 text-center">
           <h3 className="text-2xl font-semibold">Swap Complete!</h3>
           <p className="text-muted-foreground text-sm">
-            Your {tokenSymbol} has been successfully sent to your address
+            Your {config.receivedTokenSymbol} has been successfully sent to your
+            address
           </p>
         </div>
 
@@ -127,76 +149,46 @@ export function BtcToPolygonSuccessStep({ swapData }: SuccessStepProps) {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Amount Sent</span>
             <span className="font-medium">
-              {swapData.sats_required.toLocaleString()} sats
+              {config.sentAmount} {config.sentTokenSymbol}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Amount Received</span>
             <span className="font-medium">
-              {usdcAmount} {tokenSymbol}
+              {config.receivedAmount} {config.receivedTokenSymbol}
             </span>
           </div>
           <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
             <span className="text-muted-foreground">Sent to Address</span>
             <div className="flex items-center gap-2">
-              <a
-                href={`https://polygonscan.com/address/${receiveAddress}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 break-all font-mono text-xs hover:underline"
-              >
-                {receiveAddress}
-              </a>
+              {config.receiveAddressIsPolygon ? (
+                <a
+                  href={`https://polygonscan.com/address/${config.receiveAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 break-all font-mono text-xs hover:underline"
+                >
+                  {config.receiveAddress}
+                </a>
+              ) : (
+                <span className="flex-1 break-all font-mono text-xs">
+                  {config.receiveAddress}
+                </span>
+              )}
               <div className="flex shrink-0 gap-1">
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => handleCopyAddress(receiveAddress)}
+                  onClick={() => handleCopyAddress(config.receiveAddress)}
                   className="h-8 w-8"
                 >
-                  {copiedAddress === receiveAddress ? (
+                  {copiedAddress === config.receiveAddress ? (
                     <CheckCheck className="h-3 w-3" />
                   ) : (
                     <Copy className="h-3 w-3" />
                   )}
                 </Button>
-                <Button size="icon" variant="ghost" asChild className="h-8 w-8">
-                  <a
-                    href={`https://polygonscan.com/address/${receiveAddress}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
-            <span className="text-muted-foreground">Transaction Hash</span>
-            {swapTxId ? (
-              <div className="flex items-center gap-2">
-                <a
-                  href={`https://polygonscan.com/tx/${swapTxId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 break-all font-mono text-xs hover:underline"
-                >
-                  {swapTxId}
-                </a>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleCopyAddress(swapTxId)}
-                    className="h-8 w-8"
-                  >
-                    {copiedAddress === swapTxId ? (
-                      <CheckCheck className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
+                {config.receiveAddressIsPolygon && (
                   <Button
                     size="icon"
                     variant="ghost"
@@ -204,13 +196,64 @@ export function BtcToPolygonSuccessStep({ swapData }: SuccessStepProps) {
                     className="h-8 w-8"
                   >
                     <a
-                      href={`https://polygonscan.com/tx/${swapTxId}`}
+                      href={`https://polygonscan.com/address/${config.receiveAddress}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
                       <ExternalLink className="h-3 w-3" />
                     </a>
                   </Button>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
+            <span className="text-muted-foreground">Transaction Hash</span>
+            {config.swapTxId ? (
+              <div className="flex items-center gap-2">
+                {config.swapTxIdIsPolygon ? (
+                  <a
+                    href={`https://polygonscan.com/tx/${config.swapTxId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 break-all font-mono text-xs hover:underline"
+                  >
+                    {config.swapTxId}
+                  </a>
+                ) : (
+                  <span className="flex-1 break-all font-mono text-xs">
+                    {config.swapTxId}
+                  </span>
+                )}
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleCopyAddress(config.swapTxId!)}
+                    className="h-8 w-8"
+                  >
+                    {copiedAddress === config.swapTxId ? (
+                      <CheckCheck className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                  {config.swapTxIdIsPolygon && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      asChild
+                      className="h-8 w-8"
+                    >
+                      <a
+                        href={`https://polygonscan.com/tx/${config.swapTxId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
             ) : (

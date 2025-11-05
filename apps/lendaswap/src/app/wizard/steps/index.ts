@@ -1,3 +1,3 @@
 export { SwapProcessingStep } from "./SwapProcessingStep";
-export { BtcToPolygonSuccessStep } from "./BtcToPolygonSuccessStep";
+export { SuccessStep } from "./SuccessStep";
 export { PolygonDepositStep } from "./PolygonDepositStep";

@@ -11,11 +11,7 @@ import {
 import { WizardSteps } from "./WizardSteps";
 import { useAsyncRetry } from "react-use";
 import { SendBitcoinStep } from "../steps";
-import {
-  SwapProcessingStep,
-  BtcToPolygonSuccessStep,
-  PolygonDepositStep,
-} from "./steps";
+import { SwapProcessingStep, SuccessStep, PolygonDepositStep } from "./steps";
 import { AlertCircle } from "lucide-react";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
@@ -303,10 +299,12 @@ export function SwapWizardPage() {
                 />
               )}
 
-              {currentStep === "success" &&
-                swapDirection === "btc-to-polygon" && (
-                  <BtcToPolygonSuccessStep swapData={displaySwapData} />
-                )}
+              {currentStep === "success" && swapDirection && (
+                <SuccessStep
+                  swapData={displaySwapData}
+                  swapDirection={swapDirection}
+                />
+              )}
 
               {currentStep === "expired" && (
                 <div className="space-y-4">
