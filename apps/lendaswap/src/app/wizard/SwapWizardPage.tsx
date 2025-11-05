@@ -11,7 +11,7 @@ import {
 import { WizardSteps } from "./WizardSteps";
 import { useAsyncRetry } from "react-use";
 import { SendBitcoinStep } from "../steps";
-import { ConfirmingDepositStep } from "./steps";
+import { ConfirmingDepositStep, SuccessStep } from "./steps";
 import { AlertCircle } from "lucide-react";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
@@ -308,13 +308,7 @@ export function SwapWizardPage() {
               )}
 
               {currentStep === "success" && (
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">Swap Complete!</h3>
-                  <p className="text-muted-foreground">
-                    Your swap has been completed successfully.
-                  </p>
-                  {/* Success UI will be integrated here */}
-                </div>
+                <SuccessStep swapData={displaySwapData} />
               )}
 
               {currentStep === "expired" && (
