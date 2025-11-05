@@ -1,16 +1,16 @@
-import {Check, CheckCheck, Copy, ExternalLink, Twitter} from "lucide-react";
-import {useNavigate} from "react-router";
-import {Button} from "#/components/ui/button";
-import {useState} from "react";
-import type {GetSwapResponse} from "../../api";
-import {getTokenSymbol} from "../../api";
-import {SuccessMeme} from "../../components/SuccessMeme";
+import { Check, CheckCheck, Copy, ExternalLink, Twitter } from "lucide-react";
+import { useNavigate } from "react-router";
+import { Button } from "#/components/ui/button";
+import { useState } from "react";
+import type { GetSwapResponse } from "../../api";
+import { getTokenSymbol } from "../../api";
+import { SuccessMeme } from "../../components/SuccessMeme";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
 }
 
-export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
+export function BtcToPolygonSuccessStep({ swapData }: SuccessStepProps) {
   const navigate = useNavigate();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
@@ -25,14 +25,14 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
   };
 
   const handleStartNewSwap = () => {
-    navigate("/", {replace: true});
+    navigate("/", { replace: true });
   };
 
   // Calculate swap duration if we have timestamps
   const swapDurationSeconds = swapData.created_at
     ? Math.floor(
-      (new Date().getTime() - new Date(swapData.created_at).getTime()) / 1000,
-    )
+        (new Date().getTime() - new Date(swapData.created_at).getTime()) / 1000,
+      )
     : null;
 
   const tokenSymbol = getTokenSymbol(swapData.target_token);
@@ -51,7 +51,7 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
       <div className="flex flex-col items-center space-y-6">
         {/* Success Icon */}
         <div className="bg-foreground flex h-16 w-16 items-center justify-center rounded-full">
-          <Check className="text-background h-8 w-8"/>
+          <Check className="text-background h-8 w-8" />
         </div>
 
         {/* Success Message */}
@@ -64,19 +64,15 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
 
         {/* LIFETIME OFFER Banner */}
         <div className="w-full max-w-md">
-          <div
-            className="relative overflow-hidden rounded-xl border-2 border-green-500/50 bg-gradient-to-r from-green-500/20 via-green-400/20 to-green-500/20 p-6 shadow-lg">
+          <div className="relative overflow-hidden rounded-xl border-2 border-green-500/50 bg-gradient-to-r from-green-500/20 via-green-400/20 to-green-500/20 p-6 shadow-lg">
             {/* Animated background effect */}
-            <div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent animate-shimmer"/>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent animate-shimmer" />
 
             <div className="relative space-y-4 text-center">
-              <div
-                className="inline-flex items-center gap-2 rounded-full bg-green-500/20 px-3 py-1 text-xs font-bold text-green-600 dark:text-green-400">
+              <div className="inline-flex items-center gap-2 rounded-full bg-green-500/20 px-3 py-1 text-xs font-bold text-green-600 dark:text-green-400">
                 <span className="relative flex h-2 w-2">
-                  <span
-                    className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"/>
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"/>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
                 </span>
                 LIFETIME OFFER
               </div>
@@ -93,7 +89,7 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
                 onClick={handleShareOnTwitter}
                 className="w-full gap-2 bg-black hover:bg-black/90 text-white dark:bg-white dark:hover:bg-white/90 dark:text-black"
               >
-                <Twitter className="h-4 w-4"/>
+                <Twitter className="h-4 w-4" />
                 Share on 𝕏 & Unlock Lifetime 0% Fees
               </Button>
             </div>
@@ -101,7 +97,7 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
         </div>
 
         {/* Success Meme with Share Button */}
-        <SuccessMeme/>
+        <SuccessMeme />
 
         {/* Transaction Details */}
         <div className="bg-muted/50 w-full max-w-md space-y-3 rounded-lg p-4">
@@ -120,9 +116,9 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
                   className="h-8 w-8 shrink-0"
                 >
                   {copiedAddress === swapData.id ? (
-                    <CheckCheck className="h-3 w-3"/>
+                    <CheckCheck className="h-3 w-3" />
                   ) : (
-                    <Copy className="h-3 w-3"/>
+                    <Copy className="h-3 w-3" />
                   )}
                 </Button>
               </div>
@@ -159,9 +155,9 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
                   className="h-8 w-8"
                 >
                   {copiedAddress === receiveAddress ? (
-                    <CheckCheck className="h-3 w-3"/>
+                    <CheckCheck className="h-3 w-3" />
                   ) : (
-                    <Copy className="h-3 w-3"/>
+                    <Copy className="h-3 w-3" />
                   )}
                 </Button>
                 <Button size="icon" variant="ghost" asChild className="h-8 w-8">
@@ -170,7 +166,7 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <ExternalLink className="h-3 w-3"/>
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 </Button>
               </div>
@@ -196,9 +192,9 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
                     className="h-8 w-8"
                   >
                     {copiedAddress === swapTxId ? (
-                      <CheckCheck className="h-3 w-3"/>
+                      <CheckCheck className="h-3 w-3" />
                     ) : (
-                      <Copy className="h-3 w-3"/>
+                      <Copy className="h-3 w-3" />
                     )}
                   </Button>
                   <Button
@@ -212,7 +208,7 @@ export function BtcToPolygonSuccessStep({swapData}: SuccessStepProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <ExternalLink className="h-3 w-3"/>
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                   </Button>
                 </div>
