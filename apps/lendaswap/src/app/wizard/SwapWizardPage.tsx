@@ -61,7 +61,7 @@ function determineStepFromStatus(
     case "clientfunded":
       return "server-depositing";
     case "serverfunded":
-      return "server-deposit";
+      return "server-depositing";
     case "serverredeemed":
       return "success";
     case "clientredeemed":

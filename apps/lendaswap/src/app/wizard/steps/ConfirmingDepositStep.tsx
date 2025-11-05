@@ -1,6 +1,6 @@
-import { Check, Copy, Loader2 } from "lucide-react";
-import { GetSwapResponse } from "../../api";
-import { useState } from "react";
+import {Check, Copy, Loader2} from "lucide-react";
+import {GetSwapResponse} from "../../api";
+import {useState} from "react";
 
 interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;
@@ -8,9 +8,9 @@ interface ConfirmingDepositStepProps {
 }
 
 export function ConfirmingDepositStep({
-  swapData,
-  swapDirection,
-}: ConfirmingDepositStepProps) {
+                                        swapData,
+                                        swapDirection,
+                                      }: ConfirmingDepositStepProps) {
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
 
   const handleCopyTxId = async (txId: string) => {
@@ -34,7 +34,7 @@ export function ConfirmingDepositStep({
           {/* Step 1: User Funded */}
           <div className="flex items-start gap-3">
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
-              <Check className="h-4 w-4 text-primary-foreground" />
+              <Check className="h-4 w-4 text-primary-foreground"/>
             </div>
             <div className="flex-1 space-y-1">
               <p className="font-medium">User Funded</p>
@@ -50,9 +50,9 @@ export function ConfirmingDepositStep({
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === swapData.bitcoin_htlc_fund_txid ? (
-                      <Check className="h-3 w-3" />
+                      <Check className="h-3 w-3"/>
                     ) : (
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-3 w-3"/>
                     )}
                   </button>
                 </div>
@@ -68,9 +68,9 @@ export function ConfirmingDepositStep({
               }`}
             >
               {swapData.polygon_htlc_fund_txid ? (
-                <Check className="h-4 w-4 text-primary-foreground" />
+                <Check className="h-4 w-4 text-primary-foreground"/>
               ) : (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
               )}
             </div>
             <div className="flex-1 space-y-1">
@@ -91,9 +91,9 @@ export function ConfirmingDepositStep({
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === swapData.polygon_htlc_fund_txid ? (
-                      <Check className="h-3 w-3" />
+                      <Check className="h-3 w-3"/>
                     ) : (
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-3 w-3"/>
                     )}
                   </button>
                 </div>
@@ -109,9 +109,9 @@ export function ConfirmingDepositStep({
               }`}
             >
               {swapData.polygon_htlc_claim_txid ? (
-                <Check className="h-4 w-4 text-primary-foreground" />
+                <Check className="h-4 w-4 text-primary-foreground"/>
               ) : (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
               )}
             </div>
             <div className="flex-1 space-y-1">
@@ -128,9 +128,9 @@ export function ConfirmingDepositStep({
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === swapData.polygon_htlc_claim_txid ? (
-                      <Check className="h-3 w-3" />
+                      <Check className="h-3 w-3"/>
                     ) : (
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-3 w-3"/>
                     )}
                   </button>
                 </div>
@@ -142,7 +142,7 @@ export function ConfirmingDepositStep({
           {swapData.bitcoin_htlc_claim_txid && (
             <div className="flex items-start gap-3">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
-                <Check className="h-4 w-4 text-primary-foreground" />
+                <Check className="h-4 w-4 text-primary-foreground"/>
               </div>
               <div className="flex-1 space-y-1">
                 <p className="font-medium">Server Redeemed</p>
@@ -157,9 +157,9 @@ export function ConfirmingDepositStep({
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === swapData.bitcoin_htlc_claim_txid ? (
-                      <Check className="h-3 w-3" />
+                      <Check className="h-3 w-3"/>
                     ) : (
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-3 w-3"/>
                     )}
                   </button>
                 </div>
@@ -175,7 +175,7 @@ export function ConfirmingDepositStep({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-center py-12">
-        <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+        <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4"/>
       </div>
     </div>
   );
