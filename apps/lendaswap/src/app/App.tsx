@@ -247,7 +247,7 @@ function HomePage() {
           }),
         );
 
-        navigate(`/swap/${swap.id}/send`);
+        navigate(`/swap/${swap.id}/wizard`);
       } else if (isPolygonSource) {
         // NEW FLOW: Polygon → Arkade
 

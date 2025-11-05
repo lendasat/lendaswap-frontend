@@ -10,8 +10,12 @@ import {
 } from "../api";
 import { WizardSteps } from "./WizardSteps";
 import { useAsyncRetry } from "react-use";
-import { SendBitcoinStep } from "../steps";
-import { SwapProcessingStep, SuccessStep, PolygonDepositStep } from "./steps";
+import {
+  SendBitcoinStep,
+  SwapProcessingStep,
+  SuccessStep,
+  PolygonDepositStep,
+} from "./steps";
 import { AlertCircle } from "lucide-react";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
@@ -233,7 +237,7 @@ export function SwapWizardPage() {
 
         {/* Step Content Card */}
         <Card className="border-border/50 shadow-xl backdrop-blur-sm bg-card/80">
-          <CardContent className="space-y-6 p-8">
+          <CardContent className="space-y-6 p-0">
             {/* Error State */}
             {error && (
               <Card className="border-destructive/50 bg-destructive/10">
