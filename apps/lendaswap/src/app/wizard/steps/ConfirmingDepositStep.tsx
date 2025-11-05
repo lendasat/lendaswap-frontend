@@ -138,14 +138,22 @@ export function ConfirmingDepositStep({
             </div>
           </div>
 
-          {/* Step 4: Server Redeemed (optional, only shown if exists) */}
-          {swapData.bitcoin_htlc_claim_txid && (
-            <div className="flex items-start gap-3">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
+          {/* Step 4: Server Redeemed */}
+          <div className="flex items-start gap-3">
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                swapData.bitcoin_htlc_claim_txid ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              {swapData.bitcoin_htlc_claim_txid ? (
                 <Check className="h-4 w-4 text-primary-foreground"/>
-              </div>
-              <div className="flex-1 space-y-1">
-                <p className="font-medium">Server Redeemed</p>
+              ) : (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground"/>
+              )}
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="font-medium">Server Redeemed</p>
+              {swapData.bitcoin_htlc_claim_txid && (
                 <div className="flex items-center gap-2">
                   <code className="text-xs text-muted-foreground">
                     {clipTxId(swapData.bitcoin_htlc_claim_txid)}
@@ -163,9 +171,9 @@ export function ConfirmingDepositStep({
                     )}
                   </button>
                 </div>
-              </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     );
