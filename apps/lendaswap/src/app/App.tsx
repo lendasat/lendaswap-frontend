@@ -462,6 +462,10 @@ function HomePage() {
             onChange={setTargetAddress}
             targetToken={targetAsset}
             setAddressIsValid={setAddressValid}
+            setBitcoinAmount={(amount) => {
+              setLastFieldEdited("btc");
+              setBitcoinAmount(amount.toString());
+            }}
           />
 
           {/* Polygon Wallet Address - only shown when source is Polygon stablecoin */}

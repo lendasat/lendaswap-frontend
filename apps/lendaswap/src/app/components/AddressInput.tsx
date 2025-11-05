@@ -15,6 +15,7 @@ interface AddressInputProps {
   targetToken: TokenId;
   className?: string;
   setAddressIsValid: (valid: boolean) => void;
+  setBitcoinAmount: (amount: number) => void;
 }
 
 export function AddressInput({
@@ -23,6 +24,7 @@ export function AddressInput({
   targetToken,
   className = "",
   setAddressIsValid,
+  setBitcoinAmount,
 }: AddressInputProps) {
   const isPolygonTarget =
     targetToken === "usdc_pol" || targetToken === "usdt_pol";
@@ -48,18 +50,21 @@ export function AddressInput({
       try {
         setValidationError("");
         const bolt11Invoice = decode(value);
-
+        let hasAmount = false;
         for (const sectionsKey in bolt11Invoice.sections) {
           const section = bolt11Invoice.sections[sectionsKey];
           if (section.name === "amount" && section.value) {
             const amount = Number.parseInt(section.value);
             if (amount > 0) {
-              setValidationError(
-                "Invoice cannot have an amount. Please provide a different invoice.",
-              );
-              setAddressIsValid(false);
+              setAddressIsValid(true);
+              hasAmount = true;
+              setBitcoinAmount(amount / 1_000 / 100_000_000);
             }
           }
+        }
+        if (!hasAmount) {
+          setAddressIsValid(true);
+          setValidationError("Invoices without amount are not supported.");
         }
       } catch (e) {
         setValidationError("Invalid Lightning invoice");
