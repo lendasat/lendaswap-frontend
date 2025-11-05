@@ -39,14 +39,7 @@ import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
 import { usePriceFeed } from "./PriceFeedContext";
-import {
-  ManageSwapPage,
-  SwapProcessingPage,
-  SwapSendPage,
-  SwapSignPolygonPage,
-  SwapSuccessPage,
-  SwapsPage,
-} from "./pages";
+import { ManageSwapPage, SwapsPage } from "./pages";
 import { SwapWizardPage } from "./wizard";
 import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
 import { hasReferralCode } from "./utils/referralCode";
@@ -754,19 +747,6 @@ export default function App() {
                 element={<Navigate to="/btc_lightning/usdc_pol" replace />}
               />
               <Route path="/:sourceToken/:targetToken" element={<HomePage />} />
-              <Route path="/swap/:swapId/send" element={<SwapSendPage />} />
-              <Route
-                path="/swap/:swapId/sign-polygon"
-                element={<SwapSignPolygonPage />}
-              />
-              <Route
-                path="/swap/:swapId/processing"
-                element={<SwapProcessingPage />}
-              />
-              <Route
-                path="/swap/:swapId/success"
-                element={<SwapSuccessPage />}
-              />
               <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
               <Route path="/swaps" element={<SwapsPage />} />
               <Route path="/manage/:swapId" element={<ManageSwapPage />} />
