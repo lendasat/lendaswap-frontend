@@ -250,48 +250,88 @@ function HomePage() {
           return;
         }
 
-        // Generate secret and keys
-        const secret = generateSecret();
-        const hash_lock = await hashSecret(secret);
-        const { publicKey: receiver_pk, privateKey: own_sk } =
-          getOrCreateBitcoinKeys();
+        if (targetAsset === "btc_arkade") {
+          // Generate secret and keys
+          const secret = generateSecret();
+          const hash_lock = await hashSecret(secret);
+          const { publicKey: receiver_pk, privateKey: own_sk } =
+            getOrCreateBitcoinKeys();
 
-        // Call Polygon → Arkade API
-        const swap = await api.createPolygonToArkadeSwap({
-          target_address: targetAddress, // Arkade address
-          source_amount: parseFloat(usdAmount),
-          source_token: sourceAsset,
-          hash_lock,
-          receiver_pk,
-          user_polygon_address: userPolygonAddress,
-          // FIXME: not needed
-          user_polygon_address_nonce: 0,
-        });
-
-        // Store swap data (needed for claiming BTC later)
-        localStorage.setItem(
-          swap.id,
-          JSON.stringify({
-            secret,
-            own_sk,
+          // Call Polygon → Arkade API
+          const swap = await api.createPolygonToArkadeSwap({
+            target_address: targetAddress, // Arkade address
+            source_amount: parseFloat(usdAmount),
+            source_token: sourceAsset,
+            hash_lock,
             receiver_pk,
-            lendaswap_pk: swap.sender_pk,
-            arkade_server_pk: swap.server_pk,
-            refund_locktime: swap.refund_locktime,
-            unilateral_claim_delay: swap.unilateral_claim_delay,
-            unilateral_refund_delay: swap.unilateral_refund_delay,
-            unilateral_refund_without_receiver_delay:
-              swap.unilateral_refund_without_receiver_delay,
-            network: swap.network,
-            vhtlc_address: swap.htlc_address_arkade,
-            created_at: swap.created_at,
-            source_token: swap.source_token,
-            target_token: swap.target_token,
-          }),
-        );
+            user_polygon_address: userPolygonAddress,
+            // FIXME: not needed
+            user_polygon_address_nonce: 0,
+          });
 
-        // Navigate to Polygon signing page
-        navigate(`/swap/${swap.id}/wizard`);
+          // Store swap data (needed for claiming BTC later)
+          localStorage.setItem(
+            swap.id,
+            JSON.stringify({
+              secret,
+              own_sk,
+              receiver_pk,
+              lendaswap_pk: swap.sender_pk,
+              arkade_server_pk: swap.server_pk,
+              refund_locktime: swap.refund_locktime,
+              unilateral_claim_delay: swap.unilateral_claim_delay,
+              unilateral_refund_delay: swap.unilateral_refund_delay,
+              unilateral_refund_without_receiver_delay:
+                swap.unilateral_refund_without_receiver_delay,
+              network: swap.network,
+              vhtlc_address: swap.htlc_address_arkade,
+              created_at: swap.created_at,
+              source_token: swap.source_token,
+              target_token: swap.target_token,
+            }),
+          );
+
+          // Navigate to Polygon signing page
+          navigate(`/swap/${swap.id}/wizard`);
+        }
+
+        if (targetAsset === "btc_lightning") {
+          // Generate keys
+          const { publicKey: receiver_pk, privateKey: own_sk } =
+            getOrCreateBitcoinKeys();
+
+          // Call Polygon → Arkade API
+          const swap = await api.createPolygonToLightningSwap({
+            bolt11_invoice: targetAddress, // Arkade address
+            source_token: sourceAsset,
+            receiver_pk,
+            user_polygon_address: userPolygonAddress,
+          });
+
+          // Store swap data (needed for claiming BTC later)
+          localStorage.setItem(
+            swap.id,
+            JSON.stringify({
+              own_sk,
+              receiver_pk,
+              lendaswap_pk: swap.sender_pk,
+              arkade_server_pk: swap.server_pk,
+              refund_locktime: swap.refund_locktime,
+              unilateral_claim_delay: swap.unilateral_claim_delay,
+              unilateral_refund_delay: swap.unilateral_refund_delay,
+              unilateral_refund_without_receiver_delay:
+                swap.unilateral_refund_without_receiver_delay,
+              network: swap.network,
+              vhtlc_address: swap.htlc_address_arkade,
+              created_at: swap.created_at,
+              source_token: swap.source_token,
+              target_token: swap.target_token,
+            }),
+          );
+
+          // Navigate to Polygon signing page
+          navigate(`/swap/${swap.id}/wizard`);
+        }
       }
     } catch (error) {
       console.error("Failed to create swap:", error);

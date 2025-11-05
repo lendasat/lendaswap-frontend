@@ -43,7 +43,9 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
   const [error, setError] = useState("");
 
   const tokenSymbol = getTokenSymbol(swapData.source_token);
-  const receiveAmount = (swapData.sats_required / 100_000_000).toFixed(8);
+  const receiveAmount = swapData?.sats_received
+    ? (swapData.sats_received / 100_000_000).toFixed(8)
+    : 0;
 
   const handleSign = async () => {
     if (!walletClient || !address || !publicClient) {
@@ -59,7 +61,11 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
       const tokenAddress = swapData.source_token_address as `0x${string}`;
 
       // Parse the amount needed for this swap
-      const amountNeeded = BigInt(swapData.usd_amount);
+      // Convert USD amount to token amount with 6 decimals (USDC/USDT use 6 decimals)
+      const decimals = 6;
+      const amountNeeded = BigInt(
+        Math.floor(swapData.usd_amount * Math.pow(10, decimals)),
+      );
 
       console.log("Checking current allowance...");
       console.log("Amount needed:", amountNeeded.toString());
@@ -176,7 +182,7 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground"></span>
           <span className="text-muted-foreground">
-            (~{swapData.sats_required.toLocaleString()} sats)
+            (~{swapData.sats_received} sats)
           </span>
         </div>
       </div>
