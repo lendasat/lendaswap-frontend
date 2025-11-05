@@ -1,4 +1,4 @@
-import {getReferralCode} from "./utils/referralCode";
+import { getReferralCode } from "./utils/referralCode";
 
 // API client for Lendaswap backend
 const API_BASE_URL =
@@ -80,7 +80,6 @@ export interface SwapRequest {
   refund_pk: string;
   referral_code?: string; // Optional referral code for tracking
 }
-
 
 export function getTokenSymbol(tokenId: TokenId): string {
   switch (tokenId) {
@@ -231,7 +230,7 @@ export const api = {
     const referralCode = getReferralCode();
     const requestWithReferral = {
       ...request,
-      ...(referralCode ? {referral_code: referralCode} : {}),
+      ...(referralCode ? { referral_code: referralCode } : {}),
     };
 
     const response = await fetch(`${API_BASE_URL}/swap/arkade/polygon`, {
@@ -244,7 +243,7 @@ export const api = {
     if (!response.ok) {
       const error = await response
         .json()
-        .catch(() => ({error: response.statusText}));
+        .catch(() => ({ error: response.statusText }));
       throw new Error(
         error.error || `Failed to create swap: ${response.statusText}`,
       );
@@ -274,12 +273,12 @@ export const api = {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({secret}),
+      body: JSON.stringify({ secret }),
     });
     if (!response.ok) {
       const error = await response
         .json()
-        .catch(() => ({error: response.statusText}));
+        .catch(() => ({ error: response.statusText }));
       throw new Error(error.error || `Failed to claim: ${response.statusText}`);
     }
   },
@@ -290,19 +289,19 @@ export const api = {
     const referralCode = getReferralCode();
     const requestWithReferral = {
       ...request,
-      ...(referralCode ? {referral_code: referralCode} : {}),
+      ...(referralCode ? { referral_code: referralCode } : {}),
     };
 
     const response = await fetch(`${API_BASE_URL}/swap/polygon/arkade`, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestWithReferral),
     });
 
     if (!response.ok) {
       const error = await response
         .json()
-        .catch(() => ({error: response.statusText}));
+        .catch(() => ({ error: response.statusText }));
       throw new Error(
         error.error || `Failed to create swap: ${response.statusText}`,
       );
@@ -319,7 +318,7 @@ export const api = {
       `${API_BASE_URL}/swap/${swapId}/gelato-submit`,
       {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
       },
     );
@@ -327,7 +326,7 @@ export const api = {
     if (!response.ok) {
       const error = await response
         .json()
-        .catch(() => ({error: response.statusText}));
+        .catch(() => ({ error: response.statusText }));
       throw new Error(
         error.error || `Failed to submit to Gelato: ${response.statusText}`,
       );

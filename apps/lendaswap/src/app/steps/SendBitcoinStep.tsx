@@ -13,8 +13,6 @@ interface SendBitcoinStepProps {
   unifiedAddress: string;
   swapData: SwapResponse | null;
   usdcAmount: string;
-  copiedAddress: string | null;
-  handleCopyAddress: (address: string) => void;
   tokenSymbol?: string; // e.g., "USDC", "USDT"
 }
 
@@ -24,8 +22,6 @@ export function SendBitcoinStep({
   unifiedAddress,
   swapData,
   usdcAmount,
-  copiedAddress,
-  handleCopyAddress,
   tokenSymbol = "USDC",
 }: SendBitcoinStepProps) {
   const navigate = useNavigate();
@@ -33,6 +29,17 @@ export function SendBitcoinStep({
   const { client, isEmbedded, isReady } = useWalletBridge();
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  const handleCopyAddress = async (address: string) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedAddress(address);
+      setTimeout(() => setCopiedAddress(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+    }
+  };
 
   const handleSendFromWallet = async () => {
     if (!client || !arkadeAddress || !swapData || !swapId) {

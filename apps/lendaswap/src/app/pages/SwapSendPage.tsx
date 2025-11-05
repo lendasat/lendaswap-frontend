@@ -142,8 +142,6 @@ export function SwapSendPage() {
       unifiedAddress={unifiedAddress}
       swapData={swapData}
       usdcAmount={usdcAmount}
-      copiedAddress={copiedAddress}
-      handleCopyAddress={handleCopyAddress}
       tokenSymbol={tokenSymbol}
     />
   );
