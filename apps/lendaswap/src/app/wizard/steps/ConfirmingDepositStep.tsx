@@ -30,13 +30,6 @@ export function ConfirmingDepositStep({
   if (swapDirection === "btc-to-polygon") {
     return (
       <div className="space-y-6">
-        <div className="space-y-2">
-          <h3 className="text-xl font-semibold">Processing Swap</h3>
-          <p className="text-muted-foreground">
-            Your swap is being processed. Please wait...
-          </p>
-        </div>
-
         <div className="space-y-4">
           {/* Step 1: User Funded */}
           <div className="flex items-start gap-3">
@@ -181,10 +174,6 @@ export function ConfirmingDepositStep({
   // polygon-to-btc
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold">Confirming Deposit</h3>
-      <p className="text-muted-foreground">
-        Your Polygon deposit has been received. Waiting for confirmations...
-      </p>
       <div className="flex items-center justify-center py-12">
         <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
       </div>

@@ -3,6 +3,7 @@ import { cn } from "#/lib/utils";
 interface Step {
   id: string;
   label: string;
+  labelCompleted?: string;
   status: "completed" | "current" | "upcoming";
 }
 
@@ -45,7 +46,9 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
                   },
                 )}
               >
-                {step.label}
+                {isCompleted && step.labelCompleted
+                  ? step.labelCompleted
+                  : step.label}
               </div>
 
               {/* Connector Line */}

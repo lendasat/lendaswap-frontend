@@ -30,6 +30,7 @@ type StepId =
 interface Step {
   id: StepId;
   label: string;
+  labelCompleted?: string;
   status: "completed" | "current" | "upcoming";
 }
 
@@ -149,6 +150,7 @@ export function SwapWizardPage() {
         {
           id: "user-deposit",
           label: "Waiting for deposit",
+          labelCompleted: "Deposited",
           status:
             currentStep === "user-deposit"
               ? "current"
@@ -159,6 +161,7 @@ export function SwapWizardPage() {
         {
           id: "server-deposit",
           label: "Swapping like it's popping",
+          labelCompleted: "Swapped",
           status:
             currentStep === "server-depositing" ||
             currentStep === "server-deposit" ||
@@ -181,6 +184,7 @@ export function SwapWizardPage() {
       {
         id: "user-deposit",
         label: "Waiting for deposit",
+        labelCompleted: "Deposited",
         status:
           currentStep === "user-deposit"
             ? "current"
@@ -191,6 +195,7 @@ export function SwapWizardPage() {
       {
         id: "server-deposit",
         label: "Swapping like it's popping",
+        labelCompleted: "Swapped",
         status:
           currentStep === "server-depositing" ||
           currentStep === "server-deposit" ||
@@ -228,11 +233,7 @@ export function SwapWizardPage() {
                     Failed to Load Swap
                   </h3>
                 </div>
-                <p className="text-muted-foreground">
-                  {error instanceof Error
-                    ? error.message
-                    : "An error occurred while loading swap data. Please try again."}
-                </p>
+                <p className="text-muted-foreground">{error.message}</p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => retry()}
