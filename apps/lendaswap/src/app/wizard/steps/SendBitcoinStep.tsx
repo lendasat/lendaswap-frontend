@@ -61,7 +61,7 @@ export function SendBitcoinStep({
       // Send Bitcoin using the wallet bridge
       await client.sendToAddress(
         arkadeAddress,
-        swapData.sats_required,
+        swapData.sats_receive,
         "bitcoin",
       );
 
@@ -187,17 +187,17 @@ export function SendBitcoinStep({
             <span className="text-muted-foreground">Required Sats</span>
             <div className="flex items-center gap-2">
               <span className="font-medium">
-                {swapData.sats_required.toLocaleString()} sats
+                {swapData.sats_receive.toLocaleString()} sats
               </span>
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() =>
-                  handleCopyAddress(swapData.sats_required.toString())
+                  handleCopyAddress(swapData.sats_receive.toString())
                 }
                 className="h-6 w-6"
               >
-                {copiedAddress === swapData.sats_required.toString() ? (
+                {copiedAddress === swapData.sats_receive.toString() ? (
                   <CheckCheck className="h-3 w-3" />
                 ) : (
                   <Copy className="h-3 w-3" />

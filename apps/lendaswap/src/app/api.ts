@@ -102,7 +102,6 @@ export interface SwapCommonFields {
   id: string;
   status: SwapStatus;
   hash_lock: string;
-  sats_required: number; // Total amount user needs to send (includes fee)
   fee_sats: number; // Fee amount in sats
   usd_amount: number;
   // VHTLC parameters for refunding
@@ -123,7 +122,7 @@ export interface BtcToPolygonSwapResponse extends SwapCommonFields {
   htlc_address_arkade: string;
   user_address_polygon: string;
   ln_invoice: string;
-  sats_received: number | null;
+  sats_receive: number;
   source_token: TokenId; // Token being sent
   target_token: TokenId; // Token being received
   user_address_arkade: string;
