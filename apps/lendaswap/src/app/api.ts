@@ -63,6 +63,7 @@ export type SwapStatus =
   | "clientfunded" // Client funded BTC, waiting for server to create HTLC
   | "clientrefunded" // Client refunded before server created HTLC (terminal)
   | "serverfunded" // Server locked WBTC in HTLC, waiting for client to claim
+  | "clientredeeming" // Client is claiming token by revealing secret
   | "clientredeemed" // Client claimed token by revealing secret
   | "serverredeemed" // Server claimed BTC using revealed secret (success - terminal)
   | "clientfundedserverrefunded" // HTLC timed out, both refunded (terminal)
