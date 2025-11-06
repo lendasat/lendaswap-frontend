@@ -41,25 +41,25 @@ export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
     swapDirection === "btc-to-polygon"
       ? {
           sentTokenSymbol: "sats",
-          sentAmount: swapData.sats_required.toLocaleString(),
+          sentAmount: swapData.sats_receive.toLocaleString(),
           receivedTokenSymbol: getTokenSymbol(swapData.target_token),
           receivedAmount: swapData.usd_amount.toFixed(2),
           receiveAddress: swapData.user_address_polygon,
           receiveAddressIsPolygon: true,
           swapTxId: swapData.polygon_htlc_claim_txid,
           swapTxIdIsPolygon: true,
-          tweetText: `Just swapped ${swapData.sats_required.toLocaleString()} sats to ${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`,
+          tweetText: `Just swapped ${swapData.sats_receive.toLocaleString()} sats to ${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`,
         }
       : {
           sentTokenSymbol: getTokenSymbol(swapData.source_token),
           sentAmount: swapData.usd_amount.toFixed(2),
           receivedTokenSymbol: "sats",
-          receivedAmount: swapData.sats_required.toLocaleString(),
+          receivedAmount: swapData.sats_receive.toLocaleString(),
           receiveAddress: swapData.user_address_arkade,
           receiveAddressIsPolygon: false,
           swapTxId: swapData.bitcoin_htlc_claim_txid,
           swapTxIdIsPolygon: false,
-          tweetText: `Just swapped ${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} to ${swapData.sats_required.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`,
+          tweetText: `Just swapped ${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} to ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat! ⚡️\n\nFast, secure, and atomic swaps with 0% fees! 🚀\n\nTry it: https://swap.lendasat.com`,
         };
 
   const handleShareOnTwitter = () => {
@@ -156,7 +156,7 @@ export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => handleCopyAddress(config.receiveAddress)}
+                  onClick={() => handleCopyAddress(config.receiveAddress || "")}
                   className="h-8 w-8"
                 >
                   {copiedAddress === config.receiveAddress ? (
