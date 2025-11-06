@@ -7,6 +7,8 @@ import {
   SwapStatus,
   TokenId,
   GetSwapResponse,
+  BtcToPolygonSwapResponse,
+  PolygonToBtcSwapResponse,
 } from "../api";
 import { WizardSteps } from "./WizardSteps";
 import { useAsyncRetry } from "react-use";
@@ -68,6 +70,7 @@ function determineStepFromStatus(
       return "server-depositing";
     case "serverredeemed":
       return "success";
+    case "clientredeeming":
     case "clientredeemed":
       return "success";
     case "expired":
@@ -299,7 +302,7 @@ export function SwapWizardPage() {
                       arkadeAddress={displaySwapData.htlc_address_arkade}
                       lightningAddress={displaySwapData.ln_invoice}
                       unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${displaySwapData.sats_required / 100_000_000}`}
-                      swapData={displaySwapData}
+                      swapData={displaySwapData as BtcToPolygonSwapResponse}
                       usdcAmount={displaySwapData.usd_amount.toFixed(2)}
                       tokenSymbol={getTokenSymbol(displaySwapData.target_token)}
                     />
@@ -307,7 +310,9 @@ export function SwapWizardPage() {
 
                 {currentStep === "user-deposit" &&
                   swapDirection === "polygon-to-btc" && (
-                    <PolygonDepositStep swapData={displaySwapData} />
+                    <PolygonDepositStep
+                      swapData={displaySwapData as PolygonToBtcSwapResponse}
+                    />
                   )}
 
                 {currentStep === "server-deposit" && (
