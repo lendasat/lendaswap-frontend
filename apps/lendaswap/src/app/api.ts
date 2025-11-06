@@ -185,33 +185,6 @@ export interface PolygonToArkadeSwapRequest {
   user_polygon_address_nonce: number;
 }
 
-export interface PolygonToArkadeSwapResponse {
-  id: string;
-  htlc_address_polygon: string;
-  htlc_address_arkade: string;
-  approve_tx?: string;
-  create_swap_tx: string;
-  sats_receive: number;
-  fee_sats: number;
-  usd_amount: number;
-  hash_lock: string;
-  sender_pk: string;
-  receiver_pk: string;
-  server_pk: string;
-  refund_locktime: number;
-  unilateral_claim_delay: number;
-  unilateral_refund_delay: number;
-  unilateral_refund_without_receiver_delay: number;
-  network: string;
-  // Gelato signing parameters
-  gelato_forwarder_address: string;
-  gelato_user_deadline: string;
-  source_token_address?: string;
-  created_at: string;
-  source_token: TokenId;
-  target_token: TokenId;
-}
-
 // Polygon → Arkade swap types
 export interface PolygonToLightningSwapRequest {
   bolt11_invoice: string;
@@ -219,30 +192,6 @@ export interface PolygonToLightningSwapRequest {
   receiver_pk: string;
   user_polygon_address: string;
   referral_code?: string;
-}
-
-export interface PolygonToLightningSwapResponse {
-  id: string;
-  polygon_address: string;
-  arkade_address: string;
-  sats_receive: number; // Total amount user will receive
-  fee_sats: number; // Fee amount in sats
-  usd_amount: number; // Total amount user needs to send
-  hash_lock: string; // Echo back for verification
-  // VHTLC parameters needed for refunding
-  sender_pk: string; // Client's public key (refund_pk)
-  receiver_pk: string; // Lendaswap's public key
-  server_pk: string; // Arkade server's public key
-  refund_locktime: number; // Timestamp past which refund is permitted
-  unilateral_claim_delay: number; // Relative timelock for claim
-  unilateral_refund_delay: number; // Relative timelock for refund
-  unilateral_refund_without_receiver_delay: number /* Relative timelock for refund without
-   * receiver */;
-  network: string; // Bitcoin network (e.g., "signet", "bitcoin")
-  created_at: string;
-  source_token: TokenId;
-  target_token: TokenId;
-  htlc_address_arkade: string;
 }
 
 export interface GelatoSubmitRequest {
@@ -335,7 +284,7 @@ export const api = {
 
   async createPolygonToArkadeSwap(
     request: PolygonToArkadeSwapRequest,
-  ): Promise<PolygonToArkadeSwapResponse> {
+  ): Promise<GetSwapResponse> {
     const referralCode = getReferralCode();
     const requestWithReferral = {
       ...request,
@@ -362,7 +311,7 @@ export const api = {
 
   async createPolygonToLightningSwap(
     request: PolygonToLightningSwapRequest,
-  ): Promise<PolygonToLightningSwapResponse> {
+  ): Promise<GetSwapResponse> {
     console.log(`request ${JSON.stringify(request)}`);
     const referralCode = getReferralCode();
     const requestWithReferral = {

@@ -44,7 +44,7 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
 
   const tokenSymbol = getTokenSymbol(swapData.source_token);
   const receiveAmount = swapData?.sats_receive
-    ? (swapData.sats_required / 100_000_000).toFixed(8)
+    ? (swapData.sats_receive / 100_000_000).toFixed(8)
     : 0;
 
   const handleSign = async () => {
