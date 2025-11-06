@@ -176,7 +176,12 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">You Receive</span>
+          {swapData?.target_token === "btc_lightning" && (
+            <span className="text-muted-foreground">We will send</span>
+          )}
+          {swapData?.target_token === "btc_arkade" && (
+            <span className="text-muted-foreground">You receive</span>
+          )}
           <span className="font-medium">~{receiveAmount} BTC</span>
         </div>
         <div className="flex justify-between text-xs">
