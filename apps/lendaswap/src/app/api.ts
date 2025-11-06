@@ -96,66 +96,81 @@ export function getTokenSymbol(tokenId: TokenId): string {
   }
 }
 
-export interface SwapResponse {
-  id: string;
-  ln_invoice: string;
-  htlc_address_arkade: string;
-  sats_required: number;
-  fee_sats?: number; // Optional - not displayed in UI
-  usd_amount: number;
-  hash_lock: string;
-  // VHTLC parameters for refunding
-  sender_pk: string;
-  receiver_pk: string;
-  server_pk: string;
-  refund_locktime: number;
-  unilateral_claim_delay: number;
-  unilateral_refund_delay: number;
-  unilateral_refund_without_receiver_delay: number;
-  network: string;
-  created_at: string;
-  source_token: TokenId;
-  target_token: TokenId;
-}
-
-export interface GetSwapResponse {
+// Common fields shared across all swap directions
+export interface SwapCommonFields {
   id: string;
   status: SwapStatus;
-  htlc_address_arkade: string;
-  ln_invoice: string;
-  sats_required: number;
-  sats_received: number | null;
+  hash_lock: string;
+  sats_required: number; // Total amount user needs to send (includes fee)
+  fee_sats: number; // Fee amount in sats
   usd_amount: number;
+  // VHTLC parameters for refunding
+  sender_pk: string; // Client's public key (refund_pk or claim_pk)
+  receiver_pk: string; // Lendaswap's public key
+  server_pk: string; // Arkade server's public key
+  refund_locktime: number; // Timestamp past which refund is permitted
+  unilateral_claim_delay: number; // Relative timelock for claim
+  unilateral_refund_delay: number; // Relative timelock for refund
+  unilateral_refund_without_receiver_delay: number; // Relative timelock for refund without receiver
+  network: string; // Bitcoin network (e.g., "signet", "mainnet")
+  created_at: string; // Timestamp of when the swap was created
+}
+
+// BTC → Polygon swap response
+export interface BtcToPolygonSwapResponse extends SwapCommonFields {
+  htlc_address_polygon: string;
+  htlc_address_arkade: string;
+  user_address_polygon: string;
+  ln_invoice: string;
+  sats_received: number | null;
+  source_token: TokenId; // Token being sent
+  target_token: TokenId; // Token being received
+  user_address_arkade: string;
   bitcoin_htlc_claim_txid: string | null;
   bitcoin_htlc_fund_txid: string | null;
   polygon_htlc_claim_txid: string | null;
   polygon_htlc_fund_txid: string | null;
-  hash_lock: string;
+}
+
+// Polygon → BTC swap response
+export interface PolygonToBtcSwapResponse extends SwapCommonFields {
   htlc_address_polygon: string;
+  htlc_address_arkade: string;
   user_address_polygon: string;
-  user_address_arkade: string;
-  onchain_swap_id: string | null; // The actual on-chain swap ID used by the HTLC contract
-  fee_sats?: number; // Optional fee in satoshis
-  // VHTLC parameters for refunding
-  sender_pk: string;
-  receiver_pk: string;
-  server_pk: string;
-  refund_locktime: number;
-  unilateral_claim_delay: number;
-  unilateral_refund_delay: number;
-  unilateral_refund_without_receiver_delay: number;
-  network: string;
-  // Polygon → Arkade swap specific fields (matches CreateSwapResponse naming)
-  create_swap_tx?: string;
-  approve_tx?: string;
-  gelato_forwarder_address?: string;
-  gelato_user_nonce?: string;
-  gelato_user_deadline?: string;
-  sats_receive?: number; // For Polygon → Arkade: net sats user will receive
-  source_token_address?: string; // ERC20 token address for approve target
-  created_at: string;
-  source_token: TokenId;
-  target_token: TokenId;
+  user_address_arkade: string | null;
+  ln_invoice: string;
+  source_token: TokenId; // Token being sent
+  target_token: TokenId; // Token being received
+  sats_receive: number; // Net sats user will receive
+  bitcoin_htlc_claim_txid: string | null;
+  bitcoin_htlc_fund_txid: string | null;
+  polygon_htlc_claim_txid: string | null;
+  polygon_htlc_fund_txid: string | null;
+  // Polygon-specific transaction details
+  create_swap_tx: string | null;
+  approve_tx: string | null;
+  gelato_forwarder_address: string | null;
+  gelato_user_nonce: string | null;
+  gelato_user_deadline: string | null;
+  source_token_address: string; // ERC20 token address for approve target
+}
+
+// Tagged union type matching backend enum
+export type GetSwapResponse =
+  | ({ direction: "btc_to_polygon" } & BtcToPolygonSwapResponse)
+  | ({ direction: "polygon_to_btc" } & PolygonToBtcSwapResponse);
+
+// Type guards for swap direction
+export function isBtcToPolygonSwap(
+  swap: GetSwapResponse,
+): swap is { direction: "btc_to_polygon" } & BtcToPolygonSwapResponse {
+  return swap.direction === "btc_to_polygon";
+}
+
+export function isPolygonToBtcSwap(
+  swap: GetSwapResponse,
+): swap is { direction: "polygon_to_btc" } & PolygonToBtcSwapResponse {
+  return swap.direction === "polygon_to_btc";
 }
 
 // Polygon → Arkade swap types
@@ -258,7 +273,9 @@ export const api = {
     return response.json();
   },
 
-  async createArkadeToPolygonSwap(request: SwapRequest): Promise<SwapResponse> {
+  async createArkadeToPolygonSwap(
+    request: SwapRequest,
+  ): Promise<GetSwapResponse> {
     // Automatically include referral code from localStorage if present
     const referralCode = getReferralCode();
     const requestWithReferral = {

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { CardContent } from "#/components/ui/card";
-import type { GetSwapResponse } from "../../api";
+import { PolygonToBtcSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
 
 // ERC20 ABI - approve and allowance functions
@@ -31,7 +31,7 @@ const ERC20_ABI = [
 ] as const;
 
 interface PolygonDepositStepProps {
-  swapData: GetSwapResponse;
+  swapData: PolygonToBtcSwapResponse;
 }
 
 export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
@@ -43,8 +43,8 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
   const [error, setError] = useState("");
 
   const tokenSymbol = getTokenSymbol(swapData.source_token);
-  const receiveAmount = swapData?.sats_received
-    ? (swapData.sats_received / 100_000_000).toFixed(8)
+  const receiveAmount = swapData?.sats_receive
+    ? (swapData.sats_required / 100_000_000).toFixed(8)
     : 0;
 
   const handleSign = async () => {
@@ -182,7 +182,7 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground"></span>
           <span className="text-muted-foreground">
-            (~{swapData.sats_received} sats)
+            (~{swapData.sats_receive} sats)
           </span>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
-import { api, GetSwapResponse } from "../../api";
+import { api, BtcToPolygonSwapResponse, GetSwapResponse } from "../../api";
 import { useEffect, useRef, useState } from "react";
 import {
   claimVhtlc,
@@ -162,20 +162,21 @@ export function SwapProcessingStep({
   // Auto-claim for polygon-to-btc when server is funded
   useEffect(() => {
     const autoClaimPolygonToArkadeSwaps = async () => {
+      const polygonToBtcSwapData = swapData as BtcToPolygonSwapResponse;
       if (swapDirection !== "polygon-to-btc") return;
-      if (swapData.target_token === "btc_lightning") {
+      if (polygonToBtcSwapData.target_token === "btc_lightning") {
         // this will be claimed by the lightning client
         return;
       }
-      if (swapData.status !== "serverfunded") return;
+      if (polygonToBtcSwapData.status !== "serverfunded") return;
       if (!wasmInitialized) return;
-      if (!swapData.user_address_arkade) {
+      if (!polygonToBtcSwapData.user_address_arkade) {
         console.error("No user address for arkade provided");
         setClaimError("Missing Arkade address for claim");
         return;
       }
 
-      const claimKey = `swap_${swapData.id}_claim_attempted`;
+      const claimKey = `swap_${polygonToBtcSwapData.id}_claim_attempted`;
       const attemptTimestamp = localStorage.getItem(claimKey);
 
       // Check if we've exhausted retries
@@ -200,12 +201,12 @@ export function SwapProcessingStep({
 
         const fetchedAmounts = await getAmountsForSwap(
           ARK_SERVER_URL,
-          swapData.id,
+          polygonToBtcSwapData.id,
         );
         console.log(`Fetched amounts for swap`, fetchedAmounts);
 
         console.log("Auto-claiming with parameters:", {
-          swapId: swapData.id,
+          swapId: polygonToBtcSwapData.id,
           retryCount,
         });
 
@@ -214,8 +215,8 @@ export function SwapProcessingStep({
 
         const txid = await claimVhtlc(
           ARK_SERVER_URL,
-          swapData.id,
-          swapData.user_address_arkade,
+          polygonToBtcSwapData.id,
+          polygonToBtcSwapData.user_address_arkade,
         );
         console.log(`Claim request sent successfully ${txid}`);
         // Success! Reset retry count

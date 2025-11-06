@@ -4,14 +4,14 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "#/components/ui/button";
 import { CardContent } from "#/components/ui/card";
-import { SwapResponse } from "../../api";
+import { BtcToPolygonSwapResponse } from "../../api";
 import { useWalletBridge } from "../../WalletBridgeContext";
 
 interface SendBitcoinStepProps {
   arkadeAddress: string | null;
   lightningAddress: string | null;
   unifiedAddress: string;
-  swapData: SwapResponse | null;
+  swapData: BtcToPolygonSwapResponse | null;
   usdcAmount: string;
   tokenSymbol?: string; // e.g., "USDC", "USDT"
 }
