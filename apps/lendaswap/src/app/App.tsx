@@ -16,6 +16,7 @@ import {
   PiggyBank,
   Shield,
   Tag,
+  TriangleAlert,
   Wrench,
   Zap,
 } from "lucide-react";
@@ -45,6 +46,7 @@ import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
+import { Alert, AlertTitle } from "#/components/ui/alert";
 
 // Generate a random 32-byte secret
 function generateSecret(): string {
@@ -511,9 +513,13 @@ function HomePage() {
           {/* Polygon Wallet Address - only shown when source is Polygon stablecoin */}
           {(sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol") && (
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">
-                Your Polygon Wallet Address
-              </label>
+              <Alert variant={"warning"}>
+                <TriangleAlert className={"w-4 h-4"} />
+                <AlertTitle>
+                  For this swap a web3 wallet (e.g., MetaMask) and POL token to
+                  pay for gas on Polygon is required
+                </AlertTitle>
+              </Alert>
               {isConnected && userPolygonAddress ? (
                 <div className="flex items-center gap-2">
                   <input
