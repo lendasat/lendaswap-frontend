@@ -453,7 +453,9 @@ export function SwapProcessingStep({
                 <p className="text-muted-foreground text-xs">
                   {isClaiming
                     ? swapDirection === "polygon-to-btc"
-                      ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
+                      ? swapData.target_token === "btc_lightning"
+                        ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
+                        : "Lightning invoice is pending..."
                       : "Submitting claim request via Gelato Relay..."
                     : swapDirection === "polygon-to-btc"
                       ? "The VHTLC has been funded. Preparing to claim your sats..."
