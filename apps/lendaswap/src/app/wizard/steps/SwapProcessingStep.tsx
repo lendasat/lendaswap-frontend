@@ -320,6 +320,7 @@ export function SwapProcessingStep({
                   {clipTxId(config.step1TxId)}
                 </code>
                 <button
+                  type="button"
                   onClick={() => handleCopyTxId(config.step1TxId!)}
                   className="text-muted-foreground hover:text-foreground"
                 >
@@ -369,6 +370,7 @@ export function SwapProcessingStep({
                   {clipTxId(config.step2TxId)}
                 </code>
                 <button
+                  type="button"
                   onClick={() => handleCopyTxId(config.step2TxId!)}
                   className="text-muted-foreground hover:text-foreground"
                 >
@@ -414,6 +416,7 @@ export function SwapProcessingStep({
                   {clipTxId(config.step3TxId)}
                 </code>
                 <button
+                  type="button"
                   onClick={() => handleCopyTxId(config.step3TxId!)}
                   className="text-muted-foreground hover:text-foreground"
                 >
@@ -512,6 +515,7 @@ export function SwapProcessingStep({
                   {clipTxId(config.step4TxId)}
                 </code>
                 <button
+                  type="button"
                   onClick={() => handleCopyTxId(config.step4TxId!)}
                   className="text-muted-foreground hover:text-foreground"
                 >
