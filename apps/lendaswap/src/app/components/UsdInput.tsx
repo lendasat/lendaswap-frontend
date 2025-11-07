@@ -47,7 +47,7 @@ export function UsdInput({
   if (isLoading) {
     return (
       <div
-        className={`px-4 py-3 min-h-[4.25rem] bg-white border-2  rounded-lg shadow-sm flex items-center ${className}`}
+        className={`px-4 py-3 min-h-[4.25rem] bg-card border-2  rounded-lg shadow-sm flex items-center ${className}`}
       >
         <Skeleton className="h-6 w-24" />
       </div>
@@ -62,7 +62,7 @@ export function UsdInput({
       placeholder={placeholder}
       value={value}
       onChange={handleChange}
-      className={`px-4 py-3 min-h-[4.25rem] bg-white border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm ${className}`}
+      className={`px-4 py-3 min-h-[4.25rem] bg-card border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm ${className}`}
       disabled={disabled}
       data-1p-ignore
       data-lpignore="true"

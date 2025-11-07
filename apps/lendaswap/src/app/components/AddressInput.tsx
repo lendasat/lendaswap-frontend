@@ -108,7 +108,7 @@ export function AddressInput({
           placeholder={getPlaceholder()}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`px-4 py-3 min-h-[4.25rem] bg-white border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm font-mono text-sm ${
+          className={`px-4 py-3 min-h-[4.25rem] bg-card border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm font-mono text-sm ${
             isPolygonTarget ? "pr-40" : ""
           } ${className}`}
           data-1p-ignore

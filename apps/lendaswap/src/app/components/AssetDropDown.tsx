@@ -122,7 +122,8 @@ const ASSETS = [
     symbol: "USDC",
     name: "USD Coin",
     icon: <USDCIcon />,
-    bgColor: "bg-blue-50 hover:bg-blue-100",
+    bgColor:
+      "bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50",
     network: {
       name: "Polygon",
       symbol: "Polygon",
@@ -134,7 +135,8 @@ const ASSETS = [
     symbol: "USDT0",
     name: "Tether",
     icon: <USDTIcon />,
-    bgColor: "bg-green-50 hover:bg-green-100",
+    bgColor:
+      "bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50",
     network: {
       name: "Polygon",
       symbol: "Polygon",
@@ -146,7 +148,8 @@ const ASSETS = [
     symbol: "BTC",
     name: "Bitcoin",
     icon: <BitcoinIcon />,
-    bgColor: "bg-orange-50 hover:bg-orange-100",
+    bgColor:
+      "bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50",
     network: {
       name: "Lightning",
       symbol: "Lightning",
@@ -158,7 +161,8 @@ const ASSETS = [
     symbol: "BTC",
     name: "Bitcoin",
     icon: <BitcoinIcon />,
-    bgColor: "bg-orange-50 hover:bg-orange-100",
+    bgColor:
+      "bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50",
     network: {
       name: "Arkade",
       symbol: "Arkade",
@@ -211,17 +215,17 @@ export function AssetDropDown({
           className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors ${selectedAsset.bgColor}`}
         >
           {/* Primary Icon - Asset */}
-          <div className="flex items-center justify-center w-7 h-7 bg-white rounded-full shrink-0">
+          <div className="flex items-center justify-center w-7 h-7 bg-white dark:bg-slate-800 rounded-full shrink-0">
             <div className="w-4 h-4">{selectedAsset.icon}</div>
           </div>
 
           {/* Text Content */}
           <div className="flex-1 text-left">
             <div className="flex flex-col">
-              <span className="font-bold text-sm text-slate-900">
+              <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
                 {selectedAsset.symbol}
               </span>
-              <div className="flex items-center gap-0.5 px-1 py-0.5 bg-slate-100 rounded-full w-fit">
+              <div className="flex items-center gap-0.5 px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
                 {typeof selectedAsset.network.icon === "string" ? (
                   <span className="text-[10px]">
                     {selectedAsset.network.icon}
@@ -229,7 +233,7 @@ export function AssetDropDown({
                 ) : (
                   <div className="w-2 h-2">{selectedAsset.network.icon}</div>
                 )}
-                <span className="text-[10px] font-medium text-slate-700">
+                <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300">
                   {selectedAsset.network.symbol}
                 </span>
               </div>
@@ -237,7 +241,7 @@ export function AssetDropDown({
           </div>
 
           {/* Dropdown Arrow */}
-          <ChevronDown className="w-4 h-4 text-blue-600 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
         </div>
       </DropdownMenuTrigger>
 
@@ -249,26 +253,26 @@ export function AssetDropDown({
           <DropdownMenuItem
             key={asset.id}
             onClick={() => setSelectedAsset(asset.id as TokenId)}
-            className="flex items-center gap-3 px-3 py-3 cursor-pointer rounded-lg hover:bg-slate-100 focus:bg-slate-100"
+            className="flex items-center gap-3 px-3 py-3 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800"
           >
             {/* Primary Icon - Asset */}
-            <div className="flex items-center justify-center w-9 h-9 bg-white rounded-full border-2 border-slate-100 shrink-0">
+            <div className="flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-700 rounded-full border-2 border-slate-100 dark:border-slate-600 shrink-0">
               <div className="w-6 h-6">{asset.icon}</div>
             </div>
 
             {/* Text Content */}
             <div className="flex-1">
               <div className="flex flex-col gap-1">
-                <span className="font-semibold text-slate-900">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {asset.symbol}
                 </span>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-full w-fit">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
                   {typeof asset.network.icon === "string" ? (
                     <span className="text-xs">{asset.network.icon}</span>
                   ) : (
                     <div className="w-3 h-3">{asset.network.icon}</div>
                   )}
-                  <span className="text-xs font-medium text-slate-600">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                     {asset.network.symbol}
                   </span>
                 </div>
@@ -277,7 +281,7 @@ export function AssetDropDown({
 
             {/* Checkmark for selected item */}
             {selectedAsset.id === asset.id && (
-              <Check className="w-4 h-4 text-blue-600 shrink-0" />
+              <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             )}
           </DropdownMenuItem>
         ))}
