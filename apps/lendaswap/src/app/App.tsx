@@ -809,8 +809,8 @@ export default function App() {
                     <Zap className="h-5 w-5 text-white dark:text-black" />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-2xl font-bold">&lt;30s</div>
-                    <div className="text-muted-foreground text-sm">Swaps</div>
+                    <div className="text-2xl font-bold">Quick</div>
+                    <div className="text-muted-foreground text-sm">Don't blink</div>
                   </div>
                 </CardContent>
               </Card>
@@ -820,9 +820,9 @@ export default function App() {
                     <Shield className="h-5 w-5 text-white dark:text-black" />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-2xl font-bold">Atomic Swap</div>
-                    <div className="text-muted-foreground text-xs">
-                      Succeed or refund atomically
+                    <div className="text-2xl font-bold">Atomic</div>
+                    <div className="text-muted-foreground text-sm">
+                      Swap with confidence
                     </div>
                   </div>
                 </CardContent>
@@ -835,7 +835,7 @@ export default function App() {
                   <div className="space-y-1">
                     <div className="text-2xl font-bold">0%</div>
                     <div className="text-muted-foreground text-sm">
-                      fees-taken
+                      Save on fees
                     </div>
                   </div>
                 </CardContent>
