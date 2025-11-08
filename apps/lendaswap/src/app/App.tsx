@@ -18,6 +18,7 @@ import {
   Tag,
   Wallet,
   Wrench,
+  X,
   Zap,
 } from "lucide-react";
 import { useAccount } from "wagmi";
@@ -723,20 +724,34 @@ export default function App() {
       <header className="border-b">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2 transition-opacity hover:opacity-80"
-            >
-              <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black dark:bg-white">
-                {theme === "dark" ? (
-                  <LendasatBlack className="h-5 w-5 shrink-0" />
-                ) : (
-                  <LendasatGrey className="h-5 w-5 shrink-0" />
-                )}
-              </div>
-              <h1 className="text-xl font-semibold">LendaSwap</h1>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="flex items-center gap-2 transition-opacity hover:opacity-80"
+              >
+                <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black dark:bg-white">
+                  {theme === "dark" ? (
+                    <LendasatBlack className="h-5 w-5 shrink-0" />
+                  ) : (
+                    <LendasatGrey className="h-5 w-5 shrink-0" />
+                  )}
+                </div>
+                <h1 className="text-xl font-semibold">LendaSwap</h1>
+              </button>
+
+              {/* X/Twitter Link */}
+              <a
+                href="https://x.com/lendasat"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+                aria-label="Follow us on X"
+              >
+                <X className="w-4 h-4" />
+              </a>
+            </div>
+
             <div className="flex items-center gap-3">
               {/* Mobile Dropdown Menu */}
               <div className="md:hidden">
