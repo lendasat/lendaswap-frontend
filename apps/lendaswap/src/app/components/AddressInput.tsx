@@ -1,6 +1,7 @@
 import { decode } from "@gandlaf21/bolt11-decode";
 import { ConnectKitButton } from "connectkit";
 import { isAddress } from "ethers";
+import { Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
@@ -108,8 +109,8 @@ export function AddressInput({
           placeholder={getPlaceholder()}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`px-4 py-3 min-h-[4.25rem] bg-card border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm font-mono text-sm ${
-            isPolygonTarget ? "pr-40" : ""
+          className={`px-4 py-2 md:py-2.5 min-h-[3rem] md:min-h-[3.5rem] bg-card border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm font-mono text-sm ${
+            isPolygonTarget ? "pr-36 md:pr-40" : ""
           } ${className}`}
           data-1p-ignore
           data-lpignore="true"
@@ -140,8 +141,10 @@ export function AddressInput({
                     size="sm"
                     onClick={show}
                     type="button"
+                    className="h-8 text-xs md:h-9 md:text-sm px-2 md:px-3"
                   >
-                    Connect Wallet
+                    <Wallet className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1 md:mr-1.5" />
+                    Connect
                   </Button>
                 )}
               </ConnectKitButton.Custom>

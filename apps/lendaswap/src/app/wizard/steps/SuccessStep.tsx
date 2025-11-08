@@ -9,9 +9,10 @@ import { SuccessMeme } from "../../components/SuccessMeme";
 interface SuccessStepProps {
   swapData: GetSwapResponse;
   swapDirection: "btc-to-polygon" | "polygon-to-btc";
+  swapId: string;
 }
 
-export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
+export function SuccessStep({ swapData, swapDirection, swapId }: SuccessStepProps) {
   const navigate = useNavigate();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
@@ -68,7 +69,20 @@ export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
   };
 
   return (
-    <div className="py-2">
+    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+      {/* Swap ID Header */}
+      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Swap ID:
+        </p>
+        <code className="text-xs font-mono text-foreground flex-1">
+          {swapId}
+        </code>
+        <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
       <div className="flex flex-col items-center space-y-6">
         {/* Success Icon */}
         <div className="bg-foreground flex h-16 w-16 items-center justify-center rounded-full">
@@ -248,6 +262,7 @@ export function SuccessStep({ swapData, swapDirection }: SuccessStepProps) {
         >
           Start New Swap
         </Button>
+      </div>
       </div>
     </div>
   );

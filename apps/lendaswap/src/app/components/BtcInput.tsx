@@ -69,7 +69,7 @@ export function BtcInput({
   if (isLoading) {
     return (
       <div
-        className={`px-4 py-3 min-h-[4.25rem] bg-card border-2 rounded-lg shadow-sm flex items-center ${className}`}
+        className={`px-4 py-2 md:py-2.5 min-h-[3rem] md:min-h-[3.5rem] bg-card border-2 rounded-lg shadow-sm flex items-center ${className}`}
       >
         <Skeleton className="h-6 w-32" />
       </div>
@@ -85,7 +85,7 @@ export function BtcInput({
       value={value}
       onChange={handleChange}
       onBlur={handleBlur}
-      className={`px-4 py-3 min-h-[4.25rem] bg-card border-2  rounded-lg hover:border-blue-300 transition-colors shadow-sm ${className}`}
+      className={`px-4 py-2 md:py-2.5 min-h-[3rem] md:min-h-[3.5rem] bg-card border-2  rounded-lg hover:border-blue-300 transition-colors shadow-sm ${className}`}
       disabled={disabled}
       data-1p-ignore
       data-lpignore="true"

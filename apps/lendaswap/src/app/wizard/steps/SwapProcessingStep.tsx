@@ -7,7 +7,6 @@ import {
   initBrowserWallet,
 } from "@frontend/browser-wallet";
 import { Button } from "#/components/ui/button";
-import { CardContent } from "#/components/ui/card";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
@@ -15,11 +14,13 @@ const ARK_SERVER_URL =
 interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;
   swapDirection: "btc-to-polygon" | "polygon-to-btc";
+  swapId: string;
 }
 
 export function SwapProcessingStep({
   swapData,
   swapDirection,
+  swapId,
 }: ConfirmingDepositStepProps) {
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
@@ -305,7 +306,20 @@ export function SwapProcessingStep({
         };
 
   return (
-    <CardContent className="space-y-6 pt-2">
+    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+      {/* Swap ID Header */}
+      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Swap ID:
+        </p>
+        <code className="text-xs font-mono text-foreground flex-1">
+          {swapId}
+        </code>
+        <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+      </div>
+
+      {/* Content */}
+      <div className="space-y-6 p-6">
       <div className="space-y-4">
         {/* Step 1: User Funded */}
         <div className="flex items-start gap-3">
@@ -542,6 +556,7 @@ export function SwapProcessingStep({
           </div>
         </div>
       </div>
-    </CardContent>
+      </div>
+    </div>
   );
 }

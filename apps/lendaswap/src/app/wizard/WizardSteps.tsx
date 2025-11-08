@@ -37,7 +37,7 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
                     "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-all",
                     {
                       "border-primary bg-primary/20": isCompleted,
-                      "border-primary bg-primary scale-110": isCurrent,
+                      "border-primary bg-primary": isCurrent,
                       "border-border/50 bg-muted/20": isUpcoming,
                     },
                   )}
@@ -46,7 +46,7 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
                     <div className="h-2 w-2 rounded-full bg-primary" />
                   )}
                   {isCurrent && (
-                    <div className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
+                    <div className="h-2 w-2 rounded-full bg-primary-foreground" />
                   )}
                 </div>
                 {/* Connector Line */}
@@ -102,25 +102,20 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
               <div
                 key={index}
                 className={cn(
-                  "relative rounded-xl border px-3 py-2 text-center text-[8px] font-semibold transition-all uppercase tracking-wider whitespace-nowrap overflow-hidden",
+                  "rounded-xl border px-3 py-2 text-center text-[8px] font-semibold transition-all uppercase tracking-wider whitespace-nowrap",
                   {
-                    "border-primary/30 bg-gradient-to-br from-primary/20 to-primary/10 text-primary shadow-lg shadow-primary/20":
+                    "border-primary/40 bg-primary/10 text-primary":
                       isCompleted,
-                    "border-primary bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl shadow-primary/30 scale-105":
+                    "border-primary bg-primary text-primary-foreground":
                       isCurrent,
-                    "border-border/50 bg-gradient-to-br from-muted/30 to-muted/20 text-muted-foreground":
+                    "border-border/50 bg-muted/30 text-muted-foreground":
                       isUpcoming,
                   },
                 )}
               >
-                {isCurrent && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                )}
-                <div className="relative">
-                  {isCompleted && step.labelCompleted
-                    ? step.labelCompleted
-                    : step.label}
-                </div>
+                {isCompleted && step.labelCompleted
+                  ? step.labelCompleted
+                  : step.label}
               </div>
 
               {/* Connector Line */}

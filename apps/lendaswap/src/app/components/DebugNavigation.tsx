@@ -11,8 +11,11 @@ export function DebugNavigation() {
     return null;
   }
 
+  const currentStep = new URLSearchParams(location.search).get("step");
+  const isWizardPage = location.pathname.includes(`/swap/${DEBUG_SWAP_ID}/wizard`);
+
   return (
-    <Card className="border-orange-500 bg-orange-50 dark:bg-orange-950">
+    <Card className="border-orange-500 bg-orange-50 dark:bg-orange-950 rounded-2xl">
       <CardContent className="py-4">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
@@ -24,37 +27,29 @@ export function DebugNavigation() {
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
-              variant={location.pathname === "/" ? "default" : "outline"}
+              variant={!isWizardPage ? "default" : "outline"}
               onClick={() => navigate("/")}
             >
               Enter Amount
             </Button>
             <Button
               size="sm"
-              variant={
-                location.pathname.includes("/send") ? "default" : "outline"
-              }
-              onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/send`)}
+              variant={currentStep === "pending" ? "default" : "outline"}
+              onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/wizard?step=pending`)}
             >
               Send Bitcoin
             </Button>
             <Button
               size="sm"
-              variant={
-                location.pathname.includes("/processing")
-                  ? "default"
-                  : "outline"
-              }
-              onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/processing`)}
+              variant={currentStep === "clientfunded" ? "default" : "outline"}
+              onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/wizard?step=clientfunded`)}
             >
               Processing
             </Button>
             <Button
               size="sm"
-              variant={
-                location.pathname.includes("/success") ? "default" : "outline"
-              }
-              onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/success`)}
+              variant={currentStep === "serverredeemed" ? "default" : "outline"}
+              onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/wizard?step=serverredeemed`)}
             >
               Success
             </Button>

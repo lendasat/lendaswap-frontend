@@ -2,7 +2,6 @@ import { Loader } from "lucide-react";
 import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { CardContent } from "#/components/ui/card";
 import { PolygonToBtcSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
 
@@ -32,9 +31,10 @@ const ERC20_ABI = [
 
 interface PolygonDepositStepProps {
   swapData: PolygonToBtcSwapResponse;
+  swapId: string;
 }
 
-export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
+export function PolygonDepositStep({ swapData, swapId }: PolygonDepositStepProps) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
@@ -166,7 +166,20 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
   };
 
   return (
-    <CardContent className="space-y-6 pt-2">
+    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+      {/* Swap ID Header */}
+      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Swap ID:
+        </p>
+        <code className="text-xs font-mono text-foreground flex-1">
+          {swapId}
+        </code>
+        <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+      </div>
+
+      {/* Content */}
+      <div className="space-y-6 p-6">
       {/* Amount Reminder */}
       <div className="bg-muted/50 space-y-2 rounded-lg p-4">
         <div className="flex justify-between text-sm">
@@ -224,6 +237,7 @@ export function PolygonDepositStep({ swapData }: PolygonDepositStepProps) {
           )}
         </Button>
       </div>
-    </CardContent>
+      </div>
+    </div>
   );
 }

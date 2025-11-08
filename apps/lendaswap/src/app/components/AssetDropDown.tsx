@@ -1,12 +1,40 @@
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "#/components/ui/drawer";
+import { Input } from "#/components/ui/input";
 import { TokenId } from "../api";
+
+// Hook to detect mobile viewport
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return isMobile;
+}
 
 // Inline SVG Components
 const USDCIcon = () => (
@@ -122,8 +150,6 @@ const ASSETS = [
     symbol: "USDC",
     name: "USD Coin",
     icon: <USDCIcon />,
-    bgColor:
-      "bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50",
     network: {
       name: "Polygon",
       symbol: "Polygon",
@@ -135,8 +161,6 @@ const ASSETS = [
     symbol: "USDT0",
     name: "Tether",
     icon: <USDTIcon />,
-    bgColor:
-      "bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50",
     network: {
       name: "Polygon",
       symbol: "Polygon",
@@ -148,8 +172,6 @@ const ASSETS = [
     symbol: "BTC",
     name: "Bitcoin",
     icon: <BitcoinIcon />,
-    bgColor:
-      "bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50",
     network: {
       name: "Lightning",
       symbol: "Lightning",
@@ -161,8 +183,6 @@ const ASSETS = [
     symbol: "BTC",
     name: "Bitcoin",
     icon: <BitcoinIcon />,
-    bgColor:
-      "bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/50",
     network: {
       name: "Arkade",
       symbol: "Arkade",
@@ -182,6 +202,10 @@ export function AssetDropDown({
   onChange,
   availableAssets,
 }: AssetDropDownProps) {
+  const isMobile = useIsMobile();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   let selectedAsset = ASSETS[0];
   switch (value) {
     case "usdc_pol":
@@ -197,8 +221,10 @@ export function AssetDropDown({
       selectedAsset = ASSETS[3];
       break;
   }
+
   const setSelectedAsset = (asset: TokenId) => {
     onChange(asset);
+    setDrawerOpen(false);
   };
 
   // Filter assets based on availableAssets if provided
@@ -206,88 +232,156 @@ export function AssetDropDown({
     ? ASSETS.filter((asset) => availableAssets.includes(asset.id as TokenId))
     : ASSETS;
 
-  return (
-    // <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-    //   <div className="w-full max-w-md">
-    <DropdownMenu>
-      <DropdownMenuTrigger className="w-full">
-        <div
-          className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors ${selectedAsset.bgColor}`}
-        >
-          {/* Primary Icon - Asset */}
-          <div className="flex items-center justify-center w-7 h-7 bg-white dark:bg-slate-800 rounded-full shrink-0">
-            <div className="w-4 h-4">{selectedAsset.icon}</div>
-          </div>
+  // Further filter by search query
+  const searchFilteredAssets = filteredAssets.filter((asset) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      asset.symbol.toLowerCase().includes(query) ||
+      asset.name.toLowerCase().includes(query) ||
+      asset.network.name.toLowerCase().includes(query)
+    );
+  });
 
-          {/* Text Content */}
-          <div className="flex-1 text-left">
-            <div className="flex flex-col">
-              <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                {selectedAsset.symbol}
-              </span>
-              <div className="flex items-center gap-0.5 px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
-                {typeof selectedAsset.network.icon === "string" ? (
-                  <span className="text-[10px]">
-                    {selectedAsset.network.icon}
-                  </span>
-                ) : (
-                  <div className="w-2 h-2">{selectedAsset.network.icon}</div>
-                )}
-                <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300">
-                  {selectedAsset.network.symbol}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dropdown Arrow */}
-          <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+  // Compact trigger button for both mobile and desktop
+  const TriggerButton = () => (
+    <div className="flex items-center gap-1 px-1 py-0.5 md:px-1.5 md:py-1 rounded-md md:rounded-lg border border-border bg-background hover:bg-accent transition-colors">
+      {/* Primary Icon - Asset */}
+      <div className="flex items-center justify-center w-6 h-6 md:w-7 md:h-7 bg-muted rounded-full shrink-0 p-0.5">
+        <div className="w-full h-full flex items-center justify-center">
+          {selectedAsset.icon}
         </div>
+      </div>
+
+      {/* Text Content */}
+      <div className="flex flex-col gap-0 min-w-0">
+        <span className="font-bold text-[10px] md:text-xs leading-tight whitespace-nowrap">
+          {selectedAsset.symbol}
+        </span>
+        <div className="flex items-center gap-0.5 px-0.5 py-0 bg-muted/50 rounded-sm w-fit">
+          {typeof selectedAsset.network.icon === "string" ? (
+            <span className="text-[7px] md:text-[8px]">{selectedAsset.network.icon}</span>
+          ) : (
+            <div className="w-1.5 h-1.5 md:w-2 md:h-2">{selectedAsset.network.icon}</div>
+          )}
+          <span className="text-[7px] md:text-[8px] font-medium text-muted-foreground leading-none whitespace-nowrap">
+            {selectedAsset.network.symbol}
+          </span>
+        </div>
+      </div>
+
+      {/* Dropdown Arrow */}
+      <ChevronDown className="w-2.5 h-2.5 md:w-3 md:h-3 text-muted-foreground shrink-0" />
+    </div>
+  );
+
+  // Asset list item component (reused for both dropdown and drawer)
+  const AssetListItem = ({
+    asset,
+    onClick,
+  }: { asset: (typeof ASSETS)[0]; onClick: () => void }) => (
+    <div
+      onClick={onClick}
+      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer rounded-xl hover:bg-accent transition-colors"
+    >
+      {/* Primary Icon - Asset */}
+      <div className="flex items-center justify-center w-12 h-12 bg-muted rounded-full border border-border shrink-0 p-1 overflow-hidden">
+        <div className="w-full h-full flex items-center justify-center scale-125">
+          {asset.icon}
+        </div>
+      </div>
+
+      {/* Text Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-col gap-0.5">
+          <span className="font-bold text-sm">{asset.symbol}</span>
+          <div className="flex items-center gap-0.5 px-1 py-0.5 bg-muted/50 rounded-md w-fit">
+            {typeof asset.network.icon === "string" ? (
+              <span className="text-[8px]">{asset.network.icon}</span>
+            ) : (
+              <div className="w-2 h-2">{asset.network.icon}</div>
+            )}
+            <span className="text-[8px] font-medium text-muted-foreground">
+              {asset.network.symbol}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Checkmark for selected item */}
+      {selectedAsset.id === asset.id && (
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary shrink-0">
+          <Check className="w-4 h-4 text-primary-foreground shrink-0" />
+        </div>
+      )}
+    </div>
+  );
+
+  // Mobile view: Drawer
+  if (isMobile) {
+    return (
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerTrigger className="w-full" asChild>
+          <button type="button" className="w-full">
+            <TriggerButton />
+          </button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="border-b">
+            <DrawerTitle>Select Trading Pair</DrawerTitle>
+            {/* Search Input */}
+            <div className="relative mt-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search assets or networks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </DrawerHeader>
+          <div className="overflow-y-auto max-h-[60vh] p-4 pb-8 space-y-1">
+            {searchFilteredAssets.length > 0 ? (
+              searchFilteredAssets.map((asset) => (
+                <AssetListItem
+                  key={asset.id}
+                  asset={asset}
+                  onClick={() => setSelectedAsset(asset.id as TokenId)}
+                />
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No assets found
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop view: Dropdown Menu
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="w-full" asChild>
+        <button type="button" className="w-full">
+          <TriggerButton />
+        </button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-64 md:w-[var(--radix-dropdown-menu-trigger-width)] p-2"
-        align="start"
+        className="w-[280px] p-2 rounded-xl max-h-[400px] overflow-y-auto"
+        align="end"
       >
-        {filteredAssets.map((asset) => (
-          <DropdownMenuItem
-            key={asset.id}
-            onClick={() => setSelectedAsset(asset.id as TokenId)}
-            className="flex items-center gap-3 px-3 py-3 cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 focus:bg-slate-100 dark:focus:bg-slate-800"
-          >
-            {/* Primary Icon - Asset */}
-            <div className="flex items-center justify-center w-9 h-9 bg-white dark:bg-slate-700 rounded-full border-2 border-slate-100 dark:border-slate-600 shrink-0">
-              <div className="w-6 h-6">{asset.icon}</div>
-            </div>
-
-            {/* Text Content */}
-            <div className="flex-1">
-              <div className="flex flex-col gap-1">
-                <span className="font-semibold text-slate-900 dark:text-slate-100">
-                  {asset.symbol}
-                </span>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
-                  {typeof asset.network.icon === "string" ? (
-                    <span className="text-xs">{asset.network.icon}</span>
-                  ) : (
-                    <div className="w-3 h-3">{asset.network.icon}</div>
-                  )}
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                    {asset.network.symbol}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Checkmark for selected item */}
-            {selectedAsset.id === asset.id && (
-              <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-            )}
-          </DropdownMenuItem>
-        ))}
+        <div className="space-y-1">
+          {filteredAssets.map((asset) => (
+            <AssetListItem
+              key={asset.id}
+              asset={asset}
+              onClick={() => setSelectedAsset(asset.id as TokenId)}
+            />
+          ))}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
-    // </div>
-    // </div>
   );
 }

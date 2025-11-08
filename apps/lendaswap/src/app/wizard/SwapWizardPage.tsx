@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import { Card, CardContent } from "#/components/ui/card";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import {
   api,
   getTokenSymbol,
@@ -10,7 +9,7 @@ import {
   BtcToPolygonSwapResponse,
   PolygonToBtcSwapResponse,
 } from "../api";
-import { WizardSteps } from "./WizardSteps";
+// import { WizardSteps } from "./WizardSteps"; // Commented out for simplicity
 import { useAsyncRetry } from "react-use";
 import {
   SendBitcoinStep,
@@ -19,6 +18,7 @@ import {
   PolygonDepositStep,
 } from "./steps";
 import { AlertCircle } from "lucide-react";
+import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
@@ -33,13 +33,6 @@ type StepId =
   | "refundable"
   | "refunded";
 
-interface Step {
-  id: StepId;
-  label: string;
-  labelCompleted?: string;
-  status: "completed" | "current" | "upcoming";
-}
-
 const isBtcToPolygon = (
   source_token: undefined | TokenId,
 ): SwapDirection | undefined => {
@@ -53,6 +46,42 @@ const isBtcToPolygon = (
 
   return undefined;
 };
+
+// Create mock swap data for debug mode
+function createMockSwapData(status: SwapStatus): GetSwapResponse {
+  const mockData: any = {
+    direction: "btc_to_polygon",
+    id: DEBUG_SWAP_ID,
+    status,
+    source_token: "btc_lightning",
+    target_token: "usdc_pol",
+    hash_lock: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    fee_sats: 100,
+    htlc_address_arkade: "ark1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpnwz7m",
+    htlc_address_polygon: "0x0000000000000000000000000000000000000000",
+    user_address_polygon: "0x1111111111111111111111111111111111111111",
+    user_address_arkade: "ark1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpnwz7m",
+    ln_invoice: "lnbc1000u1pjqqqqqpp5qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqdqqcqzpgxqrrsssp5qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9qyyssqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+    sats_receive: 10000,
+    sats_required: 10100, // sats_receive + fee_sats
+    usd_amount: 100,
+    created_at: new Date().toISOString(),
+    sender_pk: "02cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    receiver_pk: "02bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    server_pk: "02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    refund_locktime: Math.floor(Date.now() / 1000) + 3600,
+    unilateral_claim_delay: 100,
+    unilateral_refund_delay: 200,
+    unilateral_refund_without_receiver_delay: 300,
+    network: "regtest",
+    bitcoin_htlc_claim_txid: null,
+    bitcoin_htlc_fund_txid: null,
+    polygon_htlc_claim_txid: null,
+    polygon_htlc_fund_txid: null,
+  };
+
+  return mockData as GetSwapResponse;
+}
 
 function determineStepFromStatus(
   status: undefined | SwapStatus,
@@ -89,9 +118,13 @@ function determineStepFromStatus(
 export function SwapWizardPage() {
   const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const lastStatusRef = useRef<SwapStatus | null>(null);
   const [displaySwapData, setDisplaySwapData] =
     useState<GetSwapResponse | null>(null);
+
+  // Get debug step from URL query params
+  const debugStep = searchParams.get("step") as SwapStatus | null;
 
   const {
     loading: isLoading,
@@ -103,8 +136,15 @@ export function SwapWizardPage() {
       navigate("/", { replace: true });
       return;
     }
+
+    // In debug mode, return mock data instead of calling API
+    if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
+      const mockStatus: SwapStatus = debugStep || "pending";
+      return createMockSwapData(mockStatus);
+    }
+
     return await api.getSwap(swapId);
-  });
+  }, [swapId, debugStep]);
 
   // Update display data when swap data changes and status is different
   useEffect(() => {
@@ -128,6 +168,12 @@ export function SwapWizardPage() {
   // Poll swap status every 2 seconds in the background
   useEffect(() => {
     if (!swapId) {
+      return;
+    }
+
+    // Don't poll in debug mode
+    if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
+      console.log("Debug mode: polling disabled");
       return;
     }
 
@@ -155,148 +201,50 @@ export function SwapWizardPage() {
     return () => clearInterval(pollInterval);
   }, [swapId, retry, displaySwapData]);
 
-  // Determine step from swap status
-
-  // Build steps based on swap direction
-  const buildSteps = (): Step[] => {
-    if (!swapDirection || !currentStep) return [];
-
-    const completedSteps: StepId[] = [
-      "server-depositing",
-      "server-deposit",
-      "user-redeem",
-      "success",
-    ];
-
-    if (swapDirection === "btc-to-polygon") {
-      return [
-        {
-          id: "user-deposit",
-          label: "Waiting for deposit",
-          labelCompleted: "Deposited",
-          status:
-            currentStep === "user-deposit"
-              ? "current"
-              : completedSteps.includes(currentStep)
-                ? "completed"
-                : "upcoming",
-        },
-        {
-          id: "server-deposit",
-          label: "Swapping",
-          labelCompleted: "Swapped",
-          status:
-            currentStep === "server-depositing" ||
-            currentStep === "server-deposit" ||
-            currentStep === "user-redeem"
-              ? "current"
-              : currentStep === "success"
-                ? "completed"
-                : "upcoming",
-        },
-        {
-          id: "success",
-          label: "Finished",
-          status: currentStep === "success" ? "current" : "upcoming",
-        },
-      ];
-    }
-
-    // polygon-to-btc
-    return [
-      {
-        id: "user-deposit",
-        label: "Waiting for deposit",
-        labelCompleted: "Deposited",
-        status:
-          currentStep === "user-deposit"
-            ? "current"
-            : completedSteps.includes(currentStep)
-              ? "completed"
-              : "upcoming",
-      },
-      {
-        id: "server-deposit",
-        label: "Swapping",
-        labelCompleted: "Swapped",
-        status:
-          currentStep === "server-depositing" ||
-          currentStep === "server-deposit" ||
-          currentStep === "user-redeem"
-            ? "current"
-            : currentStep === "success"
-              ? "completed"
-              : "upcoming",
-      },
-      {
-        id: "success",
-        label: "Finished",
-        status: currentStep === "success" ? "current" : "upcoming",
-      },
-    ];
-  };
-
-  const steps = buildSteps();
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-6">
-      <div className="mx-auto max-w-3xl space-y-8">
-        {/* Swap ID Header */}
-        {displaySwapData && (
-          <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm px-4 py-3 flex items-center gap-3">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Swap ID:
-            </p>
-            <code className="text-xs font-mono text-foreground flex-1">
-              {displaySwapData.id}
-            </code>
-            <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+    <>
+      {/* Error State */}
+        {error && (
+          <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+            <div className="space-y-4 px-6 py-6 bg-destructive/10">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+                <h3 className="text-xl font-semibold text-destructive">
+                  Failed to Load Swap
+                </h3>
+              </div>
+              <p className="text-muted-foreground">{error.message}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => retry()}
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Retry
+                </button>
+                <button
+                  onClick={() => navigate("/")}
+                  className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  Go Home
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Step Content Card */}
-        <Card className="border-border/50 shadow-xl backdrop-blur-sm bg-card/80">
-          <CardContent className="space-y-6 p-0">
-            {/* Error State */}
-            {error && (
-              <Card className="border-destructive/50 bg-destructive/10">
-                <CardContent className="space-y-4 p-6">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-6 w-6 text-destructive" />
-                    <h3 className="text-xl font-semibold text-destructive">
-                      Failed to Load Swap
-                    </h3>
-                  </div>
-                  <p className="text-muted-foreground">{error.message}</p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => retry()}
-                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                      Retry
-                    </button>
-                    <button
-                      onClick={() => navigate("/")}
-                      className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
-                    >
-                      Go Home
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+        {/* Loading State */}
+        {isLoading && !displaySwapData && (
+          <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl">
+            <div className="flex items-center justify-center py-12">
+              <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
+            </div>
+          </div>
+        )}
 
-            {/* Loading State */}
-            {isLoading && !displaySwapData && (
-              <div className="flex items-center justify-center py-12">
-                <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
-              </div>
-            )}
-
-            {/* Step-specific content */}
-            {displaySwapData && !error && (
-              <>
-                {currentStep === "user-deposit" &&
+        {/* Step-specific content */}
+        {displaySwapData && !error && (
+          <>
+            {currentStep === "user-deposit" &&
                   swapDirection === "btc-to-polygon" && (
                     <SendBitcoinStep
                       arkadeAddress={displaySwapData.htlc_address_arkade}
@@ -305,6 +253,7 @@ export function SwapWizardPage() {
                       swapData={displaySwapData as BtcToPolygonSwapResponse}
                       usdcAmount={displaySwapData.usd_amount.toFixed(2)}
                       tokenSymbol={getTokenSymbol(displaySwapData.target_token)}
+                      swapId={displaySwapData.id}
                     />
                   )}
 
@@ -312,18 +261,33 @@ export function SwapWizardPage() {
                   swapDirection === "polygon-to-btc" && (
                     <PolygonDepositStep
                       swapData={displaySwapData as PolygonToBtcSwapResponse}
+                      swapId={displaySwapData.id}
                     />
                   )}
 
                 {currentStep === "server-deposit" && (
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold">Processing Swap</h3>
-                    <p className="text-muted-foreground">
-                      Please wait while we confirm your deposit and process the
-                      swap...
-                    </p>
-                    <div className="flex items-center justify-center py-12">
-                      <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+                  <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+                    {/* Swap ID Header */}
+                    <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Swap ID:
+                      </p>
+                      <code className="text-xs font-mono text-foreground flex-1">
+                        {displaySwapData.id}
+                      </code>
+                      <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-4 p-6">
+                      <h3 className="text-xl font-semibold">Processing Swap</h3>
+                      <p className="text-muted-foreground">
+                        Please wait while we confirm your deposit and process the
+                        swap...
+                      </p>
+                      <div className="flex items-center justify-center py-12">
+                        <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -332,6 +296,7 @@ export function SwapWizardPage() {
                   <SwapProcessingStep
                     swapData={displaySwapData}
                     swapDirection={swapDirection}
+                    swapId={displaySwapData.id}
                   />
                 )}
 
@@ -339,51 +304,86 @@ export function SwapWizardPage() {
                   <SuccessStep
                     swapData={displaySwapData}
                     swapDirection={swapDirection}
+                    swapId={displaySwapData.id}
                   />
                 )}
 
                 {currentStep === "expired" && (
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-destructive">
-                      Swap Expired
-                    </h3>
-                    <p className="text-muted-foreground">
-                      This swap has expired. The time window to complete the
-                      swap has passed.
-                    </p>
+                  <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+                    {/* Swap ID Header */}
+                    <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Swap ID:
+                      </p>
+                      <code className="text-xs font-mono text-foreground flex-1">
+                        {displaySwapData.id}
+                      </code>
+                      <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-4 p-6">
+                      <h3 className="text-xl font-semibold text-destructive">
+                        Swap Expired
+                      </h3>
+                      <p className="text-muted-foreground">
+                        This swap has expired. The time window to complete the
+                        swap has passed.
+                      </p>
+                    </div>
                   </div>
                 )}
 
                 {currentStep === "refundable" && (
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-orange-500">
-                      Refund Available
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Your deposit can be refunded. Please contact support or
-                      use the refund function.
-                    </p>
+                  <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+                    {/* Swap ID Header */}
+                    <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Swap ID:
+                      </p>
+                      <code className="text-xs font-mono text-foreground flex-1">
+                        {displaySwapData.id}
+                      </code>
+                      <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-4 p-6">
+                      <h3 className="text-xl font-semibold text-orange-500">
+                        Refund Available
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Your deposit can be refunded. Please contact support or
+                        use the refund function.
+                      </p>
+                    </div>
                   </div>
                 )}
 
                 {currentStep === "refunded" && (
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-semibold">Swap Refunded</h3>
-                    <p className="text-muted-foreground">
-                      Your funds have been refunded successfully.
-                    </p>
+                  <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+                    {/* Swap ID Header */}
+                    <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Swap ID:
+                      </p>
+                      <code className="text-xs font-mono text-foreground flex-1">
+                        {displaySwapData.id}
+                      </code>
+                      <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-4 p-6">
+                      <h3 className="text-xl font-semibold">Swap Refunded</h3>
+                      <p className="text-muted-foreground">
+                        Your funds have been refunded successfully.
+                      </p>
+                    </div>
                   </div>
                 )}
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Wizard Steps Navigation at Bottom */}
-        <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6">
-          <WizardSteps steps={steps} />
-        </div>
-      </div>
-    </div>
+          </>
+        )}
+    </>
   );
 }

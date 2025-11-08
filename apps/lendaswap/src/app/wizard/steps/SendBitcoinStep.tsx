@@ -1,9 +1,8 @@
 import { CheckCheck, Copy, Loader2, Wallet, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { CardContent } from "#/components/ui/card";
 import { BtcToPolygonSwapResponse } from "../../api";
 import { useWalletBridge } from "../../WalletBridgeContext";
 
@@ -14,6 +13,7 @@ interface SendBitcoinStepProps {
   swapData: BtcToPolygonSwapResponse | null;
   usdcAmount: string;
   tokenSymbol?: string; // e.g., "USDC", "USDT"
+  swapId: string;
 }
 
 export function SendBitcoinStep({
@@ -23,9 +23,9 @@ export function SendBitcoinStep({
   swapData,
   usdcAmount,
   tokenSymbol = "USDC",
+  swapId,
 }: SendBitcoinStepProps) {
   const navigate = useNavigate();
-  const { swapId } = useParams<{ swapId: string }>();
   const { client, isEmbedded, isReady } = useWalletBridge();
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -77,7 +77,20 @@ export function SendBitcoinStep({
   };
 
   return (
-    <CardContent className="space-y-6 pt-2">
+    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+      {/* Swap ID Header */}
+      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Swap ID:
+        </p>
+        <code className="text-xs font-mono text-foreground flex-1">
+          {swapId}
+        </code>
+        <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+      </div>
+
+      {/* Content */}
+      <div className="space-y-6 p-6">
       {/* QR Code - Hidden on mobile by default, always visible on desktop */}
       {arkadeAddress && (
         <>
@@ -259,6 +272,7 @@ export function SendBitcoinStep({
           Back
         </Button>
       </div>
-    </CardContent>
+      </div>
+    </div>
   );
 }
