@@ -876,9 +876,6 @@ export default function App() {
             <p className="text-muted-foreground">{stepInfo.description}</p>
           </div>
 
-          {/* Debug Navigation */}
-          <DebugNavigation />
-
           {/* Step Card */}
           <Routes>
             <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
@@ -948,6 +945,9 @@ export default function App() {
       {/* Footer */}
       <footer className="mt-16 border-t">
         <div className="container mx-auto px-6 py-6">
+          {/* Debug Navigation */}
+          <DebugNavigation />
+
           <div className="text-muted-foreground text-center text-sm">
             <p>© 2025 LendaSwap. All rights reserved.</p>
           </div>
