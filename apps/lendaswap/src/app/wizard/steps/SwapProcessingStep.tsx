@@ -320,242 +320,242 @@ export function SwapProcessingStep({
 
       {/* Content */}
       <div className="space-y-6 p-6">
-      <div className="space-y-4">
-        {/* Step 1: User Funded */}
-        <div className="flex items-start gap-3">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
-            <Check className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div className="flex-1 space-y-1">
-            <p className="font-medium">{config.step1Label}</p>
-            {config.step1TxId && (
-              <div className="flex items-center gap-2">
-                <code className="text-xs text-muted-foreground">
-                  {clipTxId(config.step1TxId)}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => handleCopyTxId(config.step1TxId!)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {copiedTxId === config.step1TxId ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </button>
-                {config.step1IsPolygon && (
-                  <a
-                    href={`https://polygonscan.com/tx/${config.step1TxId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Step 2: Server Funding/Funded */}
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-              config.step2TxId ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            {config.step2TxId ? (
+        <div className="space-y-4">
+          {/* Step 1: User Funded */}
+          <div className="flex items-start gap-3">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
               <Check className="h-4 w-4 text-primary-foreground" />
-            ) : (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <p className="font-medium">
-              {config.step2TxId
-                ? config.step2LabelComplete
-                : config.step2LabelActive}
-            </p>
-            {config.step2TxId && (
-              <div className="flex items-center gap-2">
-                <code className="text-xs text-muted-foreground">
-                  {clipTxId(config.step2TxId)}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => handleCopyTxId(config.step2TxId!)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {copiedTxId === config.step2TxId ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </button>
-                {config.step2IsPolygon && (
-                  <a
-                    href={`https://polygonscan.com/tx/${config.step2TxId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="font-medium">{config.step1Label}</p>
+              {config.step1TxId && (
+                <div className="flex items-center gap-2">
+                  <code className="text-xs text-muted-foreground">
+                    {clipTxId(config.step1TxId)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyTxId(config.step1TxId!)}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            )}
+                    {copiedTxId === config.step1TxId ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </button>
+                  {config.step1IsPolygon && (
+                    <a
+                      href={`https://polygonscan.com/tx/${config.step1TxId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Step 3: Client Redeeming */}
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-              config.step3TxId ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            {config.step3TxId ? (
-              <Check className="h-4 w-4 text-primary-foreground" />
-            ) : (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <p className="font-medium">{config.step3Label}</p>
-            {config.step3TxId && (
-              <div className="flex items-center gap-2">
-                <code className="text-xs text-muted-foreground">
-                  {clipTxId(config.step3TxId)}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => handleCopyTxId(config.step3TxId!)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {copiedTxId === config.step3TxId ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </button>
-                {config.step3IsPolygon && (
-                  <a
-                    href={`https://polygonscan.com/tx/${config.step3TxId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+          {/* Step 2: Server Funding/Funded */}
+          <div className="flex items-start gap-3">
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                config.step2TxId ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              {config.step2TxId ? (
+                <Check className="h-4 w-4 text-primary-foreground" />
+              ) : (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="font-medium">
+                {config.step2TxId
+                  ? config.step2LabelComplete
+                  : config.step2LabelActive}
+              </p>
+              {config.step2TxId && (
+                <div className="flex items-center gap-2">
+                  <code className="text-xs text-muted-foreground">
+                    {clipTxId(config.step2TxId)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyTxId(config.step2TxId!)}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            )}
-            {/* Show claiming status inline when server is funded */}
-            {swapData.status === "serverfunded" && (
-              <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
-                <p className="text-sm font-medium">
-                  {isClaiming
-                    ? swapDirection === "polygon-to-btc"
-                      ? "Redeeming your sats..."
-                      : "Claiming your tokens..."
-                    : swapDirection === "polygon-to-btc"
-                      ? "VHTLC Funded"
-                      : "HTLC Funded"}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {isClaiming
-                    ? swapDirection === "polygon-to-btc"
-                      ? swapData.target_token === "btc_lightning"
-                        ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
-                        : "Lightning invoice is pending..."
-                      : "Submitting claim request via Gelato Relay..."
-                    : swapDirection === "polygon-to-btc"
-                      ? "The VHTLC has been funded. Preparing to claim your sats..."
-                      : "The HTLC has been funded. Preparing to claim your tokens..."}
-                </p>
-                {retryCount > 0 && retryCount < maxRetries && (
-                  <p className="text-muted-foreground text-xs">
-                    Retry attempt {retryCount}/{maxRetries}...
+                    {copiedTxId === config.step2TxId ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </button>
+                  {config.step2IsPolygon && (
+                    <a
+                      href={`https://polygonscan.com/tx/${config.step2TxId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Step 3: Client Redeeming */}
+          <div className="flex items-start gap-3">
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                config.step3TxId ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              {config.step3TxId ? (
+                <Check className="h-4 w-4 text-primary-foreground" />
+              ) : (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="font-medium">{config.step3Label}</p>
+              {config.step3TxId && (
+                <div className="flex items-center gap-2">
+                  <code className="text-xs text-muted-foreground">
+                    {clipTxId(config.step3TxId)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyTxId(config.step3TxId!)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {copiedTxId === config.step3TxId ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </button>
+                  {config.step3IsPolygon && (
+                    <a
+                      href={`https://polygonscan.com/tx/${config.step3TxId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              )}
+              {/* Show claiming status inline when server is funded */}
+              {swapData.status === "serverfunded" && (
+                <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
+                  <p className="text-sm font-medium">
+                    {isClaiming
+                      ? swapDirection === "polygon-to-btc"
+                        ? "Redeeming your sats..."
+                        : "Claiming your tokens..."
+                      : swapDirection === "polygon-to-btc"
+                        ? "VHTLC Funded"
+                        : "HTLC Funded"}
                   </p>
-                )}
-                {swapDirection === "btc-to-polygon" &&
-                  !isClaiming &&
-                  !claimError && (
+                  <p className="text-muted-foreground text-xs">
+                    {isClaiming
+                      ? swapDirection === "polygon-to-btc"
+                        ? swapData.target_token === "btc_lightning"
+                          ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
+                          : "Lightning invoice is pending..."
+                        : "Submitting claim request via Gelato Relay..."
+                      : swapDirection === "polygon-to-btc"
+                        ? "The VHTLC has been funded. Preparing to claim your sats..."
+                        : "The HTLC has been funded. Preparing to claim your tokens..."}
+                  </p>
+                  {retryCount > 0 && retryCount < maxRetries && (
                     <p className="text-muted-foreground text-xs">
-                      Gas fees fully sponsored via Gelato Relay - no fees for
-                      you!
+                      Retry attempt {retryCount}/{maxRetries}...
                     </p>
                   )}
-                {claimError && (
-                  <div className="space-y-2">
-                    <div className="bg-destructive/10 text-destructive rounded-lg p-2 text-xs">
-                      {claimError}
-                    </div>
-                    {retryCount >= maxRetries && (
-                      <Button
-                        onClick={handleManualRetry}
-                        size="sm"
-                        variant="outline"
-                        className="w-full"
-                      >
-                        Retry Manually
-                      </Button>
+                  {swapDirection === "btc-to-polygon" &&
+                    !isClaiming &&
+                    !claimError && (
+                      <p className="text-muted-foreground text-xs">
+                        Gas fees fully sponsored via Gelato Relay - no fees for
+                        you!
+                      </p>
                     )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Step 4: Server Redeemed */}
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-              config.step4TxId ? "bg-primary" : "bg-muted"
-            }`}
-          >
-            {config.step4TxId ? (
-              <Check className="h-4 w-4 text-primary-foreground" />
-            ) : (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            )}
-          </div>
-          <div className="flex-1 space-y-1">
-            <p className="font-medium">{config.step4Label}</p>
-            {config.step4TxId && (
-              <div className="flex items-center gap-2">
-                <code className="text-xs text-muted-foreground">
-                  {clipTxId(config.step4TxId)}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => handleCopyTxId(config.step4TxId!)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {copiedTxId === config.step4TxId ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
+                  {claimError && (
+                    <div className="space-y-2">
+                      <div className="bg-destructive/10 text-destructive rounded-lg p-2 text-xs">
+                        {claimError}
+                      </div>
+                      {retryCount >= maxRetries && (
+                        <Button
+                          onClick={handleManualRetry}
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                        >
+                          Retry Manually
+                        </Button>
+                      )}
+                    </div>
                   )}
-                </button>
-                {config.step4IsPolygon && (
-                  <a
-                    href={`https://polygonscan.com/tx/${config.step4TxId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Step 4: Server Redeemed */}
+          <div className="flex items-start gap-3">
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                config.step4TxId ? "bg-primary" : "bg-muted"
+              }`}
+            >
+              {config.step4TxId ? (
+                <Check className="h-4 w-4 text-primary-foreground" />
+              ) : (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <div className="flex-1 space-y-1">
+              <p className="font-medium">{config.step4Label}</p>
+              {config.step4TxId && (
+                <div className="flex items-center gap-2">
+                  <code className="text-xs text-muted-foreground">
+                    {clipTxId(config.step4TxId)}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyTxId(config.step4TxId!)}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            )}
+                    {copiedTxId === config.step4TxId ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </button>
+                  {config.step4IsPolygon && (
+                    <a
+                      href={`https://polygonscan.com/tx/${config.step4TxId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );

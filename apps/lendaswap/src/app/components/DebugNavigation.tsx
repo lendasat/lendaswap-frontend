@@ -11,7 +11,9 @@ export function DebugNavigation() {
   }
 
   const currentStep = new URLSearchParams(location.search).get("step");
-  const isWizardPage = location.pathname.includes(`/swap/${DEBUG_SWAP_ID}/wizard`);
+  const isWizardPage = location.pathname.includes(
+    `/swap/${DEBUG_SWAP_ID}/wizard`,
+  );
 
   return (
     <div className="mb-6 flex flex-col items-center gap-3 border-t border-orange-500/30 bg-orange-500/5 px-4 py-3 rounded-lg">
@@ -41,7 +43,9 @@ export function DebugNavigation() {
         <Button
           size="sm"
           variant={currentStep === "clientfunded" ? "default" : "outline"}
-          onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/wizard?step=clientfunded`)}
+          onClick={() =>
+            navigate(`/swap/${DEBUG_SWAP_ID}/wizard?step=clientfunded`)
+          }
           className="h-8 text-xs"
         >
           Processing
@@ -49,7 +53,9 @@ export function DebugNavigation() {
         <Button
           size="sm"
           variant={currentStep === "serverredeemed" ? "default" : "outline"}
-          onClick={() => navigate(`/swap/${DEBUG_SWAP_ID}/wizard?step=serverredeemed`)}
+          onClick={() =>
+            navigate(`/swap/${DEBUG_SWAP_ID}/wizard?step=serverredeemed`)
+          }
           className="h-8 text-xs"
         >
           Success

@@ -540,7 +540,11 @@ function HomePage() {
               ) : (
                 <ConnectKitButton.Custom>
                   {({ show }) => (
-                    <Button variant="outline" onClick={show} className="w-full h-10 md:h-12 text-sm">
+                    <Button
+                      variant="outline"
+                      onClick={show}
+                      className="w-full h-10 md:h-12 text-sm"
+                    >
                       <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
                       Connect
                     </Button>
@@ -661,7 +665,7 @@ export default function App() {
             linear-gradient(to right, hsl(var(--foreground) / 0.03) 1px, transparent 1px),
             linear-gradient(to bottom, hsl(var(--foreground) / 0.03) 1px, transparent 1px)
           `,
-          backgroundSize: '40px 40px'
+          backgroundSize: "40px 40px",
         }}
       />
 
@@ -671,9 +675,10 @@ export default function App() {
         <div
           className="absolute -top-48 -left-48 w-[600px] h-[600px]"
           style={{
-            background: 'radial-gradient(circle at center, rgba(251, 146, 60, 0.25) 0%, rgba(249, 115, 22, 0.15) 25%, rgba(234, 88, 12, 0.08) 50%, transparent 70%)',
-            filter: 'blur(100px)',
-            mixBlendMode: 'screen',
+            background:
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.25) 0%, rgba(249, 115, 22, 0.15) 25%, rgba(234, 88, 12, 0.08) 50%, transparent 70%)",
+            filter: "blur(100px)",
+            mixBlendMode: "screen",
           }}
         />
 
@@ -681,9 +686,10 @@ export default function App() {
         <div
           className="absolute -top-32 -left-32 w-[500px] h-[500px]"
           style={{
-            background: 'radial-gradient(ellipse 80% 100% at 30% 30%, rgba(255, 137, 51, 0.2) 0%, rgba(251, 113, 133, 0.12) 40%, transparent 65%)',
-            filter: 'blur(80px)',
-            mixBlendMode: 'screen',
+            background:
+              "radial-gradient(ellipse 80% 100% at 30% 30%, rgba(255, 137, 51, 0.2) 0%, rgba(251, 113, 133, 0.12) 40%, transparent 65%)",
+            filter: "blur(80px)",
+            mixBlendMode: "screen",
           }}
         />
 
@@ -691,9 +697,10 @@ export default function App() {
         <div
           className="absolute -bottom-40 -right-40 w-[550px] h-[550px]"
           style={{
-            background: 'radial-gradient(circle at center, rgba(251, 146, 60, 0.22) 0%, rgba(249, 115, 22, 0.14) 30%, rgba(245, 158, 11, 0.08) 50%, transparent 68%)',
-            filter: 'blur(110px)',
-            mixBlendMode: 'screen',
+            background:
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.22) 0%, rgba(249, 115, 22, 0.14) 30%, rgba(245, 158, 11, 0.08) 50%, transparent 68%)",
+            filter: "blur(110px)",
+            mixBlendMode: "screen",
           }}
         />
 
@@ -701,9 +708,10 @@ export default function App() {
         <div
           className="absolute top-[35%] right-[15%] w-[450px] h-[450px]"
           style={{
-            background: 'radial-gradient(ellipse 90% 110% at 40% 50%, rgba(249, 115, 22, 0.18) 0%, rgba(251, 146, 60, 0.1) 35%, transparent 60%)',
-            filter: 'blur(120px)',
-            mixBlendMode: 'screen',
+            background:
+              "radial-gradient(ellipse 90% 110% at 40% 50%, rgba(249, 115, 22, 0.18) 0%, rgba(251, 146, 60, 0.1) 35%, transparent 60%)",
+            filter: "blur(120px)",
+            mixBlendMode: "screen",
           }}
         />
 
@@ -711,255 +719,271 @@ export default function App() {
         <div
           className="absolute top-[50%] -left-20 w-[400px] h-[400px]"
           style={{
-            background: 'radial-gradient(circle at center, rgba(234, 88, 12, 0.15) 0%, rgba(249, 115, 22, 0.08) 40%, transparent 65%)',
-            filter: 'blur(90px)',
-            mixBlendMode: 'screen',
+            background:
+              "radial-gradient(circle at center, rgba(234, 88, 12, 0.15) 0%, rgba(249, 115, 22, 0.08) 40%, transparent 65%)",
+            filter: "blur(90px)",
+            mixBlendMode: "screen",
           }}
         />
       </div>
 
       {/* Content */}
       <div className="relative z-10">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                className="flex items-center gap-2 transition-opacity hover:opacity-80"
-              >
-                <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black dark:bg-white">
-                  {theme === "dark" ? (
-                    <LendasatBlack className="h-5 w-5 shrink-0" />
-                  ) : (
-                    <LendasatGrey className="h-5 w-5 shrink-0" />
-                  )}
-                </div>
-                <h1 className="text-xl font-semibold">LendaSwap</h1>
-              </button>
-
-              {/* X/Twitter Link */}
-              <a
-                href="https://x.com/lendasat"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
-                aria-label="Follow us on X"
-              >
-                <X className="w-4 h-4" />
-              </a>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Mobile Dropdown Menu */}
-              <div className="md:hidden">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <Menu className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    {hasCode ? (
-                      <DropdownMenuItem disabled className="gap-2">
-                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        <span className="text-green-600 dark:text-green-400 font-bold">
-                          NO-FEE
-                        </span>
-                      </DropdownMenuItem>
+        {/* Header */}
+        <header className="border-b">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="flex items-center gap-2 transition-opacity hover:opacity-80"
+                >
+                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black dark:bg-white">
+                    {theme === "dark" ? (
+                      <LendasatBlack className="h-5 w-5 shrink-0" />
                     ) : (
+                      <LendasatGrey className="h-5 w-5 shrink-0" />
+                    )}
+                  </div>
+                  <h1 className="text-xl font-semibold">LendaSwap</h1>
+                </button>
+
+                {/* X/Twitter Link */}
+                <a
+                  href="https://x.com/lendasat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+                  aria-label="Follow us on X"
+                >
+                  <X className="w-4 h-4" />
+                </a>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Mobile Dropdown Menu */}
+                <div className="md:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Menu className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {hasCode ? (
+                        <DropdownMenuItem disabled className="gap-2">
+                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span className="text-green-600 dark:text-green-400 font-bold">
+                            NO-FEE
+                          </span>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem
+                          onClick={() => setDialogOpen(true)}
+                          className="gap-2"
+                        >
+                          <Tag className="h-4 w-4" />
+                          Add your code
+                        </DropdownMenuItem>
+                      )}
+
                       <DropdownMenuItem
-                        onClick={() => setDialogOpen(true)}
+                        onClick={() => navigate("/swaps")}
                         className="gap-2"
                       >
-                        <Tag className="h-4 w-4" />
-                        Add your code
+                        <Wrench className="h-4 w-4" />
+                        Manage Swaps
                       </DropdownMenuItem>
-                    )}
 
-                    <DropdownMenuItem
-                      onClick={() => navigate("/swaps")}
+                      <DropdownMenuSeparator />
+
+                      <ConnectKitButton.Custom>
+                        {({ isConnected, show, truncatedAddress, ensName }) => {
+                          return (
+                            <DropdownMenuItem onClick={show}>
+                              {isConnected ? (
+                                (ensName ?? truncatedAddress)
+                              ) : (
+                                <>
+                                  <Wallet className="w-4 h-4 mr-2" />
+                                  Connect
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        }}
+                      </ConnectKitButton.Custom>
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem asChild>
+                        <ThemeToggle />
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Desktop Buttons */}
+                <div className="hidden md:flex items-center gap-3">
+                  {hasCode ? (
+                    <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                        NO-FEE
+                      </span>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDialogOpen(true)}
                       className="gap-2"
                     >
-                      <Wrench className="h-4 w-4" />
-                      Manage Swaps
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-
-                    <ConnectKitButton.Custom>
-                      {({ isConnected, show, truncatedAddress, ensName }) => {
-                        return (
-                          <DropdownMenuItem onClick={show}>
-                            {isConnected ? (
-                            ensName ?? truncatedAddress
+                      <Tag className="h-4 w-4" />
+                      <span>Add your code</span>
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/swaps")}
+                    className="gap-2"
+                    title="Manage Swaps"
+                  >
+                    <Wrench className="h-4 w-4" />
+                  </Button>
+                  <ThemeToggle />
+                  <ConnectKitButton.Custom>
+                    {({ isConnected, show, truncatedAddress, ensName }) => {
+                      return (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={show}
+                          className="h-9"
+                        >
+                          {isConnected ? (
+                            (ensName ?? truncatedAddress)
                           ) : (
                             <>
-                              <Wallet className="w-4 h-4 mr-2" />
+                              <Wallet className="w-3.5 h-3.5 mr-1.5" />
                               Connect
                             </>
                           )}
-                          </DropdownMenuItem>
-                        );
-                      }}
-                    </ConnectKitButton.Custom>
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuItem asChild>
-                      <ThemeToggle />
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Desktop Buttons */}
-              <div className="hidden md:flex items-center gap-3">
-                {hasCode ? (
-                  <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
-                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm font-bold text-green-600 dark:text-green-400">
-                      NO-FEE
-                    </span>
-                  </div>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDialogOpen(true)}
-                    className="gap-2"
-                  >
-                    <Tag className="h-4 w-4" />
-                    <span>Add your code</span>
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/swaps")}
-                  className="gap-2"
-                  title="Manage Swaps"
-                >
-                  <Wrench className="h-4 w-4" />
-                </Button>
-                <ThemeToggle />
-                <ConnectKitButton.Custom>
-                  {({ isConnected, show, truncatedAddress, ensName }) => {
-                    return (
-                      <Button variant="outline" size="sm" onClick={show} className="h-9">
-                        {isConnected ? (
-                          ensName ?? truncatedAddress
-                        ) : (
-                          <>
-                            <Wallet className="w-3.5 h-3.5 mr-1.5" />
-                            Connect
-                          </>
-                        )}
-                      </Button>
-                    );
-                  }}
-                </ConnectKitButton.Custom>
+                        </Button>
+                      );
+                    }}
+                  </ConnectKitButton.Custom>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-12">
-        <div className="mx-auto max-w-2xl space-y-8">
-          {/* Title */}
-          <div className="space-y-2 text-center">
-            <h2 className="text-3xl font-semibold">{stepInfo.title}</h2>
-            <p className="text-muted-foreground">{stepInfo.description}</p>
-          </div>
+        {/* Main Content */}
+        <main className="container mx-auto px-6 py-12">
+          <div className="mx-auto max-w-2xl space-y-8">
+            {/* Title */}
+            <div className="space-y-2 text-center">
+              <h2 className="text-3xl font-semibold">{stepInfo.title}</h2>
+              <p className="text-muted-foreground">{stepInfo.description}</p>
+            </div>
 
-          {/* Step Card */}
-          <Routes>
-            <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
-            <Route
-              path="*"
-              element={
+            {/* Step Card */}
+            <Routes>
+              <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
+              <Route
+                path="*"
+                element={
+                  <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                    <Routes>
+                      <Route
+                        path="/"
+                        element={
+                          <Navigate to="/btc_lightning/usdc_pol" replace />
+                        }
+                      />
+                      <Route
+                        path="/:sourceToken/:targetToken"
+                        element={<HomePage />}
+                      />
+                      <Route path="/swaps" element={<SwapsPage />} />
+                      <Route
+                        path="/manage/:swapId"
+                        element={<ManageSwapPage />}
+                      />
+                    </Routes>
+                  </Card>
+                }
+              />
+            </Routes>
+
+            {/* Info Cards - Only show on home page */}
+            {isHomePage && (
+              <div className="grid gap-4 md:grid-cols-3">
                 <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
-                  <Routes>
-                    <Route
-                      path="/"
-                      element={<Navigate to="/btc_lightning/usdc_pol" replace />}
-                    />
-                    <Route path="/:sourceToken/:targetToken" element={<HomePage />} />
-                    <Route path="/swaps" element={<SwapsPage />} />
-                    <Route path="/manage/:swapId" element={<ManageSwapPage />} />
-                  </Routes>
+                  <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
+                      <Zap className="h-5 w-5 text-white dark:text-black" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-2xl font-bold">Quick</div>
+                      <div className="text-muted-foreground text-sm">
+                        Don't blink
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
-              }
-            />
-          </Routes>
-
-          {/* Info Cards - Only show on home page */}
-          {isHomePage && (
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
-                    <Zap className="h-5 w-5 text-white dark:text-black" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold">Quick</div>
-                    <div className="text-muted-foreground text-sm">Don't blink</div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
-                    <Shield className="h-5 w-5 text-white dark:text-black" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold">Atomic</div>
-                    <div className="text-muted-foreground text-sm">
-                      Swap with confidence
+                <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                  <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
+                      <Shield className="h-5 w-5 text-white dark:text-black" />
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
-                <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
-                    <PiggyBank className="h-5 w-5 text-white dark:text-black" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold">0%</div>
-                    <div className="text-muted-foreground text-sm">
-                      Save on fees
+                    <div className="space-y-1">
+                      <div className="text-2xl font-bold">Atomic</div>
+                      <div className="text-muted-foreground text-sm">
+                        Swap with confidence
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-16 border-t">
-        <div className="container mx-auto px-6 py-6">
-          {/* Debug Navigation */}
-          <DebugNavigation />
-
-          <div className="text-muted-foreground text-center text-sm">
-            <p>© 2025 LendaSwap. All rights reserved.</p>
+                  </CardContent>
+                </Card>
+                <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                  <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
+                      <PiggyBank className="h-5 w-5 text-white dark:text-black" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-2xl font-bold">0%</div>
+                      <div className="text-muted-foreground text-sm">
+                        Save on fees
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
-        </div>
-      </footer>
+        </main>
 
-      {/* Referral Code Dialog */}
-      <ReferralCodeDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onCodeAdded={() => setHasCode(true)}
-      />
+        {/* Footer */}
+        <footer className="mt-16 border-t">
+          <div className="container mx-auto px-6 py-6">
+            {/* Debug Navigation */}
+            <DebugNavigation />
+
+            <div className="text-muted-foreground text-center text-sm">
+              <p>© 2025 LendaSwap. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+
+        {/* Referral Code Dialog */}
+        <ReferralCodeDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onCodeAdded={() => setHasCode(true)}
+        />
       </div>
     </div>
   );

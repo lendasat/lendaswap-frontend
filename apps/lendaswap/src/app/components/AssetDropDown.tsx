@@ -259,9 +259,13 @@ export function AssetDropDown({
         </span>
         <div className="flex items-center gap-0.5 px-0.5 py-0 bg-muted/50 rounded-sm w-fit">
           {typeof selectedAsset.network.icon === "string" ? (
-            <span className="text-[7px] md:text-[8px]">{selectedAsset.network.icon}</span>
+            <span className="text-[7px] md:text-[8px]">
+              {selectedAsset.network.icon}
+            </span>
           ) : (
-            <div className="w-1.5 h-1.5 md:w-2 md:h-2">{selectedAsset.network.icon}</div>
+            <div className="w-1.5 h-1.5 md:w-2 md:h-2">
+              {selectedAsset.network.icon}
+            </div>
           )}
           <span className="text-[7px] md:text-[8px] font-medium text-muted-foreground leading-none whitespace-nowrap">
             {selectedAsset.network.symbol}
@@ -278,7 +282,10 @@ export function AssetDropDown({
   const AssetListItem = ({
     asset,
     onClick,
-  }: { asset: (typeof ASSETS)[0]; onClick: () => void }) => (
+  }: {
+    asset: (typeof ASSETS)[0];
+    onClick: () => void;
+  }) => (
     <div
       onClick={onClick}
       className="flex items-center gap-3 px-3 py-2.5 cursor-pointer rounded-xl hover:bg-accent transition-colors"

@@ -34,7 +34,10 @@ interface PolygonDepositStepProps {
   swapId: string;
 }
 
-export function PolygonDepositStep({ swapData, swapId }: PolygonDepositStepProps) {
+export function PolygonDepositStep({
+  swapData,
+  swapId,
+}: PolygonDepositStepProps) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
@@ -180,63 +183,63 @@ export function PolygonDepositStep({ swapData, swapId }: PolygonDepositStepProps
 
       {/* Content */}
       <div className="space-y-6 p-6">
-      {/* Amount Reminder */}
-      <div className="bg-muted/50 space-y-2 rounded-lg p-4">
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">You Send</span>
-          <span className="font-medium">
-            ${swapData.usd_amount.toFixed(2)} {tokenSymbol}
-          </span>
+        {/* Amount Reminder */}
+        <div className="bg-muted/50 space-y-2 rounded-lg p-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">You Send</span>
+            <span className="font-medium">
+              ${swapData.usd_amount.toFixed(2)} {tokenSymbol}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            {swapData?.target_token === "btc_lightning" && (
+              <span className="text-muted-foreground">We will send</span>
+            )}
+            {swapData?.target_token === "btc_arkade" && (
+              <span className="text-muted-foreground">You receive</span>
+            )}
+            <span className="font-medium">~{receiveAmount} BTC</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground"></span>
+            <span className="text-muted-foreground">
+              (~{swapData.sats_receive} sats)
+            </span>
+          </div>
         </div>
-        <div className="flex justify-between text-sm">
-          {swapData?.target_token === "btc_lightning" && (
-            <span className="text-muted-foreground">We will send</span>
-          )}
-          {swapData?.target_token === "btc_arkade" && (
-            <span className="text-muted-foreground">You receive</span>
-          )}
-          <span className="font-medium">~{receiveAmount} BTC</span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-muted-foreground"></span>
-          <span className="text-muted-foreground">
-            (~{swapData.sats_receive} sats)
-          </span>
-        </div>
-      </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
-          {error}
-        </div>
-      )}
+        {/* Error Display */}
+        {error && (
+          <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
+            {error}
+          </div>
+        )}
 
-      {/* Wallet Connection Warning */}
-      {!address && (
-        <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20">
-          Please connect your wallet to continue
-        </div>
-      )}
+        {/* Wallet Connection Warning */}
+        {!address && (
+          <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20">
+            Please connect your wallet to continue
+          </div>
+        )}
 
-      {/* Action Buttons */}
-      <div className="flex flex-col gap-3">
-        {/* Fund Swap button - always first */}
-        <Button
-          onClick={handleSign}
-          disabled={isSigning || !address}
-          className="h-12 w-full text-base font-semibold"
-        >
-          {isSigning ? (
-            <>
-              <Loader className="animate-spin h-4 w-4 mr-2" />
-              Processing Transactions...
-            </>
-          ) : (
-            "Fund Swap"
-          )}
-        </Button>
-      </div>
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3">
+          {/* Fund Swap button - always first */}
+          <Button
+            onClick={handleSign}
+            disabled={isSigning || !address}
+            className="h-12 w-full text-base font-semibold"
+          >
+            {isSigning ? (
+              <>
+                <Loader className="animate-spin h-4 w-4 mr-2" />
+                Processing Transactions...
+              </>
+            ) : (
+              "Fund Swap"
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );

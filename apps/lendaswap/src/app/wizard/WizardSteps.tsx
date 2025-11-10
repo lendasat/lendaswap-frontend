@@ -104,8 +104,7 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
                 className={cn(
                   "rounded-xl border px-3 py-2 text-center text-[8px] font-semibold transition-all uppercase tracking-wider whitespace-nowrap",
                   {
-                    "border-primary/40 bg-primary/10 text-primary":
-                      isCompleted,
+                    "border-primary/40 bg-primary/10 text-primary": isCompleted,
                     "border-primary bg-primary text-primary-foreground":
                       isCurrent,
                     "border-border/50 bg-muted/30 text-muted-foreground":
