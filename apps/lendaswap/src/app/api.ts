@@ -182,7 +182,6 @@ export interface PolygonToArkadeSwapRequest {
   receiver_pk: string;
   user_polygon_address: string;
   referral_code?: string;
-  user_polygon_address_nonce: number;
 }
 
 // Polygon → Arkade swap types
