@@ -2,7 +2,10 @@ import init, {
   refund_vhtlc,
   claim_vhtlc,
   amounts_for_swap,
-  type VhtlcAmounts as WasmVhtlcAmounts,
+  generate_or_get_mnemonic,
+  get_mnemonic,
+  import_mnemonic,
+  derive_swap_params,
 } from "../wasm/browser_wallet.js";
 
 export interface VhtlcAmounts {
@@ -99,4 +102,91 @@ export async function claimVhtlc(
   }
 
   return await claim_vhtlc(arkServerUrl, swapId, claimAddress);
+}
+
+// ============================================================================
+// HD Wallet Functions
+// ============================================================================
+
+export interface SwapParams {
+  ownSk: string;
+  ownPk: string;
+  preimage: string;
+  preimageHash: string;
+  keyIndex: number;
+}
+
+/**
+ * Generate or get existing mnemonic phrase.
+ * If a mnemonic already exists in storage, it returns that.
+ * Otherwise, generates a new 12-word mnemonic and stores it.
+ *
+ * @returns The mnemonic phrase as a string
+ */
+export async function generateOrGetMnemonic(): Promise<string> {
+  if (!wasmInitPromise) {
+    throw new Error(
+      "Browser wallet not initialized. Call initBrowserWallet() first.",
+    );
+  }
+
+  return generate_or_get_mnemonic();
+}
+
+/**
+ * Get the current mnemonic phrase from storage.
+ * Use this for displaying the backup phrase to the user.
+ *
+ * @returns The mnemonic phrase if it exists, null otherwise
+ */
+export async function getMnemonic(): Promise<string | null> {
+  if (!wasmInitPromise) {
+    throw new Error(
+      "Browser wallet not initialized. Call initBrowserWallet() first.",
+    );
+  }
+
+  const result = get_mnemonic();
+  return result || null;
+}
+
+/**
+ * Import a mnemonic phrase (for wallet recovery).
+ * This will replace any existing mnemonic.
+ *
+ * @param phrase - The mnemonic phrase to import
+ */
+export async function importMnemonic(phrase: string): Promise<void> {
+  if (!wasmInitPromise) {
+    throw new Error(
+      "Browser wallet not initialized. Call initBrowserWallet() first.",
+    );
+  }
+
+  return import_mnemonic(phrase);
+}
+
+/**
+ * Derive swap parameters for a new swap.
+ * This automatically increments the derivation index.
+ *
+ * @returns Object containing ownSk (hex), ownPk (hex), preimage(hex), preimageHash (hex), and index
+ */
+export async function deriveKeypairForSwap(): Promise<SwapParams> {
+  if (!wasmInitPromise) {
+    throw new Error(
+      "Browser wallet not initialized. Call initBrowserWallet() first.",
+    );
+  }
+
+  const result = derive_swap_params();
+
+  // Convert from WASM snake_case to JavaScript camelCase
+  return {
+    ownSk: result.own_sk,
+    ownPk: result.own_pk,
+    preimage: result.preimage,
+    preimageHash: result.preimage_hash,
+    keyIndex: result.key_index,
+  };
 }

@@ -7,6 +7,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { polygon } from "viem/chains";
 import { createConfig, WagmiProvider } from "wagmi";
+import {
+  initBrowserWallet,
+  generateOrGetMnemonic,
+} from "@frontend/browser-wallet";
 import App from "./app/App";
 import { PriceFeedProvider } from "./app/PriceFeedContext";
 import { ThemeProvider } from "./app/utils/theme-provider";
@@ -24,24 +28,35 @@ const queryClient = new QueryClient();
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 
-root.render(
-  <StrictMode>
-    <BrowserRouter>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
-          <ConnectKitProvider mode="auto">
-            <Theme>
-              <ThemeProvider>
-                <PriceFeedProvider>
-                  <WalletBridgeProvider>
-                    <App />
-                  </WalletBridgeProvider>
-                </PriceFeedProvider>
-              </ThemeProvider>
-            </Theme>
-          </ConnectKitProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
-    </BrowserRouter>
-  </StrictMode>,
-);
+// Initialize browser wallet WASM before rendering
+(async () => {
+  try {
+    await initBrowserWallet();
+    // Generate or retrieve mnemonic to ensure wallet is ready
+    await generateOrGetMnemonic();
+  } catch (error) {
+    console.error("Failed to initialize browser wallet:", error);
+  }
+
+  root.render(
+    <StrictMode>
+      <BrowserRouter>
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            <ConnectKitProvider mode="auto">
+              <Theme>
+                <ThemeProvider>
+                  <PriceFeedProvider>
+                    <WalletBridgeProvider>
+                      <App />
+                    </WalletBridgeProvider>
+                  </PriceFeedProvider>
+                </ThemeProvider>
+              </Theme>
+            </ConnectKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </BrowserRouter>
+    </StrictMode>,
+  );
+})();
