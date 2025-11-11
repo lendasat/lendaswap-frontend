@@ -44,35 +44,12 @@ import { VersionFooter } from "./components/VersionFooter";
 import { usePriceFeed } from "./PriceFeedContext";
 import { SwapsPage, RefundPage } from "./pages";
 import { SwapWizardPage } from "./wizard";
-import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
+import { deriveKeypairForSwap } from "@frontend/browser-wallet";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import { addSwap } from "./db";
 import { useWalletBridge } from "./WalletBridgeContext";
-
-// Generate a random 32-byte secret
-function generateSecret(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-// Generate SHA-256 hash of the secret
-async function hashSecret(secret: string): Promise<string> {
-  // Decode hex string to bytes
-  const bytes = new Uint8Array(
-    secret.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
-  );
-  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return `0x${hashHex}`;
-}
 
 // Validate that the URL tokens are valid
 function isValidTokenId(token: string | undefined): token is TokenId {
@@ -203,10 +180,17 @@ function HomePage() {
 
       if (isBtcSource) {
         // EXISTING FLOW: BTC → Polygon
-        const secret = generateSecret();
-        const hash_lock = await hashSecret(secret);
-        const { publicKey: refund_pk, privateKey: own_sk } =
-          getOrCreateBitcoinKeys();
+        // Derive swap params (keypair + preimage hash) from HD wallet
+        const {
+          ownSk: own_sk,
+          ownPk: refund_pk,
+          preimage: secret,
+          preimageHash,
+          keyIndex: key_index,
+        } = await deriveKeypairForSwap();
+
+        // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
+        const hash_lock = `0x${preimageHash}`;
 
         let targetAmount = parseFloat(usdAmount);
         if (targetAsset === "btc_arkade" || targetAsset === "btc_lightning") {
@@ -224,8 +208,7 @@ function HomePage() {
         console.log(
           "Persisting swap data",
           JSON.stringify({
-            secret,
-            own_sk,
+            key_index,
             lendaswap_pk: swap.receiver_pk,
             arkade_server_pk: swap.server_pk,
             refund_locktime: swap.refund_locktime,
@@ -241,6 +224,7 @@ function HomePage() {
         localStorage.setItem(
           swap.id,
           JSON.stringify({
+            key_index,
             secret,
             own_sk,
             lendaswap_pk: swap.receiver_pk,
@@ -277,11 +261,17 @@ function HomePage() {
         }
 
         if (targetAsset === "btc_arkade") {
-          // Generate secret and keys
-          const secret = generateSecret();
-          const hash_lock = await hashSecret(secret);
-          const { publicKey: receiver_pk, privateKey: own_sk } =
-            getOrCreateBitcoinKeys();
+          // Derive swap params (keypair + preimage hash) from HD wallet
+            const {
+                ownSk: own_sk,
+                ownPk: receiver_pk,
+                preimage: secret,
+                preimageHash,
+                keyIndex: key_index,
+            } = await deriveKeypairForSwap();
+
+          // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
+          const hash_lock = `0x${preimageHash}`;
 
           // Call Polygon → Arkade API
           const swap = await api.createPolygonToArkadeSwap({
@@ -297,6 +287,7 @@ function HomePage() {
           localStorage.setItem(
             swap.id,
             JSON.stringify({
+              key_index,
               secret,
               own_sk,
               receiver_pk,
@@ -328,23 +319,23 @@ function HomePage() {
         }
 
         if (targetAsset === "btc_lightning") {
-          // Generate keys
-          const { publicKey: receiver_pk, privateKey: own_sk } =
-            getOrCreateBitcoinKeys();
+          // Derive keypair from HD wallet (Lightning doesn't need preimage hash)
+          const { ownSk: own_sk, ownPk: receiver_pk, keyIndex: key_index } =
+            await deriveKeypairForSwap();
 
-          // Call Polygon → Arkade API
+          // Call Polygon → Lightning API
           const swap = await api.createPolygonToLightningSwap({
-            bolt11_invoice: targetAddress, // Arkade address
+            bolt11_invoice: targetAddress,
             source_token: sourceAsset,
             receiver_pk,
             user_polygon_address: userPolygonAddress,
           });
 
-          // Store swap data (needed for claiming BTC later)
+          // Store swap data
           localStorage.setItem(
             swap.id,
             JSON.stringify({
-              own_sk,
+              key_index,
               receiver_pk,
               lendaswap_pk: swap.sender_pk,
               arkade_server_pk: swap.server_pk,
