@@ -27,6 +27,8 @@
     "canvas-confetti": "^1.9.3",
     "connectkit": "^1.9.1",
     "date-fns": "^4.1.0",
+    "dexie": "^4.2.1",
+    "dexie-react-hooks": "^4.2.0",
     "ethers": "^6.15.0",
     "lucide-react": "^0.483.0",
     "qrcode.react": "3.1.0",

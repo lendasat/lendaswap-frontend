@@ -47,6 +47,7 @@ import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
+import { addSwap } from "./db";
 
 // Generate a random 32-byte secret
 function generateSecret(): string {
@@ -242,6 +243,14 @@ function HomePage() {
           }),
         );
 
+        // Store in Dexie as well (with additional sensitive fields)
+        await addSwap({
+          ...swap,
+          secret,
+          own_sk,
+          refund_pk,
+        });
+
         navigate(`/swap/${swap.id}/wizard`);
       } else if (isPolygonSource) {
         // NEW FLOW: Polygon → Arkade
@@ -291,6 +300,14 @@ function HomePage() {
             }),
           );
 
+          // Store in Dexie as well (with additional sensitive fields)
+          await addSwap({
+            ...swap,
+            secret,
+            own_sk,
+            receiver_pk,
+          });
+
           // Navigate to Polygon signing page
           navigate(`/swap/${swap.id}/wizard`);
         }
@@ -328,6 +345,13 @@ function HomePage() {
               target_token: swap.target_token,
             }),
           );
+
+          // Store in Dexie as well (with additional sensitive fields)
+          await addSwap({
+            ...swap,
+            own_sk,
+            receiver_pk,
+          });
 
           // Navigate to Polygon signing page
           navigate(`/swap/${swap.id}/wizard`);
