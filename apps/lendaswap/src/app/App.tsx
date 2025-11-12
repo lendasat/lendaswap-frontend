@@ -11,11 +11,14 @@ import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
 import {
   Check,
+  Download,
+  Key,
   Loader,
   Menu,
   PiggyBank,
   Shield,
   Tag,
+  Upload,
   Wallet,
   Wrench,
   X,
@@ -36,8 +39,10 @@ import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { api, type TokenId } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
+import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
 import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
+import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
 import { VersionFooter } from "./components/VersionFooter";
@@ -262,13 +267,13 @@ function HomePage() {
 
         if (targetAsset === "btc_arkade") {
           // Derive swap params (keypair + preimage hash) from HD wallet
-            const {
-                ownSk: own_sk,
-                ownPk: receiver_pk,
-                preimage: secret,
-                preimageHash,
-                keyIndex: key_index,
-            } = await deriveKeypairForSwap();
+          const {
+            ownSk: own_sk,
+            ownPk: receiver_pk,
+            preimage: secret,
+            preimageHash,
+            keyIndex: key_index,
+          } = await deriveKeypairForSwap();
 
           // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
           const hash_lock = `0x${preimageHash}`;
@@ -320,8 +325,11 @@ function HomePage() {
 
         if (targetAsset === "btc_lightning") {
           // Derive keypair from HD wallet (Lightning doesn't need preimage hash)
-          const { ownSk: own_sk, ownPk: receiver_pk, keyIndex: key_index } =
-            await deriveKeypairForSwap();
+          const {
+            ownSk: own_sk,
+            ownPk: receiver_pk,
+            keyIndex: key_index,
+          } = await deriveKeypairForSwap();
 
           // Call Polygon → Lightning API
           const swap = await api.createPolygonToLightningSwap({
@@ -685,6 +693,8 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
@@ -834,6 +844,24 @@ export default function App() {
 
                       <DropdownMenuSeparator />
 
+                      <DropdownMenuItem
+                        onClick={() => setBackupDialogOpen(true)}
+                        className="gap-2"
+                      >
+                        <Key className="h-4 w-4" />
+                        View Backup Phrase
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={() => setImportDialogOpen(true)}
+                        className="gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Import Wallet
+                      </DropdownMenuItem>
+
+                      <DropdownMenuSeparator />
+
                       <ConnectKitButton.Custom>
                         {({ isConnected, show, truncatedAddress, ensName }) => {
                           return (
@@ -889,6 +917,34 @@ export default function App() {
                   >
                     <Wrench className="h-4 w-4" />
                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2"
+                        title="Wallet Settings"
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem
+                        onClick={() => setBackupDialogOpen(true)}
+                        className="gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        View Backup Phrase
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setImportDialogOpen(true)}
+                        className="gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Import Wallet
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <ThemeToggle />
                   <ConnectKitButton.Custom>
                     {({ isConnected, show, truncatedAddress, ensName }) => {
@@ -1019,6 +1075,20 @@ export default function App() {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           onCodeAdded={() => setHasCode(true)}
+        />
+
+        {/* Wallet Management Dialogs */}
+        <BackupMnemonicDialog
+          open={backupDialogOpen}
+          onOpenChange={setBackupDialogOpen}
+        />
+        <ImportMnemonicDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          onImportSuccess={() => {
+            // Optionally refresh the page or show a success message
+            window.location.reload();
+          }}
         />
       </div>
     </div>
