@@ -19,6 +19,7 @@ import {
 } from "./steps";
 import { AlertCircle } from "lucide-react";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
+import { getSwapById, updateSwap } from "../db";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
@@ -150,7 +151,7 @@ export function SwapWizardPage() {
       return createMockSwapData(mockStatus);
     }
 
-    return await api.getSwap(swapId);
+    return getSwapById(swapId);
   }, [swapId, debugStep]);
 
   // Update display data when swap data changes and status is different
@@ -177,6 +178,10 @@ export function SwapWizardPage() {
     if (!swapId) {
       return;
     }
+    if (!swapData) {
+      // swap was not found, so no need to poll
+      return;
+    }
 
     // Don't poll in debug mode
     if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
@@ -201,8 +206,30 @@ export function SwapWizardPage() {
     }
 
     const pollInterval = setInterval(async () => {
-      console.log("Background polling swap status...");
-      retry();
+      console.log("Background polling swap status from API...");
+      try {
+        // Fetch latest swap data from API
+        const updatedSwap = await api.getSwap(swapId);
+
+        // Check if anything has changed
+        if (
+          displaySwapData &&
+          JSON.stringify(updatedSwap) !== JSON.stringify(displaySwapData)
+        ) {
+          console.log("Swap data changed, updating database...", {
+            old: displaySwapData.status,
+            new: updatedSwap.status,
+          });
+
+          // Update the database with the latest data
+          await updateSwap(swapId, updatedSwap);
+
+          // Trigger a re-fetch to update the UI
+          retry();
+        }
+      } catch (error) {
+        console.error("Failed to poll swap status:", error);
+      }
     }, 2000);
 
     return () => clearInterval(pollInterval);
@@ -239,6 +266,39 @@ export function SwapWizardPage() {
         </div>
       )}
 
+      {/* Swap Not Found State */}
+      {!isLoading && !error && !swapData && swapId && (
+        <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+          <div className="space-y-4 px-6 py-6 bg-warning/10">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-6 w-6 text-warning" />
+              <h3 className="text-xl font-semibold">Swap Not Found</h3>
+            </div>
+            <p className="text-muted-foreground">
+              The swap with ID{" "}
+              <code className="px-2 py-1 bg-muted rounded text-sm font-mono">
+                {swapId}
+              </code>{" "}
+              could not be found.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate("/")}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Go Home
+              </button>
+              <button
+                onClick={() => navigate("/swaps")}
+                className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
+              >
+                View All Swaps
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Loading State */}
       {isLoading && !displaySwapData && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl">
@@ -256,7 +316,7 @@ export function SwapWizardPage() {
               <SendBitcoinStep
                 arkadeAddress={displaySwapData.htlc_address_arkade}
                 lightningAddress={displaySwapData.ln_invoice}
-                unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${displaySwapData.sats_required / 100_000_000}`}
+                unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${displaySwapData.sats_receive / 100_000_000}`}
                 swapData={displaySwapData as BtcToPolygonSwapResponse}
                 usdcAmount={displaySwapData.usd_amount.toFixed(2)}
                 tokenSymbol={getTokenSymbol(displaySwapData.target_token)}

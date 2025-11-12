@@ -62,7 +62,7 @@ export async function updateSwap(
   id: string,
   updates: Partial<StoredSwap>,
 ): Promise<number> {
-  return await db.swaps.update(id, updates);
+  return db.swaps.update(id, updates);
 }
 
 /**
@@ -71,7 +71,7 @@ export async function updateSwap(
  * @returns The swap data or undefined if not found
  */
 export async function getSwapById(id: string): Promise<StoredSwap | undefined> {
-  return await db.swaps.get(id);
+  return db.swaps.get(id);
 }
 
 /**
@@ -79,7 +79,7 @@ export async function getSwapById(id: string): Promise<StoredSwap | undefined> {
  * @returns Array of all swaps
  */
 export async function getAllSwaps(): Promise<StoredSwap[]> {
-  return await db.swaps.orderBy("created_at").reverse().toArray();
+  return db.swaps.orderBy("created_at").reverse().toArray();
 }
 
 /**
@@ -90,7 +90,7 @@ export async function getAllSwaps(): Promise<StoredSwap[]> {
 export async function getSwapsByStatus(
   status: StoredSwap["status"],
 ): Promise<StoredSwap[]> {
-  return await db.swaps.where("status").equals(status).toArray();
+  return db.swaps.where("status").equals(status).toArray();
 }
 
 /**
@@ -101,7 +101,7 @@ export async function getSwapsByStatus(
 export async function getSwapsByDirection(
   direction: "btc_to_polygon" | "polygon_to_btc",
 ): Promise<StoredSwap[]> {
-  return await db.swaps.where("direction").equals(direction).toArray();
+  return db.swaps.where("direction").equals(direction).toArray();
 }
 
 /**
@@ -124,5 +124,5 @@ export async function clearAllSwaps(): Promise<void> {
  * @returns The total number of swaps
  */
 export async function getSwapCount(): Promise<number> {
-  return await db.swaps.count();
+  return db.swaps.count();
 }
