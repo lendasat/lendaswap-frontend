@@ -88,7 +88,7 @@ export function AddressInput({
   const getPlaceholder = () => {
     switch (targetToken) {
       case "btc_lightning":
-        return "Provide a bolt11 invoice without amount";
+        return "Provide a bolt11 invoice with amount";
       case "btc_arkade":
         return "Provide an Arkade address";
       case "usdc_pol":
