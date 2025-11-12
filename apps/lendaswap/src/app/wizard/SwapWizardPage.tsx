@@ -16,6 +16,7 @@ import {
   SuccessStep,
   PolygonDepositStep,
   BtcToPolygonRefundStep,
+  PolygonToBtcRefundStep,
 } from "./steps";
 import { AlertCircle } from "lucide-react";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
@@ -424,6 +425,13 @@ export function SwapWizardPage() {
               />
             )}
 
+          {currentStep === "refundable" &&
+            swapDirection === "polygon-to-btc" && (
+              <PolygonToBtcRefundStep
+                swapData={displaySwapData as PolygonToBtcSwapResponse}
+                swapId={displaySwapData.id}
+              />
+            )}
 
           {currentStep === "refunded" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
