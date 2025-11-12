@@ -65,8 +65,7 @@ export function SendBitcoinStep({
         "bitcoin",
       );
 
-      // Trust the client - navigate immediately to processing page
-      navigate(`/swap/${swapId}/processing`);
+      // We stay on wizard - polling will detect status change and update UI
     } catch (error) {
       console.error("Failed to send from wallet:", error);
       setSendError(
