@@ -4,13 +4,14 @@ import {
   getAmountsForSwap,
   type VhtlcAmounts,
 } from "@frontend/browser-wallet";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Alert, AlertDescription } from "#/components/ui/alert";
-import { BtcToPolygonSwapResponse } from "../../api";
+import { BtcToPolygonSwapResponse, getTokenDisplayName } from "../../api";
+import { TokenIcon } from "../../components/TokenIcon";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
@@ -162,6 +163,38 @@ export function BtcToPolygonRefundStep({
 
         {/* VHTLC Details */}
         <div className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Swap</p>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center w-5 h-5 bg-muted rounded-full p-0.5">
+                  <TokenIcon
+                    tokenId={swapData.source_token}
+                    className="h-5 w-5"
+                  />
+                </div>
+                <span className="text-xs font-medium">
+                  {getTokenDisplayName(swapData.source_token)}
+                </span>
+              </div>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center w-5 h-5 bg-muted rounded-full p-0.5">
+                  <TokenIcon
+                    tokenId={swapData.target_token}
+                    className="h-5 w-5"
+                  />
+                </div>
+                <span className="text-xs font-medium">
+                  {getTokenDisplayName(swapData.target_token)}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground ml-2">
+                (${swapData.usd_amount.toFixed(2)})
+              </span>
+            </div>
+          </div>
+
           <div className="space-y-1">
             <p className="text-sm font-medium">VHTLC Address</p>
             <p className="text-xs text-muted-foreground font-mono break-all">

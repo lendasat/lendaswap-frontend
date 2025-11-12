@@ -97,6 +97,19 @@ export function getTokenSymbol(tokenId: TokenId): string {
   }
 }
 
+export function getTokenDisplayName(tokenId: TokenId): string {
+  switch (tokenId) {
+    case "btc_arkade":
+      return "BTC (Arkade)";
+    case "btc_lightning":
+      return "BTC (Lightning)";
+    case "usdc_pol":
+      return "USDC";
+    case "usdt_pol":
+      return "USDT";
+  }
+}
+
 // Common fields shared across all swap directions
 export interface SwapCommonFields {
   id: string;

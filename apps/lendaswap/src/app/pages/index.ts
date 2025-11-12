@@ -1,2 +1,2 @@
-export { ManageSwapPage } from "./ManageSwapPage";
 export { SwapsPage } from "./SwapsPage";
+export { RefundPage } from "./RefundPage";

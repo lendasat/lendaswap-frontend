@@ -41,7 +41,7 @@ import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
 import { usePriceFeed } from "./PriceFeedContext";
-import { ManageSwapPage, SwapsPage } from "./pages";
+import { SwapsPage, RefundPage } from "./pages";
 import { SwapWizardPage } from "./wizard";
 import { getOrCreateBitcoinKeys } from "./utils/bitcoinKeys";
 import { hasReferralCode } from "./utils/referralCode";
@@ -657,6 +657,11 @@ function useStepInfo() {
       title: "Manage Swap",
       description: "View details and refund your swap",
     };
+  } else if (location.pathname.includes("/refund")) {
+    return {
+      title: "Refund Swap",
+      description: "Reclaim your funds from an expired swap",
+    };
   }
 
   return {
@@ -915,6 +920,7 @@ export default function App() {
             {/* Step Card */}
             <Routes>
               <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
+              <Route path="/swap/:swapId/refund" element={<RefundPage />} />
               <Route
                 path="*"
                 element={
@@ -931,10 +937,6 @@ export default function App() {
                         element={<HomePage />}
                       />
                       <Route path="/swaps" element={<SwapsPage />} />
-                      <Route
-                        path="/manage/:swapId"
-                        element={<ManageSwapPage />}
-                      />
                     </Routes>
                   </Card>
                 }

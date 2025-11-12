@@ -1,10 +1,14 @@
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Alert, AlertDescription } from "#/components/ui/alert";
-import { PolygonToBtcSwapResponse } from "../../api";
-import { getTokenSymbol } from "../../api";
+import {
+  PolygonToBtcSwapResponse,
+  getTokenSymbol,
+  getTokenDisplayName,
+} from "../../api";
+import { TokenIcon } from "../../components/TokenIcon";
 
 // Helper function to convert UUID to bytes32
 // Example: "16446b7d-f430-4d95-b936-761e725fe637" -> "0x16446B7DF4304D95B936761E725FE63700000000000000000000000000000000"
@@ -256,6 +260,38 @@ export function PolygonToBtcRefundStep({
 
         {/* Refund Details */}
         <div className="space-y-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Swap</p>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center w-5 h-5 bg-muted rounded-full p-0.5">
+                  <TokenIcon
+                    tokenId={swapData.source_token}
+                    className="h-5 w-5"
+                  />
+                </div>
+                <span className="text-xs font-medium">
+                  {getTokenDisplayName(swapData.source_token)}
+                </span>
+              </div>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-center w-5 h-5 bg-muted rounded-full p-0.5">
+                  <TokenIcon
+                    tokenId={swapData.target_token}
+                    className="h-5 w-5"
+                  />
+                </div>
+                <span className="text-xs font-medium">
+                  {getTokenDisplayName(swapData.target_token)}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground ml-2">
+                (${swapData.usd_amount.toFixed(2)})
+              </span>
+            </div>
+          </div>
+
           <div className="space-y-1">
             <p className="text-sm font-medium">HTLC Address</p>
             <p className="text-xs text-muted-foreground font-mono break-all">
