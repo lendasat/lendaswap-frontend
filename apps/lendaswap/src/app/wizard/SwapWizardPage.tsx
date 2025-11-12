@@ -21,6 +21,7 @@ import {
 import { AlertCircle } from "lucide-react";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 import { getSwapById, updateSwap } from "../db";
+import { useWalletBridge } from "../WalletBridgeContext";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
@@ -109,6 +110,7 @@ function determineStepFromStatus(
     case "clientinvalidfunded":
     case "clientfundedtoolate":
       if (refundLocktimeDate < new Date()) {
+        console.warn(`Refund timelock expired. Ready to refund.`);
         return "refundable";
       }
       break;
@@ -149,6 +151,7 @@ export function SwapWizardPage() {
   const lastStatusRef = useRef<SwapStatus | null>(null);
   const [displaySwapData, setDisplaySwapData] =
     useState<GetSwapResponse | null>(null);
+  const { arkAddress } = useWalletBridge();
 
   // Get debug step from URL query params
   const debugStep = searchParams.get("step") as SwapStatus | null;
@@ -422,6 +425,7 @@ export function SwapWizardPage() {
               <BtcToPolygonRefundStep
                 swapData={displaySwapData as BtcToPolygonSwapResponse}
                 swapId={displaySwapData.id}
+                arkAddress={arkAddress}
               />
             )}
 

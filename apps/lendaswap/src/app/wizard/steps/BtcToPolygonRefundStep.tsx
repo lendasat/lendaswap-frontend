@@ -19,11 +19,13 @@ const ARK_SERVER_URL =
 interface BtcToPolygonRefundStepProps {
   swapData: BtcToPolygonSwapResponse;
   swapId: string;
+  arkAddress?: string | null;
 }
 
 export function BtcToPolygonRefundStep({
   swapData,
   swapId,
+  arkAddress,
 }: BtcToPolygonRefundStepProps) {
   const [wasmInitialized, setWasmInitialized] = useState(false);
   const [refundAddress, setRefundAddress] = useState("");
@@ -32,6 +34,13 @@ export function BtcToPolygonRefundStep({
   const [refundSuccess, setRefundSuccess] = useState<string | null>(null);
   const [amounts, setAmounts] = useState<VhtlcAmounts | null>(null);
   const [isLoadingAmounts, setIsLoadingAmounts] = useState(false);
+
+  // Auto-populate refund address if arkAddress is provided
+  useEffect(() => {
+    if (arkAddress && !refundAddress) {
+      setRefundAddress(arkAddress);
+    }
+  }, [arkAddress, refundAddress]);
 
   // Initialize WASM module on mount
   useEffect(() => {
@@ -280,7 +289,8 @@ export function BtcToPolygonRefundStep({
                 placeholder="ark1..."
                 value={refundAddress}
                 onChange={(e) => setRefundAddress(e.target.value)}
-                disabled={isRefunding}
+                disabled={isRefunding || !!arkAddress}
+                className={arkAddress ? "cursor-not-allowed opacity-60" : ""}
               />
             </div>
 
