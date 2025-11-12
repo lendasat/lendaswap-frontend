@@ -217,6 +217,11 @@ export interface GelatoSubmitResponse {
   message: string;
 }
 
+export interface Version {
+  tag: string;
+  commit_hash: string;
+}
+
 export const api = {
   async getTokens(): Promise<TokenInfo[]> {
     const response = await fetch(`${API_BASE_URL}/tokens`);
@@ -371,6 +376,14 @@ export const api = {
       );
     }
 
+    return response.json();
+  },
+
+  async getVersion(): Promise<Version> {
+    const response = await fetch(`${API_BASE_URL}/version`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch version: ${response.statusText}`);
+    }
     return response.json();
   },
 };

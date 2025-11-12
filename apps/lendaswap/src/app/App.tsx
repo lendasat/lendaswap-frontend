@@ -40,6 +40,7 @@ import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
+import { VersionFooter } from "./components/VersionFooter";
 import { usePriceFeed } from "./PriceFeedContext";
 import { SwapsPage, RefundPage } from "./pages";
 import { SwapWizardPage } from "./wizard";
@@ -996,8 +997,11 @@ export default function App() {
             {/* Debug Navigation */}
             <DebugNavigation />
 
-            <div className="text-muted-foreground text-center text-sm">
-              <p>© 2025 LendaSwap. All rights reserved.</p>
+            <div className="space-y-3">
+              <VersionFooter />
+              <div className="text-muted-foreground text-center text-sm">
+                <p>© 2025 LendaSwap. All rights reserved.</p>
+              </div>
             </div>
           </div>
         </footer>
