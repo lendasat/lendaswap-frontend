@@ -212,10 +212,7 @@ export function SwapWizardPage() {
         const updatedSwap = await api.getSwap(swapId);
 
         // Check if anything has changed
-        if (
-          displaySwapData &&
-          JSON.stringify(updatedSwap) !== JSON.stringify(displaySwapData)
-        ) {
+        if (displaySwapData && updatedSwap.status !== displaySwapData.status) {
           console.log("Swap data changed, updating database...", {
             old: displaySwapData.status,
             new: updatedSwap.status,
