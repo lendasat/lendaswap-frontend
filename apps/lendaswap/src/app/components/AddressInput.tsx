@@ -8,8 +8,6 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import type { TokenId } from "../api";
 
-// import {decode} from "bolt11";
-
 interface AddressInputProps {
   value: string;
   onChange: (value: string) => void;
@@ -17,6 +15,7 @@ interface AddressInputProps {
   className?: string;
   setAddressIsValid: (valid: boolean) => void;
   setBitcoinAmount: (amount: number) => void;
+  disabled?: boolean;
 }
 
 export function AddressInput({
@@ -26,6 +25,7 @@ export function AddressInput({
   className = "",
   setAddressIsValid,
   setBitcoinAmount,
+  disabled = false,
 }: AddressInputProps) {
   const isPolygonTarget =
     targetToken === "usdc_pol" || targetToken === "usdt_pol";
@@ -109,9 +109,10 @@ export function AddressInput({
           placeholder={getPlaceholder()}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
           className={`px-4 py-2 md:py-2.5 min-h-[3rem] md:min-h-[3.5rem] bg-card border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm font-mono text-sm ${
             isPolygonTarget ? "pr-36 md:pr-40" : ""
-          } ${className}`}
+          } ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`}
           data-1p-ignore
           data-lpignore="true"
           autoComplete="off"
