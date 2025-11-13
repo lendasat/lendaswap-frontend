@@ -65,8 +65,7 @@ export function SendBitcoinStep({
         "bitcoin",
       );
 
-      // Trust the client - navigate immediately to processing page
-      navigate(`/swap/${swapId}/processing`);
+      // We stay on wizard - polling will detect status change and update UI
     } catch (error) {
       console.error("Failed to send from wallet:", error);
       setSendError(
@@ -236,19 +235,11 @@ export function SendBitcoinStep({
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
-          {/* Waiting for payment - always first */}
-          <Button
-            className="h-12 w-full text-base font-semibold"
-            disabled={true}
-          >
-            Waiting for payment
-          </Button>
-
-          {/* Send from wallet - only on embedded wallets */}
+          {/* Send from wallet - only on embedded wallets - First on mobile, second on desktop */}
           {isEmbedded && isReady && client && arkadeAddress && (
             <Button
               variant="outline"
-              className="h-12 w-full text-base font-semibold"
+              className="h-12 w-full text-base font-semibold order-first md:order-2"
               onClick={handleSendFromWallet}
               disabled={isSending}
             >
@@ -266,10 +257,18 @@ export function SendBitcoinStep({
             </Button>
           )}
 
-          {/* Back button */}
+          {/* Waiting for payment - Second on mobile, first on desktop */}
+          <Button
+            className="h-12 w-full text-base font-semibold order-2 md:order-first"
+            disabled={true}
+          >
+            Waiting for payment
+          </Button>
+
+          {/* Back button - Always last */}
           <Button
             variant="outline"
-            className="h-12 w-full"
+            className="h-12 w-full order-last"
             onClick={() => navigate("/")}
           >
             Back

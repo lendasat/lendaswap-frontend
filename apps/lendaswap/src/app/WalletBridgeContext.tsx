@@ -1,4 +1,4 @@
-import { LendasatClient } from "@lendasat/lendasat-wallet-bridge";
+import { AddressType, LendasatClient } from "@lendasat/lendasat-wallet-bridge";
 import {
   createContext,
   ReactNode,
@@ -9,12 +9,14 @@ import {
 
 interface WalletBridgeContextType {
   client: LendasatClient | null;
+  arkAddress: string | null;
   isEmbedded: boolean;
   isReady: boolean;
 }
 
 const WalletBridgeContext = createContext<WalletBridgeContextType>({
   client: null,
+  arkAddress: null,
   isEmbedded: false,
   isReady: false,
 });
@@ -29,6 +31,7 @@ export function WalletBridgeProvider({ children }: WalletBridgeProviderProps) {
   const [client, setClient] = useState<LendasatClient | null>(null);
   const [isEmbedded, setIsEmbedded] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [arkAddress, setArkAddress] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if we're running in an iframe
@@ -39,7 +42,18 @@ export function WalletBridgeProvider({ children }: WalletBridgeProviderProps) {
       // Initialize the wallet bridge client
       const bridgeClient = new LendasatClient();
       setClient(bridgeClient);
-      setIsReady(true);
+
+      // Async initialization
+      (async () => {
+        try {
+          const address = await bridgeClient.getAddress(AddressType.ARK);
+          setArkAddress(address);
+        } catch (error) {
+          console.error("Failed to get Ark address:", error);
+        } finally {
+          setIsReady(true);
+        }
+      })();
 
       // Cleanup on unmount
       return () => {
@@ -51,7 +65,9 @@ export function WalletBridgeProvider({ children }: WalletBridgeProviderProps) {
   }, []);
 
   return (
-    <WalletBridgeContext.Provider value={{ client, isEmbedded, isReady }}>
+    <WalletBridgeContext.Provider
+      value={{ client, isEmbedded, isReady, arkAddress }}
+    >
       {children}
     </WalletBridgeContext.Provider>
   );

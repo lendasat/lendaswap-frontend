@@ -7,10 +7,12 @@ import {
   BtcToPolygonRefundStep,
   PolygonToBtcRefundStep,
 } from "../wizard/steps";
+import { useWalletBridge } from "../WalletBridgeContext";
 
 export function RefundPage() {
   const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
+  const { arkAddress } = useWalletBridge();
   const [swapData, setSwapData] = useState<StoredSwap | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +107,11 @@ export function RefundPage() {
   return (
     <div className="container max-w-2xl mx-auto py-8 px-4">
       {swapDirection === "btc_to_polygon" && (
-        <BtcToPolygonRefundStep swapData={swapData} swapId={swapId} />
+        <BtcToPolygonRefundStep
+          swapData={swapData}
+          swapId={swapId}
+          arkAddress={arkAddress}
+        />
       )}
 
       {swapDirection === "polygon_to_btc" && (

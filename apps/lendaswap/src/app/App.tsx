@@ -49,6 +49,7 @@ import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import { addSwap } from "./db";
+import { useWalletBridge } from "./WalletBridgeContext";
 
 // Generate a random 32-byte secret
 function generateSecret(): string {
@@ -120,6 +121,7 @@ function HomePage() {
   const [swapError, setSwapError] = useState<string>("");
   const [userPolygonAddress, setUserPolygonAddress] = useState<string>("");
   const [isPolygonAddressValid, setIsPolygonAddressValid] = useState(false);
+  const { arkAddress, isEmbedded } = useWalletBridge();
 
   // Auto-populate Polygon address from connected wallet
   useEffect(() => {
@@ -131,6 +133,18 @@ function HomePage() {
       setIsPolygonAddressValid(false);
     }
   }, [isConnected, connectedAddress]);
+
+  // Auto-populate target address with arkAddress if embedded and target is btc_arkade
+  useEffect(() => {
+    if (
+      isEmbedded &&
+      arkAddress &&
+      targetAsset === "btc_arkade" &&
+      !targetAddress
+    ) {
+      setTargetAddress(arkAddress);
+    }
+  }, [isEmbedded, arkAddress, targetAsset, targetAddress]);
 
   // Get price feed from context
   const { getExchangeRate, isLoadingPrice } = usePriceFeed();
@@ -531,6 +545,9 @@ function HomePage() {
               setLastFieldEdited("btc");
               setBitcoinAmount(amount.toString());
             }}
+            disabled={
+              isEmbedded && !!arkAddress && targetAsset === "btc_arkade"
+            }
           />
 
           {/* Polygon Wallet Address - only shown when source is Polygon stablecoin */}
