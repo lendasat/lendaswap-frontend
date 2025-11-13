@@ -49,7 +49,7 @@ import { VersionFooter } from "./components/VersionFooter";
 import { usePriceFeed } from "./PriceFeedContext";
 import { SwapsPage, RefundPage } from "./pages";
 import { SwapWizardPage } from "./wizard";
-import { deriveKeypairForSwap } from "@frontend/browser-wallet";
+import { deriveSwapParams } from "@frontend/browser-wallet";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
@@ -184,15 +184,17 @@ function HomePage() {
         sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol";
 
       if (isBtcSource) {
-        // EXISTING FLOW: BTC → Polygon
-        // Derive swap params (keypair + preimage hash) from HD wallet
+        // BTC → Polygon
+
+        // Derive swap params (keypair + preimage hash) from HD wallet (this increments the index)
         const {
           ownSk: own_sk,
           ownPk: refund_pk,
           preimage: secret,
           preimageHash,
+          userId: user_id,
           keyIndex: key_index,
-        } = await deriveKeypairForSwap();
+        } = await deriveSwapParams();
 
         // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
         const hash_lock = `0x${preimageHash}`;
@@ -208,6 +210,7 @@ function HomePage() {
           target_token: targetAsset,
           hash_lock,
           refund_pk,
+          user_id,
         });
 
         console.log(
@@ -257,7 +260,7 @@ function HomePage() {
 
         navigate(`/swap/${swap.id}/wizard`);
       } else if (isPolygonSource) {
-        // NEW FLOW: Polygon → Arkade
+        // Polygon → Bitcoin
 
         // Validate Polygon address
         if (!isPolygonAddressValid) {
@@ -266,14 +269,17 @@ function HomePage() {
         }
 
         if (targetAsset === "btc_arkade") {
-          // Derive swap params (keypair + preimage hash) from HD wallet
+          // Polygon → Arkade
+
+          // Then derive swap params (keypair + preimage hash) from HD wallet (this increments the index)
           const {
             ownSk: own_sk,
             ownPk: receiver_pk,
             preimage: secret,
             preimageHash,
+            userId: user_id,
             keyIndex: key_index,
-          } = await deriveKeypairForSwap();
+          } = await deriveSwapParams();
 
           // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
           const hash_lock = `0x${preimageHash}`;
@@ -286,6 +292,7 @@ function HomePage() {
             hash_lock,
             receiver_pk,
             user_polygon_address: userPolygonAddress,
+            user_id,
           });
 
           // Store swap data (needed for claiming BTC later)
@@ -324,19 +331,18 @@ function HomePage() {
         }
 
         if (targetAsset === "btc_lightning") {
-          // Derive keypair from HD wallet (Lightning doesn't need preimage hash)
-          const {
-            ownSk: own_sk,
-            ownPk: receiver_pk,
-            keyIndex: key_index,
-          } = await deriveKeypairForSwap();
+          // Polygon → Lightning
+
+          // Then derive user ID from HD wallet (Polygon-Lightning doesn't need keys or hash).
+          const { keyIndex: key_index, userId: user_id } =
+            await deriveSwapParams();
 
           // Call Polygon → Lightning API
           const swap = await api.createPolygonToLightningSwap({
             bolt11_invoice: targetAddress,
             source_token: sourceAsset,
-            receiver_pk,
             user_polygon_address: userPolygonAddress,
+            user_id,
           });
 
           // Store swap data
@@ -344,7 +350,6 @@ function HomePage() {
             swap.id,
             JSON.stringify({
               key_index,
-              receiver_pk,
               lendaswap_pk: swap.sender_pk,
               arkade_server_pk: swap.server_pk,
               refund_locktime: swap.refund_locktime,
@@ -360,12 +365,8 @@ function HomePage() {
             }),
           );
 
-          // Store in Dexie as well (with additional sensitive fields)
-          await addSwap({
-            ...swap,
-            own_sk,
-            receiver_pk,
-          });
+          // Store in Dexie as well
+          await addSwap(swap);
 
           // Navigate to Polygon signing page
           navigate(`/swap/${swap.id}/wizard`);

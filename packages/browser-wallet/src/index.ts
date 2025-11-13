@@ -6,6 +6,8 @@ import init, {
   get_mnemonic,
   import_mnemonic,
   derive_swap_params,
+  derive_swap_params_at_index,
+  get_user_id_xpub,
 } from "../wasm/browser_wallet.js";
 
 export interface VhtlcAmounts {
@@ -113,6 +115,7 @@ export interface SwapParams {
   ownPk: string;
   preimage: string;
   preimageHash: string;
+  userId: string;
   keyIndex: number;
 }
 
@@ -170,9 +173,9 @@ export async function importMnemonic(phrase: string): Promise<void> {
  * Derive swap parameters for a new swap.
  * This automatically increments the derivation index.
  *
- * @returns Object containing ownSk (hex), ownPk (hex), preimage(hex), preimageHash (hex), and index
+ * @returns Object containing ownSk (hex), ownPk (hex), preimage(hex), preimageHash (hex), userId (hex), and index
  */
-export async function deriveKeypairForSwap(): Promise<SwapParams> {
+export async function deriveSwapParams(): Promise<SwapParams> {
   if (!wasmInitPromise) {
     throw new Error(
       "Browser wallet not initialized. Call initBrowserWallet() first.",
@@ -187,6 +190,52 @@ export async function deriveKeypairForSwap(): Promise<SwapParams> {
     ownPk: result.own_pk,
     preimage: result.preimage,
     preimageHash: result.preimage_hash,
+    userId: result.user_id,
     keyIndex: result.key_index,
   };
+}
+
+/**
+ * Derive swap parameters at a specific index (for recovery).
+ * This does NOT increment the derivation index.
+ *
+ * @param index - The derivation index to use
+ * @returns Object containing ownSk (hex), ownPk (hex), preimage(hex), preimageHash (hex), userId (hex), and index
+ */
+export async function deriveSwapParamsAtIndex(
+  index: number,
+): Promise<SwapParams> {
+  if (!wasmInitPromise) {
+    throw new Error(
+      "Browser wallet not initialized. Call initBrowserWallet() first.",
+    );
+  }
+
+  const result = derive_swap_params_at_index(index);
+
+  // Convert from WASM snake_case to JavaScript camelCase
+  return {
+    ownSk: result.own_sk,
+    ownPk: result.own_pk,
+    preimage: result.preimage,
+    preimageHash: result.preimage_hash,
+    userId: result.user_id,
+    keyIndex: result.key_index,
+  };
+}
+
+/**
+ * Get the user_id Xpub for wallet recovery.
+ * This Xpub can be sent to the server to recover all swaps.
+ *
+ * @returns The Xpub string, or null if no mnemonic is stored
+ */
+export async function getUserIdXpub(): Promise<string | null> {
+  if (!wasmInitPromise) {
+    throw new Error(
+      "Browser wallet not initialized. Call initBrowserWallet() first.",
+    );
+  }
+
+  return get_user_id_xpub();
 }
