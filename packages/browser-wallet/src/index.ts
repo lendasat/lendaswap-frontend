@@ -19,6 +19,14 @@ export interface VhtlcAmounts {
 let wasmInitPromise: Promise<void> | null = null;
 
 /**
+ * Get the Bitcoin network from environment variable.
+ * Defaults to "bitcoin" (mainnet) if not set.
+ */
+function getNetwork(): string {
+  return import.meta.env.VITE_BITCOIN_NETWORK || "bitcoin";
+}
+
+/**
  * Initialize the browser wallet WASM module.
  * This must be called before using any other functions.
  * Note: The logger is automatically initialized when the WASM module loads.
@@ -133,7 +141,7 @@ export async function generateOrGetMnemonic(): Promise<string> {
     );
   }
 
-  return generate_or_get_mnemonic();
+  return generate_or_get_mnemonic(getNetwork());
 }
 
 /**
@@ -166,7 +174,7 @@ export async function importMnemonic(phrase: string): Promise<void> {
     );
   }
 
-  return import_mnemonic(phrase);
+  return import_mnemonic(phrase, getNetwork());
 }
 
 /**
@@ -182,7 +190,7 @@ export async function deriveSwapParams(): Promise<SwapParams> {
     );
   }
 
-  const result = derive_swap_params();
+  const result = derive_swap_params(getNetwork());
 
   // Convert from WASM snake_case to JavaScript camelCase
   return {
@@ -211,7 +219,7 @@ export async function deriveSwapParamsAtIndex(
     );
   }
 
-  const result = derive_swap_params_at_index(index);
+  const result = derive_swap_params_at_index(index, getNetwork());
 
   // Convert from WASM snake_case to JavaScript camelCase
   return {
@@ -237,5 +245,5 @@ export async function getUserIdXpub(): Promise<string | null> {
     );
   }
 
-  return get_user_id_xpub();
+  return get_user_id_xpub(getNetwork());
 }
