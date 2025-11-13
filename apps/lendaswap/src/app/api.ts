@@ -79,6 +79,7 @@ export interface SwapRequest {
   target_token: TokenId; // Token to receive (e.g., USDC_POL, USDT_POL)
   hash_lock: string;
   refund_pk: string;
+  user_id: string; // Public key for wallet recovery
   referral_code?: string; // Optional referral code for tracking
 }
 
@@ -194,15 +195,16 @@ export interface PolygonToArkadeSwapRequest {
   hash_lock: string;
   receiver_pk: string;
   user_polygon_address: string;
+  user_id: string; // Public key for wallet recovery
   referral_code?: string;
 }
 
-// Polygon → Arkade swap types
+// Polygon → Lightning swap types
 export interface PolygonToLightningSwapRequest {
   bolt11_invoice: string;
   source_token: TokenId;
-  receiver_pk: string;
   user_polygon_address: string;
+  user_id: string; // Public key for wallet recovery
   referral_code?: string;
 }
 
@@ -383,6 +385,28 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/version`);
     if (!response.ok) {
       throw new Error(`Failed to fetch version: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async recoverSwaps(xpub: string): Promise<{
+    swaps: Array<GetSwapResponse & { index: number }>;
+    highest_index: number;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/swap/recover`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ xpub }),
+    });
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(
+        error.error || `Failed to recover swaps: ${response.statusText}`,
+      );
     }
     return response.json();
   },
