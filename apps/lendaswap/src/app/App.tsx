@@ -37,13 +37,8 @@ import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import { api, type TokenId } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
-// import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
 import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
-// import {
-//   FirstTimeBackupModal,
-//   hasAcknowledgedBackup,
-// } from "./components/FirstTimeBackupModal";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
 import { VersionFooter } from "./components/VersionFooter";
@@ -104,9 +99,6 @@ function HomePage() {
   const [swapError, setSwapError] = useState<string>("");
   const [userPolygonAddress, setUserPolygonAddress] = useState<string>("");
   const [isPolygonAddressValid, setIsPolygonAddressValid] = useState(false);
-  // Better UX: Removed intrusive first-time backup modal
-  // const [showFirstTimeBackupModal, setShowFirstTimeBackupModal] =
-  //   useState(false);
   const { arkAddress, isEmbedded } = useWalletBridge();
 
   // Auto-populate Polygon address from connected wallet
@@ -172,19 +164,10 @@ function HomePage() {
   }, [exchangeRate, isLoadingPrice, lastFieldEdited, bitcoinAmount, usdAmount]);
 
   const handleContinueToAddress = async () => {
-    // Create swap and navigate to send bitcoin step
     if (!targetAddress || !usdAmount || !addressValid) {
       return;
     }
 
-    // Better UX: Don't interrupt the swap flow with backup modal
-    // Users can access backup from the key icon in the header
-    // if (!hasAcknowledgedBackup()) {
-    //   setShowFirstTimeBackupModal(true);
-    //   return;
-    // }
-
-    // Proceed with swap creation
     await createSwap();
   };
 
@@ -649,14 +632,6 @@ function HomePage() {
           )}
         </div>
       </div>
-
-      {/* Better UX: Removed intrusive first-time backup modal */}
-      {/* Users can access backup from the key icon in the header instead */}
-      {/* <FirstTimeBackupModal
-        open={showFirstTimeBackupModal}
-        onOpenChange={setShowFirstTimeBackupModal}
-        onContinue={createSwap}
-      /> */}
     </>
   );
 }
