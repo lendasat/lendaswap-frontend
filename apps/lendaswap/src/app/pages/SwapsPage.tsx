@@ -1,4 +1,11 @@
-import { Check, Copy, ArrowRight, Trash2 } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ArrowRight,
+  Trash2,
+  Download,
+  Upload,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { format } from "date-fns";
@@ -26,6 +33,8 @@ import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
 import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
 import { ReactComponent as TetherIcon } from "../../assets/tether.svg";
+import { getMnemonic } from "@frontend/browser-wallet";
+import { ImportMnemonicDialog } from "../components/ImportMnemonicDialog";
 
 export function SwapsPage() {
   const [swaps, setSwaps] = useState<StoredSwap[]>([]);
@@ -33,6 +42,8 @@ export function SwapsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
   const [swapToDelete, setSwapToDelete] = useState<string | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const navigate = useNavigate();
 
   const handleCopyId = async (e: React.MouseEvent, swapId: string) => {
@@ -79,6 +90,42 @@ export function SwapsPage() {
     }
   };
 
+  const handleDownloadSeedphrase = async () => {
+    setIsDownloading(true);
+    try {
+      const mnemonic = await getMnemonic();
+
+      if (!mnemonic) {
+        console.error("No mnemonic found");
+        return;
+      }
+
+      // Create a blob with the mnemonic
+      const blob = new Blob([mnemonic], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      // Create a temporary link and trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `lendaswap-phrase-${new Date().toISOString().split("T")[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download mnemonic:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleImportSuccess = () => {
+    // Reload the page to refresh wallet state
+    window.location.reload();
+  };
+
   const getTokenIcon = (tokenId: TokenId) => {
     switch (tokenId) {
       case "btc_arkade":
@@ -113,12 +160,43 @@ export function SwapsPage() {
   }, []);
 
   return (
-    <div className="container max-w-6xl mx-auto py-8 px-4 h-screen flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Your Swaps</h1>
+    <div className="container max-w-6xl mx-auto py-4 sm:py-8 px-4 h-screen flex flex-col">
+      <div className="flex justify-center items-center gap-2 mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownloadSeedphrase}
+          disabled={isDownloading}
+          className="gap-1.5 text-xs sm:text-sm"
+        >
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">
+            {isDownloading ? "Downloading..." : "Download Seedphrase"}
+          </span>
+          <span className="sm:hidden">
+            {isDownloading ? "Downloading..." : "Backup"}
+          </span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setImportDialogOpen(true)}
+          className="gap-1.5 text-xs sm:text-sm"
+        >
+          <Upload className="h-4 w-4" />
+          <span className="hidden sm:inline">Import Seedphrase</span>
+          <span className="sm:hidden">Restore</span>
+        </Button>
         {swaps.length > 0 && (
-          <Button variant="destructive" size="sm" onClick={handleClearAllClick}>
-            Clear History
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleClearAllClick}
+            className="gap-1.5 text-xs sm:text-sm"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Clear History</span>
+            <span className="sm:hidden">Clear</span>
           </Button>
         )}
       </div>
@@ -240,6 +318,13 @@ export function SwapsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Import seedphrase dialog */}
+      <ImportMnemonicDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 }

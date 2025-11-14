@@ -8,17 +8,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
-import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { Textarea } from "#/components/ui/textarea";
 import { Alert, AlertDescription } from "#/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import {
+  FileUpload,
+  FileUploadDropzone,
+  FileUploadItem,
+  FileUploadItemDelete,
+  FileUploadItemMetadata,
+  FileUploadItemPreview,
+  FileUploadList,
+  FileUploadTrigger,
+} from "#/components/ui/file-upload";
 import {
   importMnemonic,
   getUserIdXpub,
   deriveSwapParamsAtIndex,
 } from "@frontend/browser-wallet";
 import { clearAllSwaps, addSwap } from "../db";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Upload, FileText, X } from "lucide-react";
 import { api } from "../api";
 
 interface ImportMnemonicDialogProps {
@@ -27,33 +37,47 @@ interface ImportMnemonicDialogProps {
   onImportSuccess: () => void;
 }
 
-type Step = "warning" | "input" | "success";
+type Step = "input" | "success";
 
 export function ImportMnemonicDialog({
   open,
   onOpenChange,
   onImportSuccess,
 }: ImportMnemonicDialogProps) {
-  const [step, setStep] = useState<Step>("warning");
-  const [confirmText, setConfirmText] = useState("");
+  const [step, setStep] = useState<Step>("input");
   const [mnemonic, setMnemonic] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
   const handleClose = () => {
     // Reset state when closing
-    setStep("warning");
-    setConfirmText("");
+    setStep("input");
     setMnemonic("");
     setError(null);
     setLoading(false);
+    setFiles([]);
     onOpenChange(false);
   };
 
-  const handleWarningConfirm = () => {
-    if (confirmText.toUpperCase() === "DELETE") {
-      setStep("input");
-      setConfirmText("");
+  const handleFilesChange = async (newFiles: File[]) => {
+    setFiles(newFiles);
+    setError(null);
+
+    if (newFiles.length === 0) {
+      setMnemonic("");
+      return;
+    }
+
+    const file = newFiles[0];
+
+    // Read the file content
+    try {
+      const text = await file.text();
+      setMnemonic(text.trim().toLowerCase());
+    } catch (err) {
+      setError("Failed to read file");
+      setFiles([]);
     }
   };
 
@@ -266,102 +290,133 @@ export function ImportMnemonicDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        {step === "warning" && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
-                Warning: Data Will Be Erased
-              </DialogTitle>
-              <DialogDescription>
-                Importing a new wallet will permanently erase all your current
-                swap data.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <Alert variant="destructive">
-                <AlertDescription>
-                  <strong>Before proceeding:</strong>
-                  <ul className="mt-2 list-disc list-inside space-y-1">
-                    <li>Back up your current wallet's 12-word phrase</li>
-                    <li>
-                      All pending and completed swap records will be deleted
-                    </li>
-                    <li>This action cannot be undone</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirm">
-                  Type <strong>DELETE</strong> to confirm
-                </Label>
-                <Input
-                  id="confirm"
-                  placeholder="DELETE"
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  className="font-mono uppercase"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleWarningConfirm}
-                disabled={confirmText.toUpperCase() !== "DELETE"}
-              >
-                I Understand, Continue
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-
         {step === "input" && (
           <>
             <DialogHeader>
               <DialogTitle>Import Wallet</DialogTitle>
               <DialogDescription>
-                Enter your 12-word recovery phrase to restore your wallet.
+                Upload a recovery phrase file or enter it manually to restore
+                your wallet.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="mnemonic">Recovery Phrase (12 words)</Label>
-                <Textarea
-                  id="mnemonic"
-                  placeholder="word1 word2 word3 ... word12"
-                  value={mnemonic}
-                  onChange={(e) => {
-                    setMnemonic(e.target.value.toLowerCase());
-                    setError(null);
-                  }}
-                  rows={3}
-                  className="font-mono text-sm"
-                  disabled={loading}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Enter all 12 words separated by spaces, in lowercase.
-                </p>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Warning:</strong> Importing a wallet will permanently
+                  erase all your current swap data and cannot be undone.
+                </AlertDescription>
+              </Alert>
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload" className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    <span className="hidden sm:inline">Upload File</span>
+                    <span className="sm:hidden">Upload</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden sm:inline">Enter Manually</span>
+                    <span className="sm:hidden">Manual</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="upload" className="space-y-4 mt-4">
+                  <FileUpload
+                    maxFiles={1}
+                    maxSize={1024 * 1024} // 1MB
+                    accept=".txt,text/plain"
+                    value={files}
+                    onValueChange={handleFilesChange}
+                    disabled={loading}
+                  >
+                    <FileUploadDropzone>
+                      <div className="flex flex-col items-center gap-1 text-center">
+                        <div className="flex items-center justify-center rounded-full border p-2.5">
+                          <Upload className="size-6 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium text-sm">
+                          Drop recovery phrase file here
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          Or click to browse (.txt file)
+                        </p>
+                      </div>
+                      <FileUploadTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 w-fit"
+                        >
+                          Browse files
+                        </Button>
+                      </FileUploadTrigger>
+                    </FileUploadDropzone>
+                    <FileUploadList>
+                      {files.map((file, index) => (
+                        <FileUploadItem key={index} value={file}>
+                          <FileUploadItemPreview />
+                          <FileUploadItemMetadata />
+                          <FileUploadItemDelete asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-1"
+                            >
+                              <X />
+                            </Button>
+                          </FileUploadItemDelete>
+                        </FileUploadItem>
+                      ))}
+                    </FileUploadList>
+                  </FileUpload>
+                </TabsContent>
+
+                <TabsContent value="manual" className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="mnemonic">Recovery Phrase (12 words)</Label>
+                    <Textarea
+                      id="mnemonic"
+                      placeholder="word1 word2 word3 ... word12"
+                      value={mnemonic}
+                      onChange={(e) => {
+                        setMnemonic(e.target.value.toLowerCase());
+                        setError(null);
+                        setFiles([]);
+                      }}
+                      rows={3}
+                      className="font-mono text-sm"
+                      disabled={loading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter all 12 words separated by spaces, in lowercase.
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="gap-2">
               <Button
                 variant="outline"
                 onClick={handleClose}
                 disabled={loading}
+                className="flex-1"
               >
                 Cancel
               </Button>
-              <Button onClick={handleImport} disabled={loading || !mnemonic}>
+              <Button
+                onClick={handleImport}
+                disabled={loading || !mnemonic}
+                className="flex-1"
+              >
                 {loading ? "Importing..." : "Import Wallet"}
               </Button>
             </DialogFooter>
