@@ -41,7 +41,6 @@ import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
-import { VersionFooter } from "./components/VersionFooter";
 import { usePriceFeed } from "./PriceFeedContext";
 import { SwapsPage, RefundPage } from "./pages";
 import { SwapWizardPage } from "./wizard";
@@ -1024,11 +1023,18 @@ export default function App() {
             {/* Debug Navigation */}
             <DebugNavigation />
 
-            <div className="space-y-3">
-              <VersionFooter />
-              <div className="text-muted-foreground text-center text-sm">
-                <p>© 2025 LendaSwap. All rights reserved.</p>
-              </div>
+            <div className="text-muted-foreground text-center text-sm">
+              <p>
+                © 2025 LendaSwap. All rights reserved.{" "}
+                <a
+                  href="https://lendasat.com/docs/tos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground transition-colors"
+                >
+                  Terms of Service
+                </a>
+              </p>
             </div>
           </div>
         </footer>

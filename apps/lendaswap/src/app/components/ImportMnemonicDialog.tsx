@@ -386,7 +386,7 @@ export function ImportMnemonicDialog({
                         setFiles([]);
                       }}
                       rows={3}
-                      className="font-mono text-sm"
+                      className="font-mono text-sm ph-no-capture"
                       disabled={loading}
                     />
                     <p className="text-xs text-muted-foreground">

@@ -37,6 +37,7 @@ import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
 import { ReactComponent as TetherIcon } from "../../assets/tether.svg";
 import { getMnemonic } from "@frontend/browser-wallet";
 import { ImportMnemonicDialog } from "../components/ImportMnemonicDialog";
+import { VersionFooter } from "../components/VersionFooter";
 
 export function SwapsPage() {
   const [swaps, setSwaps] = useState<StoredSwap[]>([]);
@@ -203,7 +204,8 @@ export function SwapsPage() {
   const words = mnemonic ? mnemonic.split(" ") : [];
 
   return (
-    <div className="container max-w-6xl mx-auto py-4 sm:py-8 px-4 h-screen flex flex-col">
+    <>
+      <div className="container max-w-6xl mx-auto py-4 sm:py-8 px-4 h-screen flex flex-col">
       <div className="flex flex-col items-center gap-4 mb-4">
         {/* Seedphrase display section */}
         <div className="w-full max-w-3xl">
@@ -395,6 +397,12 @@ export function SwapsPage() {
           </Table>
         </div>
       )}
+      </div>
+
+      {/* Version information */}
+      <div className="pb-6">
+        <VersionFooter />
+      </div>
 
       {/* Delete single swap dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -450,6 +458,6 @@ export function SwapsPage() {
         onOpenChange={setImportDialogOpen}
         onImportSuccess={handleImportSuccess}
       />
-    </div>
+    </>
   );
 }
