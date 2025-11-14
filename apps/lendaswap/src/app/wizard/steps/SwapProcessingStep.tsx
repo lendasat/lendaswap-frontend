@@ -29,7 +29,7 @@ export function SwapProcessingStep({
   const [wasmInitialized, setWasmInitialized] = useState(false);
   const [secret, setSecret] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 3;
+  const maxRetries = 10;
 
   // Load secret from localStorage
   useEffect(() => {
