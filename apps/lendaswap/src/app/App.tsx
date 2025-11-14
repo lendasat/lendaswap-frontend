@@ -11,17 +11,13 @@ import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
 import {
   Check,
-  Download,
-  Key,
   Loader,
   Menu,
   PiggyBank,
   Shield,
   Tag,
-  Upload,
   Wallet,
   Wrench,
-  X,
   Zap,
 } from "lucide-react";
 import { useAccount } from "wagmi";
@@ -36,6 +32,7 @@ import {
 } from "#/components/ui/dropdown-menu";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
+import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import { api, type TokenId } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
@@ -825,7 +822,7 @@ export default function App() {
                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
                   aria-label="Follow us on X"
                 >
-                  <X className="w-4 h-4" />
+                  <XLogo className="w-4 h-4 fill-current" />
                 </a>
               </div>
 
