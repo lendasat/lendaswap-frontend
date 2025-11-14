@@ -53,7 +53,7 @@ export function SuccessStep({
           receiveAddressIsPolygon: true,
           swapTxId: swapData.polygon_htlc_claim_txid,
           swapTxIdIsPolygon: true,
-          tweetText: `I just swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap protocol.\n\n✅ 0% fees (yes, actually ZERO)\n✅ Non-custodial (your keys, your coins)\n✅ Lightning fast (atomic HTLCs)\n✅ No KYC, No BS\n\nEveryone else charges 1-3% per swap.\n\nLendasat charges $0.00.\n\nYou literally can't lose:\nhttps://swap.lendasat.com`,
+          tweetText: `I just swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap on @arkade_os.\n\n✅ 0% fees \n✅ Non-custodial \n✅ Lightning fast\n✅ No KYC, No BS\n\nhttps://swap.lendasat.com`,
         }
       : {
           sentTokenSymbol: getTokenSymbol(swapData.source_token),
@@ -64,7 +64,7 @@ export function SuccessStep({
           receiveAddressIsPolygon: false,
           swapTxId: swapData.bitcoin_htlc_claim_txid,
           swapTxIdIsPolygon: false,
-          tweetText: `I just swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap protocol.\n\n✅ 0% fees (yes, actually ZERO)\n✅ Non-custodial (your keys, your coins)\n✅ Lightning fast (atomic HTLCs)\n✅ No KYC, No BS\n\nEveryone else charges 1-3% per swap.\n\nLendasat charges $0.00.\n\nYou literally can't lose:\nhttps://swap.lendasat.com`,
+          tweetText: `I just swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap on @arkade_os.\n\n✅ 0% fees \n✅ Non-custodial \n✅ Lightning fast\n✅ No KYC, No BS\n\nhttps://swap.lendasat.com`,
         };
 
   const handleShareOnTwitter = () => {
