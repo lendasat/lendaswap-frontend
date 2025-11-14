@@ -229,7 +229,7 @@ export function SwapsPage() {
           </Button>
 
           {showSeedphrase && mnemonic && (
-            <div className="mt-4 p-4 border rounded-lg bg-muted/30">
+            <div className="mt-4 p-4 border rounded-lg bg-muted/30 ph-no-capture">
               <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
                 <AlertDescription className="text-amber-600 dark:text-amber-400 text-sm">
                   <strong>Never share this phrase with anyone.</strong> Anyone
@@ -246,7 +246,7 @@ export function SwapsPage() {
                     <span className="text-xs text-muted-foreground w-6">
                       {index + 1}.
                     </span>
-                    <span className="flex-1 font-mono text-sm">{word}</span>
+                    <span className="flex-1 font-mono text-sm ph-no-capture">{word}</span>
                     <button
                       onClick={() => handleCopyWord(word, index)}
                       className="p-1 hover:bg-muted rounded transition-colors"

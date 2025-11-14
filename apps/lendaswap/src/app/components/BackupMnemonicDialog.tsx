@@ -102,7 +102,7 @@ export function BackupMnemonicDialog({
             </Alert>
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 ph-no-capture">
                 {words.map((word, index) => (
                   <div
                     key={index}
@@ -111,7 +111,7 @@ export function BackupMnemonicDialog({
                     <span className="text-xs text-muted-foreground w-6">
                       {index + 1}.
                     </span>
-                    <span className="flex-1 font-mono text-sm">{word}</span>
+                    <span className="flex-1 font-mono text-sm ph-no-capture">{word}</span>
                     <button
                       onClick={() => copyWord(word, index)}
                       className="p-1 hover:bg-background rounded transition-colors"
