@@ -316,7 +316,7 @@ export function AssetDropDown({
 
       {/* Checkmark for selected item */}
       {selectedAsset.id === asset.id && (
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary shrink-0">
+        <div className="flex items-center justify-center w-6 h-6 rounded-md bg-primary shrink-0">
           <Check className="w-4 h-4 text-primary-foreground shrink-0" />
         </div>
       )}

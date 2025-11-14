@@ -37,12 +37,13 @@ import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import { api, type TokenId } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
+// import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
 import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
-import {
-  FirstTimeBackupModal,
-  hasAcknowledgedBackup,
-} from "./components/FirstTimeBackupModal";
+// import {
+//   FirstTimeBackupModal,
+//   hasAcknowledgedBackup,
+// } from "./components/FirstTimeBackupModal";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
 import { VersionFooter } from "./components/VersionFooter";
@@ -103,8 +104,9 @@ function HomePage() {
   const [swapError, setSwapError] = useState<string>("");
   const [userPolygonAddress, setUserPolygonAddress] = useState<string>("");
   const [isPolygonAddressValid, setIsPolygonAddressValid] = useState(false);
-  const [showFirstTimeBackupModal, setShowFirstTimeBackupModal] =
-    useState(false);
+  // Better UX: Removed intrusive first-time backup modal
+  // const [showFirstTimeBackupModal, setShowFirstTimeBackupModal] =
+  //   useState(false);
   const { arkAddress, isEmbedded } = useWalletBridge();
 
   // Auto-populate Polygon address from connected wallet
@@ -175,11 +177,12 @@ function HomePage() {
       return;
     }
 
-    // Check if user has acknowledged backup - show modal if not
-    if (!hasAcknowledgedBackup()) {
-      setShowFirstTimeBackupModal(true);
-      return;
-    }
+    // Better UX: Don't interrupt the swap flow with backup modal
+    // Users can access backup from the key icon in the header
+    // if (!hasAcknowledgedBackup()) {
+    //   setShowFirstTimeBackupModal(true);
+    //   return;
+    // }
 
     // Proceed with swap creation
     await createSwap();
@@ -647,12 +650,13 @@ function HomePage() {
         </div>
       </div>
 
-      {/* First Time Backup Modal */}
-      <FirstTimeBackupModal
+      {/* Better UX: Removed intrusive first-time backup modal */}
+      {/* Users can access backup from the key icon in the header instead */}
+      {/* <FirstTimeBackupModal
         open={showFirstTimeBackupModal}
         onOpenChange={setShowFirstTimeBackupModal}
         onContinue={createSwap}
-      />
+      /> */}
     </>
   );
 }
@@ -728,8 +732,8 @@ export default function App() {
         className="fixed inset-0 pointer-events-none z-0"
         style={{
           backgroundImage: `
-            linear-gradient(to right, hsl(var(--foreground) / 0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, hsl(var(--foreground) / 0.03) 1px, transparent 1px)
+            linear-gradient(to right, hsl(var(--foreground) / 0.015) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--foreground) / 0.015) 1px, transparent 1px)
           `,
           backgroundSize: "40px 40px",
         }}
@@ -742,7 +746,7 @@ export default function App() {
           className="absolute -top-48 -left-48 w-[600px] h-[600px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.25) 0%, rgba(249, 115, 22, 0.15) 25%, rgba(234, 88, 12, 0.08) 50%, transparent 70%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.09) 25%, rgba(234, 88, 12, 0.05) 50%, transparent 70%)",
             filter: "blur(100px)",
             mixBlendMode: "screen",
           }}
@@ -753,7 +757,7 @@ export default function App() {
           className="absolute -top-32 -left-32 w-[500px] h-[500px]"
           style={{
             background:
-              "radial-gradient(ellipse 80% 100% at 30% 30%, rgba(255, 137, 51, 0.2) 0%, rgba(251, 113, 133, 0.12) 40%, transparent 65%)",
+              "radial-gradient(ellipse 80% 100% at 30% 30%, rgba(255, 137, 51, 0.12) 0%, rgba(251, 113, 133, 0.07) 40%, transparent 65%)",
             filter: "blur(80px)",
             mixBlendMode: "screen",
           }}
@@ -764,7 +768,7 @@ export default function App() {
           className="absolute -bottom-40 -right-40 w-[550px] h-[550px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.22) 0%, rgba(249, 115, 22, 0.14) 30%, rgba(245, 158, 11, 0.08) 50%, transparent 68%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.13) 0%, rgba(249, 115, 22, 0.08) 30%, rgba(245, 158, 11, 0.05) 50%, transparent 68%)",
             filter: "blur(110px)",
             mixBlendMode: "screen",
           }}
@@ -775,7 +779,7 @@ export default function App() {
           className="absolute top-[35%] right-[15%] w-[450px] h-[450px]"
           style={{
             background:
-              "radial-gradient(ellipse 90% 110% at 40% 50%, rgba(249, 115, 22, 0.18) 0%, rgba(251, 146, 60, 0.1) 35%, transparent 60%)",
+              "radial-gradient(ellipse 90% 110% at 40% 50%, rgba(249, 115, 22, 0.11) 0%, rgba(251, 146, 60, 0.06) 35%, transparent 60%)",
             filter: "blur(120px)",
             mixBlendMode: "screen",
           }}
@@ -786,7 +790,7 @@ export default function App() {
           className="absolute top-[50%] -left-20 w-[400px] h-[400px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(234, 88, 12, 0.15) 0%, rgba(249, 115, 22, 0.08) 40%, transparent 65%)",
+              "radial-gradient(circle at center, rgba(234, 88, 12, 0.09) 0%, rgba(249, 115, 22, 0.05) 40%, transparent 65%)",
             filter: "blur(90px)",
             mixBlendMode: "screen",
           }}
@@ -870,7 +874,7 @@ export default function App() {
                         className="gap-2"
                       >
                         <Wrench className="h-4 w-4" />
-                        Manage Swaps
+                        Settings
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
@@ -926,7 +930,7 @@ export default function App() {
                     size="sm"
                     onClick={() => navigate("/swaps")}
                     className="gap-2"
-                    title="Manage Swaps"
+                    title="Settings"
                   >
                     <Wrench className="h-4 w-4" />
                   </Button>

@@ -4,7 +4,7 @@ import { Button } from "#/components/ui/button";
 import { useState } from "react";
 import type { GetSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
-import { SuccessMeme } from "../../components/SuccessMeme";
+// import { SuccessMeme } from "../../components/SuccessMeme";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
@@ -53,7 +53,7 @@ export function SuccessStep({
           receiveAddressIsPolygon: true,
           swapTxId: swapData.polygon_htlc_claim_txid,
           swapTxIdIsPolygon: true,
-          tweetText: `I just swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap on @arkade_os.\n\n✅ 0% fees \n✅ Non-custodial \n✅ Lightning fast\n✅ No KYC, No BS\n\nhttps://swap.lendasat.com`,
+          tweetText: `Swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         }
       : {
           sentTokenSymbol: getTokenSymbol(swapData.source_token),
@@ -64,7 +64,7 @@ export function SuccessStep({
           receiveAddressIsPolygon: false,
           swapTxId: swapData.bitcoin_htlc_claim_txid,
           swapTxIdIsPolygon: false,
-          tweetText: `I just swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap on @arkade_os.\n\n✅ 0% fees \n✅ Non-custodial \n✅ Lightning fast\n✅ No KYC, No BS\n\nhttps://swap.lendasat.com`,
+          tweetText: `Swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         };
 
   const handleShareOnTwitter = () => {
@@ -136,8 +136,8 @@ export function SuccessStep({
             </div>
           </div>
 
-          {/* Success Meme with Share Button */}
-          <SuccessMeme />
+          {/* Cleaner and more professional without GIFs - GIFs aren't posted on X anyway */}
+          {/* <SuccessMeme /> */}
 
           {/* Transaction Details */}
           <div className="bg-muted/50 w-full max-w-md space-y-3 rounded-lg p-4">
