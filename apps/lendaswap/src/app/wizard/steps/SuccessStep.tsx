@@ -4,7 +4,6 @@ import { Button } from "#/components/ui/button";
 import { useState } from "react";
 import type { GetSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
-// import { SuccessMeme } from "../../components/SuccessMeme";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
@@ -135,9 +134,6 @@ export function SuccessStep({
               </div>
             </div>
           </div>
-
-          {/* Cleaner and more professional without GIFs - GIFs aren't posted on X anyway */}
-          {/* <SuccessMeme /> */}
 
           {/* Transaction Details */}
           <div className="bg-muted/50 w-full max-w-md space-y-3 rounded-lg p-4">

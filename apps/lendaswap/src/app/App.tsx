@@ -171,7 +171,6 @@ function HomePage() {
     await createSwap();
   };
 
-  // Separate function for actual swap creation (called after backup modal is dismissed)
   const createSwap = async () => {
     try {
       setIsCreatingSwap(true);
