@@ -11,6 +11,7 @@ import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
 import {
   Check,
+  Github,
   Loader,
   Menu,
   PiggyBank,
@@ -814,15 +815,26 @@ export default function App() {
                   <h1 className="text-xl font-semibold">LendaSwap</h1>
                 </button>
 
+                {/* GitHub Link */}
+                <a
+                  href="https://github.com/lendasat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+                  aria-label="Visit us on GitHub"
+                >
+                  <Github className="w-5 h-5" />
+                </a>
+
                 {/* X/Twitter Link */}
                 <a
                   href="https://x.com/lendasat"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+                  className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
                   aria-label="Follow us on X"
                 >
-                  <XLogo className="w-4 h-4 fill-current" />
+                  <XLogo className="w-5 h-5 fill-current" />
                 </a>
               </div>
 
