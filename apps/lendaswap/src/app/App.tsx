@@ -7,6 +7,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router";
+import { usePostHog } from "posthog-js/react";
 import "../assets/styles.css";
 import { ConnectKitButton } from "connectkit";
 import {
@@ -64,6 +65,7 @@ function isValidTokenId(token: string | undefined): token is TokenId {
 // Home page component (enter-amount step)
 function HomePage() {
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const params = useParams<{ sourceToken?: string; targetToken?: string }>();
   const { address: connectedAddress, isConnected } = useAccount();
 
@@ -170,6 +172,22 @@ function HomePage() {
     await createSwap();
   };
 
+  // Helper to track swap initiation
+  const trackSwapInitiation = (swap: any) => {
+    const swapDirection = (swap.source_token === 'btc_arkade' || swap.source_token === 'btc_lightning')
+      ? 'btc-to-polygon'
+      : 'polygon-to-btc';
+    posthog?.capture('swap_initiated', {
+      swap_id: swap.id,
+      swap_direction: swapDirection,
+      source_token: swap.source_token,
+      target_token: swap.target_token,
+      amount_usd: swap.usd_amount,
+      amount_sats: swap.sats_receive,
+      has_referral_code: hasReferralCode(),
+    });
+  };
+
   const createSwap = async () => {
     try {
       setIsCreatingSwap(true);
@@ -256,6 +274,7 @@ function HomePage() {
           refund_pk,
         });
 
+        trackSwapInitiation(swap);
         navigate(`/swap/${swap.id}/wizard`);
       } else if (isPolygonSource) {
         // Polygon → Bitcoin
@@ -324,7 +343,7 @@ function HomePage() {
             receiver_pk,
           });
 
-          // Navigate to Polygon signing page
+          trackSwapInitiation(swap);
           navigate(`/swap/${swap.id}/wizard`);
         }
 
@@ -366,7 +385,7 @@ function HomePage() {
           // Store in Dexie as well
           await addSwap(swap);
 
-          // Navigate to Polygon signing page
+          trackSwapInitiation(swap);
           navigate(`/swap/${swap.id}/wizard`);
         }
       }

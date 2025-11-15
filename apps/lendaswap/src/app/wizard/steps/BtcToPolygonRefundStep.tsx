@@ -6,6 +6,7 @@ import {
 } from "@frontend/browser-wallet";
 import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePostHog } from "posthog-js/react";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
@@ -27,6 +28,7 @@ export function BtcToPolygonRefundStep({
   swapId,
   arkAddress,
 }: BtcToPolygonRefundStepProps) {
+  const posthog = usePostHog();
   const [wasmInitialized, setWasmInitialized] = useState(false);
   const [refundAddress, setRefundAddress] = useState("");
   const [isRefunding, setIsRefunding] = useState(false);
@@ -119,6 +121,14 @@ export function BtcToPolygonRefundStep({
     try {
       const txid = await refundVhtlc(ARK_SERVER_URL, swapId, refundAddress);
       setRefundSuccess(`Refund successful! Transaction ID: ${txid}`);
+
+      // Track refund success
+      posthog?.capture('swap_refunded', {
+        swap_id: swapId,
+        swap_direction: 'btc-to-polygon',
+        refund_reason: 'user_initiated',
+        refund_txid: txid,
+      });
     } catch (error) {
       console.error("Refund failed:", error);
       setRefundError(

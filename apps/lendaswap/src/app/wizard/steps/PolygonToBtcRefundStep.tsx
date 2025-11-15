@@ -1,5 +1,6 @@
 import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import { usePostHog } from "posthog-js/react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -94,6 +95,7 @@ export function PolygonToBtcRefundStep({
   swapData,
   swapId,
 }: PolygonToBtcRefundStepProps) {
+  const posthog = usePostHog();
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
@@ -208,6 +210,14 @@ export function PolygonToBtcRefundStep({
       console.log("Refund tx:", refundTxHash);
 
       setRefundSuccess(`Refund successful! Transaction hash: ${refundTxHash}`);
+
+      // Track refund success
+      posthog?.capture('swap_refunded', {
+        swap_id: swapId,
+        swap_direction: 'polygon-to-btc',
+        refund_reason: 'user_initiated',
+        refund_txid: refundTxHash,
+      });
 
       // Refresh swap state
       const updatedSwap = (await publicClient.readContract({

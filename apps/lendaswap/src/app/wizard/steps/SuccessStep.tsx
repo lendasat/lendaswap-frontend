@@ -1,7 +1,8 @@
 import { Check, CheckCheck, Copy, ExternalLink, Twitter } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePostHog } from "posthog-js/react";
 import type { GetSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
 
@@ -17,7 +18,28 @@ export function SuccessStep({
   swapId,
 }: SuccessStepProps) {
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  // Track swap completion event
+  useEffect(() => {
+    const swapDurationSeconds = swapData.created_at
+      ? Math.floor(
+          (new Date().getTime() - new Date(swapData.created_at).getTime()) / 1000,
+        )
+      : null;
+
+    posthog?.capture('swap_completed', {
+      swap_id: swapId,
+      swap_direction: swapDirection,
+      source_token: swapData.source_token,
+      target_token: swapData.target_token,
+      amount_usd: swapData.usd_amount,
+      amount_sats: swapData.sats_receive,
+      fee_sats: swapData.fee_sats,
+      duration_seconds: swapDurationSeconds,
+    });
+  }, [swapId, swapDirection, swapData, posthog]);
 
   const handleCopyAddress = async (address: string) => {
     try {
