@@ -30,7 +30,7 @@ const config = createConfig(
 const queryClient = new QueryClient();
 
 // PostHog configuration
-const posthogKey = import.meta.env.VITE_POSTHOG_API_KEY;
+const posthogKey = import.meta.env.VITE_POSTHOG_API_KEY || "phc_3MrZhmMPhgvjtBN54e9aDhV2iVAom8t3ocDizQxofyw";
 const posthogHost = import.meta.env.VITE_POSTHOG_HOST || "https://eu.i.posthog.com";
 const posthogOptions = createPostHogConfig(posthogHost);
 
