@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { getSwapById, type StoredSwap } from "../db";
+import { useWalletBridge } from "../WalletBridgeContext";
 import {
   BtcToPolygonRefundStep,
   PolygonToBtcRefundStep,
 } from "../wizard/steps";
-import { useWalletBridge } from "../WalletBridgeContext";
 
 export function RefundPage() {
   const { swapId } = useParams<{ swapId: string }>();
@@ -86,12 +86,14 @@ export function RefundPage() {
             )}
             <div className="flex gap-3 pt-2">
               <button
+                type="button"
                 onClick={() => navigate("/")}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Go Home
               </button>
               <button
+                type="button"
                 onClick={() => navigate("/swaps")}
                 className="px-4 py-2 rounded-lg border border-border hover:bg-accent transition-colors"
               >

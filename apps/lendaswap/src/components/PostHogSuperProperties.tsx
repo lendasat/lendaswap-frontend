@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { usePostHog } from "posthog-js/react";
 import { getUserIdXpub } from "@frontend/browser-wallet";
+import { usePostHog } from "posthog-js/react";
+import { useEffect } from "react";
 
 export function PostHogSuperProperties() {
   const posthog = usePostHog();

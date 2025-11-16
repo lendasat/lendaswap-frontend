@@ -55,7 +55,7 @@ export function AddressInput({
         for (const sectionsKey in bolt11Invoice.sections) {
           const section = bolt11Invoice.sections[sectionsKey];
           if (section.name === "amount" && section.value) {
-            const amount = Number.parseInt(section.value);
+            const amount = Number.parseInt(section.value, 10);
             if (amount > 0) {
               setAddressIsValid(true);
               hasAmount = true;
@@ -67,7 +67,7 @@ export function AddressInput({
           setAddressIsValid(true);
           setValidationError("Invoices without amount are not supported.");
         }
-      } catch (e) {
+      } catch (_e) {
         setValidationError("Invalid Lightning invoice");
         setAddressIsValid(false);
       }
@@ -83,7 +83,13 @@ export function AddressInput({
         setValidationError("");
       }
     }
-  }, [value, targetToken, isPolygonTarget]);
+  }, [
+    value,
+    targetToken,
+    isPolygonTarget,
+    setAddressIsValid,
+    setBitcoinAmount,
+  ]);
 
   const getPlaceholder = () => {
     switch (targetToken) {
@@ -100,9 +106,9 @@ export function AddressInput({
 
   return (
     <div className="space-y-2">
-      <label className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground">
         {`Where would you like to receive the funds?`}
-      </label>
+      </div>
       <div className="relative">
         <Input
           type="text"

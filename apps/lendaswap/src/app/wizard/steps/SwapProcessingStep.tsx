@@ -1,12 +1,16 @@
-import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
-import { api, BtcToPolygonSwapResponse, GetSwapResponse } from "../../api";
-import { useEffect, useRef, useState } from "react";
 import {
   claimVhtlc,
   getAmountsForSwap,
   initBrowserWallet,
 } from "@frontend/browser-wallet";
+import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "#/components/ui/button";
+import {
+  api,
+  type BtcToPolygonSwapResponse,
+  type GetSwapResponse,
+} from "../../api";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
@@ -67,8 +71,10 @@ export function SwapProcessingStep({
   }, []);
 
   // Helper function to sleep
-  const sleep = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
+  const sleep = useCallback(
+    (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
+    [],
+  );
 
   // Manual retry handler
   const handleManualRetry = async () => {
@@ -104,7 +110,7 @@ export function SwapProcessingStep({
       try {
         // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
         if (retryCount > 0) {
-          const backoffMs = Math.pow(2, retryCount) * 1000;
+          const backoffMs = 2 ** retryCount * 1000;
           console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
           await sleep(backoffMs);
         }
@@ -158,7 +164,7 @@ export function SwapProcessingStep({
     };
 
     autoClaimBtcToPolygonSwaps();
-  }, [swapData, swapDirection, secret, isClaiming, retryCount]);
+  }, [swapData, swapDirection, secret, isClaiming, retryCount, sleep]);
 
   // Auto-claim for polygon-to-btc when server is funded
   useEffect(() => {
@@ -195,7 +201,7 @@ export function SwapProcessingStep({
       try {
         // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
         if (retryCount > 0) {
-          const backoffMs = Math.pow(2, retryCount) * 1000;
+          const backoffMs = 2 ** retryCount * 1000;
           console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
           await sleep(backoffMs);
         }
@@ -255,7 +261,7 @@ export function SwapProcessingStep({
     };
 
     autoClaimPolygonToArkadeSwaps();
-  }, [swapData, swapDirection, wasmInitialized, isClaiming, retryCount]);
+  }, [swapData, swapDirection, wasmInitialized, isClaiming, retryCount, sleep]);
 
   const handleCopyTxId = async (txId: string) => {
     try {
@@ -335,7 +341,7 @@ export function SwapProcessingStep({
                   </code>
                   <button
                     type="button"
-                    onClick={() => handleCopyTxId(config.step1TxId!)}
+                    onClick={() => handleCopyTxId(config.step1TxId || "")}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === config.step1TxId ? (
@@ -385,7 +391,7 @@ export function SwapProcessingStep({
                   </code>
                   <button
                     type="button"
-                    onClick={() => handleCopyTxId(config.step2TxId!)}
+                    onClick={() => handleCopyTxId(config.step2TxId || "")}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === config.step2TxId ? (
@@ -431,7 +437,7 @@ export function SwapProcessingStep({
                   </code>
                   <button
                     type="button"
-                    onClick={() => handleCopyTxId(config.step3TxId!)}
+                    onClick={() => handleCopyTxId(config.step3TxId || "")}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === config.step3TxId ? (
@@ -532,7 +538,7 @@ export function SwapProcessingStep({
                   </code>
                   <button
                     type="button"
-                    onClick={() => handleCopyTxId(config.step4TxId!)}
+                    onClick={() => handleCopyTxId(config.step4TxId || "")}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     {copiedTxId === config.step4TxId ? (

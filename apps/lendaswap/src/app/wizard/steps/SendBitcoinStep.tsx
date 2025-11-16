@@ -1,9 +1,9 @@
-import { CheckCheck, Copy, Loader2, Wallet, QrCode } from "lucide-react";
+import { CheckCheck, Copy, Loader2, QrCode, Wallet } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { BtcToPolygonSwapResponse } from "../../api";
+import type { BtcToPolygonSwapResponse } from "../../api";
 import { useWalletBridge } from "../../WalletBridgeContext";
 
 interface SendBitcoinStepProps {

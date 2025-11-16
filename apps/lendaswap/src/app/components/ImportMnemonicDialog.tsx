@@ -1,4 +1,11 @@
+import {
+  deriveSwapParamsAtIndex,
+  getUserIdXpub,
+  importMnemonic,
+} from "@frontend/browser-wallet";
+import { AlertTriangle, CheckCircle2, FileText, Upload, X } from "lucide-react";
 import { useState } from "react";
+import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -8,10 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
-import { Label } from "#/components/ui/label";
-import { Textarea } from "#/components/ui/textarea";
-import { Alert, AlertDescription } from "#/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import {
   FileUpload,
   FileUploadDropzone,
@@ -22,14 +25,11 @@ import {
   FileUploadList,
   FileUploadTrigger,
 } from "#/components/ui/file-upload";
-import {
-  importMnemonic,
-  getUserIdXpub,
-  deriveSwapParamsAtIndex,
-} from "@frontend/browser-wallet";
-import { clearAllSwaps, addSwap } from "../db";
-import { AlertTriangle, CheckCircle2, Upload, FileText, X } from "lucide-react";
+import { Label } from "#/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
+import { Textarea } from "#/components/ui/textarea";
 import { api } from "../api";
+import { addSwap, clearAllSwaps } from "../db";
 
 interface ImportMnemonicDialogProps {
   open: boolean;
@@ -75,7 +75,7 @@ export function ImportMnemonicDialog({
     try {
       const text = await file.text();
       setMnemonic(text.trim().toLowerCase());
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to read file");
       setFiles([]);
     }
@@ -109,7 +109,9 @@ export function ImportMnemonicDialog({
       }
     }
 
-    keysToRemove.forEach((key) => localStorage.removeItem(key));
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+    });
   };
 
   const handleImport = async () => {
@@ -354,8 +356,8 @@ export function ImportMnemonicDialog({
                       </FileUploadTrigger>
                     </FileUploadDropzone>
                     <FileUploadList>
-                      {files.map((file, index) => (
-                        <FileUploadItem key={index} value={file}>
+                      {files.map((file) => (
+                        <FileUploadItem key={file.name} value={file}>
                           <FileUploadItemPreview />
                           <FileUploadItemMetadata />
                           <FileUploadItemDelete asChild>

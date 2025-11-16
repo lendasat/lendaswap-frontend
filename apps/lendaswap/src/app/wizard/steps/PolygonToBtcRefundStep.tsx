@@ -1,13 +1,13 @@
-import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
+import { useEffect, useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
-import { Button } from "#/components/ui/button";
 import { Alert, AlertDescription } from "#/components/ui/alert";
+import { Button } from "#/components/ui/button";
 import {
-  PolygonToBtcSwapResponse,
-  getTokenSymbol,
   getTokenDisplayName,
+  getTokenSymbol,
+  type PolygonToBtcSwapResponse,
 } from "../../api";
 import { TokenIcon } from "../../components/TokenIcon";
 

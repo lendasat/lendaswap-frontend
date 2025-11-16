@@ -1,3 +1,4 @@
+import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import {
   Navigate,
@@ -7,8 +8,8 @@ import {
   useNavigate,
   useParams,
 } from "react-router";
-import { usePostHog } from "posthog-js/react";
 import "../assets/styles.css";
+import { deriveSwapParams } from "@frontend/browser-wallet";
 import { ConnectKitButton } from "connectkit";
 import {
   Check,
@@ -42,15 +43,14 @@ import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
+import { addSwap } from "./db";
 import { usePriceFeed } from "./PriceFeedContext";
-import { SwapsPage, RefundPage } from "./pages";
-import { SwapWizardPage } from "./wizard";
-import { deriveSwapParams } from "@frontend/browser-wallet";
+import { RefundPage, SwapsPage } from "./pages";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
-import { addSwap } from "./db";
 import { useWalletBridge } from "./WalletBridgeContext";
+import { SwapWizardPage } from "./wizard";
 
 // Validate that the URL tokens are valid
 function isValidTokenId(token: string | undefined): token is TokenId {
@@ -173,7 +173,7 @@ function HomePage() {
   };
 
   // Helper to track swap initiation
-  const trackSwapInitiation = (swap: any) => {
+  const trackSwapInitiation = (swap: GetSwapResponse) => {
     const swapDirection =
       swap.source_token === "btc_arkade" ||
       swap.source_token === "btc_lightning"
@@ -415,243 +415,237 @@ function HomePage() {
   }
 
   return (
-    <>
-      <div className="flex flex-col gap-2 px-4 md:px-4">
-        <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">You send</label>
-          <div className="relative">
-            {sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol" ? (
-              <UsdInput
-                value={usdAmount}
-                onChange={(v) => {
-                  setLastFieldEdited("usd");
-                  setUsdAmount(v);
-                }}
-                className="pr-24 md:pr-32"
-              />
-            ) : (
-              <BtcInput
-                value={bitcoinAmount}
-                onChange={(v) => {
-                  setLastFieldEdited("btc");
-                  setBitcoinAmount(v);
-                }}
-                className="pr-24 md:pr-32"
-              />
-            )}
-            <div
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-20 md:w-28"
-              id={"sourceAsset"}
-            >
-              <AssetDropDown
-                value={sourceAsset}
-                onChange={(asset) => {
-                  if (
-                    (asset === "usdc_pol" || asset === "usdt_pol") &&
-                    (targetAsset === "btc_arkade" ||
-                      targetAsset === "btc_lightning")
-                  ) {
-                    setSourceAsset(asset);
-                    setTargetAsset(targetAsset);
-                    navigate(`/${asset}/${targetAsset}`, { replace: true });
-                    return;
-                  }
+    <div className="flex flex-col gap-2 px-4 md:px-4">
+      <div className="space-y-2">
+        <div className="text-sm text-muted-foreground">You send</div>
+        <div className="relative">
+          {sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol" ? (
+            <UsdInput
+              value={usdAmount}
+              onChange={(v) => {
+                setLastFieldEdited("usd");
+                setUsdAmount(v);
+              }}
+              className="pr-24 md:pr-32"
+            />
+          ) : (
+            <BtcInput
+              value={bitcoinAmount}
+              onChange={(v) => {
+                setLastFieldEdited("btc");
+                setBitcoinAmount(v);
+              }}
+              className="pr-24 md:pr-32"
+            />
+          )}
+          <div
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-20 md:w-28"
+            id={"sourceAsset"}
+          >
+            <AssetDropDown
+              value={sourceAsset}
+              onChange={(asset) => {
+                if (
+                  (asset === "usdc_pol" || asset === "usdt_pol") &&
+                  (targetAsset === "btc_arkade" ||
+                    targetAsset === "btc_lightning")
+                ) {
+                  setSourceAsset(asset);
+                  setTargetAsset(targetAsset);
+                  navigate(`/${asset}/${targetAsset}`, { replace: true });
+                  return;
+                }
 
-                  if (
-                    (asset === "btc_arkade" || asset === "btc_lightning") &&
-                    (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
-                  ) {
-                    setSourceAsset(asset);
-                    setTargetAsset(targetAsset);
-                    navigate(`/${asset}/${targetAsset}`, { replace: true });
-                    return;
-                  }
+                if (
+                  (asset === "btc_arkade" || asset === "btc_lightning") &&
+                  (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
+                ) {
+                  setSourceAsset(asset);
+                  setTargetAsset(targetAsset);
+                  navigate(`/${asset}/${targetAsset}`, { replace: true });
+                  return;
+                }
 
-                  if (
-                    (asset === "usdc_pol" || asset === "usdt_pol") &&
-                    (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
-                  ) {
-                    setSourceAsset(asset);
-                    setTargetAsset("btc_arkade");
-                    navigate(`/${asset}/btc_arkade`, { replace: true });
-                    return;
-                  }
+                if (
+                  (asset === "usdc_pol" || asset === "usdt_pol") &&
+                  (targetAsset === "usdc_pol" || targetAsset === "usdt_pol")
+                ) {
+                  setSourceAsset(asset);
+                  setTargetAsset("btc_arkade");
+                  navigate(`/${asset}/btc_arkade`, { replace: true });
+                  return;
+                }
 
-                  if (
-                    (asset === "btc_arkade" || asset === "btc_lightning") &&
-                    (targetAsset === "btc_arkade" ||
-                      targetAsset === "btc_lightning")
-                  ) {
-                    setSourceAsset(asset);
-                    setTargetAsset("usdc_pol");
-                    navigate(`/${asset}/usdc_pol`, { replace: true });
-                    return;
-                  }
-                }}
-                availableAssets={availableSourceAssets}
-              />
-            </div>
+                if (
+                  (asset === "btc_arkade" || asset === "btc_lightning") &&
+                  (targetAsset === "btc_arkade" ||
+                    targetAsset === "btc_lightning")
+                ) {
+                  setSourceAsset(asset);
+                  setTargetAsset("usdc_pol");
+                  navigate(`/${asset}/usdc_pol`, { replace: true });
+                  return;
+                }
+              }}
+              availableAssets={availableSourceAssets}
+            />
           </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-sm text-muted-foreground">You receive</label>
-          <div className="relative">
-            {targetAsset === "usdc_pol" || targetAsset === "usdt_pol" ? (
-              <UsdInput
-                value={usdAmount}
-                onChange={(v) => {
-                  setLastFieldEdited("usd");
-                  setUsdAmount(v);
-                }}
-                className="pr-24 md:pr-32"
-                isLoading={isLoadingPrice}
-              />
-            ) : (
-              <BtcInput
-                value={bitcoinAmount}
-                onChange={(v) => {
-                  setLastFieldEdited("btc");
-                  setBitcoinAmount(v);
-                }}
-                className="pr-24 md:pr-32"
-                isLoading={isLoadingPrice}
-              />
-            )}
-            <div
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-20 md:w-28"
-              id={"targetAsset"}
-            >
-              <AssetDropDown
-                value={targetAsset}
-                onChange={(asset) => {
-                  navigate(`/${sourceAsset}/${asset}`, { replace: true });
-                  setTargetAsset(asset);
-                }}
-                availableAssets={availableTargetAssets}
-              />
-            </div>
-          </div>
-          {displayedExchangeRate && !isLoadingPrice && (
-            <div className="text-sm text-muted-foreground text-center mt-2">
-              1{" "}
-              {sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
-                ? "BTC"
-                : "USD"}{" "}
-              ={" "}
-              {displayedExchangeRate.toLocaleString("en-US", {
-                minimumFractionDigits:
-                  sourceAsset === "btc_lightning" ||
-                  sourceAsset === "btc_arkade"
-                    ? 2
-                    : 8,
-                maximumFractionDigits:
-                  sourceAsset === "btc_lightning" ||
-                  sourceAsset === "btc_arkade"
-                    ? 2
-                    : 8,
-              })}{" "}
-              {targetAsset === "btc_lightning" || targetAsset === "btc_arkade"
-                ? "BTC"
-                : "USD"}
-            </div>
+      </div>
+      <div className="space-y-2">
+        <div className="text-sm text-muted-foreground">You receive</div>
+        <div className="relative">
+          {targetAsset === "usdc_pol" || targetAsset === "usdt_pol" ? (
+            <UsdInput
+              value={usdAmount}
+              onChange={(v) => {
+                setLastFieldEdited("usd");
+                setUsdAmount(v);
+              }}
+              className="pr-24 md:pr-32"
+              isLoading={isLoadingPrice}
+            />
+          ) : (
+            <BtcInput
+              value={bitcoinAmount}
+              onChange={(v) => {
+                setLastFieldEdited("btc");
+                setBitcoinAmount(v);
+              }}
+              className="pr-24 md:pr-32"
+              isLoading={isLoadingPrice}
+            />
           )}
-          <AddressInput
-            value={targetAddress}
-            onChange={setTargetAddress}
-            targetToken={targetAsset}
-            setAddressIsValid={setAddressValid}
-            setBitcoinAmount={(amount) => {
-              setLastFieldEdited("btc");
-              setBitcoinAmount(amount.toString());
-            }}
-            disabled={
-              isEmbedded && !!arkAddress && targetAsset === "btc_arkade"
-            }
-          />
+          <div
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-20 md:w-28"
+            id={"targetAsset"}
+          >
+            <AssetDropDown
+              value={targetAsset}
+              onChange={(asset) => {
+                navigate(`/${sourceAsset}/${asset}`, { replace: true });
+                setTargetAsset(asset);
+              }}
+              availableAssets={availableTargetAssets}
+            />
+          </div>
+        </div>
+        {displayedExchangeRate && !isLoadingPrice && (
+          <div className="text-sm text-muted-foreground text-center mt-2">
+            1{" "}
+            {sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
+              ? "BTC"
+              : "USD"}{" "}
+            ={" "}
+            {displayedExchangeRate.toLocaleString("en-US", {
+              minimumFractionDigits:
+                sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
+                  ? 2
+                  : 8,
+              maximumFractionDigits:
+                sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
+                  ? 2
+                  : 8,
+            })}{" "}
+            {targetAsset === "btc_lightning" || targetAsset === "btc_arkade"
+              ? "BTC"
+              : "USD"}
+          </div>
+        )}
+        <AddressInput
+          value={targetAddress}
+          onChange={setTargetAddress}
+          targetToken={targetAsset}
+          setAddressIsValid={setAddressValid}
+          setBitcoinAmount={(amount) => {
+            setLastFieldEdited("btc");
+            setBitcoinAmount(amount.toString());
+          }}
+          disabled={isEmbedded && !!arkAddress && targetAsset === "btc_arkade"}
+        />
 
-          {/* Polygon Wallet Address - only shown when source is Polygon stablecoin */}
-          {(sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol") && (
-            <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">
-                Connect a Web3 wallet with POL tokens to pay for gas fees
-              </label>
-              {isConnected && userPolygonAddress ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={userPolygonAddress}
-                    readOnly
-                    className="w-full rounded-lg border border-input px-3 py-2 text-sm bg-muted cursor-not-allowed min-h-[3rem] md:min-h-[3.5rem]"
-                  />
-                  <ConnectKitButton.Custom>
-                    {({ show }) => (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={show}
-                        className="shrink-0"
-                      >
-                        Change
-                      </Button>
-                    )}
-                  </ConnectKitButton.Custom>
-                </div>
-              ) : (
+        {/* Polygon Wallet Address - only shown when source is Polygon stablecoin */}
+        {(sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol") && (
+          <div className="space-y-2">
+            <div className="text-sm text-muted-foreground">
+              Connect a Web3 wallet with POL tokens to pay for gas fees
+            </div>
+            {isConnected && userPolygonAddress ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={userPolygonAddress}
+                  readOnly
+                  className="w-full rounded-lg border border-input px-3 py-2 text-sm bg-muted cursor-not-allowed min-h-[3rem] md:min-h-[3.5rem]"
+                />
                 <ConnectKitButton.Custom>
                   {({ show }) => (
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={show}
-                      className="w-full h-10 md:h-12 text-sm"
+                      className="shrink-0"
                     >
-                      <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                      Connect
+                      Change
                     </Button>
                   )}
                 </ConnectKitButton.Custom>
-              )}
-              {!isConnected && (
-                <p className="text-xs text-muted-foreground">
-                  Connect your Polygon wallet to continue
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="pt-2">
-            <Button
-              onClick={handleContinueToAddress}
-              disabled={
-                !targetAddress ||
-                !exchangeRate ||
-                isLoadingPrice ||
-                !addressValid ||
-                isCreatingSwap ||
-                ((sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol") &&
-                  !isPolygonAddressValid)
-              }
-              className="w-full h-12"
-            >
-              {isCreatingSwap ? (
-                <>
-                  <Loader className="animate-spin h-4 w-4" />
-                  Please Wait
-                </>
-              ) : (
-                <>Continue</>
-              )}
-            </Button>
+              </div>
+            ) : (
+              <ConnectKitButton.Custom>
+                {({ show }) => (
+                  <Button
+                    variant="outline"
+                    onClick={show}
+                    className="w-full h-10 md:h-12 text-sm"
+                  >
+                    <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
+                    Connect
+                  </Button>
+                )}
+              </ConnectKitButton.Custom>
+            )}
+            {!isConnected && (
+              <p className="text-xs text-muted-foreground">
+                Connect your Polygon wallet to continue
+              </p>
+            )}
           </div>
+        )}
 
-          {/* Swap Error Display */}
-          {swapError && (
-            <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">
-              {swapError}
-            </div>
-          )}
+        <div className="pt-2">
+          <Button
+            onClick={handleContinueToAddress}
+            disabled={
+              !targetAddress ||
+              !exchangeRate ||
+              isLoadingPrice ||
+              !addressValid ||
+              isCreatingSwap ||
+              ((sourceAsset === "usdc_pol" || sourceAsset === "usdt_pol") &&
+                !isPolygonAddressValid)
+            }
+            className="w-full h-12"
+          >
+            {isCreatingSwap ? (
+              <>
+                <Loader className="animate-spin h-4 w-4" />
+                Please Wait
+              </>
+            ) : (
+              <>Continue</>
+            )}
+          </Button>
         </div>
+
+        {/* Swap Error Display */}
+        {swapError && (
+          <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">
+            {swapError}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
 

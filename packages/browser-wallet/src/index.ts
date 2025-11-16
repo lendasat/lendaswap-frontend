@@ -1,13 +1,13 @@
 import init, {
-  refund_vhtlc,
-  claim_vhtlc,
   amounts_for_swap,
-  generate_or_get_mnemonic,
-  get_mnemonic,
-  import_mnemonic,
+  claim_vhtlc,
   derive_swap_params,
   derive_swap_params_at_index,
+  generate_or_get_mnemonic,
+  get_mnemonic,
   get_user_id_xpub,
+  import_mnemonic,
+  refund_vhtlc,
 } from "../wasm/browser_wallet.js";
 
 export interface VhtlcAmounts {

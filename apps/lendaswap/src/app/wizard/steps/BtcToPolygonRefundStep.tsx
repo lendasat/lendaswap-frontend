@@ -1,17 +1,17 @@
 import {
+  getAmountsForSwap,
   initBrowserWallet,
   refundVhtlc,
-  getAmountsForSwap,
   type VhtlcAmounts,
 } from "@frontend/browser-wallet";
-import { Loader2, AlertCircle, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { Alert, AlertDescription } from "#/components/ui/alert";
-import { BtcToPolygonSwapResponse, getTokenDisplayName } from "../../api";
+import { type BtcToPolygonSwapResponse, getTokenDisplayName } from "../../api";
 import { TokenIcon } from "../../components/TokenIcon";
 
 const ARK_SERVER_URL =

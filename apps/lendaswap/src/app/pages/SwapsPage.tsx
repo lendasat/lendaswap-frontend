@@ -1,16 +1,17 @@
+import { getMnemonic } from "@frontend/browser-wallet";
+import { format } from "date-fns";
 import {
+  ArrowRight,
   Check,
   Copy,
-  ArrowRight,
-  Trash2,
   Download,
-  Upload,
   Eye,
   EyeOff,
+  Trash2,
+  Upload,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { format } from "date-fns";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
@@ -29,15 +30,14 @@ import {
   TableHeader,
   TableRow,
 } from "#/components/ui/table";
-import { getAllSwaps, deleteSwap, clearAllSwaps, type StoredSwap } from "../db";
-import type { TokenId } from "../api";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
-import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
 import { ReactComponent as TetherIcon } from "../../assets/tether.svg";
-import { getMnemonic } from "@frontend/browser-wallet";
+import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
+import type { TokenId } from "../api";
 import { ImportMnemonicDialog } from "../components/ImportMnemonicDialog";
 import { VersionFooter } from "../components/VersionFooter";
+import { clearAllSwaps, deleteSwap, getAllSwaps, type StoredSwap } from "../db";
 
 export function SwapsPage() {
   const [swaps, setSwaps] = useState<StoredSwap[]>([]);
@@ -240,6 +240,7 @@ export function SwapsPage() {
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   {words.map((word, index) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: "using index here is ok, this list never changes"
                       key={index}
                       className="relative flex items-center gap-2 rounded-md border bg-background p-3"
                     >
@@ -250,6 +251,7 @@ export function SwapsPage() {
                         {word}
                       </span>
                       <button
+                        type={"button"}
                         onClick={() => handleCopyWord(word, index)}
                         className="p-1 hover:bg-muted rounded transition-colors"
                         title="Copy word"

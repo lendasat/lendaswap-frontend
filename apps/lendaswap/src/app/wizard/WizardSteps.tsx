@@ -29,7 +29,7 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
           const isLast = index === steps.length - 1;
 
           return (
-            <div key={index} className="flex gap-3">
+            <div key={step.label} className="flex gap-3">
               {/* Circle Indicator with Connector Line */}
               <div className="flex flex-col items-center">
                 <div
@@ -97,10 +97,9 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
           const isLast = index === steps.length - 1;
 
           return (
-            <>
+            <React.Fragment key={step.label}>
               {/* Step Button/Pill */}
               <div
-                key={index}
                 className={cn(
                   "rounded-xl border px-3 py-2 text-center text-[8px] font-semibold transition-all uppercase tracking-wider whitespace-nowrap",
                   {
@@ -128,7 +127,7 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
                   })}
                 />
               )}
-            </>
+            </React.Fragment>
           );
         })}
       </div>

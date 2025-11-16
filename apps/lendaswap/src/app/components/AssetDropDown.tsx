@@ -1,11 +1,5 @@
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
 import {
   Drawer,
   DrawerContent,
@@ -13,8 +7,13 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "#/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
-import { TokenId } from "../api";
+import type { TokenId } from "../api";
 
 // Hook to detect mobile viewport
 function useIsMobile() {
@@ -286,9 +285,10 @@ export function AssetDropDown({
     asset: (typeof ASSETS)[0];
     onClick: () => void;
   }) => (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer rounded-xl hover:bg-accent transition-colors"
+      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer rounded-xl hover:bg-accent transition-colors w-full text-left"
     >
       {/* Primary Icon - Asset */}
       <div className="flex items-center justify-center w-12 h-12 bg-muted rounded-full border border-border shrink-0 p-1 overflow-hidden">
@@ -320,7 +320,7 @@ export function AssetDropDown({
           <Check className="w-4 h-4 text-primary-foreground shrink-0" />
         </div>
       )}
-    </div>
+    </button>
   );
 
   // Mobile view: Drawer

@@ -1,3 +1,4 @@
+import { getMnemonic } from "@frontend/browser-wallet";
 import { AlertTriangle, Download } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -12,7 +13,6 @@ import {
   DialogTitle,
 } from "#/components/ui/dialog";
 import { Label } from "#/components/ui/label";
-import { getMnemonic } from "@frontend/browser-wallet";
 
 interface FirstTimeBackupModalProps {
   open: boolean;

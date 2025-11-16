@@ -2,8 +2,7 @@ import { Loader } from "lucide-react";
 import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { PolygonToBtcSwapResponse } from "../../api";
-import { getTokenSymbol } from "../../api";
+import { getTokenSymbol, type PolygonToBtcSwapResponse } from "../../api";
 
 // ERC20 ABI - approve and allowance functions
 const ERC20_ABI = [
@@ -67,7 +66,7 @@ export function PolygonDepositStep({
       // Convert USD amount to token amount with 6 decimals (USDC/USDT use 6 decimals)
       const decimals = 6;
       const amountNeeded = BigInt(
-        Math.floor(swapData.usd_amount * Math.pow(10, decimals)),
+        Math.floor(swapData.usd_amount * 10 ** decimals),
       );
 
       console.log("Checking current allowance...");

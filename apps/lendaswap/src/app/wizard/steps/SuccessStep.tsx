@@ -1,8 +1,8 @@
 import { Check, CheckCheck, Copy, ExternalLink, Twitter } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { useState, useEffect } from "react";
-import { usePostHog } from "posthog-js/react";
 import type { GetSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
 
@@ -25,8 +25,7 @@ export function SuccessStep({
   useEffect(() => {
     const swapDurationSeconds = swapData.created_at
       ? Math.floor(
-          (new Date().getTime() - new Date(swapData.created_at).getTime()) /
-            1000,
+          (Date.now() - new Date(swapData.created_at).getTime()) / 1000,
         )
       : null;
 
@@ -58,9 +57,7 @@ export function SuccessStep({
 
   // Calculate swap duration if we have timestamps
   const swapDurationSeconds = swapData.created_at
-    ? Math.floor(
-        (new Date().getTime() - new Date(swapData.created_at).getTime()) / 1000,
-      )
+    ? Math.floor((Date.now() - new Date(swapData.created_at).getTime()) / 1000)
     : null;
 
   // Define config based on swap direction
@@ -245,7 +242,7 @@ export function SuccessStep({
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleCopyAddress(config.swapTxId!)}
+                      onClick={() => handleCopyAddress(config.swapTxId || "")}
                       className="h-8 w-8"
                     >
                       {copiedAddress === config.swapTxId ? (

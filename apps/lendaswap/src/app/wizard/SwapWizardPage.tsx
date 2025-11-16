@@ -1,27 +1,27 @@
+import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import {
-  api,
-  getTokenSymbol,
-  SwapStatus,
-  TokenId,
-  GetSwapResponse,
-  BtcToPolygonSwapResponse,
-  PolygonToBtcSwapResponse,
-} from "../api";
 import { useAsyncRetry } from "react-use";
 import {
-  SendBitcoinStep,
-  SwapProcessingStep,
-  SuccessStep,
-  PolygonDepositStep,
-  BtcToPolygonRefundStep,
-  PolygonToBtcRefundStep,
-} from "./steps";
-import { AlertCircle } from "lucide-react";
-import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
+  api,
+  type BtcToPolygonSwapResponse,
+  type GetSwapResponse,
+  getTokenSymbol,
+  type PolygonToBtcSwapResponse,
+  type SwapStatus,
+  type TokenId,
+} from "../api";
 import { getSwapById, updateSwap } from "../db";
+import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 import { useWalletBridge } from "../WalletBridgeContext";
+import {
+  BtcToPolygonRefundStep,
+  PolygonDepositStep,
+  PolygonToBtcRefundStep,
+  SendBitcoinStep,
+  SuccessStep,
+  SwapProcessingStep,
+} from "./steps";
 
 type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
 
@@ -52,7 +52,7 @@ const isBtcToPolygon = (
 
 // Create mock swap data for debug mode
 function createMockSwapData(status: SwapStatus): GetSwapResponse {
-  const mockData: any = {
+  const mockData = {
     direction: "btc_to_polygon",
     id: DEBUG_SWAP_ID,
     status,
@@ -252,7 +252,7 @@ export function SwapWizardPage() {
     }, 2000);
 
     return () => clearInterval(pollInterval);
-  }, [swapId, retry, displaySwapData]);
+  }, [swapId, retry, displaySwapData, swapData]);
 
   return (
     <>
@@ -269,12 +269,14 @@ export function SwapWizardPage() {
             <p className="text-muted-foreground">{error.message}</p>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => retry()}
                 className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Retry
               </button>
               <button
+                type="button"
                 onClick={() => navigate("/")}
                 className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
               >
@@ -302,12 +304,14 @@ export function SwapWizardPage() {
             </p>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => navigate("/")}
                 className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Go Home
               </button>
               <button
+                type="button"
                 onClick={() => navigate("/swaps")}
                 className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent"
               >

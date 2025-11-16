@@ -1,6 +1,12 @@
-import { cn } from "#/lib/utils";
-import { Button } from "#/components/ui/button";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import {
+  type ComponentProps,
+  type FormEvent,
+  type ReactNode,
+  useState,
+} from "react";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
+import { Button } from "#/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,9 +16,7 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { ComponentProps, type FormEvent, ReactNode, useState } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
-import { Eye, EyeOff } from "lucide-react";
+import { cn } from "#/lib/utils";
 
 export interface TotpRequired {
   totp_required: true;
