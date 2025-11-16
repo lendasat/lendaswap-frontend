@@ -7,7 +7,9 @@ const SEEDPHRASE_PATTERNS = [
   /private[-_]?key/i,
 ];
 
-export function sanitizeProperties(properties: Record<string, unknown>): Record<string, unknown> {
+export function sanitizeProperties(
+  properties: Record<string, unknown>,
+): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(properties)) {
@@ -26,7 +28,9 @@ export function sanitizeProperties(properties: Record<string, unknown>): Record<
   return sanitized;
 }
 
-export function createPostHogConfig(posthogHost: string): Partial<PostHogConfig> {
+export function createPostHogConfig(
+  posthogHost: string,
+): Partial<PostHogConfig> {
   return {
     api_host: posthogHost,
     person_profiles: "identified_only",

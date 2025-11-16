@@ -212,10 +212,10 @@ export function PolygonToBtcRefundStep({
       setRefundSuccess(`Refund successful! Transaction hash: ${refundTxHash}`);
 
       // Track refund success
-      posthog?.capture('swap_refunded', {
+      posthog?.capture("swap_refunded", {
         swap_id: swapId,
-        swap_direction: 'polygon-to-btc',
-        refund_reason: 'user_initiated',
+        swap_direction: "polygon-to-btc",
+        refund_reason: "user_initiated",
         refund_txid: refundTxHash,
       });
 

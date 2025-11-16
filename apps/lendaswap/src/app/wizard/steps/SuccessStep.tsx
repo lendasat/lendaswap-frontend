@@ -25,11 +25,12 @@ export function SuccessStep({
   useEffect(() => {
     const swapDurationSeconds = swapData.created_at
       ? Math.floor(
-          (new Date().getTime() - new Date(swapData.created_at).getTime()) / 1000,
+          (new Date().getTime() - new Date(swapData.created_at).getTime()) /
+            1000,
         )
       : null;
 
-    posthog?.capture('swap_completed', {
+    posthog?.capture("swap_completed", {
       swap_id: swapId,
       swap_direction: swapDirection,
       source_token: swapData.source_token,

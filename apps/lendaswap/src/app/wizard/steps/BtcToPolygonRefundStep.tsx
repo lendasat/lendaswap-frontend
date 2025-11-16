@@ -123,10 +123,10 @@ export function BtcToPolygonRefundStep({
       setRefundSuccess(`Refund successful! Transaction ID: ${txid}`);
 
       // Track refund success
-      posthog?.capture('swap_refunded', {
+      posthog?.capture("swap_refunded", {
         swap_id: swapId,
-        swap_direction: 'btc-to-polygon',
-        refund_reason: 'user_initiated',
+        swap_direction: "btc-to-polygon",
+        refund_reason: "user_initiated",
         refund_txid: txid,
       });
     } catch (error) {

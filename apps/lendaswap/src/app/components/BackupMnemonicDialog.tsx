@@ -111,7 +111,9 @@ export function BackupMnemonicDialog({
                     <span className="text-xs text-muted-foreground w-6">
                       {index + 1}.
                     </span>
-                    <span className="flex-1 font-mono text-sm ph-no-capture">{word}</span>
+                    <span className="flex-1 font-mono text-sm ph-no-capture">
+                      {word}
+                    </span>
                     <button
                       onClick={() => copyWord(word, index)}
                       className="p-1 hover:bg-background rounded transition-colors"

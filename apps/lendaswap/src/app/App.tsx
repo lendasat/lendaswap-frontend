@@ -174,10 +174,12 @@ function HomePage() {
 
   // Helper to track swap initiation
   const trackSwapInitiation = (swap: any) => {
-    const swapDirection = (swap.source_token === 'btc_arkade' || swap.source_token === 'btc_lightning')
-      ? 'btc-to-polygon'
-      : 'polygon-to-btc';
-    posthog?.capture('swap_initiated', {
+    const swapDirection =
+      swap.source_token === "btc_arkade" ||
+      swap.source_token === "btc_lightning"
+        ? "btc-to-polygon"
+        : "polygon-to-btc";
+    posthog?.capture("swap_initiated", {
       swap_id: swap.id,
       swap_direction: swapDirection,
       source_token: swap.source_token,
