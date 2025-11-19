@@ -144,6 +144,32 @@ export function isEvmToken(tokenId: TokenId): boolean {
 }
 
 /**
+ * Check if a token is from Ethereum
+ */
+export function isEthereumToken(tokenId: TokenId): boolean {
+  switch (tokenId) {
+    case "usdc_eth":
+    case "usdt_eth":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Check if a token is from Polygon
+ */
+export function isPolygonToken(tokenId: TokenId): boolean {
+  switch (tokenId) {
+    case "usdc_pol":
+    case "usdt0_pol":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
  * Get the network name for a token, to be used as part of a URL
  */
 export function networkUrl(tokenId: TokenId): string {

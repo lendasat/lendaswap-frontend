@@ -5,15 +5,51 @@ import {
 } from "@frontend/browser-wallet";
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
+import { mainnet, polygon } from "viem/chains";
 import { Button } from "#/components/ui/button";
 import {
   api,
   type BtcToPolygonSwapResponse,
   type GetSwapResponse,
 } from "../../api";
+import { isEthereumToken, isPolygonToken } from "../../utils/tokenUtils";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
+
+// ReverseAtomicSwapHTLC ABI - claimSwap function
+const HTLC_ABI = [
+  {
+    type: "function",
+    name: "claimSwap",
+    inputs: [
+      { name: "swapId", type: "bytes32", internalType: "bytes32" },
+      { name: "secret", type: "bytes32", internalType: "bytes32" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+] as const;
+
+/**
+ * Convert a UUID string to a bytes32 HTLC swap ID
+ *
+ * The HTLC swap ID is derived from the database swap UUID by:
+ * 1. Taking the 16 bytes of the UUID (removing hyphens)
+ * 2. Padding with zeros to make 32 bytes
+ *
+ * This matches the backend's uuid_to_htlc_swap_id function.
+ */
+function uuidToHtlcSwapId(uuid: string): `0x${string}` {
+  // Remove hyphens from UUID
+  const uuidHex = uuid.replace(/-/g, "");
+
+  // Pad with zeros to make 32 bytes (64 hex chars)
+  const paddedHex = uuidHex.padEnd(64, "0");
+
+  return `0x${paddedHex}`;
+}
 
 interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;
@@ -34,6 +70,11 @@ export function SwapProcessingStep({
   const [secret, setSecret] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 10;
+
+  // Wallet client hooks for Ethereum claiming
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
+  const { switchChainAsync } = useSwitchChain();
 
   // Load secret from localStorage
   useEffect(() => {
@@ -126,7 +167,56 @@ export function SwapProcessingStep({
         // Mark that we've attempted to claim
         localStorage.setItem(claimKey, Date.now().toString());
 
-        await api.claimGelato(swapData.id, cleanSecret);
+        if (isPolygonToken(swapData.target_token)) {
+          await api.claimGelato(swapData.id, cleanSecret);
+        } else if (isEthereumToken(swapData.target_token)) {
+          // Ethereum: claim using user's wallet
+          if (!walletClient || !publicClient || !switchChainAsync) {
+            throw new Error(
+              "Wallet not connected. Please connect your Ethereum wallet to claim.",
+            );
+          }
+
+          // Switch to Ethereum mainnet if not already on it
+          if (walletClient.chain.id !== mainnet.id) {
+            console.log("Switching to Ethereum mainnet...");
+            await switchChainAsync({ chainId: mainnet.id });
+          }
+
+          const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
+          // Convert UUID to bytes32 by removing hyphens and padding with zeros
+          const swapIdBytes32 = uuidToHtlcSwapId(swapData.id);
+          const secretBytes32 = `0x${cleanSecret}` as `0x${string}`;
+
+          console.log("Claiming Ethereum HTLC with wallet...", {
+            htlcAddress,
+            swapIdBytes32,
+            secretBytes32,
+          });
+
+          // Call claimSwap on the HTLC contract
+          const claimTxHash = await walletClient.writeContract({
+            address: htlcAddress,
+            abi: HTLC_ABI,
+            functionName: "claimSwap",
+            args: [swapIdBytes32, secretBytes32],
+            account: walletClient.account,
+          });
+
+          console.log("Claim transaction hash:", claimTxHash);
+          console.log("Waiting for claim transaction to be mined...");
+
+          // Wait for the claim transaction to be confirmed
+          const claimReceipt = await publicClient.waitForTransactionReceipt({
+            hash: claimTxHash,
+          });
+
+          console.log("Claim transaction confirmed:", claimReceipt.status);
+
+          if (claimReceipt.status !== "success") {
+            throw new Error("Claim transaction failed");
+          }
+        }
 
         console.log("Claim request sent successfully");
         // Success! Reset retry count
@@ -164,7 +254,17 @@ export function SwapProcessingStep({
     };
 
     autoClaimBtcToPolygonSwaps();
-  }, [swapData, swapDirection, secret, isClaiming, retryCount, sleep]);
+  }, [
+    swapData,
+    swapDirection,
+    secret,
+    isClaiming,
+    retryCount,
+    sleep,
+    walletClient,
+    publicClient,
+    switchChainAsync,
+  ]);
 
   // Auto-claim for polygon-to-btc when server is funded
   useEffect(() => {
@@ -476,7 +576,9 @@ export function SwapProcessingStep({
                         ? swapData.target_token === "btc_lightning"
                           ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
                           : "Lightning invoice is pending..."
-                        : "Submitting claim request via Gelato Relay..."
+                        : isEthereumToken(swapData.target_token)
+                          ? "Claiming tokens via your Ethereum wallet (you pay gas)..."
+                          : "Submitting claim request via Gelato Relay..."
                       : swapDirection === "polygon-to-btc"
                         ? "The VHTLC has been funded. Preparing to claim your sats..."
                         : "The HTLC has been funded. Preparing to claim your tokens..."}
@@ -490,8 +592,9 @@ export function SwapProcessingStep({
                     !isClaiming &&
                     !claimError && (
                       <p className="text-muted-foreground text-xs">
-                        Gas fees fully sponsored via Gelato Relay - no fees for
-                        you!
+                        {isEthereumToken(swapData.target_token)
+                          ? "You will need ETH in your wallet to pay for gas fees to claim your tokens."
+                          : "Gas fees fully sponsored via Gelato Relay - no fees for you!"}
                       </p>
                     )}
                   {claimError && (

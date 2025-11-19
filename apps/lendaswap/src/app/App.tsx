@@ -186,6 +186,7 @@ function HomePage() {
 
   // Helper to track swap initiation
   const trackSwapInitiation = (swap: GetSwapResponse) => {
+    // TODO: Be more specific with swap direction. Not everything is Polygon.
     const swapDirection =
       swap.source_token === "btc_arkade" ||
       swap.source_token === "btc_lightning"
@@ -324,7 +325,7 @@ function HomePage() {
               source_token: sourceAsset,
               hash_lock,
               receiver_pk,
-              user_polygon_address: userEvmAddress,
+              user_address: userEvmAddress,
               user_id,
             },
             networkUrl(sourceAsset),
@@ -377,7 +378,7 @@ function HomePage() {
             {
               bolt11_invoice: targetAddress,
               source_token: sourceAsset,
-              user_polygon_address: userEvmAddress,
+              user_address: userEvmAddress,
               user_id,
             },
             networkUrl(sourceAsset),

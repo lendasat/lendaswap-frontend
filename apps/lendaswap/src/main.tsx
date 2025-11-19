@@ -6,7 +6,7 @@ import { Theme } from "@radix-ui/themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { PostHogProvider } from "posthog-js/react";
-import { polygon } from "viem/chains";
+import { mainnet, polygon } from "viem/chains";
 import { createConfig, WagmiProvider } from "wagmi";
 import {
   initBrowserWallet,
@@ -23,7 +23,7 @@ const config = createConfig(
   getDefaultConfig({
     appName: "LendaSwap",
     walletConnectProjectId: "a15c535db177c184c98bdbdc5ff12590",
-    chains: [polygon],
+    chains: [mainnet, polygon],
   }),
 );
 

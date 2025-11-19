@@ -181,7 +181,7 @@ export interface PolygonToArkadeSwapRequest {
   source_token: TokenId;
   hash_lock: string;
   receiver_pk: string;
-  user_polygon_address: string;
+  user_address: string;
   user_id: string; // Public key for wallet recovery
   referral_code?: string;
 }
@@ -190,7 +190,7 @@ export interface PolygonToArkadeSwapRequest {
 export interface PolygonToLightningSwapRequest {
   bolt11_invoice: string;
   source_token: TokenId;
-  user_polygon_address: string;
+  user_address: string;
   user_id: string; // Public key for wallet recovery
   referral_code?: string;
 }

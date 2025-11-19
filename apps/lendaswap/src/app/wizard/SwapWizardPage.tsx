@@ -36,14 +36,19 @@ type StepId =
   | "refundable"
   | "refunded";
 
-const isBtcToPolygon = (
+const swapDirection = (
   source_token: undefined | TokenId,
 ): SwapDirection | undefined => {
   if (source_token === "btc_arkade" || source_token === "btc_lightning") {
     return "btc-to-polygon";
   }
 
-  if (source_token === "usdt0_pol" || source_token === "usdc_pol") {
+  if (
+    source_token === "usdt0_pol" ||
+    source_token === "usdc_pol" ||
+    source_token === "usdt_eth" ||
+    source_token === "usdc_eth"
+  ) {
     return "polygon-to-btc";
   }
 
@@ -191,7 +196,7 @@ export function SwapWizardPage() {
     }
   }, [swapData, displaySwapData]);
 
-  const swapDirection = isBtcToPolygon(displaySwapData?.source_token);
+  const swapDirectionValue = swapDirection(displaySwapData?.source_token);
 
   const currentStep = determineStepFromStatus(displaySwapData);
 
@@ -335,7 +340,7 @@ export function SwapWizardPage() {
       {displaySwapData && !error && (
         <>
           {currentStep === "user-deposit" &&
-            swapDirection === "btc-to-polygon" && (
+            swapDirectionValue === "btc-to-polygon" && (
               <SendBitcoinStep
                 arkadeAddress={displaySwapData.htlc_address_arkade}
                 lightningAddress={displaySwapData.ln_invoice}
@@ -348,7 +353,7 @@ export function SwapWizardPage() {
             )}
 
           {currentStep === "user-deposit" &&
-            swapDirection === "polygon-to-btc" && (
+            swapDirectionValue === "polygon-to-btc" && (
               <PolygonDepositStep
                 swapData={displaySwapData as PolygonToBtcSwapResponse}
                 swapId={displaySwapData.id}
@@ -382,18 +387,18 @@ export function SwapWizardPage() {
             </div>
           )}
 
-          {swapDirection && currentStep === "server-depositing" && (
+          {swapDirectionValue && currentStep === "server-depositing" && (
             <SwapProcessingStep
               swapData={displaySwapData}
-              swapDirection={swapDirection}
+              swapDirection={swapDirectionValue}
               swapId={displaySwapData.id}
             />
           )}
 
-          {currentStep === "success" && swapDirection && (
+          {currentStep === "success" && swapDirectionValue && (
             <SuccessStep
               swapData={displaySwapData}
-              swapDirection={swapDirection}
+              swapDirection={swapDirectionValue}
               swapId={displaySwapData.id}
             />
           )}
@@ -425,7 +430,7 @@ export function SwapWizardPage() {
           )}
 
           {currentStep === "refundable" &&
-            swapDirection === "btc-to-polygon" && (
+            swapDirectionValue === "btc-to-polygon" && (
               <BtcToPolygonRefundStep
                 swapData={displaySwapData as BtcToPolygonSwapResponse}
                 swapId={displaySwapData.id}
@@ -434,7 +439,7 @@ export function SwapWizardPage() {
             )}
 
           {currentStep === "refundable" &&
-            swapDirection === "polygon-to-btc" && (
+            swapDirectionValue === "polygon-to-btc" && (
               <PolygonToBtcRefundStep
                 swapData={displaySwapData as PolygonToBtcSwapResponse}
                 swapId={displaySwapData.id}
