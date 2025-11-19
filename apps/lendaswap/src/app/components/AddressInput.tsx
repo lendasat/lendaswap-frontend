@@ -7,6 +7,7 @@ import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import type { TokenId } from "../api";
+import { isEvmToken } from "../utils/tokenUtils";
 
 interface AddressInputProps {
   value: string;
@@ -27,8 +28,7 @@ export function AddressInput({
   setBitcoinAmount,
   disabled = false,
 }: AddressInputProps) {
-  const isPolygonTarget =
-    targetToken === "usdc_pol" || targetToken === "usdt0_pol";
+  const isEvmTarget = isEvmToken(targetToken);
   const { address, isConnected } = useAccount();
   const [validationError, setValidationError] = useState<string>("");
 
@@ -40,7 +40,7 @@ export function AddressInput({
 
     setAddressIsValid(true);
 
-    if (isPolygonTarget) {
+    if (isEvmTarget) {
       if (!isAddress(value)) {
         setValidationError("Invalid Ethereum/Polygon address");
         setAddressIsValid(false);
@@ -83,18 +83,20 @@ export function AddressInput({
         setValidationError("");
       }
     }
-  }, [value, targetToken, isPolygonTarget]);
+  }, [value, targetToken, isEvmTarget]);
 
   const getPlaceholder = () => {
     switch (targetToken) {
       case "btc_lightning":
-        return "Provide a bolt11 invoice with amount";
+        return "Provide a BOLT11 invoice with amount";
       case "btc_arkade":
         return "Provide an Arkade address";
       case "usdc_pol":
-        return "Provide a USDC address on Polygon";
       case "usdt0_pol":
-        return "Provide a USDT0 address on Polygon";
+        return "Provide a Polygon address";
+      case "usdc_eth":
+      case "usdt_eth":
+        return "Provide an Ethereum address";
     }
   };
 
@@ -111,7 +113,7 @@ export function AddressInput({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           className={`px-4 py-2 md:py-2.5 min-h-[3rem] md:min-h-[3.5rem] bg-card border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm font-mono text-sm ${
-            isPolygonTarget ? "pr-36 md:pr-40" : ""
+            isEvmTarget ? "pr-36 md:pr-40" : ""
           } ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`}
           data-1p-ignore
           data-lpignore="true"
@@ -119,7 +121,7 @@ export function AddressInput({
         />
 
         {/* Get Address Button - Only for Polygon addresses */}
-        {isPolygonTarget && (
+        {isEvmTarget && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             {isConnected && !value ? (
               <Button
