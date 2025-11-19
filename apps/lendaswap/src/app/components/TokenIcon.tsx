@@ -2,7 +2,7 @@ import type { TokenId } from "../api";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
 import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
-import { ReactComponent as TetherIcon } from "../../assets/tether.svg";
+import { ReactComponent as TetherIcon } from "../../assets/usdt0.svg";
 
 interface TokenIconProps {
   tokenId: TokenId;
