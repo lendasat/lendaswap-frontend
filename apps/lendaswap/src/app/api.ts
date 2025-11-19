@@ -229,8 +229,9 @@ export const api = {
     return response.json();
   },
 
-  async createArkadeToPolygonSwap(
+  async createArkadeToEvmSwap(
     request: SwapRequest,
+    targetNetwork: string,
   ): Promise<GetSwapResponse> {
     // Automatically include referral code from localStorage if present
     const referralCode = getReferralCode();
@@ -239,13 +240,16 @@ export const api = {
       ...(referralCode ? { referral_code: referralCode } : {}),
     };
 
-    const response = await fetch(`${API_BASE_URL}/swap/arkade/polygon`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_BASE_URL}/swap/arkade/${targetNetwork}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestWithReferral),
       },
-      body: JSON.stringify(requestWithReferral),
-    });
+    );
     if (!response.ok) {
       const error = await response
         .json()
@@ -289,8 +293,9 @@ export const api = {
     }
   },
 
-  async createPolygonToArkadeSwap(
+  async createEvmToArkadeSwap(
     request: PolygonToArkadeSwapRequest,
+    sourceNetwork: string,
   ): Promise<GetSwapResponse> {
     const referralCode = getReferralCode();
     const requestWithReferral = {
@@ -298,62 +303,12 @@ export const api = {
       ...(referralCode ? { referral_code: referralCode } : {}),
     };
 
-    const response = await fetch(`${API_BASE_URL}/swap/polygon/arkade`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestWithReferral),
-    });
-
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ error: response.statusText }));
-      throw new Error(
-        error.error || `Failed to create swap: ${response.statusText}`,
-      );
-    }
-
-    return response.json();
-  },
-
-  async createPolygonToLightningSwap(
-    request: PolygonToLightningSwapRequest,
-  ): Promise<GetSwapResponse> {
-    console.log(`request ${JSON.stringify(request)}`);
-    const referralCode = getReferralCode();
-    const requestWithReferral = {
-      ...request,
-      ...(referralCode ? { referral_code: referralCode } : {}),
-    };
-
-    const response = await fetch(`${API_BASE_URL}/swap/polygon/lightning`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestWithReferral),
-    });
-
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ error: response.statusText }));
-      throw new Error(
-        error.error || `Failed to create swap: ${response.statusText}`,
-      );
-    }
-
-    return response.json();
-  },
-
-  async submitToGelato(
-    swapId: string,
-    request: GelatoSubmitRequest,
-  ): Promise<GelatoSubmitResponse> {
     const response = await fetch(
-      `${API_BASE_URL}/swap/${swapId}/gelato-submit`,
+      `${API_BASE_URL}/swap/${sourceNetwork}/arkade`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(request),
+        body: JSON.stringify(requestWithReferral),
       },
     );
 
@@ -362,7 +317,39 @@ export const api = {
         .json()
         .catch(() => ({ error: response.statusText }));
       throw new Error(
-        error.error || `Failed to submit to Gelato: ${response.statusText}`,
+        error.error || `Failed to create swap: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  },
+
+  async createEvmToLightningSwap(
+    request: PolygonToLightningSwapRequest,
+    sourceNetwork: string,
+  ): Promise<GetSwapResponse> {
+    console.log(`request ${JSON.stringify(request)}`);
+    const referralCode = getReferralCode();
+    const requestWithReferral = {
+      ...request,
+      ...(referralCode ? { referral_code: referralCode } : {}),
+    };
+
+    const response = await fetch(
+      `${API_BASE_URL}/swap/${sourceNetwork}/lightning`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestWithReferral),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(
+        error.error || `Failed to create swap: ${response.statusText}`,
       );
     }
 

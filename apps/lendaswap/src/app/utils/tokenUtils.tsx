@@ -1,12 +1,12 @@
-import {ReactComponent as BitcoinIcon} from "../../assets/bitcoin.svg";
-import {ReactComponent as BitcoinLightningIcon} from "../../assets/bitcoin_lightning.svg";
-import {ReactComponent as UsdcIcon} from "../../assets/usdc.svg";
-import {ReactComponent as UsdtIcon} from "../../assets/usdt0.svg";
-import {ReactComponent as PolygonIcon} from "../../assets/polygon.svg";
-import {ReactComponent as EthereumIcon} from "../../assets/eth.svg";
-import {ReactComponent as ArkadeIcon} from "../../assets/arkade.svg";
-import type {TokenId} from "../api";
-import {ReactElement} from "react";
+import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
+import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
+import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
+import { ReactComponent as UsdtIcon } from "../../assets/usdt0.svg";
+import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
+import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
+import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
+import type { TokenId } from "../api";
+import { ReactElement } from "react";
 
 export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
   const isSourceUsd = isUsdToken(sourceToken);
@@ -71,15 +71,15 @@ export function getTokenDisplayName(tokenId: TokenId): string {
 export function getTokenIcon(tokenId: TokenId): ReactElement {
   switch (tokenId) {
     case "btc_lightning":
-      return <BitcoinIcon/>;
+      return <BitcoinIcon />;
     case "btc_arkade":
-      return <BitcoinIcon/>;
+      return <BitcoinIcon />;
     case "usdc_pol":
     case "usdc_eth":
-      return <UsdcIcon/>;
+      return <UsdcIcon />;
     case "usdt0_pol":
     case "usdt_eth":
-      return <UsdtIcon/>;
+      return <UsdtIcon />;
     default:
       // Fallback for unknown tokens
       return <span>?</span>;
@@ -92,15 +92,15 @@ export function getTokenIcon(tokenId: TokenId): ReactElement {
 export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
   switch (tokenId) {
     case "btc_lightning":
-      return <BitcoinLightningIcon width={10} height={10}/>;
+      return <BitcoinLightningIcon width={10} height={10} />;
     case "btc_arkade":
-      return <ArkadeIcon width={8} height={8}/>;
+      return <ArkadeIcon width={8} height={8} />;
     case "usdc_pol":
     case "usdt0_pol":
-      return <PolygonIcon/>;
+      return <PolygonIcon />;
     case "usdc_eth":
     case "usdt_eth":
-      return <EthereumIcon/>;
+      return <EthereumIcon />;
     default:
       // Fallback for unknown tokens
       return <span>?</span>;
@@ -128,7 +128,7 @@ export function getTokenNetworkName(tokenId: TokenId): string {
 }
 
 /**
- * Get the network name for a token
+ * Check if a token is from an EVM chain
  */
 export function isEvmToken(tokenId: TokenId): boolean {
   switch (tokenId) {
@@ -140,6 +140,24 @@ export function isEvmToken(tokenId: TokenId): boolean {
     case "btc_arkade":
     case "btc_lightning":
       return false;
+  }
+}
+
+/**
+ * Get the network name for a token, to be used as part of a URL
+ */
+export function networkUrl(tokenId: TokenId): string {
+  switch (tokenId) {
+    case "usdc_pol":
+    case "usdt0_pol":
+      return "polygon";
+    case "usdc_eth":
+    case "usdt_eth":
+      return "ethereum";
+    case "btc_arkade":
+      return "arkade";
+    case "btc_lightning":
+      return "lightning";
   }
 }
 
@@ -168,7 +186,6 @@ export function isUsdToken(tokenId: TokenId): boolean {
       return false;
   }
 }
-
 
 // Validate if this is a btc token or not
 export function isBtcToken(tokenId: TokenId): boolean {

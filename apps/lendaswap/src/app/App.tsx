@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -8,7 +8,7 @@ import {
   useParams,
 } from "react-router";
 import "../assets/styles.css";
-import {ConnectKitButton} from "connectkit";
+import { ConnectKitButton } from "connectkit";
 import {
   Check,
   Download,
@@ -24,9 +24,9 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import {useAccount} from "wagmi";
-import {Button} from "#/components/ui/button";
-import {Card, CardContent} from "#/components/ui/card";
+import { useAccount } from "wagmi";
+import { Button } from "#/components/ui/button";
+import { Card, CardContent } from "#/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,35 +34,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import {ReactComponent as LendasatBlack} from "../assets/lendasat_black.svg";
-import {ReactComponent as LendasatGrey} from "../assets/lendasat_grey.svg";
-import {api, getTokenSymbol, type TokenId} from "./api";
-import {AddressInput} from "./components/AddressInput";
-import {AssetDropDown} from "./components/AssetDropDown";
-import {BackupMnemonicDialog} from "./components/BackupMnemonicDialog";
-import {BtcInput} from "./components/BtcInput";
-import {DebugNavigation} from "./components/DebugNavigation";
-import {ImportMnemonicDialog} from "./components/ImportMnemonicDialog";
-import {ReferralCodeDialog} from "./components/ReferralCodeDialog";
-import {UsdInput} from "./components/UsdInput";
-import {VersionFooter} from "./components/VersionFooter";
-import {usePriceFeed} from "./PriceFeedContext";
-import {SwapsPage, RefundPage} from "./pages";
-import {SwapWizardPage} from "./wizard";
-import {deriveSwapParams} from "@frontend/browser-wallet";
-import {hasReferralCode} from "./utils/referralCode";
-import {useTheme} from "./utils/theme-provider";
-import {ThemeToggle} from "./utils/theme-toggle";
-import {addSwap} from "./db";
-import {useWalletBridge} from "./WalletBridgeContext";
-import {useAsync} from "react-use";
-import {isEvmToken, isUsdToken, isValidTokenId} from "./utils/tokenUtils";
+import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
+import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
+import { api, getTokenSymbol, type TokenId } from "./api";
+import { AddressInput } from "./components/AddressInput";
+import { AssetDropDown } from "./components/AssetDropDown";
+import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
+import { BtcInput } from "./components/BtcInput";
+import { DebugNavigation } from "./components/DebugNavigation";
+import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
+import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
+import { UsdInput } from "./components/UsdInput";
+import { VersionFooter } from "./components/VersionFooter";
+import { usePriceFeed } from "./PriceFeedContext";
+import { SwapsPage, RefundPage } from "./pages";
+import { SwapWizardPage } from "./wizard";
+import { deriveSwapParams } from "@frontend/browser-wallet";
+import { hasReferralCode } from "./utils/referralCode";
+import { useTheme } from "./utils/theme-provider";
+import { ThemeToggle } from "./utils/theme-toggle";
+import { addSwap } from "./db";
+import { useWalletBridge } from "./WalletBridgeContext";
+import { useAsync } from "react-use";
+import {
+  isEvmToken,
+  isUsdToken,
+  isValidTokenId,
+  networkUrl,
+} from "./utils/tokenUtils";
 
 // Home page component (enter-amount step)
 function HomePage() {
   const navigate = useNavigate();
   const params = useParams<{ sourceToken?: string; targetToken?: string }>();
-  const {address: connectedAddress, isConnected} = useAccount();
+  const { address: connectedAddress, isConnected } = useAccount();
 
   // Read tokens from URL params, validate them
   const urlSourceToken = isValidTokenId(params.sourceToken)
@@ -75,7 +80,7 @@ function HomePage() {
   // Redirect to default if invalid tokens in URL
   useEffect(() => {
     if (!urlSourceToken || !urlTargetToken) {
-      navigate("/btc_lightning/usdc_pol", {replace: true});
+      navigate("/btc_lightning/usdc_pol", { replace: true });
     }
   }, [urlSourceToken, urlTargetToken, navigate]);
 
@@ -95,7 +100,7 @@ function HomePage() {
   const [swapError, setSwapError] = useState<string>("");
   const [userEvmAddress, setUserEvmAddress] = useState<string>("");
   const [isEvmAddressValid, setIsEvmAddressValid] = useState(false);
-  const {arkAddress, isEmbedded} = useWalletBridge();
+  const { arkAddress, isEmbedded } = useWalletBridge();
 
   // Auto-populate Polygon address from connected wallet
   useEffect(() => {
@@ -121,7 +126,7 @@ function HomePage() {
   }, [isEmbedded, arkAddress, targetAsset, targetAddress]);
 
   // Get price feed from context
-  const {getExchangeRate, isLoadingPrice} = usePriceFeed();
+  const { getExchangeRate, isLoadingPrice } = usePriceFeed();
 
   const exchangeRate = getExchangeRate(
     sourceAsset,
@@ -204,14 +209,17 @@ function HomePage() {
           targetAmount = parseFloat(bitcoinAmount);
         }
 
-        const swap = await api.createArkadeToPolygonSwap({
-          target_address: targetAddress,
-          target_amount: targetAmount,
-          target_token: targetAsset,
-          hash_lock,
-          refund_pk,
-          user_id,
-        });
+        const swap = await api.createArkadeToEvmSwap(
+          {
+            target_address: targetAddress,
+            target_amount: targetAmount,
+            target_token: targetAsset,
+            hash_lock,
+            refund_pk,
+            user_id,
+          },
+          networkUrl(targetAsset),
+        );
 
         console.log(
           "Persisting swap data",
@@ -223,7 +231,7 @@ function HomePage() {
             unilateral_claim_delay: swap.unilateral_claim_delay,
             unilateral_refund_delay: swap.unilateral_refund_delay,
             unilateral_refund_without_receiver_delay:
-            swap.unilateral_refund_without_receiver_delay,
+              swap.unilateral_refund_without_receiver_delay,
             network: swap.network,
             vhtlc_address: swap.htlc_address_arkade,
           }),
@@ -241,7 +249,7 @@ function HomePage() {
             unilateral_claim_delay: swap.unilateral_claim_delay,
             unilateral_refund_delay: swap.unilateral_refund_delay,
             unilateral_refund_without_receiver_delay:
-            swap.unilateral_refund_without_receiver_delay,
+              swap.unilateral_refund_without_receiver_delay,
             network: swap.network,
             vhtlc_address: swap.htlc_address_arkade,
             created_at: swap.created_at,
@@ -285,15 +293,18 @@ function HomePage() {
           const hash_lock = `0x${preimageHash}`;
 
           // Call Polygon → Arkade API
-          const swap = await api.createPolygonToArkadeSwap({
-            target_address: targetAddress, // Arkade address
-            source_amount: parseFloat(usdAmount),
-            source_token: sourceAsset,
-            hash_lock,
-            receiver_pk,
-            user_polygon_address: userEvmAddress,
-            user_id,
-          });
+          const swap = await api.createEvmToArkadeSwap(
+            {
+              target_address: targetAddress, // Arkade address
+              source_amount: parseFloat(usdAmount),
+              source_token: sourceAsset,
+              hash_lock,
+              receiver_pk,
+              user_polygon_address: userEvmAddress,
+              user_id,
+            },
+            networkUrl(sourceAsset),
+          );
 
           // Store swap data (needed for claiming BTC later)
           localStorage.setItem(
@@ -309,7 +320,7 @@ function HomePage() {
               unilateral_claim_delay: swap.unilateral_claim_delay,
               unilateral_refund_delay: swap.unilateral_refund_delay,
               unilateral_refund_without_receiver_delay:
-              swap.unilateral_refund_without_receiver_delay,
+                swap.unilateral_refund_without_receiver_delay,
               network: swap.network,
               vhtlc_address: swap.htlc_address_arkade,
               created_at: swap.created_at,
@@ -334,16 +345,19 @@ function HomePage() {
           // Polygon → Lightning
 
           // Then derive user ID from HD wallet (Polygon-Lightning doesn't need keys or hash).
-          const {keyIndex: key_index, userId: user_id} =
+          const { keyIndex: key_index, userId: user_id } =
             await deriveSwapParams();
 
           // Call Polygon → Lightning API
-          const swap = await api.createPolygonToLightningSwap({
-            bolt11_invoice: targetAddress,
-            source_token: sourceAsset,
-            user_polygon_address: userEvmAddress,
-            user_id,
-          });
+          const swap = await api.createEvmToLightningSwap(
+            {
+              bolt11_invoice: targetAddress,
+              source_token: sourceAsset,
+              user_polygon_address: userEvmAddress,
+              user_id,
+            },
+            networkUrl(sourceAsset),
+          );
 
           // Store swap data
           localStorage.setItem(
@@ -356,7 +370,7 @@ function HomePage() {
               unilateral_claim_delay: swap.unilateral_claim_delay,
               unilateral_refund_delay: swap.unilateral_refund_delay,
               unilateral_refund_without_receiver_delay:
-              swap.unilateral_refund_without_receiver_delay,
+                swap.unilateral_refund_without_receiver_delay,
               network: swap.network,
               vhtlc_address: swap.htlc_address_arkade,
               created_at: swap.created_at,
@@ -452,7 +466,7 @@ function HomePage() {
                 ) {
                   setSourceAsset(asset);
                   setTargetAsset(targetAsset);
-                  navigate(`/${asset}/${targetAsset}`, {replace: true});
+                  navigate(`/${asset}/${targetAsset}`, { replace: true });
                   return;
                 }
 
@@ -465,7 +479,7 @@ function HomePage() {
                 ) {
                   setSourceAsset(asset);
                   setTargetAsset(targetAsset);
-                  navigate(`/${asset}/${targetAsset}`, {replace: true});
+                  navigate(`/${asset}/${targetAsset}`, { replace: true });
                   return;
                 }
 
@@ -481,7 +495,7 @@ function HomePage() {
                 ) {
                   setSourceAsset(asset);
                   setTargetAsset("btc_arkade");
-                  navigate(`/${asset}/btc_arkade`, {replace: true});
+                  navigate(`/${asset}/btc_arkade`, { replace: true });
                   return;
                 }
 
@@ -492,7 +506,7 @@ function HomePage() {
                 ) {
                   setSourceAsset(asset);
                   setTargetAsset("usdc_pol");
-                  navigate(`/${asset}/usdc_pol`, {replace: true});
+                  navigate(`/${asset}/usdc_pol`, { replace: true });
                   return;
                 }
               }}
@@ -534,7 +548,7 @@ function HomePage() {
             <AssetDropDown
               value={targetAsset}
               onChange={(asset) => {
-                navigate(`/${sourceAsset}/${asset}`, {replace: true});
+                navigate(`/${sourceAsset}/${asset}`, { replace: true });
                 setTargetAsset(asset);
               }}
               availableAssets={availableTargetAssets}
@@ -590,7 +604,7 @@ function HomePage() {
                   className="w-full rounded-lg border border-input px-3 py-2 text-sm bg-muted cursor-not-allowed min-h-[3rem] md:min-h-[3.5rem]"
                 />
                 <ConnectKitButton.Custom>
-                  {({show}) => (
+                  {({ show }) => (
                     <Button
                       variant="outline"
                       size="sm"
@@ -604,13 +618,13 @@ function HomePage() {
               </div>
             ) : (
               <ConnectKitButton.Custom>
-                {({show}) => (
+                {({ show }) => (
                   <Button
                     variant="outline"
                     onClick={show}
                     className="w-full h-10 md:h-12 text-sm"
                   >
-                    <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2"/>
+                    <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
                     Connect
                   </Button>
                 )}
@@ -639,7 +653,7 @@ function HomePage() {
           >
             {isCreatingSwap ? (
               <>
-                <Loader className="animate-spin h-4 w-4"/>
+                <Loader className="animate-spin h-4 w-4" />
                 Please Wait
               </>
             ) : (
@@ -712,7 +726,7 @@ function useStepInfo() {
 }
 
 export default function App() {
-  const {theme} = useTheme();
+  const { theme } = useTheme();
   const stepInfo = useStepInfo();
   const location = useLocation();
   const navigate = useNavigate();
@@ -809,12 +823,11 @@ export default function App() {
                   onClick={() => navigate("/")}
                   className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 >
-                  <div
-                    className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black dark:bg-white">
+                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black dark:bg-white">
                     {theme === "dark" ? (
-                      <LendasatBlack className="h-5 w-5 shrink-0"/>
+                      <LendasatBlack className="h-5 w-5 shrink-0" />
                     ) : (
-                      <LendasatGrey className="h-5 w-5 shrink-0"/>
+                      <LendasatGrey className="h-5 w-5 shrink-0" />
                     )}
                   </div>
                   <h1 className="text-xl font-semibold">LendaSwap</h1>
@@ -828,7 +841,7 @@ export default function App() {
                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
                   aria-label="Follow us on X"
                 >
-                  <X className="w-4 h-4"/>
+                  <X className="w-4 h-4" />
                 </a>
               </div>
 
@@ -838,13 +851,13 @@ export default function App() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm">
-                        <Menu className="h-4 w-4"/>
+                        <Menu className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
                       {hasCode ? (
                         <DropdownMenuItem disabled className="gap-2">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400"/>
+                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                           <span className="text-green-600 dark:text-green-400 font-bold">
                             NO-FEE
                           </span>
@@ -854,7 +867,7 @@ export default function App() {
                           onClick={() => setDialogOpen(true)}
                           className="gap-2"
                         >
-                          <Tag className="h-4 w-4"/>
+                          <Tag className="h-4 w-4" />
                           Add your code
                         </DropdownMenuItem>
                       )}
@@ -863,17 +876,17 @@ export default function App() {
                         onClick={() => navigate("/swaps")}
                         className="gap-2"
                       >
-                        <Wrench className="h-4 w-4"/>
+                        <Wrench className="h-4 w-4" />
                         Manage Swaps
                       </DropdownMenuItem>
 
-                      <DropdownMenuSeparator/>
+                      <DropdownMenuSeparator />
 
                       <DropdownMenuItem
                         onClick={() => setBackupDialogOpen(true)}
                         className="gap-2"
                       >
-                        <Key className="h-4 w-4"/>
+                        <Key className="h-4 w-4" />
                         View Backup Phrase
                       </DropdownMenuItem>
 
@@ -881,21 +894,21 @@ export default function App() {
                         onClick={() => setImportDialogOpen(true)}
                         className="gap-2"
                       >
-                        <Upload className="h-4 w-4"/>
+                        <Upload className="h-4 w-4" />
                         Import Wallet
                       </DropdownMenuItem>
 
-                      <DropdownMenuSeparator/>
+                      <DropdownMenuSeparator />
 
                       <ConnectKitButton.Custom>
-                        {({isConnected, show, truncatedAddress, ensName}) => {
+                        {({ isConnected, show, truncatedAddress, ensName }) => {
                           return (
                             <DropdownMenuItem onClick={show}>
                               {isConnected ? (
                                 (ensName ?? truncatedAddress)
                               ) : (
                                 <>
-                                  <Wallet className="w-4 h-4 mr-2"/>
+                                  <Wallet className="w-4 h-4 mr-2" />
                                   Connect
                                 </>
                               )}
@@ -904,10 +917,10 @@ export default function App() {
                         }}
                       </ConnectKitButton.Custom>
 
-                      <DropdownMenuSeparator/>
+                      <DropdownMenuSeparator />
 
                       <DropdownMenuItem asChild>
-                        <ThemeToggle/>
+                        <ThemeToggle />
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -917,7 +930,7 @@ export default function App() {
                 <div className="hidden md:flex items-center gap-3">
                   {hasCode ? (
                     <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400"/>
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <span className="text-sm font-bold text-green-600 dark:text-green-400">
                         NO-FEE
                       </span>
@@ -929,7 +942,7 @@ export default function App() {
                       onClick={() => setDialogOpen(true)}
                       className="gap-2"
                     >
-                      <Tag className="h-4 w-4"/>
+                      <Tag className="h-4 w-4" />
                       <span>Add your code</span>
                     </Button>
                   )}
@@ -940,7 +953,7 @@ export default function App() {
                     className="gap-2"
                     title="Manage Swaps"
                   >
-                    <Wrench className="h-4 w-4"/>
+                    <Wrench className="h-4 w-4" />
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -950,7 +963,7 @@ export default function App() {
                         className="gap-2"
                         title="Wallet Settings"
                       >
-                        <Key className="h-4 w-4"/>
+                        <Key className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
@@ -958,21 +971,21 @@ export default function App() {
                         onClick={() => setBackupDialogOpen(true)}
                         className="gap-2"
                       >
-                        <Download className="h-4 w-4"/>
+                        <Download className="h-4 w-4" />
                         View Backup Phrase
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setImportDialogOpen(true)}
                         className="gap-2"
                       >
-                        <Upload className="h-4 w-4"/>
+                        <Upload className="h-4 w-4" />
                         Import Wallet
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <ThemeToggle/>
+                  <ThemeToggle />
                   <ConnectKitButton.Custom>
-                    {({isConnected, show, truncatedAddress, ensName}) => {
+                    {({ isConnected, show, truncatedAddress, ensName }) => {
                       return (
                         <Button
                           variant="outline"
@@ -984,7 +997,7 @@ export default function App() {
                             (ensName ?? truncatedAddress)
                           ) : (
                             <>
-                              <Wallet className="w-3.5 h-3.5 mr-1.5"/>
+                              <Wallet className="w-3.5 h-3.5 mr-1.5" />
                               Connect
                             </>
                           )}
@@ -1009,8 +1022,8 @@ export default function App() {
 
             {/* Step Card */}
             <Routes>
-              <Route path="/swap/:swapId/wizard" element={<SwapWizardPage/>}/>
-              <Route path="/swap/:swapId/refund" element={<RefundPage/>}/>
+              <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
+              <Route path="/swap/:swapId/refund" element={<RefundPage />} />
               <Route
                 path="*"
                 element={
@@ -1019,14 +1032,14 @@ export default function App() {
                       <Route
                         path="/"
                         element={
-                          <Navigate to="/btc_lightning/usdc_pol" replace/>
+                          <Navigate to="/btc_lightning/usdc_pol" replace />
                         }
                       />
                       <Route
                         path="/:sourceToken/:targetToken"
-                        element={<HomePage/>}
+                        element={<HomePage />}
                       />
-                      <Route path="/swaps" element={<SwapsPage/>}/>
+                      <Route path="/swaps" element={<SwapsPage />} />
                     </Routes>
                   </Card>
                 }
@@ -1039,7 +1052,7 @@ export default function App() {
                 <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
                   <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
-                      <Zap className="h-5 w-5 text-white dark:text-black"/>
+                      <Zap className="h-5 w-5 text-white dark:text-black" />
                     </div>
                     <div className="space-y-1">
                       <div className="text-2xl font-bold">Quick</div>
@@ -1052,7 +1065,7 @@ export default function App() {
                 <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
                   <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
-                      <Shield className="h-5 w-5 text-white dark:text-black"/>
+                      <Shield className="h-5 w-5 text-white dark:text-black" />
                     </div>
                     <div className="space-y-1">
                       <div className="text-2xl font-bold">Atomic</div>
@@ -1065,7 +1078,7 @@ export default function App() {
                 <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
                   <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
-                      <PiggyBank className="h-5 w-5 text-white dark:text-black"/>
+                      <PiggyBank className="h-5 w-5 text-white dark:text-black" />
                     </div>
                     <div className="space-y-1">
                       <div className="text-2xl font-bold">0%</div>
@@ -1084,10 +1097,10 @@ export default function App() {
         <footer className="mt-16 border-t">
           <div className="container mx-auto px-6 py-6">
             {/* Debug Navigation */}
-            <DebugNavigation/>
+            <DebugNavigation />
 
             <div className="space-y-3">
-              <VersionFooter/>
+              <VersionFooter />
               <div className="text-muted-foreground text-center text-sm">
                 <p>© 2025 LendaSwap. All rights reserved.</p>
               </div>
