@@ -1,12 +1,12 @@
 import {
   createContext,
-  ReactNode,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
 } from "react";
-import {type PriceUpdateMessage, priceFeedService, type TokenId} from "./api";
-import {toPairName} from "./utils/tokenUtils";
+import { type PriceUpdateMessage, priceFeedService, type TokenId } from "./api";
+import { toPairName } from "./utils/tokenUtils";
 
 interface PriceFeedContextValue {
   // Latest price update from WebSocket
@@ -31,7 +31,7 @@ interface PriceFeedProviderProps {
   children: ReactNode;
 }
 
-export function PriceFeedProvider({children}: PriceFeedProviderProps) {
+export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
   const [priceUpdate, setPriceUpdate] = useState<PriceUpdateMessage | null>(
     null,
   );
@@ -70,11 +70,12 @@ export function PriceFeedProvider({children}: PriceFeedProviderProps) {
   ): number | null => {
     if (!priceUpdate) return null;
 
-
     // Determine which token pair to use
     const pairName = toPairName(sourceToken, targetToken);
 
-    const pair = priceUpdate.pairs.find((p) => p.pair.toLowerCase() === pairName);
+    const pair = priceUpdate.pairs.find(
+      (p) => p.pair.toLowerCase() === pairName,
+    );
     if (!pair) {
       console.warn(`Price pair not found: ${pairName}`);
       return null;

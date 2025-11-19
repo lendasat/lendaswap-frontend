@@ -445,7 +445,9 @@ export class PriceFeedService {
         try {
           const update: PriceUpdateMessage = JSON.parse(event.data);
           // Notify all listeners
-          this.listeners.forEach((callback) => callback(update));
+          this.listeners.forEach((callback) => {
+            callback(update);
+          });
         } catch (error) {
           console.error("Failed to parse price update:", error);
         }

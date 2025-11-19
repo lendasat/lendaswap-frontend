@@ -1,3 +1,4 @@
+import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import {
   Navigate,
@@ -13,6 +14,7 @@ import {
   Check,
   Download,
   Key,
+  Github,
   Loader,
   Menu,
   PiggyBank,
@@ -21,7 +23,6 @@ import {
   Upload,
   Wallet,
   Wrench,
-  X,
   Zap,
 } from "lucide-react";
 import { useAccount } from "wagmi";
@@ -36,6 +37,7 @@ import {
 } from "#/components/ui/dropdown-menu";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
+import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import { api, getTokenSymbol, type TokenId } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
@@ -45,7 +47,7 @@ import { DebugNavigation } from "./components/DebugNavigation";
 import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
-import { VersionFooter } from "./components/VersionFooter";
+import { addSwap } from "./db";
 import { usePriceFeed } from "./PriceFeedContext";
 import { SwapsPage, RefundPage } from "./pages";
 import { SwapWizardPage } from "./wizard";
@@ -53,7 +55,6 @@ import { deriveSwapParams } from "@frontend/browser-wallet";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
-import { addSwap } from "./db";
 import { useWalletBridge } from "./WalletBridgeContext";
 import { useAsync } from "react-use";
 import {
@@ -66,6 +67,7 @@ import {
 // Home page component (enter-amount step)
 function HomePage() {
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const params = useParams<{ sourceToken?: string; targetToken?: string }>();
   const { address: connectedAddress, isConnected } = useAccount();
 
@@ -175,11 +177,32 @@ function HomePage() {
   }, [exchangeRate, isLoadingPrice, lastFieldEdited, bitcoinAmount, usdAmount]);
 
   const handleContinueToAddress = async () => {
-    // Create swap and navigate to send bitcoin step
     if (!targetAddress || !usdAmount || !addressValid) {
       return;
     }
 
+    await createSwap();
+  };
+
+  // Helper to track swap initiation
+  const trackSwapInitiation = (swap: GetSwapResponse) => {
+    const swapDirection =
+      swap.source_token === "btc_arkade" ||
+      swap.source_token === "btc_lightning"
+        ? "btc-to-polygon"
+        : "polygon-to-btc";
+    posthog?.capture("swap_initiated", {
+      swap_id: swap.id,
+      swap_direction: swapDirection,
+      source_token: swap.source_token,
+      target_token: swap.target_token,
+      amount_usd: swap.usd_amount,
+      amount_sats: swap.sats_receive,
+      has_referral_code: hasReferralCode(),
+    });
+  };
+
+  const createSwap = async () => {
     try {
       setIsCreatingSwap(true);
       setSwapError("");
@@ -266,6 +289,7 @@ function HomePage() {
           refund_pk,
         });
 
+        trackSwapInitiation(swap);
         navigate(`/swap/${swap.id}/wizard`);
       } else if (isEvmSource) {
         // Polygon → Bitcoin
@@ -337,7 +361,7 @@ function HomePage() {
             receiver_pk,
           });
 
-          // Navigate to Polygon signing page
+          trackSwapInitiation(swap);
           navigate(`/swap/${swap.id}/wizard`);
         }
 
@@ -382,7 +406,7 @@ function HomePage() {
           // Store in Dexie as well
           await addSwap(swap);
 
-          // Navigate to Polygon signing page
+          trackSwapInitiation(swap);
           navigate(`/swap/${swap.id}/wizard`);
         }
       }
@@ -427,7 +451,7 @@ function HomePage() {
   return (
     <div className="flex flex-col gap-2 px-4 md:px-4">
       <div className="space-y-2">
-        <label className="text-sm text-muted-foreground">You send</label>
+        <div className="text-sm text-muted-foreground">You send</div>
         <div className="relative">
           {isUsdToken(sourceAsset) ? (
             <UsdInput
@@ -746,8 +770,8 @@ export default function App() {
         className="fixed inset-0 pointer-events-none z-0"
         style={{
           backgroundImage: `
-            linear-gradient(to right, hsl(var(--foreground) / 0.03) 1px, transparent 1px),
-            linear-gradient(to bottom, hsl(var(--foreground) / 0.03) 1px, transparent 1px)
+            linear-gradient(to right, hsl(var(--foreground) / 0.015) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--foreground) / 0.015) 1px, transparent 1px)
           `,
           backgroundSize: "40px 40px",
         }}
@@ -760,7 +784,7 @@ export default function App() {
           className="absolute -top-48 -left-48 w-[600px] h-[600px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.25) 0%, rgba(249, 115, 22, 0.15) 25%, rgba(234, 88, 12, 0.08) 50%, transparent 70%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.09) 25%, rgba(234, 88, 12, 0.05) 50%, transparent 70%)",
             filter: "blur(100px)",
             mixBlendMode: "screen",
           }}
@@ -771,7 +795,7 @@ export default function App() {
           className="absolute -top-32 -left-32 w-[500px] h-[500px]"
           style={{
             background:
-              "radial-gradient(ellipse 80% 100% at 30% 30%, rgba(255, 137, 51, 0.2) 0%, rgba(251, 113, 133, 0.12) 40%, transparent 65%)",
+              "radial-gradient(ellipse 80% 100% at 30% 30%, rgba(255, 137, 51, 0.12) 0%, rgba(251, 113, 133, 0.07) 40%, transparent 65%)",
             filter: "blur(80px)",
             mixBlendMode: "screen",
           }}
@@ -782,7 +806,7 @@ export default function App() {
           className="absolute -bottom-40 -right-40 w-[550px] h-[550px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.22) 0%, rgba(249, 115, 22, 0.14) 30%, rgba(245, 158, 11, 0.08) 50%, transparent 68%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.13) 0%, rgba(249, 115, 22, 0.08) 30%, rgba(245, 158, 11, 0.05) 50%, transparent 68%)",
             filter: "blur(110px)",
             mixBlendMode: "screen",
           }}
@@ -793,7 +817,7 @@ export default function App() {
           className="absolute top-[35%] right-[15%] w-[450px] h-[450px]"
           style={{
             background:
-              "radial-gradient(ellipse 90% 110% at 40% 50%, rgba(249, 115, 22, 0.18) 0%, rgba(251, 146, 60, 0.1) 35%, transparent 60%)",
+              "radial-gradient(ellipse 90% 110% at 40% 50%, rgba(249, 115, 22, 0.11) 0%, rgba(251, 146, 60, 0.06) 35%, transparent 60%)",
             filter: "blur(120px)",
             mixBlendMode: "screen",
           }}
@@ -804,7 +828,7 @@ export default function App() {
           className="absolute top-[50%] -left-20 w-[400px] h-[400px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(234, 88, 12, 0.15) 0%, rgba(249, 115, 22, 0.08) 40%, transparent 65%)",
+              "radial-gradient(circle at center, rgba(234, 88, 12, 0.09) 0%, rgba(249, 115, 22, 0.05) 40%, transparent 65%)",
             filter: "blur(90px)",
             mixBlendMode: "screen",
           }}
@@ -833,15 +857,26 @@ export default function App() {
                   <h1 className="text-xl font-semibold">LendaSwap</h1>
                 </button>
 
+                {/* GitHub Link */}
+                <a
+                  href="https://github.com/lendasat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+                  aria-label="Visit us on GitHub"
+                >
+                  <Github className="w-5 h-5" />
+                </a>
+
                 {/* X/Twitter Link */}
                 <a
                   href="https://x.com/lendasat"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+                  className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
                   aria-label="Follow us on X"
                 >
-                  <X className="w-4 h-4" />
+                  <XLogo className="w-5 h-5 fill-current" />
                 </a>
               </div>
 
@@ -877,7 +912,7 @@ export default function App() {
                         className="gap-2"
                       >
                         <Wrench className="h-4 w-4" />
-                        Manage Swaps
+                        Settings
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
@@ -951,7 +986,7 @@ export default function App() {
                     size="sm"
                     onClick={() => navigate("/swaps")}
                     className="gap-2"
-                    title="Manage Swaps"
+                    title="Settings"
                   >
                     <Wrench className="h-4 w-4" />
                   </Button>
@@ -1099,11 +1134,18 @@ export default function App() {
             {/* Debug Navigation */}
             <DebugNavigation />
 
-            <div className="space-y-3">
-              <VersionFooter />
-              <div className="text-muted-foreground text-center text-sm">
-                <p>© 2025 LendaSwap. All rights reserved.</p>
-              </div>
+            <div className="text-muted-foreground text-center text-sm">
+              <p>
+                © 2025 LendaSwap. All rights reserved.{" "}
+                <a
+                  href="https://lendasat.com/docs/tos"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground transition-colors"
+                >
+                  Terms of Service
+                </a>
+              </p>
             </div>
           </div>
         </footer>

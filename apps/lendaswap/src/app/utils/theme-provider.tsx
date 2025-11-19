@@ -1,6 +1,7 @@
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -39,10 +40,18 @@ export const ThemeContext = createContext<Theme>({
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setThemeState] = useState<string>(() => getPreferredTheme());
 
+  const applyTheme = useCallback((newTheme: string) => {
+    setThemeState(newTheme);
+    // remove both light and dark classes so that only the saved theme is really used.
+    document.documentElement.classList.remove("light");
+    document.documentElement.classList.remove("dark");
+    document.documentElement.classList.add(newTheme);
+  }, []);
+
   useEffect(() => {
     const savedTheme = getPreferredTheme();
     applyTheme(savedTheme);
-  }, []);
+  }, [applyTheme]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -60,14 +69,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("theme", newTheme);
       applyTheme(newTheme);
     }
-  };
-
-  const applyTheme = (newTheme: string) => {
-    setThemeState(newTheme);
-    // remove both light and dark classes so that only the saved theme is really used.
-    document.documentElement.classList.remove("light");
-    document.documentElement.classList.remove("dark");
-    document.documentElement.classList.add(newTheme);
   };
 
   return (

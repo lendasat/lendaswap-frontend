@@ -1,6 +1,8 @@
+import { Label } from "@radix-ui/react-label";
+import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useState } from "react";
-import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -9,10 +11,8 @@ import {
   CardTitle,
 } from "#/components/ui/card";
 import { cn } from "#/lib/utils";
-import { Label } from "@radix-ui/react-label";
-import { Input } from "./ui/input";
-import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 const validateEmail = (email: string) => {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -1,6 +1,7 @@
+import { AlertCircle, Loader2 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -8,15 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "#/components/ui/card";
-import { cn } from "#/lib/utils";
-import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
-import { Button } from "./ui/button";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
 } from "#/components/ui/input-otp";
+import { cn } from "#/lib/utils";
+import { Button } from "./ui/button";
 
 interface ShadcnEmailVerificationProps extends React.ComponentProps<"div"> {
   handleVerification: (verificationCode: string) => Promise<void>;

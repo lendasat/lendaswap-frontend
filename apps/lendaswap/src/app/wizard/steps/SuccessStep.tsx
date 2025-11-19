@@ -1,10 +1,10 @@
 import { Check, CheckCheck, Copy, ExternalLink, Twitter } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { useState } from "react";
 import type { GetSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
-import { SuccessMeme } from "../../components/SuccessMeme";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
@@ -18,7 +18,28 @@ export function SuccessStep({
   swapId,
 }: SuccessStepProps) {
   const navigate = useNavigate();
+  const posthog = usePostHog();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  // Track swap completion event
+  useEffect(() => {
+    const swapDurationSeconds = swapData.created_at
+      ? Math.floor(
+          (Date.now() - new Date(swapData.created_at).getTime()) / 1000,
+        )
+      : null;
+
+    posthog?.capture("swap_completed", {
+      swap_id: swapId,
+      swap_direction: swapDirection,
+      source_token: swapData.source_token,
+      target_token: swapData.target_token,
+      amount_usd: swapData.usd_amount,
+      amount_sats: swapData.sats_receive,
+      fee_sats: swapData.fee_sats,
+      duration_seconds: swapDurationSeconds,
+    });
+  }, [swapId, swapDirection, swapData, posthog]);
 
   const handleCopyAddress = async (address: string) => {
     try {
@@ -36,9 +57,7 @@ export function SuccessStep({
 
   // Calculate swap duration if we have timestamps
   const swapDurationSeconds = swapData.created_at
-    ? Math.floor(
-        (new Date().getTime() - new Date(swapData.created_at).getTime()) / 1000,
-      )
+    ? Math.floor((Date.now() - new Date(swapData.created_at).getTime()) / 1000)
     : null;
 
   // Define config based on swap direction
@@ -53,7 +72,7 @@ export function SuccessStep({
           receiveAddressIsPolygon: true,
           swapTxId: swapData.polygon_htlc_claim_txid,
           swapTxIdIsPolygon: true,
-          tweetText: `I just swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap protocol.\n\n✅ 0% fees (yes, actually ZERO)\n✅ Non-custodial (your keys, your coins)\n✅ Lightning fast (atomic HTLCs)\n✅ No KYC, No BS\n\nEveryone else charges 1-3% per swap.\n\nLendasat charges $0.00.\n\nYou literally can't lose:\nhttps://swap.lendasat.com`,
+          tweetText: `Swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         }
       : {
           sentTokenSymbol: getTokenSymbol(swapData.source_token),
@@ -64,7 +83,7 @@ export function SuccessStep({
           receiveAddressIsPolygon: false,
           swapTxId: swapData.bitcoin_htlc_claim_txid,
           swapTxIdIsPolygon: false,
-          tweetText: `I just swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s with @lendasat\n\nThis is the FIRST EVER trustless Bitcoin atomic swap protocol.\n\n✅ 0% fees (yes, actually ZERO)\n✅ Non-custodial (your keys, your coins)\n✅ Lightning fast (atomic HTLCs)\n✅ No KYC, No BS\n\nEveryone else charges 1-3% per swap.\n\nLendasat charges $0.00.\n\nYou literally can't lose:\nhttps://swap.lendasat.com`,
+          tweetText: `Swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         };
 
   const handleShareOnTwitter = () => {
@@ -135,9 +154,6 @@ export function SuccessStep({
               </div>
             </div>
           </div>
-
-          {/* Success Meme with Share Button */}
-          <SuccessMeme />
 
           {/* Transaction Details */}
           <div className="bg-muted/50 w-full max-w-md space-y-3 rounded-lg p-4">
@@ -226,7 +242,7 @@ export function SuccessStep({
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => handleCopyAddress(config.swapTxId!)}
+                      onClick={() => handleCopyAddress(config.swapTxId || "")}
                       className="h-8 w-8"
                     >
                       {copiedAddress === config.swapTxId ? (

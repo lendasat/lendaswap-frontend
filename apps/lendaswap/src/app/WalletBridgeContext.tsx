@@ -1,7 +1,7 @@
 import { AddressType, LendasatClient } from "@lendasat/lendasat-wallet-bridge";
 import {
   createContext,
-  ReactNode,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
