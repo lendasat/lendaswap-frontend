@@ -17,7 +17,7 @@ export function TokenIcon({ tokenId, className = "h-5 w-5" }: TokenIconProps) {
       return <BitcoinLightningIcon className={className} />;
     case "usdc_pol":
       return <UsdcIcon className={className} />;
-    case "usdt_pol":
+    case "usdt0_pol":
       return <TetherIcon className={className} />;
   }
 }

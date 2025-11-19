@@ -43,7 +43,7 @@ const isBtcToPolygon = (
     return "btc-to-polygon";
   }
 
-  if (source_token === "usdt_pol" || source_token === "usdc_pol") {
+  if (source_token === "usdt0_pol" || source_token === "usdc_pol") {
     return "polygon-to-btc";
   }
 

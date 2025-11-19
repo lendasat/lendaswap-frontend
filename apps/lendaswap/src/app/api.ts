@@ -8,7 +8,13 @@ const API_BASE_URL =
 const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
 
 // Token types
-export type TokenId = "btc_lightning" | "btc_arkade" | "usdc_pol" | "usdt_pol";
+export type TokenId =
+  | "btc_lightning"
+  | "btc_arkade"
+  | "usdc_pol"
+  | "usdt0_pol"
+  | "usdc_eth"
+  | "usdt_eth";
 
 export type Chain = "Bitcoin" | "Polygon";
 
@@ -21,8 +27,8 @@ export interface TokenInfo {
 }
 
 export interface AssetPair {
-  source: TokenId;
-  target: TokenId;
+  source: TokenInfo;
+  target: TokenInfo;
 }
 
 export interface PriceResponse {
@@ -38,7 +44,7 @@ export interface PriceTiers {
 }
 
 export interface TradingPairPrices {
-  pair: string; // e.g., "USDC_POL-BTC" or "USDT_POL-BTC"
+  pair: string; // e.g., "USDC_POL-BTC" or "USDT0_POL-BTC"
   tiers: PriceTiers;
 }
 
@@ -76,40 +82,21 @@ export type SwapStatus =
 export interface SwapRequest {
   target_address: string;
   target_amount: number;
-  target_token: TokenId; // Token to receive (e.g., USDC_POL, USDT_POL)
+  target_token: TokenId; // Token to receive (e.g., USDC_POL, USDT0_POL)
   hash_lock: string;
   refund_pk: string;
   user_id: string; // Public key for wallet recovery
   referral_code?: string; // Optional referral code for tracking
 }
 
-export function getTokenSymbol(tokenId: TokenId): string {
-  switch (tokenId) {
-    case "usdc_pol":
-      return "USDC";
-    case "usdt_pol":
-      return "USDT";
-    case "btc_arkade":
-      return "BTC";
-    case "btc_lightning":
-      return "BTC";
-    default:
-      return "USDC";
-  }
-}
-
-export function getTokenDisplayName(tokenId: TokenId): string {
-  switch (tokenId) {
-    case "btc_arkade":
-      return "BTC (Arkade)";
-    case "btc_lightning":
-      return "BTC (Lightning)";
-    case "usdc_pol":
-      return "USDC";
-    case "usdt_pol":
-      return "USDT";
-  }
-}
+// Token utility functions moved to utils/tokenUtils.tsx
+// Re-export for backwards compatibility
+export {
+  getTokenSymbol,
+  getTokenDisplayName,
+  getTokenIcon,
+  getTokenNetworkName,
+} from "./utils/tokenUtils";
 
 // Common fields shared across all swap directions
 export interface SwapCommonFields {
@@ -230,6 +217,7 @@ export const api = {
     if (!response.ok) {
       throw new Error(`Failed to fetch tokens: ${response.statusText}`);
     }
+    console.log("response", response.body);
     return response.json();
   },
 

@@ -87,7 +87,7 @@ export function SwapsPage() {
         return <BitcoinLightningIcon className="h-6 w-6" />;
       case "usdc_pol":
         return <UsdcIcon className="h-6 w-6" />;
-      case "usdt_pol":
+      case "usdt0_pol":
         return <TetherIcon className="h-6 w-6" />;
     }
   };

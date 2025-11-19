@@ -28,7 +28,7 @@ export function AddressInput({
   disabled = false,
 }: AddressInputProps) {
   const isPolygonTarget =
-    targetToken === "usdc_pol" || targetToken === "usdt_pol";
+    targetToken === "usdc_pol" || targetToken === "usdt0_pol";
   const { address, isConnected } = useAccount();
   const [validationError, setValidationError] = useState<string>("");
 
@@ -93,7 +93,7 @@ export function AddressInput({
         return "Provide an Arkade address";
       case "usdc_pol":
         return "Provide a USDC address on Polygon";
-      case "usdt_pol":
+      case "usdt0_pol":
         return "Provide a USDT0 address on Polygon";
     }
   };
