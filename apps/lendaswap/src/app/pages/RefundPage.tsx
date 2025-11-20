@@ -108,7 +108,7 @@ export function RefundPage() {
 
   return (
     <div className="container max-w-2xl mx-auto py-8 px-4">
-      {swapDirection === "btc_to_polygon" && (
+      {swapDirection === "btc_to_evm" && (
         <BtcToPolygonRefundStep
           swapData={swapData}
           swapId={swapId}
@@ -116,7 +116,7 @@ export function RefundPage() {
         />
       )}
 
-      {swapDirection === "polygon_to_btc" && (
+      {swapDirection === "evm_to_btc" && (
         <PolygonToBtcRefundStep swapData={swapData} swapId={swapId} />
       )}
 

@@ -72,9 +72,9 @@ export function SuccessStep({
           sentAmount: swapData.sats_receive.toLocaleString(),
           receivedTokenSymbol: getTokenSymbol(swapData.target_token),
           receivedAmount: swapData.usd_amount.toFixed(2),
-          receiveAddress: swapData.user_address_polygon,
+          receiveAddress: swapData.user_address_evm,
           receiveAddressIsPolygon: true,
-          swapTxId: swapData.polygon_htlc_claim_txid,
+          swapTxId: swapData.evm_htlc_claim_txid,
           swapTxIdIsPolygon: true,
           tweetText: `Swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         }

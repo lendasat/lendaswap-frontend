@@ -10,7 +10,7 @@ import { Button } from "#/components/ui/button";
 import { getBlockexplorerTxLink, getViemChain } from "../../utils/tokenUtils";
 import {
   api,
-  type BtcToPolygonSwapResponse,
+  type BtcToEvmSwapResponse,
   type GetSwapResponse,
 } from "../../api";
 import { isEthereumToken, isPolygonToken } from "../../utils/tokenUtils";
@@ -53,7 +53,7 @@ function uuidToHtlcSwapId(uuid: string): `0x${string}` {
 
 interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;
-  swapDirection: "btc-to-polygon" | "polygon-to-btc";
+  swapDirection: "btc-to-evm" | "evm-to-btc";
   swapId: string;
 }
 
@@ -128,10 +128,10 @@ export function SwapProcessingStep({
     localStorage.removeItem(claimKey);
   };
 
-  // Auto-claim for btc-to-polygon when server is funded
+  // Auto-claim for btc-to-evm when server is funded
   useEffect(() => {
     const autoClaimBtcToPolygonSwaps = async () => {
-      if (swapDirection !== "btc-to-polygon") return;
+      if (swapDirection !== "btc-to-evm") return;
       if (swapData.status !== "serverfunded") return;
       if (!secret) return;
 
@@ -189,7 +189,7 @@ export function SwapProcessingStep({
           console.log("Switching to chain:", chain.name);
           await switchChainAsync({ chainId: chain.id });
 
-          const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
+          const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
           // Convert UUID to bytes32 by removing hyphens and padding with zeros
           const swapIdBytes32 = uuidToHtlcSwapId(swapData.id);
           const secretBytes32 = `0x${cleanSecret}` as `0x${string}`;
@@ -273,11 +273,11 @@ export function SwapProcessingStep({
     switchChainAsync,
   ]);
 
-  // Auto-claim for polygon-to-btc when server is funded
+  // Auto-claim for evm-to-btc when server is funded
   useEffect(() => {
     const autoClaimPolygonToArkadeSwaps = async () => {
-      const polygonToBtcSwapData = swapData as BtcToPolygonSwapResponse;
-      if (swapDirection !== "polygon-to-btc") return;
+      const polygonToBtcSwapData = swapData as BtcToEvmSwapResponse;
+      if (swapDirection !== "evm-to-btc") return;
       if (polygonToBtcSwapData.target_token === "btc_lightning") {
         // this will be claimed by the lightning client
         return;
@@ -386,17 +386,17 @@ export function SwapProcessingStep({
 
   // Define field mappings and labels based on swap direction
   const config =
-    swapDirection === "btc-to-polygon"
+    swapDirection === "btc-to-evm"
       ? {
           step1Label: "User Funded",
           step1TxId: swapData.bitcoin_htlc_fund_txid,
           step1IsPolygon: false,
           step2LabelActive: "Server Funding",
           step2LabelComplete: "Server Funded",
-          step2TxId: swapData.polygon_htlc_fund_txid,
+          step2TxId: swapData.evm_htlc_fund_txid,
           step2IsPolygon: true,
           step3Label: "Client Redeeming",
-          step3TxId: swapData.polygon_htlc_claim_txid,
+          step3TxId: swapData.evm_htlc_claim_txid,
           step3IsPolygon: true,
           step4Label: "Server Redeemed",
           step4TxId: swapData.bitcoin_htlc_claim_txid,
@@ -404,7 +404,7 @@ export function SwapProcessingStep({
         }
       : {
           step1Label: "User Funded",
-          step1TxId: swapData.polygon_htlc_fund_txid,
+          step1TxId: swapData.evm_htlc_fund_txid,
           step1IsPolygon: true,
           step2LabelActive: "Server Funding",
           step2LabelComplete: "Server Funded",
@@ -414,7 +414,7 @@ export function SwapProcessingStep({
           step3TxId: swapData.bitcoin_htlc_claim_txid,
           step3IsPolygon: false,
           step4Label: "Server Redeemed",
-          step4TxId: swapData.polygon_htlc_claim_txid,
+          step4TxId: swapData.evm_htlc_claim_txid,
           step4IsPolygon: true,
         };
 
@@ -584,23 +584,23 @@ export function SwapProcessingStep({
                 <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
                   <p className="text-sm font-medium">
                     {isClaiming
-                      ? swapDirection === "polygon-to-btc"
+                      ? swapDirection === "evm-to-btc"
                         ? "Redeeming your sats..."
                         : "Claiming your tokens..."
-                      : swapDirection === "polygon-to-btc"
+                      : swapDirection === "evm-to-btc"
                         ? "VHTLC Funded"
                         : "HTLC Funded"}
                   </p>
                   <p className="text-muted-foreground text-xs">
                     {isClaiming
-                      ? swapDirection === "polygon-to-btc"
+                      ? swapDirection === "evm-to-btc"
                         ? swapData.target_token === "btc_lightning"
                           ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
                           : "Lightning invoice is pending..."
                         : isEthereumToken(swapData.target_token)
                           ? "Claiming tokens via your Ethereum wallet (you pay gas)..."
                           : "Submitting claim request via Gelato Relay..."
-                      : swapDirection === "polygon-to-btc"
+                      : swapDirection === "evm-to-btc"
                         ? "The VHTLC has been funded. Preparing to claim your sats..."
                         : "The HTLC has been funded. Preparing to claim your tokens..."}
                   </p>
@@ -609,7 +609,7 @@ export function SwapProcessingStep({
                       Retry attempt {retryCount}/{maxRetries}...
                     </p>
                   )}
-                  {swapDirection === "btc-to-polygon" &&
+                  {swapDirection === "btc-to-evm" &&
                     !isClaiming &&
                     !claimError && (
                       <p className="text-muted-foreground text-xs">

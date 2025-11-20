@@ -10,7 +10,7 @@ import { Button } from "#/components/ui/button";
 import {
   getTokenNetworkName,
   getTokenSymbol,
-  type PolygonToBtcSwapResponse,
+  type EvmToBtcSwapResponse,
 } from "../../api";
 import { getViemChain } from "../../utils/tokenUtils";
 
@@ -39,7 +39,7 @@ const ERC20_ABI = [
 ] as const;
 
 interface PolygonDepositStepProps {
-  swapData: PolygonToBtcSwapResponse;
+  swapData: EvmToBtcSwapResponse;
   swapId: string;
 }
 
@@ -87,7 +87,7 @@ export function PolygonDepositStep({
       console.log("Switching to chain:", chain.name);
       await switchChainAsync({ chainId: chain.id });
 
-      const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
+      const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
       const tokenAddress = swapData.source_token_address as `0x${string}`;
 
       // Parse the amount needed for this swap

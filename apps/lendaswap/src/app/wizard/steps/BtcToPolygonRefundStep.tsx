@@ -12,7 +12,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
-  type BtcToPolygonSwapResponse,
+  type BtcToEvmSwapResponse,
   getTokenDisplayName,
   getTokenIcon,
 } from "../../api";
@@ -21,7 +21,7 @@ const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
 
 interface BtcToPolygonRefundStepProps {
-  swapData: BtcToPolygonSwapResponse;
+  swapData: BtcToEvmSwapResponse;
   swapId: string;
   arkAddress?: string | null;
 }

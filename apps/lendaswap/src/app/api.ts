@@ -16,7 +16,7 @@ export type TokenId =
   | "usdc_eth"
   | "usdt_eth";
 
-export type Chain = "Bitcoin" | "Polygon";
+export type Chain = "Bitcoin" | "Polygon" | "Ethereum";
 
 export interface TokenInfo {
   token_id: TokenId;
@@ -117,11 +117,11 @@ export interface SwapCommonFields {
   created_at: string; // Timestamp of when the swap was created
 }
 
-// BTC → Polygon swap response
-export interface BtcToPolygonSwapResponse extends SwapCommonFields {
-  htlc_address_polygon: string;
+// BTC → EVM swap response
+export interface BtcToEvmSwapResponse extends SwapCommonFields {
+  htlc_address_evm: string;
   htlc_address_arkade: string;
-  user_address_polygon: string;
+  user_address_evm: string;
   ln_invoice: string;
   sats_receive: number;
   source_token: TokenId; // Token being sent
@@ -129,15 +129,15 @@ export interface BtcToPolygonSwapResponse extends SwapCommonFields {
   user_address_arkade: string;
   bitcoin_htlc_claim_txid: string | null;
   bitcoin_htlc_fund_txid: string | null;
-  polygon_htlc_claim_txid: string | null;
-  polygon_htlc_fund_txid: string | null;
+  evm_htlc_claim_txid: string | null;
+  evm_htlc_fund_txid: string | null;
 }
 
-// Polygon → BTC swap response
-export interface PolygonToBtcSwapResponse extends SwapCommonFields {
-  htlc_address_polygon: string;
+// EVM → BTC swap response
+export interface EvmToBtcSwapResponse extends SwapCommonFields {
+  htlc_address_evm: string;
   htlc_address_arkade: string;
-  user_address_polygon: string;
+  user_address_evm: string;
   user_address_arkade: string | null;
   ln_invoice: string;
   source_token: TokenId; // Token being sent
@@ -145,9 +145,9 @@ export interface PolygonToBtcSwapResponse extends SwapCommonFields {
   sats_receive: number; // Net sats user will receive
   bitcoin_htlc_claim_txid: string | null;
   bitcoin_htlc_fund_txid: string | null;
-  polygon_htlc_claim_txid: string | null;
-  polygon_htlc_fund_txid: string | null;
-  // Polygon-specific transaction details
+  evm_htlc_claim_txid: string | null;
+  evm_htlc_fund_txid: string | null;
+  // EVM-specific transaction details
   create_swap_tx: string | null;
   approve_tx: string | null;
   gelato_forwarder_address: string | null;
@@ -158,11 +158,11 @@ export interface PolygonToBtcSwapResponse extends SwapCommonFields {
 
 // Tagged union type matching backend enum
 export type GetSwapResponse =
-  | ({ direction: "btc_to_polygon" } & BtcToPolygonSwapResponse)
-  | ({ direction: "polygon_to_btc" } & PolygonToBtcSwapResponse);
+  | ({ direction: "btc_to_evm" } & BtcToEvmSwapResponse)
+  | ({ direction: "evm_to_btc" } & EvmToBtcSwapResponse);
 
-// Polygon → Arkade swap types
-export interface PolygonToArkadeSwapRequest {
+// EVM → Arkade swap types
+export interface EvmToArkadeSwapRequest {
   target_address: string;
   source_amount: number;
   source_token: TokenId;
@@ -173,8 +173,8 @@ export interface PolygonToArkadeSwapRequest {
   referral_code?: string;
 }
 
-// Polygon → Lightning swap types
-export interface PolygonToLightningSwapRequest {
+// EVM → Lightning swap types
+export interface EvmToLightningSwapRequest {
   bolt11_invoice: string;
   source_token: TokenId;
   user_address: string;
@@ -281,7 +281,7 @@ export const api = {
   },
 
   async createEvmToArkadeSwap(
-    request: PolygonToArkadeSwapRequest,
+    request: EvmToArkadeSwapRequest,
     sourceNetwork: string,
   ): Promise<GetSwapResponse> {
     const referralCode = getReferralCode();
@@ -312,7 +312,7 @@ export const api = {
   },
 
   async createEvmToLightningSwap(
-    request: PolygonToLightningSwapRequest,
+    request: EvmToLightningSwapRequest,
     sourceNetwork: string,
   ): Promise<GetSwapResponse> {
     console.log(`request ${JSON.stringify(request)}`);

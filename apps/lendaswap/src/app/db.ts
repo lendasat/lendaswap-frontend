@@ -10,9 +10,9 @@ export interface StoredSwapExtras {
   secret?: string;
   // User's private key
   own_sk?: string;
-  // Public key for refunds (BTC → Polygon swaps)
+  // Public key for refunds (BTC → EVM swaps)
   refund_pk?: string;
-  // Public key for receiving (Polygon → BTC swaps)
+  // Public key for receiving (EVM → BTC swaps)
   receiver_pk?: string;
 }
 
@@ -34,6 +34,47 @@ export class LendaswapDatabase extends Dexie {
       // Index by id (primary key), and also by status and created_at for queries
       swaps: "id, status, created_at, direction",
     });
+
+    // Version 2: Migrate polygon_ fields to evm_ and direction enum
+    this.version(2)
+      .stores({
+        swaps: "id, status, created_at, direction",
+      })
+      .upgrade(async (tx) => {
+        // Migrate all swap records from polygon_ to evm_
+        await tx
+          .table("swaps")
+          .toCollection()
+          .modify((swap: any) => {
+            // Migrate direction enum
+            if (swap.direction === "btc_to_polygon") {
+              swap.direction = "btc_to_evm";
+            } else if (swap.direction === "polygon_to_btc") {
+              swap.direction = "evm_to_btc";
+            }
+
+            // Migrate polygon_ prefixed fields to evm_
+            if (swap.htlc_address_polygon !== undefined) {
+              swap.htlc_address_evm = swap.htlc_address_polygon;
+              delete swap.htlc_address_polygon;
+            }
+
+            if (swap.user_address_polygon !== undefined) {
+              swap.user_address_evm = swap.user_address_polygon;
+              delete swap.user_address_polygon;
+            }
+
+            if (swap.polygon_htlc_claim_txid !== undefined) {
+              swap.evm_htlc_claim_txid = swap.polygon_htlc_claim_txid;
+              delete swap.polygon_htlc_claim_txid;
+            }
+
+            if (swap.polygon_htlc_fund_txid !== undefined) {
+              swap.evm_htlc_fund_txid = swap.polygon_htlc_fund_txid;
+              delete swap.polygon_htlc_fund_txid;
+            }
+          });
+      });
   }
 }
 
@@ -95,11 +136,11 @@ export async function getSwapsByStatus(
 
 /**
  * Get swaps filtered by direction
- * @param direction The swap direction ("btc_to_polygon" or "polygon_to_btc")
+ * @param direction The swap direction ("btc_to_evm" or "evm_to_btc")
  * @returns Array of swaps with the specified direction
  */
 export async function getSwapsByDirection(
-  direction: "btc_to_polygon" | "polygon_to_btc",
+  direction: "btc_to_evm" | "evm_to_btc",
 ): Promise<StoredSwap[]> {
   return db.swaps.where("direction").equals(direction).toArray();
 }

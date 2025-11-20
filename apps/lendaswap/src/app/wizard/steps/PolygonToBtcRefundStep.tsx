@@ -13,7 +13,7 @@ import { Button } from "#/components/ui/button";
 import {
   getTokenDisplayName,
   getTokenSymbol,
-  type PolygonToBtcSwapResponse,
+  type EvmToBtcSwapResponse,
 } from "../../api";
 
 // Helper function to convert UUID to bytes32
@@ -92,7 +92,7 @@ interface ContractSwap {
 }
 
 interface PolygonToBtcRefundStepProps {
-  swapData: PolygonToBtcSwapResponse;
+  swapData: EvmToBtcSwapResponse;
   swapId: string;
 }
 
@@ -125,12 +125,12 @@ export function PolygonToBtcRefundStep({
 
   // Fetch swap data from contract
   useEffect(() => {
-    if (!publicClient || !swapData.htlc_address_polygon) return;
+    if (!publicClient || !swapData.htlc_address_evm) return;
 
     const fetchSwapData = async () => {
       setIsLoadingSwap(true);
       try {
-        const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
+        const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
         const swapIdBytes32 = uuidToBytes32(swapId);
 
         console.log("Fetching swap from contract:", {
@@ -159,7 +159,7 @@ export function PolygonToBtcRefundStep({
     };
 
     fetchSwapData();
-  }, [publicClient, swapData.htlc_address_polygon, swapId]);
+  }, [publicClient, swapData.htlc_address_evm, swapId]);
 
   const handleRefund = async () => {
     if (!walletClient || !address || !publicClient) {
@@ -199,7 +199,7 @@ export function PolygonToBtcRefundStep({
       console.log("Switching to chain:", chain.name);
       await switchChainAsync({ chainId: chain.id });
 
-      const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
+      const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
       const swapIdBytes32 = uuidToBytes32(swapId);
 
       console.log("Executing refund transaction...");
@@ -326,7 +326,7 @@ export function PolygonToBtcRefundStep({
           <div className="space-y-1">
             <p className="text-sm font-medium">HTLC Address</p>
             <p className="text-xs text-muted-foreground font-mono break-all">
-              {swapData.htlc_address_polygon}
+              {swapData.htlc_address_evm}
             </p>
           </div>
 

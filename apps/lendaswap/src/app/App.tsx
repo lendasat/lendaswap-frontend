@@ -192,12 +192,11 @@ function HomePage() {
 
   // Helper to track swap initiation
   const trackSwapInitiation = (swap: GetSwapResponse) => {
-    // TODO: Be more specific with swap direction. Not everything is Polygon.
     const swapDirection =
       swap.source_token === "btc_arkade" ||
       swap.source_token === "btc_lightning"
-        ? "btc-to-polygon"
-        : "polygon-to-btc";
+        ? "btc-to-evm"
+        : "evm-to-btc";
     posthog?.capture("swap_initiated", {
       swap_id: swap.id,
       swap_direction: swapDirection,
@@ -219,7 +218,7 @@ function HomePage() {
       const isEvmSource = isEvmToken(sourceAsset);
 
       if (isBtcSource) {
-        // BTC → Polygon
+        // BTC → EVM
 
         // Derive swap params (keypair + preimage hash) from HD wallet (this increments the index)
         const {
@@ -299,9 +298,9 @@ function HomePage() {
         trackSwapInitiation(swap);
         navigate(`/swap/${swap.id}/wizard`);
       } else if (isEvmSource) {
-        // Polygon → Bitcoin
+        // EVM → Bitcoin
 
-        // Validate Polygon address
+        // Validate EVM address
         if (!isEvmAddressValid) {
           setSwapError(
             `Please provide a valid ${getTokenNetworkName(swap.target_token)} wallet address`,
@@ -310,7 +309,7 @@ function HomePage() {
         }
 
         if (targetAsset === "btc_arkade") {
-          // Polygon → Arkade
+          // EVM → Arkade
 
           // Then derive swap params (keypair + preimage hash) from HD wallet (this increments the index)
           const {
@@ -325,7 +324,7 @@ function HomePage() {
           // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
           const hash_lock = `0x${preimageHash}`;
 
-          // Call Polygon → Arkade API
+          // Call EVM → Arkade API
           const swap = await api.createEvmToArkadeSwap(
             {
               target_address: targetAddress, // Arkade address
@@ -375,13 +374,13 @@ function HomePage() {
         }
 
         if (targetAsset === "btc_lightning") {
-          // Polygon → Lightning
+          // EVM → Lightning
 
-          // Then derive user ID from HD wallet (Polygon-Lightning doesn't need keys or hash).
+          // Then derive user ID from HD wallet (EVM-Lightning doesn't need keys or hash).
           const { keyIndex: key_index, userId: user_id } =
             await deriveSwapParams();
 
-          // Call Polygon → Lightning API
+          // Call EVM → Lightning API
           const swap = await api.createEvmToLightningSwap(
             {
               bolt11_invoice: targetAddress,
@@ -622,7 +621,7 @@ function HomePage() {
           disabled={isEmbedded && !!arkAddress && targetAsset === "btc_arkade"}
         />
 
-        {/* Polygon Wallet Address - only shown when source is Polygon stablecoin */}
+        {/* EVM Wallet Address - only shown when source is EVM stablecoin */}
         {isEvmToken(sourceAsset) && (
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground">

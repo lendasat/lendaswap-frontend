@@ -3,14 +3,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import type { BtcToPolygonSwapResponse } from "../../api";
+import type { BtcToEvmSwapResponse } from "../../api";
 import { useWalletBridge } from "../../WalletBridgeContext";
 
 interface SendBitcoinStepProps {
   arkadeAddress: string | null;
   lightningAddress: string | null;
   unifiedAddress: string;
-  swapData: BtcToPolygonSwapResponse | null;
+  swapData: BtcToEvmSwapResponse | null;
   usdcAmount: string;
   tokenSymbol?: string; // e.g., "USDC", "USDT"
   swapId: string;

@@ -157,8 +157,8 @@ export function ImportMnemonicDialog({
         const { index, ...swap } = recoveredSwap;
 
         // Re-derive and store swap params for VHTLC operations
-        if (swap.direction === "btc_to_polygon") {
-          // BTC → Polygon: derive secret and own_sk
+        if (swap.direction === "btc_to_evm") {
+          // BTC → EVM: derive secret and own_sk
           const {
             preimage: secret,
             ownSk: own_sk,
@@ -190,12 +190,12 @@ export function ImportMnemonicDialog({
           );
 
           console.log(
-            `Recovered BTC→Polygon swap ${swap.id} with re-derived keys at index ${index}`,
+            `Recovered BTC→EVM swap ${swap.id} with re-derived keys at index ${index}`,
           );
-        } else if (swap.direction === "polygon_to_btc") {
+        } else if (swap.direction === "evm_to_btc") {
           await addSwap(swap);
 
-          // Polygon → BTC
+          // EVM → BTC
           if (swap.target_token === "btc_lightning") {
             // Lightning delivery: don't derive keys (not used)
             localStorage.setItem(
@@ -218,7 +218,7 @@ export function ImportMnemonicDialog({
             );
 
             console.log(
-              `Recovered Polygon→Lightning swap ${swap.id} (no key derivation needed) at index ${index}`,
+              `Recovered EVM→Lightning swap ${swap.id} (no key derivation needed) at index ${index}`,
             );
           } else {
             // Arkade delivery: derive secret, own_sk, and receiver_pk
@@ -254,7 +254,7 @@ export function ImportMnemonicDialog({
             );
 
             console.log(
-              `Recovered Polygon→Arkade swap ${swap.id} with re-derived keys at index ${index}`,
+              `Recovered EVM→Arkade swap ${swap.id} with re-derived keys at index ${index}`,
             );
           }
         }

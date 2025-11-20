@@ -4,10 +4,10 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAsyncRetry } from "react-use";
 import {
   api,
-  type BtcToPolygonSwapResponse,
+  type BtcToEvmSwapResponse,
   type GetSwapResponse,
   getTokenSymbol,
-  type PolygonToBtcSwapResponse,
+  type EvmToBtcSwapResponse,
   type SwapStatus,
   type TokenId,
 } from "../api";
@@ -23,7 +23,7 @@ import {
   SwapProcessingStep,
 } from "./steps";
 
-type SwapDirection = "btc-to-polygon" | "polygon-to-btc";
+type SwapDirection = "btc-to-evm" | "evm-to-btc";
 
 type StepId =
   | "user-deposit"
@@ -40,7 +40,7 @@ const swapDirection = (
   source_token: undefined | TokenId,
 ): SwapDirection | undefined => {
   if (source_token === "btc_arkade" || source_token === "btc_lightning") {
-    return "btc-to-polygon";
+    return "btc-to-evm";
   }
 
   if (
@@ -49,7 +49,7 @@ const swapDirection = (
     source_token === "usdt_eth" ||
     source_token === "usdc_eth"
   ) {
-    return "polygon-to-btc";
+    return "evm-to-btc";
   }
 
   return undefined;
@@ -58,7 +58,7 @@ const swapDirection = (
 // Create mock swap data for debug mode
 function createMockSwapData(status: SwapStatus): GetSwapResponse {
   const mockData = {
-    direction: "btc_to_polygon",
+    direction: "btc_to_evm",
     id: DEBUG_SWAP_ID,
     status,
     source_token: "btc_lightning",
@@ -68,8 +68,8 @@ function createMockSwapData(status: SwapStatus): GetSwapResponse {
     fee_sats: 100,
     htlc_address_arkade:
       "ark1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpnwz7m",
-    htlc_address_polygon: "0x0000000000000000000000000000000000000000",
-    user_address_polygon: "0x1111111111111111111111111111111111111111",
+    htlc_address_evm: "0x0000000000000000000000000000000000000000",
+    user_address_evm: "0x1111111111111111111111111111111111111111",
     user_address_arkade:
       "ark1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpnwz7m",
     ln_invoice:
@@ -91,8 +91,8 @@ function createMockSwapData(status: SwapStatus): GetSwapResponse {
     network: "regtest",
     bitcoin_htlc_claim_txid: null,
     bitcoin_htlc_fund_txid: null,
-    polygon_htlc_claim_txid: null,
-    polygon_htlc_fund_txid: null,
+    evm_htlc_claim_txid: null,
+    evm_htlc_fund_txid: null,
   };
 
   return mockData as GetSwapResponse;
@@ -340,12 +340,12 @@ export function SwapWizardPage() {
       {displaySwapData && !error && (
         <>
           {currentStep === "user-deposit" &&
-            swapDirectionValue === "btc-to-polygon" && (
+            swapDirectionValue === "btc-to-evm" && (
               <SendBitcoinStep
                 arkadeAddress={displaySwapData.htlc_address_arkade}
                 lightningAddress={displaySwapData.ln_invoice}
                 unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${displaySwapData.sats_receive / 100_000_000}`}
-                swapData={displaySwapData as BtcToPolygonSwapResponse}
+                swapData={displaySwapData as BtcToEvmSwapResponse}
                 usdcAmount={displaySwapData.usd_amount.toFixed(2)}
                 tokenSymbol={getTokenSymbol(displaySwapData.target_token)}
                 swapId={displaySwapData.id}
@@ -353,9 +353,9 @@ export function SwapWizardPage() {
             )}
 
           {currentStep === "user-deposit" &&
-            swapDirectionValue === "polygon-to-btc" && (
+            swapDirectionValue === "evm-to-btc" && (
               <PolygonDepositStep
-                swapData={displaySwapData as PolygonToBtcSwapResponse}
+                swapData={displaySwapData as EvmToBtcSwapResponse}
                 swapId={displaySwapData.id}
               />
             )}
@@ -430,18 +430,18 @@ export function SwapWizardPage() {
           )}
 
           {currentStep === "refundable" &&
-            swapDirectionValue === "btc-to-polygon" && (
+            swapDirectionValue === "btc-to-evm" && (
               <BtcToPolygonRefundStep
-                swapData={displaySwapData as BtcToPolygonSwapResponse}
+                swapData={displaySwapData as BtcToEvmSwapResponse}
                 swapId={displaySwapData.id}
                 arkAddress={arkAddress}
               />
             )}
 
           {currentStep === "refundable" &&
-            swapDirectionValue === "polygon-to-btc" && (
+            swapDirectionValue === "evm-to-btc" && (
               <PolygonToBtcRefundStep
-                swapData={displaySwapData as PolygonToBtcSwapResponse}
+                swapData={displaySwapData as EvmToBtcSwapResponse}
                 swapId={displaySwapData.id}
               />
             )}
