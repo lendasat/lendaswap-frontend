@@ -7,7 +7,11 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { getTokenSymbol, type PolygonToBtcSwapResponse } from "../../api";
+import {
+  getTokenNetworkName,
+  getTokenSymbol,
+  type PolygonToBtcSwapResponse,
+} from "../../api";
 import { getViemChain } from "../../utils/tokenUtils";
 
 // ERC20 ABI - approve and allowance functions
@@ -213,7 +217,8 @@ export function PolygonDepositStep({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
-              ${swapData.usd_amount.toFixed(2)} {tokenSymbol}
+              ${swapData.usd_amount.toFixed(2)} {tokenSymbol} on{" "}
+              {getTokenNetworkName(swapData.source_token)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
@@ -223,7 +228,10 @@ export function PolygonDepositStep({
             {swapData?.target_token === "btc_arkade" && (
               <span className="text-muted-foreground">You receive</span>
             )}
-            <span className="font-medium">~{receiveAmount} BTC</span>
+            <span className="font-medium">
+              ~{receiveAmount} BTC on{" "}
+              {getTokenNetworkName(swapData.target_token)}
+            </span>
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground"></span>

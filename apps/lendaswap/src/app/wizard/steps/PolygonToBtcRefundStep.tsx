@@ -1,7 +1,7 @@
 import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
-import { getViemChain } from "../../utils/tokenUtils";
+import { getTokenIcon, getViemChain } from "../../utils/tokenUtils";
 import {
   useAccount,
   usePublicClient,
@@ -15,7 +15,6 @@ import {
   getTokenSymbol,
   type PolygonToBtcSwapResponse,
 } from "../../api";
-import { TokenIcon } from "../../components/TokenIcon";
 
 // Helper function to convert UUID to bytes32
 // Example: "16446b7d-f430-4d95-b936-761e725fe637" -> "0x16446B7DF4304D95B936761E725FE63700000000000000000000000000000000"
@@ -303,10 +302,7 @@ export function PolygonToBtcRefundStep({
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center justify-center w-5 h-5 bg-muted rounded-full p-0.5">
-                  <TokenIcon
-                    tokenId={swapData.source_token}
-                    className="h-5 w-5"
-                  />
+                  {getTokenIcon(swapData.source_token)}
                 </div>
                 <span className="text-xs font-medium">
                   {getTokenDisplayName(swapData.source_token)}
@@ -315,10 +311,7 @@ export function PolygonToBtcRefundStep({
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center justify-center w-5 h-5 bg-muted rounded-full p-0.5">
-                  <TokenIcon
-                    tokenId={swapData.target_token}
-                    className="h-5 w-5"
-                  />
+                  {getTokenIcon(swapData.target_token)}
                 </div>
                 <span className="text-xs font-medium">
                   {getTokenDisplayName(swapData.target_token)}

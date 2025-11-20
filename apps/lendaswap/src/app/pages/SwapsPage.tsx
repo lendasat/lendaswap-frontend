@@ -1,5 +1,5 @@
-import {getMnemonic} from "@frontend/browser-wallet";
-import {format} from "date-fns";
+import { getMnemonic } from "@frontend/browser-wallet";
+import { format } from "date-fns";
 import {
   ArrowRight,
   Check,
@@ -10,10 +10,10 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import {useEffect, useState} from "react";
-import {useNavigate} from "react-router";
-import {Alert, AlertDescription} from "#/components/ui/alert";
-import {Button} from "#/components/ui/button";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { Alert, AlertDescription } from "#/components/ui/alert";
+import { Button } from "#/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -30,10 +30,10 @@ import {
   TableHeader,
   TableRow,
 } from "#/components/ui/table";
-import {getTokenIcon} from "../api";
-import {ImportMnemonicDialog} from "../components/ImportMnemonicDialog";
-import {VersionFooter} from "../components/VersionFooter";
-import {clearAllSwaps, deleteSwap, getAllSwaps, type StoredSwap} from "../db";
+import { getTokenIcon } from "../api";
+import { ImportMnemonicDialog } from "../components/ImportMnemonicDialog";
+import { VersionFooter } from "../components/VersionFooter";
+import { clearAllSwaps, deleteSwap, getAllSwaps, type StoredSwap } from "../db";
 
 export function SwapsPage() {
   const [swaps, setSwaps] = useState<StoredSwap[]>([]);
@@ -104,7 +104,7 @@ export function SwapsPage() {
       }
 
       // Create a blob with the mnemonic
-      const blob = new Blob([mnemonic], {type: "text/plain"});
+      const blob = new Blob([mnemonic], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
 
       // Create a temporary link and trigger download
@@ -200,12 +200,12 @@ export function SwapsPage() {
             >
               {showSeedphrase ? (
                 <>
-                  <EyeOff className="h-4 w-4"/>
+                  <EyeOff className="h-4 w-4" />
                   <span>Hide Seedphrase</span>
                 </>
               ) : (
                 <>
-                  <Eye className="h-4 w-4"/>
+                  <Eye className="h-4 w-4" />
                   <span>Show Seedphrase</span>
                 </>
               )}
@@ -240,9 +240,9 @@ export function SwapsPage() {
                         title="Copy word"
                       >
                         {copiedWordIndex === index ? (
-                          <Check className="h-3 w-3 text-green-500"/>
+                          <Check className="h-3 w-3 text-green-500" />
                         ) : (
-                          <Copy className="h-3 w-3 text-muted-foreground"/>
+                          <Copy className="h-3 w-3 text-muted-foreground" />
                         )}
                       </button>
                     </div>
@@ -258,12 +258,12 @@ export function SwapsPage() {
                   >
                     {copiedAllWords ? (
                       <>
-                        <Check className="h-4 w-4"/>
+                        <Check className="h-4 w-4" />
                         Copied All Words
                       </>
                     ) : (
                       <>
-                        <Copy className="h-4 w-4"/>
+                        <Copy className="h-4 w-4" />
                         Copy All Words
                       </>
                     )}
@@ -282,7 +282,7 @@ export function SwapsPage() {
               disabled={isDownloading}
               className="gap-1.5 text-xs sm:text-sm"
             >
-              <Download className="h-4 w-4"/>
+              <Download className="h-4 w-4" />
               <span className="hidden sm:inline">
                 {isDownloading ? "Downloading..." : "Download Seedphrase"}
               </span>
@@ -296,7 +296,7 @@ export function SwapsPage() {
               onClick={() => setImportDialogOpen(true)}
               className="gap-1.5 text-xs sm:text-sm"
             >
-              <Upload className="h-4 w-4"/>
+              <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">Import Seedphrase</span>
               <span className="sm:hidden">Restore</span>
             </Button>
@@ -307,7 +307,7 @@ export function SwapsPage() {
                 onClick={handleClearAllClick}
                 className="gap-1.5 text-xs sm:text-sm"
               >
-                <Trash2 className="h-4 w-4"/>
+                <Trash2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Clear History</span>
                 <span className="sm:hidden">Clear</span>
               </Button>
@@ -346,7 +346,7 @@ export function SwapsPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getTokenIcon(swap.source_token)}
-                        <ArrowRight className="h-4 w-4 text-muted-foreground"/>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
                         {getTokenIcon(swap.target_token)}
                       </div>
                     </TableCell>
@@ -362,9 +362,9 @@ export function SwapsPage() {
                           title="Copy full swap ID"
                         >
                           {copiedId === swap.id ? (
-                            <Check className="h-3 w-3 text-green-600"/>
+                            <Check className="h-3 w-3 text-green-600" />
                           ) : (
-                            <Copy className="h-3 w-3"/>
+                            <Copy className="h-3 w-3" />
                           )}
                         </button>
                       </div>
@@ -376,7 +376,7 @@ export function SwapsPage() {
                         className="inline-flex items-center justify-center rounded-md p-1 hover:bg-destructive/10 hover:text-destructive transition-colors"
                         title="Delete swap"
                       >
-                        <Trash2 className="h-4 w-4"/>
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </TableCell>
                   </TableRow>
@@ -389,7 +389,7 @@ export function SwapsPage() {
 
       {/* Version information */}
       <div className="pb-6">
-        <VersionFooter/>
+        <VersionFooter />
       </div>
 
       {/* Delete single swap dialog */}

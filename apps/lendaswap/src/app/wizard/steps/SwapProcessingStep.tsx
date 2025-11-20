@@ -3,7 +3,7 @@ import {
   getAmountsForSwap,
   initBrowserWallet,
 } from "@frontend/browser-wallet";
-import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
 import { Button } from "#/components/ui/button";
@@ -418,6 +418,16 @@ export function SwapProcessingStep({
           step4IsPolygon: true,
         };
 
+  // Determine which step is currently active (the first incomplete step)
+  const getCurrentStep = () => {
+    if (!config.step2TxId) return 2; // Server funding
+    if (!config.step3TxId) return 3; // Client redeeming
+    if (!config.step4TxId) return 4; // Server redeeming
+    return 5; // All complete
+  };
+
+  const currentStep = getCurrentStep();
+
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
       {/* Swap ID Header */}
@@ -481,8 +491,10 @@ export function SwapProcessingStep({
             >
               {config.step2TxId ? (
                 <Check className="h-4 w-4 text-primary-foreground" />
-              ) : (
+              ) : currentStep === 2 ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Circle className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
             <div className="flex-1 space-y-1">
@@ -531,8 +543,10 @@ export function SwapProcessingStep({
             >
               {config.step3TxId ? (
                 <Check className="h-4 w-4 text-primary-foreground" />
-              ) : (
+              ) : currentStep === 3 ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Circle className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
             <div className="flex-1 space-y-1">
@@ -635,8 +649,10 @@ export function SwapProcessingStep({
             >
               {config.step4TxId ? (
                 <Check className="h-4 w-4 text-primary-foreground" />
-              ) : (
+              ) : currentStep === 4 ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Circle className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
             <div className="flex-1 space-y-1">
