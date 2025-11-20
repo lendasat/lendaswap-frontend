@@ -38,7 +38,13 @@ import {
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
-import { api, getTokenSymbol, type TokenId } from "./api";
+import {
+  api,
+  GetSwapResponse,
+  getTokenNetworkName,
+  getTokenSymbol,
+  type TokenId,
+} from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
@@ -297,7 +303,9 @@ function HomePage() {
 
         // Validate Polygon address
         if (!isEvmAddressValid) {
-          setSwapError("Please provide a valid Polygon wallet address");
+          setSwapError(
+            `Please provide a valid ${getTokenNetworkName(swap.target_token)} wallet address`,
+          );
           return;
         }
 
@@ -657,7 +665,7 @@ function HomePage() {
             )}
             {!isConnected && (
               <p className="text-xs text-muted-foreground">
-                Connect your Polygon wallet to continue
+                Connect your wallet to continue
               </p>
             )}
           </div>

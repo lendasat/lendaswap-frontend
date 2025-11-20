@@ -161,19 +161,6 @@ export type GetSwapResponse =
   | ({ direction: "btc_to_polygon" } & BtcToPolygonSwapResponse)
   | ({ direction: "polygon_to_btc" } & PolygonToBtcSwapResponse);
 
-// Type guards for swap direction
-export function isBtcToPolygonSwap(
-  swap: GetSwapResponse,
-): swap is { direction: "btc_to_polygon" } & BtcToPolygonSwapResponse {
-  return swap.direction === "btc_to_polygon";
-}
-
-export function isPolygonToBtcSwap(
-  swap: GetSwapResponse,
-): swap is { direction: "polygon_to_btc" } & PolygonToBtcSwapResponse {
-  return swap.direction === "polygon_to_btc";
-}
-
 // Polygon → Arkade swap types
 export interface PolygonToArkadeSwapRequest {
   target_address: string;
