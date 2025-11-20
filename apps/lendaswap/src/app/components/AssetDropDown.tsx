@@ -17,7 +17,7 @@ import {
   getTokenIcon,
   getTokenNetworkName,
   getTokenSymbol,
-  TokenId,
+  type TokenId,
 } from "../api";
 import { getTokenNetworkIcon } from "../utils/tokenUtils";
 

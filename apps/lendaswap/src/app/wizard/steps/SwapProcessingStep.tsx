@@ -271,6 +271,7 @@ export function SwapProcessingStep({
     walletClient,
     publicClient,
     switchChainAsync,
+    chain,
   ]);
 
   // Auto-claim for evm-to-btc when server is funded

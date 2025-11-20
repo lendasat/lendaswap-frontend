@@ -7,8 +7,8 @@ import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
 import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import type { TokenId } from "../api";
-import { ReactElement } from "react";
-import { Chain, mainnet, polygon } from "viem/chains";
+import type { ReactElement } from "react";
+import { type Chain, mainnet, polygon } from "viem/chains";
 
 export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
   const isSourceUsd = isUsdToken(sourceToken);

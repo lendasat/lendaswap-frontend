@@ -40,7 +40,7 @@ import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
   api,
-  GetSwapResponse,
+  type GetSwapResponse,
   getTokenNetworkName,
   getTokenSymbol,
   type TokenId,
