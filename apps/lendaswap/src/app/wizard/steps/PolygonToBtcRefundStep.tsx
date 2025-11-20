@@ -1,7 +1,13 @@
 import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { getViemChain } from "../../utils/tokenUtils";
+import {
+  useAccount,
+  usePublicClient,
+  useWalletClient,
+  useSwitchChain,
+} from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
@@ -99,6 +105,7 @@ export function PolygonToBtcRefundStep({
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
+  const { switchChainAsync } = useSwitchChain();
 
   const [isRefunding, setIsRefunding] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
@@ -158,6 +165,13 @@ export function PolygonToBtcRefundStep({
       return;
     }
 
+    if (!switchChainAsync) {
+      setRefundError(
+        "Chain switching not available. Please refresh and try again.",
+      );
+      return;
+    }
+
     if (!isLocktimePassed) {
       setRefundError("The refund locktime has not been reached yet");
       return;
@@ -173,6 +187,17 @@ export function PolygonToBtcRefundStep({
     setRefundSuccess(null);
 
     try {
+      const chain = getViemChain(swapData.source_token);
+      if (!chain) {
+        throw new Error(
+          `Unsupported token for chain switching: ${swapData.source_token}`,
+        );
+      }
+
+      // Switch to the correct chain if needed
+      console.log("Switching to chain:", chain.name);
+      await switchChainAsync({ chainId: chain.id });
+
       const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
       const swapIdBytes32 = uuidToBytes32(swapId);
 
@@ -190,6 +215,7 @@ export function PolygonToBtcRefundStep({
         functionName: "refundSwap",
         args: [swapIdBytes32],
         account: address,
+        chain,
       });
 
       console.log("Refund transaction hash:", refundTxHash);

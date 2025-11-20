@@ -6,8 +6,8 @@ import {
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
-import { mainnet, polygon } from "viem/chains";
 import { Button } from "#/components/ui/button";
+import { getViemChain } from "../../utils/tokenUtils";
 import {
   api,
   type BtcToPolygonSwapResponse,
@@ -149,6 +149,8 @@ export function SwapProcessingStep({
       setClaimError(null);
 
       try {
+        const chain = getViemChain(swapData.target_token);
+
         // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
         if (retryCount > 0) {
           const backoffMs = 2 ** retryCount * 1000;
@@ -177,11 +179,15 @@ export function SwapProcessingStep({
             );
           }
 
-          // Switch to Ethereum mainnet if not already on it
-          if (walletClient.chain.id !== mainnet.id) {
-            console.log("Switching to Ethereum mainnet...");
-            await switchChainAsync({ chainId: mainnet.id });
+          if (!chain) {
+            throw new Error(
+              `Unsupported token for chain switching: ${swapData.target_token}`,
+            );
           }
+
+          // Switch to the correct chain if needed
+          console.log("Switching to chain:", chain.name);
+          await switchChainAsync({ chainId: chain.id });
 
           const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
           // Convert UUID to bytes32 by removing hyphens and padding with zeros
@@ -201,6 +207,7 @@ export function SwapProcessingStep({
             functionName: "claimSwap",
             args: [swapIdBytes32, secretBytes32],
             account: walletClient.account,
+            chain,
           });
 
           console.log("Claim transaction hash:", claimTxHash);

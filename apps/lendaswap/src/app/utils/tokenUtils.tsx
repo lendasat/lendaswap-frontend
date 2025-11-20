@@ -7,6 +7,7 @@ import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import type { TokenId } from "../api";
 import { ReactElement } from "react";
+import { Chain, mainnet, polygon } from "viem/chains";
 
 export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
   const isSourceUsd = isUsdToken(sourceToken);
@@ -124,6 +125,22 @@ export function getTokenNetworkName(tokenId: TokenId): string {
       return "Ethereum";
     default:
       return "Unknown";
+  }
+}
+
+/**
+ * Get viem chain
+ */
+export function getViemChain(tokenId: TokenId): Chain | undefined {
+  switch (tokenId) {
+    case "usdc_pol":
+    case "usdt0_pol":
+      return polygon;
+    case "usdc_eth":
+    case "usdt_eth":
+      return mainnet;
+    default:
+      return undefined;
   }
 }
 

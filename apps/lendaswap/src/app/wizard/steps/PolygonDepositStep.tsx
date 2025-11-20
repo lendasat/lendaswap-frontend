@@ -1,8 +1,14 @@
 import { Loader } from "lucide-react";
 import { useState } from "react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import {
+  useAccount,
+  usePublicClient,
+  useWalletClient,
+  useSwitchChain,
+} from "wagmi";
 import { Button } from "#/components/ui/button";
 import { getTokenSymbol, type PolygonToBtcSwapResponse } from "../../api";
+import { getViemChain } from "../../utils/tokenUtils";
 
 // ERC20 ABI - approve and allowance functions
 const ERC20_ABI = [
@@ -40,6 +46,7 @@ export function PolygonDepositStep({
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
+  const { switchChainAsync } = useSwitchChain();
 
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState("");
@@ -55,10 +62,26 @@ export function PolygonDepositStep({
       return;
     }
 
+    if (!switchChainAsync) {
+      setError("Chain switching not available. Please refresh and try again.");
+      return;
+    }
+
     setIsSigning(true);
     setError("");
 
     try {
+      const chain = getViemChain(swapData.source_token);
+      if (!chain) {
+        throw new Error(
+          `Unsupported token for chain switching: ${swapData.source_token}`,
+        );
+      }
+
+      // Switch to the correct chain if needed
+      console.log("Switching to chain:", chain.name);
+      await switchChainAsync({ chainId: chain.id });
+
       const htlcAddress = swapData.htlc_address_polygon as `0x${string}`;
       const tokenAddress = swapData.source_token_address as `0x${string}`;
 
@@ -100,6 +123,7 @@ export function PolygonDepositStep({
           functionName: "approve",
           args: [htlcAddress, maxUint256],
           account: address,
+          chain,
         });
 
         console.log("Approve transaction hash:", approveTxHash);
@@ -132,6 +156,7 @@ export function PolygonDepositStep({
         to: htlcAddress,
         data: createSwapCalldata,
         account: address,
+        chain,
       });
 
       console.log("CreateSwap transaction hash:", createSwapTxHash);
