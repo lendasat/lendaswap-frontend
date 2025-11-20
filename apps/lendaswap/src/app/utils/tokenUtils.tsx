@@ -1,7 +1,8 @@
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
 import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
-import { ReactComponent as UsdtIcon } from "../../assets/usdt0.svg";
+import { ReactComponent as Usdt0Icon } from "../../assets/usdt0.svg";
+import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
 import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
 import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
@@ -69,18 +70,23 @@ export function getTokenDisplayName(tokenId: TokenId): string {
 /**
  * Get the icon component for a token
  */
-export function getTokenIcon(tokenId: TokenId): ReactElement {
+export function getTokenIcon(
+  tokenId: TokenId,
+  width?: number,
+  height?: number,
+): ReactElement {
   switch (tokenId) {
     case "btc_lightning":
-      return <BitcoinIcon />;
+      return <BitcoinIcon width={width} height={height} />;
     case "btc_arkade":
-      return <BitcoinIcon />;
+      return <BitcoinIcon width={width} height={height} />;
     case "usdc_pol":
     case "usdc_eth":
-      return <UsdcIcon />;
+      return <UsdcIcon width={width} height={height} />;
     case "usdt0_pol":
+      return <Usdt0Icon width={width} height={height} />;
     case "usdt_eth":
-      return <UsdtIcon />;
+      return <UsdtIcon width={width} height={height} />;
     default:
       // Fallback for unknown tokens
       return <span>?</span>;
