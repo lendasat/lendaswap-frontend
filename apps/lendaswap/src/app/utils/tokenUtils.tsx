@@ -99,7 +99,7 @@ export function getTokenIcon(
 export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
   switch (tokenId) {
     case "btc_lightning":
-      return <BitcoinLightningIcon width={10} height={10} />;
+      return <BitcoinLightningIcon width={8} height={8} />;
     case "btc_arkade":
       return <ArkadeIcon width={8} height={8} />;
     case "usdc_pol":
