@@ -92,10 +92,10 @@ export interface SwapRequest {
 // Token utility functions moved to utils/tokenUtils.tsx
 // Re-export for backwards compatibility
 export {
-  getTokenSymbol,
   getTokenDisplayName,
   getTokenIcon,
   getTokenNetworkName,
+  getTokenSymbol,
 } from "./utils/tokenUtils";
 
 // Common fields shared across all swap directions

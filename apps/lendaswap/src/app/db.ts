@@ -45,6 +45,7 @@ export class LendaswapDatabase extends Dexie {
         await tx
           .table("swaps")
           .toCollection()
+          // biome-ignore lint/suspicious/noExplicitAny: good enough
           .modify((swap: any) => {
             // Migrate direction enum
             if (swap.direction === "btc_to_polygon") {

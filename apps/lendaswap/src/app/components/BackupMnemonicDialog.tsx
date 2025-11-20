@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { getMnemonic } from "@frontend/browser-wallet";
+import { AlertTriangle, Check, Copy } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -8,9 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
-import { Alert, AlertDescription } from "#/components/ui/alert";
-import { getMnemonic } from "@frontend/browser-wallet";
-import { AlertTriangle, Check, Copy } from "lucide-react";
 
 interface BackupMnemonicDialogProps {
   open: boolean;
@@ -26,13 +26,7 @@ export function BackupMnemonicDialog({
   const [copiedAll, setCopiedAll] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      loadMnemonic();
-    }
-  }, [open]);
-
-  const loadMnemonic = async () => {
+  const loadMnemonic = useCallback(async () => {
     setLoading(true);
     try {
       const phrase = await getMnemonic();
@@ -43,7 +37,13 @@ export function BackupMnemonicDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      loadMnemonic();
+    }
+  }, [open, loadMnemonic]);
 
   const words = mnemonic ? mnemonic.split(" ") : [];
 
@@ -105,6 +105,7 @@ export function BackupMnemonicDialog({
               <div className="grid grid-cols-3 gap-3">
                 {words.map((word, index) => (
                   <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: "using index here is ok, this list never changes"
                     key={index}
                     className="relative flex items-center gap-2 rounded-md border bg-muted/50 p-3"
                   >
@@ -113,6 +114,7 @@ export function BackupMnemonicDialog({
                     </span>
                     <span className="flex-1 font-mono text-sm">{word}</span>
                     <button
+                      type={"button"}
                       onClick={() => copyWord(word, index)}
                       className="p-1 hover:bg-background rounded transition-colors"
                       title="Copy word"

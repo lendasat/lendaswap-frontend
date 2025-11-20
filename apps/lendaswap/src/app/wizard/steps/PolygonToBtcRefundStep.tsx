@@ -1,20 +1,20 @@
 import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
-import { getTokenIcon, getViemChain } from "../../utils/tokenUtils";
 import {
   useAccount,
   usePublicClient,
-  useWalletClient,
   useSwitchChain,
+  useWalletClient,
 } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
+  type EvmToBtcSwapResponse,
   getTokenDisplayName,
   getTokenSymbol,
-  type EvmToBtcSwapResponse,
 } from "../../api";
+import { getTokenIcon, getViemChain } from "../../utils/tokenUtils";
 
 // Helper function to convert UUID to bytes32
 // Example: "16446b7d-f430-4d95-b936-761e725fe637" -> "0x16446B7DF4304D95B936761E725FE63700000000000000000000000000000000"

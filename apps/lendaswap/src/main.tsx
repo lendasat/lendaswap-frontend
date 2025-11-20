@@ -2,16 +2,16 @@ import { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import "@radix-ui/themes/styles.css";
+import {
+  generateOrGetMnemonic,
+  initBrowserWallet,
+} from "@frontend/browser-wallet";
 import { Theme } from "@radix-ui/themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { PostHogProvider } from "posthog-js/react";
 import { mainnet, polygon } from "viem/chains";
 import { createConfig, WagmiProvider } from "wagmi";
-import {
-  initBrowserWallet,
-  generateOrGetMnemonic,
-} from "@frontend/browser-wallet";
 import App from "./app/App";
 import { PriceFeedProvider } from "./app/PriceFeedContext";
 import { ThemeProvider } from "./app/utils/theme-provider";

@@ -5,9 +5,9 @@ import { useAsyncRetry } from "react-use";
 import {
   api,
   type BtcToEvmSwapResponse,
+  type EvmToBtcSwapResponse,
   type GetSwapResponse,
   getTokenSymbol,
-  type EvmToBtcSwapResponse,
   type SwapStatus,
   type TokenId,
 } from "../api";

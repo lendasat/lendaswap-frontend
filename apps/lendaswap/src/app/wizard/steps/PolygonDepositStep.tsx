@@ -3,14 +3,14 @@ import { useState } from "react";
 import {
   useAccount,
   usePublicClient,
-  useWalletClient,
   useSwitchChain,
+  useWalletClient,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
 import {
+  type EvmToBtcSwapResponse,
   getTokenNetworkName,
   getTokenSymbol,
-  type EvmToBtcSwapResponse,
 } from "../../api";
 import { getViemChain } from "../../utils/tokenUtils";
 

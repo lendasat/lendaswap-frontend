@@ -5,15 +5,19 @@ import {
 } from "@frontend/browser-wallet";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
+import { usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { getBlockexplorerTxLink, getViemChain } from "../../utils/tokenUtils";
 import {
   api,
   type BtcToEvmSwapResponse,
   type GetSwapResponse,
 } from "../../api";
-import { isEthereumToken, isPolygonToken } from "../../utils/tokenUtils";
+import {
+  getBlockexplorerTxLink,
+  getViemChain,
+  isEthereumToken,
+  isPolygonToken,
+} from "../../utils/tokenUtils";
 
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";

@@ -9,12 +9,13 @@ import {
   useParams,
 } from "react-router";
 import "../assets/styles.css";
+import { deriveSwapParams } from "@frontend/browser-wallet";
 import { ConnectKitButton } from "connectkit";
 import {
   Check,
   Download,
-  Key,
   Github,
+  Key,
   Loader,
   Menu,
   PiggyBank,
@@ -25,6 +26,7 @@ import {
   Wrench,
   Zap,
 } from "lucide-react";
+import { useAsync } from "react-use";
 import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
@@ -42,7 +44,6 @@ import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
   api,
   type GetSwapResponse,
-  getTokenNetworkName,
   getTokenSymbol,
   type QuoteResponse,
   type TokenId,
@@ -57,20 +58,18 @@ import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { UsdInput } from "./components/UsdInput";
 import { addSwap } from "./db";
 import { usePriceFeed } from "./PriceFeedContext";
-import { SwapsPage, RefundPage } from "./pages";
-import { SwapWizardPage } from "./wizard";
-import { deriveSwapParams } from "@frontend/browser-wallet";
+import { RefundPage, SwapsPage } from "./pages";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
-import { useWalletBridge } from "./WalletBridgeContext";
-import { useAsync } from "react-use";
 import {
   isEvmToken,
   isUsdToken,
   isValidTokenId,
   networkUrl,
 } from "./utils/tokenUtils";
+import { useWalletBridge } from "./WalletBridgeContext";
+import { SwapWizardPage } from "./wizard";
 
 // Home page component (enter-amount step)
 function HomePage() {
@@ -603,7 +602,9 @@ function HomePage() {
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm text-muted-foreground">You receive</label>
+        <label htmlFor="usdAmount" className="text-sm text-muted-foreground">
+          You receive
+        </label>
         <div className="relative">
           {targetAsset === "usdc_pol" ||
           targetAsset === "usdt0_pol" ||
@@ -658,12 +659,16 @@ function HomePage() {
         {/* EVM Wallet Address - only shown when source is EVM stablecoin */}
         {isEvmToken(sourceAsset) && (
           <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">
+            <label
+              htmlFor={"connect-address"}
+              className="text-sm text-muted-foreground"
+            >
               Connect a Web3 wallet with gas tokens to pay for gas fees
             </label>
             {isConnected && userEvmAddress ? (
               <div className="flex items-center gap-2">
                 <input
+                  id={"connect-address"}
                   type="text"
                   value={userEvmAddress}
                   readOnly

@@ -1,14 +1,14 @@
-import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
-import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
-import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
-import { ReactComponent as Usdt0Icon } from "../../assets/usdt0.svg";
-import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
-import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
-import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
-import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
-import type { TokenId } from "../api";
 import type { ReactElement } from "react";
 import { type Chain, mainnet, polygon } from "viem/chains";
+import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
+import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
+import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
+import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
+import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
+import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
+import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
+import { ReactComponent as Usdt0Icon } from "../../assets/usdt0.svg";
+import type { TokenId } from "../api";
 
 export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
   const isSourceUsd = isUsdToken(sourceToken);
