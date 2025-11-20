@@ -132,28 +132,15 @@ export function SuccessStep({
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent animate-shimmer" />
 
               <div className="relative space-y-4 text-center">
-                <div className="inline-flex items-center gap-2 rounded-full bg-green-500/20 px-3 py-1 text-xs font-bold text-green-600 dark:text-green-400">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                  </span>
-                  LIFETIME OFFER
-                </div>
-                <h4 className="text-xl font-bold text-green-700 dark:text-green-300">
-                  Swap with 0% Fees Forever!
-                </h4>
                 <p className="text-sm text-green-600 dark:text-green-400">
-                  Share your swap on 𝕏 to unlock permanent fee-free swaps
-                </p>
-                <p className="text-xs text-green-600/80 dark:text-green-400/80">
-                  (we'll send you a DM with your individual browser code)
+                  Share your swap on 𝕏
                 </p>
                 <Button
                   onClick={handleShareOnTwitter}
                   className="w-full gap-2 bg-black hover:bg-black/90 text-white dark:bg-white dark:hover:bg-white/90 dark:text-black"
                 >
                   <Twitter className="h-4 w-4" />
-                  Share on 𝕏 & Unlock Lifetime 0% Fees
+                  Share on 𝕏
                 </Button>
               </div>
             </div>
