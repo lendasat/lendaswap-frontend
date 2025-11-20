@@ -103,8 +103,11 @@ export function PolygonToBtcRefundStep({
 }: PolygonToBtcRefundStepProps) {
   const posthog = usePostHog();
   const { address } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+
+  const chain = getViemChain(swapData.source_token);
+
+  const { data: walletClient } = useWalletClient({ chainId: chain?.id });
+  const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
 
   const [isRefunding, setIsRefunding] = useState(false);
@@ -187,7 +190,6 @@ export function PolygonToBtcRefundStep({
     setRefundSuccess(null);
 
     try {
-      const chain = getViemChain(swapData.source_token);
       if (!chain) {
         throw new Error(
           `Unsupported token for chain switching: ${swapData.source_token}`,

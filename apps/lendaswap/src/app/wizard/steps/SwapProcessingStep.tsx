@@ -71,9 +71,11 @@ export function SwapProcessingStep({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 10;
 
+  const chain = getViemChain(swapData.target_token);
+
   // Wallet client hooks for Ethereum claiming
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient({ chainId: chain?.id });
+  const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
 
   // Load secret from localStorage
@@ -149,8 +151,6 @@ export function SwapProcessingStep({
       setClaimError(null);
 
       try {
-        const chain = getViemChain(swapData.target_token);
-
         // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
         if (retryCount > 0) {
           const backoffMs = 2 ** retryCount * 1000;
