@@ -35,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import { Skeleton } from "#/components/ui/skeleton";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
@@ -43,6 +44,7 @@ import {
   type GetSwapResponse,
   getTokenNetworkName,
   getTokenSymbol,
+  type QuoteResponse,
   type TokenId,
 } from "./api";
 import { AddressInput } from "./components/AddressInput";
@@ -108,6 +110,8 @@ function HomePage() {
   const [swapError, setSwapError] = useState<string>("");
   const [userEvmAddress, setUserEvmAddress] = useState<string>("");
   const [isEvmAddressValid, setIsEvmAddressValid] = useState(false);
+  const [quote, setQuote] = useState<QuoteResponse | null>(null);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const { arkAddress, isEmbedded } = useWalletBridge();
 
   // Auto-populate Polygon address from connected wallet
@@ -181,6 +185,36 @@ function HomePage() {
       setUsdAmount(calculatedUsdAmount);
     }
   }, [exchangeRate, isLoadingPrice, lastFieldEdited, bitcoinAmount, usdAmount]);
+
+  // Fetch quote when bitcoin amount changes
+  useEffect(() => {
+    const fetchQuote = async () => {
+      const btcAmount = Number.parseFloat(bitcoinAmount);
+      if (!btcAmount || Number.isNaN(btcAmount) || btcAmount <= 0) {
+        setQuote(null);
+        return;
+      }
+
+      setIsLoadingQuote(true);
+      try {
+        // Convert BTC to satoshis
+        const sats = Math.round(btcAmount * 100_000_000);
+        const quoteResponse = await api.getQuote({
+          from: sourceAsset,
+          to: targetAsset,
+          base_amount: sats,
+        });
+        setQuote(quoteResponse);
+      } catch (error) {
+        console.error("Failed to fetch quote:", error);
+        setQuote(null);
+      } finally {
+        setIsLoadingQuote(false);
+      }
+    };
+
+    fetchQuote();
+  }, [bitcoinAmount, sourceAsset, targetAsset]);
 
   const handleContinueToAddress = async () => {
     if (!targetAddress || !usdAmount || !addressValid) {
@@ -458,6 +492,30 @@ function HomePage() {
 
   return (
     <div className="flex flex-col gap-2 px-4 md:px-4">
+      {/* Exchange Rate - centered at top */}
+      {displayedExchangeRate && !isLoadingPrice && (
+        <div className="text-sm text-muted-foreground text-center">
+          1{" "}
+          {sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
+            ? "BTC"
+            : getTokenSymbol(sourceAsset)}{" "}
+          ={" "}
+          {displayedExchangeRate.toLocaleString("en-US", {
+            minimumFractionDigits:
+              sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
+                ? 2
+                : 8,
+            maximumFractionDigits:
+              sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
+                ? 2
+                : 8,
+          })}{" "}
+          {targetAsset === "btc_lightning" || targetAsset === "btc_arkade"
+            ? "BTC"
+            : getTokenSymbol(targetAsset)}
+        </div>
+      )}
+
       <div className="space-y-2">
         <div className="text-sm text-muted-foreground">You send</div>
         <div className="relative">
@@ -587,28 +645,6 @@ function HomePage() {
             />
           </div>
         </div>
-        {displayedExchangeRate && !isLoadingPrice && (
-          <div className="text-sm text-muted-foreground text-center mt-2">
-            1{" "}
-            {sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
-              ? "BTC"
-              : getTokenSymbol(sourceAsset)}{" "}
-            ={" "}
-            {displayedExchangeRate.toLocaleString("en-US", {
-              minimumFractionDigits:
-                sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
-                  ? 2
-                  : 8,
-              maximumFractionDigits:
-                sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
-                  ? 2
-                  : 8,
-            })}{" "}
-            {targetAsset === "btc_lightning" || targetAsset === "btc_arkade"
-              ? "BTC"
-              : getTokenSymbol(targetAsset)}
-          </div>
-        )}
         <AddressInput
           value={targetAddress}
           onChange={setTargetAddress}
@@ -669,6 +705,28 @@ function HomePage() {
             )}
           </div>
         )}
+
+        {/* Fees - below inputs, above Continue button */}
+        {isLoadingQuote ? (
+          <div className="text-xs text-muted-foreground/70 pt-2 flex flex-wrap justify-between gap-y-0.5">
+            <div className="flex items-center gap-1">
+              Network Fee: <Skeleton className="h-3 w-24" />
+            </div>
+            <div className="flex items-center gap-1">
+              Protocol Fee: <Skeleton className="h-3 w-32" />
+            </div>
+          </div>
+        ) : quote ? (
+          <div className="text-xs text-muted-foreground/70 pt-2 flex flex-wrap justify-between gap-y-0.5">
+            <div>
+              Network Fee: {(quote.network_fee / 100_000_000).toFixed(8)} BTC
+            </div>
+            <div>
+              Protocol Fee: {(quote.protocol_fee / 100_000_000).toFixed(8)} BTC
+              ({(quote.protocol_fee_rate * 100).toFixed(2)}%)
+            </div>
+          </div>
+        ) : null}
 
         <div className="pt-2">
           <Button

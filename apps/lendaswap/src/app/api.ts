@@ -198,6 +198,21 @@ export interface Version {
   commit_hash: string;
 }
 
+export interface QuoteRequest {
+  from: TokenId;
+  to: TokenId;
+  base_amount: number; // Amount in satoshis
+}
+
+export interface QuoteResponse {
+  exchange_rate: string; // Exchange rate: how much fiat you get/pay per BTC
+  network_fee: number; // Network fee estimate (in satoshis)
+  protocol_fee: number; // Protocol fee (in satoshis)
+  protocol_fee_rate: number; // Protocol fee rate (as decimal, e.g., 0.0025 = 0.25%)
+  min_amount: number; // Minimum swap amount in satoshis
+  max_amount: number; // Maximum swap amount in satoshis
+}
+
 export const api = {
   async getTokens(): Promise<TokenInfo[]> {
     const response = await fetch(`${API_BASE_URL}/tokens`);
@@ -212,6 +227,24 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/asset-pairs`);
     if (!response.ok) {
       throw new Error(`Failed to fetch asset pairs: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  async getQuote(request: QuoteRequest): Promise<QuoteResponse> {
+    const params = new URLSearchParams({
+      from: request.from,
+      to: request.to,
+      base_amount: request.base_amount.toString(),
+    });
+    const response = await fetch(`${API_BASE_URL}/quote?${params}`);
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(
+        error.error || `Failed to fetch quote: ${response.statusText}`,
+      );
     }
     return response.json();
   },
