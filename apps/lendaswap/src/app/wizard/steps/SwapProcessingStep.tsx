@@ -7,7 +7,7 @@ import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { getViemChain } from "../../utils/tokenUtils";
+import { getBlockexplorerTxLink, getViemChain } from "../../utils/tokenUtils";
 import {
   api,
   type BtcToPolygonSwapResponse,
@@ -469,7 +469,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step1IsPolygon && (
                     <a
-                      href={`https://polygonscan.com/tx/${config.step1TxId}`}
+                      href={`${getBlockexplorerTxLink(swapData.source_token, config.step1TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"
@@ -521,7 +521,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step2IsPolygon && (
                     <a
-                      href={`https://polygonscan.com/tx/${config.step2TxId}`}
+                      href={`${getBlockexplorerTxLink(swapData.target_token, config.step2TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"
@@ -569,7 +569,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step3IsPolygon && (
                     <a
-                      href={`https://polygonscan.com/tx/${config.step3TxId}`}
+                      href={`${getBlockexplorerTxLink(swapData.target_token, config.step3TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"
@@ -675,7 +675,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step4IsPolygon && (
                     <a
-                      href={`https://polygonscan.com/tx/${config.step4TxId}`}
+                      href={`${getBlockexplorerTxLink(swapData.source_token, config.step4TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"

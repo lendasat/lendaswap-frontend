@@ -5,6 +5,10 @@ import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
 import type { GetSwapResponse } from "../../api";
 import { getTokenSymbol } from "../../api";
+import {
+  getBlockexplorerAddressLink,
+  getBlockexplorerTxLink,
+} from "../../utils/tokenUtils";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
@@ -174,7 +178,7 @@ export function SuccessStep({
               <div className="flex items-center gap-2">
                 {config.receiveAddressIsPolygon ? (
                   <a
-                    href={`https://polygonscan.com/address/${config.receiveAddress}`}
+                    href={`${getBlockexplorerAddressLink(swapData.target_token, config?.receiveAddress)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 break-all font-mono text-xs hover:underline"
@@ -209,7 +213,7 @@ export function SuccessStep({
                       className="h-8 w-8"
                     >
                       <a
-                        href={`https://polygonscan.com/address/${config.receiveAddress}`}
+                        href={`${getBlockexplorerAddressLink(swapData.target_token, config?.receiveAddress)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -226,7 +230,7 @@ export function SuccessStep({
                 <div className="flex items-center gap-2">
                   {config.swapTxIdIsPolygon ? (
                     <a
-                      href={`https://polygonscan.com/tx/${config.swapTxId}`}
+                      href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 break-all font-mono text-xs hover:underline"
@@ -259,7 +263,7 @@ export function SuccessStep({
                         className="h-8 w-8"
                       >
                         <a
-                          href={`https://polygonscan.com/tx/${config.swapTxId}`}
+                          href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

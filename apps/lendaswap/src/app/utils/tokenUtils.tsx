@@ -249,3 +249,43 @@ export function isBtcToken(tokenId: TokenId): boolean {
       return true;
   }
 }
+
+export function getBlockexplorerTxLink(
+  tokenId: TokenId,
+  txid?: string | null,
+): string {
+  if (!txid) {
+    return "";
+  }
+  switch (tokenId) {
+    case "usdc_pol":
+    case "usdt0_pol":
+      return `https://polygonscan.com/tx/${txid}`;
+    case "usdc_eth":
+    case "usdt_eth":
+      return `https://etherscan.com/tx/${txid}`;
+    case "btc_arkade":
+    case "btc_lightning":
+      return txid;
+  }
+}
+
+export function getBlockexplorerAddressLink(
+  tokenId: TokenId,
+  address?: string | null,
+): string {
+  if (!address) {
+    return "";
+  }
+  switch (tokenId) {
+    case "usdc_pol":
+    case "usdt0_pol":
+      return `https://polygonscan.com/address/${address}`;
+    case "usdc_eth":
+    case "usdt_eth":
+      return `https://etherscan.com/address/${address}`;
+    case "btc_arkade":
+    case "btc_lightning":
+      return address;
+  }
+}
