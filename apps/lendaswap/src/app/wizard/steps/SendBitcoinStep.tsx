@@ -339,6 +339,7 @@ export function SendBitcoinStep({
             </Button>
           )}
 
+
           {/* Back/Cancel button - Always last */}
           <Button
             variant="outline"
