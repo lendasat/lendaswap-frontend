@@ -42,6 +42,14 @@ import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
+  isLightningAddress,
+  resolveLightningAddress,
+} from "../utils/lightningAddress";
+import {
+  getSpeedLightningAddress,
+  isValidSpeedWalletContext,
+} from "../utils/speedWallet";
+import {
   api,
   type GetSwapResponse,
   getTokenSymbol,
@@ -135,6 +143,21 @@ function HomePage() {
       setTargetAddress(arkAddress);
     }
   }, [isEmbedded, arkAddress, targetAsset, targetAddress]);
+
+  // Auto-populate Lightning address from Speed Wallet if available
+  useEffect(() => {
+    const isSpeedWallet = isValidSpeedWalletContext();
+    const speedLnAddress = getSpeedLightningAddress();
+
+    if (
+      isSpeedWallet &&
+      speedLnAddress &&
+      targetAsset === "btc_lightning" &&
+      !targetAddress
+    ) {
+      setTargetAddress(speedLnAddress);
+    }
+  }, [targetAsset, targetAddress]);
 
   // Get price feed from context
   const { getExchangeRate, isLoadingPrice } = usePriceFeed();
@@ -411,10 +434,27 @@ function HomePage() {
           const { keyIndex: key_index, userId: user_id } =
             await deriveSwapParams();
 
+          // Resolve Lightning address to BOLT11 invoice if needed
+          let bolt11Invoice = targetAddress;
+          if (isLightningAddress(targetAddress)) {
+            try {
+              const amountSats = parseFloat(bitcoinAmount) * 100_000_000; // Convert BTC to sats
+              bolt11Invoice = await resolveLightningAddress(
+                targetAddress,
+                amountSats,
+              );
+            } catch (error) {
+              setSwapError(
+                `Failed to resolve Lightning address: ${error instanceof Error ? error.message : "Unknown error"}`,
+              );
+              return;
+            }
+          }
+
           // Call EVM → Lightning API
           const swap = await api.createEvmToLightningSwap(
             {
-              bolt11_invoice: targetAddress,
+              bolt11_invoice: bolt11Invoice,
               source_token: sourceAsset,
               user_address: userEvmAddress,
               user_id,

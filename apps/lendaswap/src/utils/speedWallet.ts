@@ -48,6 +48,25 @@ export const getSpeedAccountId = (): string | null => {
 };
 
 /**
+ * Gets the user's Lightning address from Speed Wallet URL parameters.
+ * Speed passes the user's LN address when launching Mini Apps.
+ *
+ * @returns Lightning address (e.g., "user@speed.app") or null if not available
+ */
+export const getSpeedLightningAddress = (): string | null => {
+  if (typeof window === "undefined") return null;
+
+  const params = new URLSearchParams(window.location.search);
+  // Try multiple possible parameter names
+  return (
+    params.get("ln_address") ||
+    params.get("lightning_address") ||
+    params.get("lnAddress") ||
+    null
+  );
+};
+
+/**
  * Checks if we have a valid Speed Wallet context (inside Speed + has account_id)
  */
 export const isValidSpeedWalletContext = (): boolean => {

@@ -6,6 +6,11 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
+import {
+  isBolt11Invoice,
+  isLightningAddress,
+} from "../../utils/lightningAddress";
+import { isValidSpeedWalletContext } from "../../utils/speedWallet";
 import type { TokenId } from "../api";
 import { isEvmToken } from "../utils/tokenUtils";
 
@@ -31,6 +36,7 @@ export function AddressInput({
   const isEvmTarget = isEvmToken(targetToken);
   const { address, isConnected } = useAccount();
   const [validationError, setValidationError] = useState<string>("");
+  const isSpeedWallet = isValidSpeedWalletContext();
 
   useEffect(() => {
     if (!value) {
@@ -48,27 +54,40 @@ export function AddressInput({
         setValidationError("");
       }
     } else if (targetToken === "btc_lightning") {
-      try {
+      // Accept both Lightning addresses and BOLT11 invoices
+      if (isLightningAddress(value)) {
+        // Valid Lightning address (will be resolved to invoice later)
         setValidationError("");
-        const bolt11Invoice = decode(value);
-        let hasAmount = false;
-        for (const sectionsKey in bolt11Invoice.sections) {
-          const section = bolt11Invoice.sections[sectionsKey];
-          if (section.name === "amount" && section.value) {
-            const amount = Number.parseInt(section.value, 10);
-            if (amount > 0) {
-              setAddressIsValid(true);
-              hasAmount = true;
-              setBitcoinAmount(amount / 1_000 / 100_000_000);
+        setAddressIsValid(true);
+      } else if (isBolt11Invoice(value)) {
+        // Valid BOLT11 invoice - decode and validate amount
+        try {
+          setValidationError("");
+          const bolt11Invoice = decode(value);
+          let hasAmount = false;
+          for (const sectionsKey in bolt11Invoice.sections) {
+            const section = bolt11Invoice.sections[sectionsKey];
+            if (section.name === "amount" && section.value) {
+              const amount = Number.parseInt(section.value, 10);
+              if (amount > 0) {
+                setAddressIsValid(true);
+                hasAmount = true;
+                setBitcoinAmount(amount / 1_000 / 100_000_000);
+              }
             }
           }
+          if (!hasAmount) {
+            setAddressIsValid(true);
+            setValidationError("Invoices without amount are not supported.");
+          }
+        } catch (_e) {
+          setValidationError("Invalid Lightning invoice");
+          setAddressIsValid(false);
         }
-        if (!hasAmount) {
-          setAddressIsValid(true);
-          setValidationError("Invoices without amount are not supported.");
-        }
-      } catch (_e) {
-        setValidationError("Invalid Lightning invoice");
+      } else {
+        setValidationError(
+          "Invalid Lightning address or BOLT11 invoice. Expected: user@domain.com or lnbc...",
+        );
         setAddressIsValid(false);
       }
     } else if (targetToken === "btc_arkade") {
@@ -88,7 +107,7 @@ export function AddressInput({
   const getPlaceholder = () => {
     switch (targetToken) {
       case "btc_lightning":
-        return "Provide a BOLT11 invoice with amount";
+        return "Lightning address (user@domain.com) or BOLT11 invoice";
       case "btc_arkade":
         return "Provide an Arkade address";
       case "usdc_pol":
@@ -120,8 +139,8 @@ export function AddressInput({
           autoComplete="off"
         />
 
-        {/* Get Address Button - Only for Polygon addresses */}
-        {isEvmTarget && (
+        {/* Get Address Button - Only for Polygon addresses, hidden in Speed Wallet */}
+        {isEvmTarget && !isSpeedWallet && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2">
             {isConnected && !value ? (
               <Button
