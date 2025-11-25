@@ -1,3 +1,4 @@
+import { useModal } from "connectkit";
 import { Loader } from "lucide-react";
 import { useState } from "react";
 import {
@@ -53,6 +54,7 @@ export function PolygonDepositStep({
   const { data: walletClient } = useWalletClient({ chainId: chain?.id });
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
+  const { setOpen } = useModal();
 
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState("");
@@ -63,8 +65,13 @@ export function PolygonDepositStep({
     : 0;
 
   const handleSign = async () => {
-    if (!walletClient || !address || !publicClient) {
-      setError("Please connect your wallet");
+    if (!address) {
+      setOpen(true);
+      return;
+    }
+
+    if (!walletClient || !publicClient) {
+      setError("Wallet client not ready. Please try again.");
       return;
     }
 
@@ -160,7 +167,6 @@ export function PolygonDepositStep({
       const createSwapTxHash = await walletClient.sendTransaction({
         to: htlcAddress,
         data: createSwapCalldata,
-        account: address,
         chain,
       });
 
@@ -260,7 +266,7 @@ export function PolygonDepositStep({
           {/* Fund Swap button - always first */}
           <Button
             onClick={handleSign}
-            disabled={isSigning || !address}
+            disabled={isSigning}
             className="h-12 w-full text-base font-semibold"
           >
             {isSigning ? (
@@ -268,6 +274,8 @@ export function PolygonDepositStep({
                 <Loader className="animate-spin h-4 w-4 mr-2" />
                 Processing Transactions...
               </>
+            ) : !address ? (
+              "Connect Wallet"
             ) : (
               "Fund Swap"
             )}

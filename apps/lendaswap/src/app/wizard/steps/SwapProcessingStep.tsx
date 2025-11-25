@@ -3,9 +3,15 @@ import {
   getAmountsForSwap,
   initBrowserWallet,
 } from "@frontend/browser-wallet";
+import { useModal } from "connectkit";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
+import {
+  useAccount,
+  usePublicClient,
+  useSwitchChain,
+  useWalletClient,
+} from "wagmi";
 import { Button } from "#/components/ui/button";
 import {
   api,
@@ -78,9 +84,11 @@ export function SwapProcessingStep({
   const chain = getViemChain(swapData.target_token);
 
   // Wallet client hooks for Ethereum claiming
+  const { address } = useAccount();
   const { data: walletClient } = useWalletClient({ chainId: chain?.id });
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
+  const { setOpen } = useModal();
 
   // Load secret from localStorage
   useEffect(() => {
@@ -139,6 +147,11 @@ export function SwapProcessingStep({
       if (swapData.status !== "serverfunded") return;
       if (!secret) return;
 
+      // For Ethereum tokens, don't auto-claim if wallet not connected
+      if (isEthereumToken(swapData.target_token) && !address) {
+        return;
+      }
+
       const claimKey = `swap_${swapData.id}_claim_attempted`;
       const attemptTimestamp = localStorage.getItem(claimKey);
 
@@ -177,10 +190,14 @@ export function SwapProcessingStep({
           await api.claimGelato(swapData.id, cleanSecret);
         } else if (isEthereumToken(swapData.target_token)) {
           // Ethereum: claim using user's wallet
+          if (!address) {
+            setOpen(true);
+            hasClaimedRef.current = false;
+            return;
+          }
+
           if (!walletClient || !publicClient || !switchChainAsync) {
-            throw new Error(
-              "Wallet not connected. Please connect your Ethereum wallet to claim.",
-            );
+            throw new Error("Wallet client not ready. Please try again.");
           }
 
           if (!chain) {
@@ -272,10 +289,12 @@ export function SwapProcessingStep({
     isClaiming,
     retryCount,
     sleep,
+    address,
     walletClient,
     publicClient,
     switchChainAsync,
     chain,
+    setOpen,
   ]);
 
   // Auto-claim for evm-to-btc when server is funded
@@ -616,7 +635,26 @@ export function SwapProcessingStep({
                   )}
                   {swapDirection === "btc-to-evm" &&
                     !isClaiming &&
-                    !claimError && (
+                    !claimError &&
+                    isEthereumToken(swapData.target_token) &&
+                    !address && (
+                      <div className="space-y-2">
+                        <p className="text-muted-foreground text-xs">
+                          Connect your Ethereum wallet to claim your tokens.
+                        </p>
+                        <Button
+                          onClick={() => setOpen(true)}
+                          size="sm"
+                          className="w-full"
+                        >
+                          Connect Wallet
+                        </Button>
+                      </div>
+                    )}
+                  {swapDirection === "btc-to-evm" &&
+                    !isClaiming &&
+                    !claimError &&
+                    address && (
                       <p className="text-muted-foreground text-xs">
                         {isEthereumToken(swapData.target_token)
                           ? "You will need ETH in your wallet to pay for gas fees to claim your tokens."
