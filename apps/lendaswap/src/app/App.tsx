@@ -696,8 +696,8 @@ function HomePage() {
           disabled={isEmbedded && !!arkAddress && targetAsset === "btc_arkade"}
         />
 
-        {/* EVM Wallet Address - only shown when source is EVM stablecoin */}
-        {isEvmToken(sourceAsset) && (
+        {/* EVM Wallet Address - only shown when source is EVM stablecoin (hidden in Speed Wallet) */}
+        {isEvmToken(sourceAsset) && !isValidSpeedWalletContext() && (
           <div className="space-y-2">
             <label
               htmlFor={"connect-address"}
@@ -809,6 +809,7 @@ function HomePage() {
 // Get step title and description based on current route
 function useStepInfo() {
   const location = useLocation();
+  const isSpeedWallet = isValidSpeedWalletContext();
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
   const isHomePage =
@@ -816,7 +817,9 @@ function useStepInfo() {
 
   if (isHomePage) {
     return {
-      title: "Swap Bitcoin to USDC/USDT",
+      title: isSpeedWallet
+        ? "⚡ Swap Bitcoin to USDC/USDT"
+        : "Swap Bitcoin to USDC/USDT",
       description:
         "Fast, secure, and transparent swapping with the lowest rates on the market",
     };
