@@ -26,7 +26,7 @@ export class LendaswapDatabase extends Dexie {
   swaps!: EntityTable<StoredSwap, "id">;
 
   constructor() {
-    super("lendaswap-v0");
+    super("lendaswap-v1-do-not-use");
 
     // Define the database schema
     // Version 1: Initial schema with swaps table

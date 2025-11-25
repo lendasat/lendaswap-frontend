@@ -28,9 +28,9 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
-import { getTokenIcon, getTokenSymbol, type SwapStatus } from "../api";
+import {api, getTokenIcon, getTokenSymbol, type SwapStatus} from "../api";
 import { VersionFooter } from "../components/VersionFooter";
-import { clearAllSwaps, deleteSwap, getAllSwaps, type StoredSwap } from "../db";
+import type { ExtendedSwapStorageData } from "@lendaswap/sdk";
 
 // Get status display info
 function getStatusInfo(status: SwapStatus): {
@@ -92,7 +92,7 @@ function getStatusInfo(status: SwapStatus): {
 }
 
 export function SwapsPage() {
-  const [swaps, setSwaps] = useState<StoredSwap[]>([]);
+  const [swaps, setSwaps] = useState<ExtendedSwapStorageData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -123,8 +123,8 @@ export function SwapsPage() {
     if (!swapToDelete) return;
 
     try {
-      await deleteSwap(swapToDelete);
-      setSwaps((prevSwaps) => prevSwaps.filter((s) => s.id !== swapToDelete));
+      await api.deleteSwap(swapToDelete);
+      setSwaps((prevSwaps) => prevSwaps.filter((s) => s.response.id !== swapToDelete));
       setDeleteDialogOpen(false);
       setSwapToDelete(null);
     } catch (error) {
@@ -138,7 +138,7 @@ export function SwapsPage() {
 
   const handleClearAllConfirm = async () => {
     try {
-      await clearAllSwaps();
+      await api.clearSwapStorage();
       setSwaps([]);
       setClearAllDialogOpen(false);
     } catch (error) {
@@ -149,7 +149,7 @@ export function SwapsPage() {
   useEffect(() => {
     const loadSwaps = async () => {
       try {
-        const dexieSwaps = await getAllSwaps();
+        const dexieSwaps = await api.listAllSwaps();
         setSwaps(dexieSwaps);
       } catch (error) {
         console.error("Failed to load swaps from Dexie:", error);
@@ -167,26 +167,26 @@ export function SwapsPage() {
 
     return swaps.filter((swap) => {
       // Search by token symbols
-      const sourceSymbol = getTokenSymbol(swap.source_token).toLowerCase();
-      const targetSymbol = getTokenSymbol(swap.target_token).toLowerCase();
+      const sourceSymbol = getTokenSymbol(swap.response.source_token).toLowerCase();
+      const targetSymbol = getTokenSymbol(swap.response.target_token).toLowerCase();
       if (sourceSymbol.includes(query) || targetSymbol.includes(query)) {
         return true;
       }
 
       // Search by USD amount
-      const usdAmount = swap.usd_amount.toFixed(2);
+      const usdAmount = swap.response.usd_amount.toFixed(2);
       if (usdAmount.includes(query) || `$${usdAmount}`.includes(query)) {
         return true;
       }
 
       // Search by sats amount
-      const satsAmount = swap.sats_receive.toString();
+      const satsAmount = swap.response.sats_receive.toString();
       if (satsAmount.includes(query.replace(/,/g, ""))) {
         return true;
       }
 
       // Search by date (multiple formats)
-      const swapDate = new Date(swap.created_at);
+      const swapDate = new Date(swap.response.created_at);
       const dateFormats = [
         format(swapDate, "dd-MMM-yyyy"), // 28-Nov-2025
         format(swapDate, "MMM"), // Nov
@@ -201,13 +201,13 @@ export function SwapsPage() {
       }
 
       // Search by status
-      const statusInfo = getStatusInfo(swap.status);
+      const statusInfo = getStatusInfo(swap.response.status);
       if (statusInfo.label.toLowerCase().includes(query)) {
         return true;
       }
 
       // Search by swap ID
-      if (swap.id.toLowerCase().includes(query)) {
+      if (swap.response.id.toLowerCase().includes(query)) {
         return true;
       }
 
@@ -216,20 +216,20 @@ export function SwapsPage() {
   }, [swaps, searchQuery]);
 
   // Format amounts for display - returns primary display string
-  const formatSwapAmount = (swap: StoredSwap) => {
+  const formatSwapAmount = (swap: ExtendedSwapStorageData) => {
     const isBtcSource =
-      swap.source_token === "btc_arkade" ||
-      swap.source_token === "btc_lightning";
+      swap.response.source_token === "btc_arkade" ||
+      swap.response.source_token === "btc_lightning";
 
     if (isBtcSource) {
       return {
-        primary: `${swap.sats_receive.toLocaleString()} sats`,
-        secondary: `$${swap.usd_amount.toFixed(2)} ${getTokenSymbol(swap.target_token)}`,
+        primary: `${swap.response.sats_receive.toLocaleString()} sats`,
+        secondary: `$${swap.response.usd_amount.toFixed(2)} ${getTokenSymbol(swap.response.target_token)}`,
       };
     } else {
       return {
-        primary: `$${swap.usd_amount.toFixed(2)}`,
-        secondary: `${swap.sats_receive.toLocaleString()} sats`,
+        primary: `$${swap.response.usd_amount.toFixed(2)}`,
+        secondary: `${swap.response.sats_receive.toLocaleString()} sats`,
       };
     }
   };
@@ -314,17 +314,17 @@ export function SwapsPage() {
         ) : (
           <div className="space-y-1.5 sm:space-y-2">
             {filteredSwaps.map((swap) => {
-              const statusInfo = getStatusInfo(swap.status);
+              const statusInfo = getStatusInfo(swap.response.status);
               const amounts = formatSwapAmount(swap);
-              const timeAgo = formatDistanceToNow(new Date(swap.created_at), {
+              const timeAgo = formatDistanceToNow(new Date(swap.response.created_at), {
                 addSuffix: false,
               });
 
               return (
                 <button
                   type="button"
-                  key={swap.id}
-                  onClick={() => navigate(`/swap/${swap.id}/wizard`)}
+                  key={swap.response.id}
+                  onClick={() => navigate(`/swap/${swap.response.id}/wizard`)}
                   className="group relative w-full text-left rounded-xl border border-border/40 bg-card hover:bg-accent/30 hover:border-border transition-all cursor-pointer overflow-hidden"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 pr-1.5 sm:pr-2">
@@ -333,13 +333,13 @@ export function SwapsPage() {
                       {/* Source token (front) */}
                       <div className="absolute left-0 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden z-10 shadow-sm">
                         <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {getTokenIcon(swap.source_token)}
+                          {getTokenIcon(swap.response.source_token)}
                         </div>
                       </div>
                       {/* Target token (behind) */}
                       <div className="absolute left-3.5 sm:left-4 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
                         <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {getTokenIcon(swap.target_token)}
+                          {getTokenIcon(swap.response.target_token)}
                         </div>
                       </div>
                     </div>
@@ -386,10 +386,10 @@ export function SwapsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem
-                            onClick={(e) => handleCopyId(e, swap.id)}
+                            onClick={(e) => handleCopyId(e, swap.response.id)}
                             className="gap-2"
                           >
-                            {copiedId === swap.id ? (
+                            {copiedId === swap.response.id ? (
                               <>
                                 <Check className="h-4 w-4 text-green-600" />
                                 Copied!
@@ -402,7 +402,7 @@ export function SwapsPage() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={(e) => handleDeleteClick(e, swap.id)}
+                            onClick={(e) => handleDeleteClick(e, swap.response.id)}
                             className="gap-2 text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />

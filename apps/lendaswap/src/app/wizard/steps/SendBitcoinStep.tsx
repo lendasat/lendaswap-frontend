@@ -7,14 +7,14 @@ import {
   isValidSpeedWalletContext,
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
-import type { BtcToEvmSwapResponse } from "../../api";
+import { type BtcToEvmSwapResponse, getTokenNetworkName } from "../../api";
 import { useWalletBridge } from "../../WalletBridgeContext";
 
 interface SendBitcoinStepProps {
   arkadeAddress: string | null;
   lightningAddress: string | null;
   unifiedAddress: string;
-  swapData: BtcToEvmSwapResponse | null;
+  swapData: BtcToEvmSwapResponse;
   usdcAmount: string;
   tokenSymbol?: string; // e.g., "USDC", "USDT"
   swapId: string;
@@ -268,7 +268,8 @@ export function SendBitcoinStep({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Receive</span>
             <span className="font-medium">
-              {usdcAmount} {tokenSymbol}
+              {usdcAmount} {tokenSymbol} on{" "}
+              {getTokenNetworkName(swapData.target_token)}
             </span>
           </div>
         </div>

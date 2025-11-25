@@ -1,4 +1,3 @@
-import { getMnemonic } from "@frontend/browser-wallet";
 import { AlertTriangle, Check, Copy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -11,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
+import { api } from "../api";
 
 interface BackupMnemonicDialogProps {
   open: boolean;
@@ -29,7 +29,7 @@ export function BackupMnemonicDialog({
   const loadMnemonic = useCallback(async () => {
     setLoading(true);
     try {
-      const phrase = await getMnemonic();
+      const phrase = await api.getMnemonic();
       setMnemonic(phrase);
     } catch (error) {
       console.error("Failed to load mnemonic:", error);

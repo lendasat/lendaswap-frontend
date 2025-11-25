@@ -1,4 +1,3 @@
-import { getMnemonic } from "@frontend/browser-wallet";
 import { AlertTriangle, Download } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -13,6 +12,7 @@ import {
   DialogTitle,
 } from "#/components/ui/dialog";
 import { Label } from "#/components/ui/label";
+import { api } from "../api";
 
 interface FirstTimeBackupModalProps {
   open: boolean;
@@ -33,7 +33,7 @@ export function FirstTimeBackupModal({
   const handleDownloadBackupPhrase = async () => {
     setIsDownloading(true);
     try {
-      const mnemonic = await getMnemonic();
+      const mnemonic = await api.getMnemonic();
 
       if (!mnemonic) {
         console.error("Mnemonic failed to download");

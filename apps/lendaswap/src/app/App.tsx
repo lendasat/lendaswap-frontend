@@ -9,7 +9,6 @@ import {
   useParams,
 } from "react-router";
 import "../assets/styles.css";
-import { deriveSwapParams, getMnemonic } from "@frontend/browser-wallet";
 import { ConnectKitButton } from "connectkit";
 import {
   ArrowDown,
@@ -70,7 +69,6 @@ import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
-import { addSwap } from "./db";
 import { usePriceFeed } from "./PriceFeedContext";
 import { RefundPage, SwapsPage } from "./pages";
 import { hasReferralCode } from "./utils/referralCode";
@@ -83,7 +81,7 @@ import {
   isEvmToken,
   isUsdToken,
   isValidTokenId,
-  networkUrl,
+  networkName,
 } from "./utils/tokenUtils";
 import { useWalletBridge } from "./WalletBridgeContext";
 import { SwapWizardPage } from "./wizard";
@@ -318,19 +316,6 @@ function HomePage() {
       if (isBtcSource) {
         // BTC → EVM
 
-        // Derive swap params (keypair + preimage hash) from HD wallet (this increments the index)
-        const {
-          ownSk: own_sk,
-          ownPk: refund_pk,
-          preimage: secret,
-          preimageHash,
-          userId: user_id,
-          keyIndex: key_index,
-        } = await deriveSwapParams();
-
-        // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
-        const hash_lock = `0x${preimageHash}`;
-
         let targetAmount = parseFloat(usdAmount);
         if (targetAsset === "btc_arkade" || targetAsset === "btc_lightning") {
           targetAmount = parseFloat(bitcoinAmount);
@@ -341,57 +326,9 @@ function HomePage() {
             target_address: targetAddress,
             target_amount: targetAmount,
             target_token: targetAsset,
-            hash_lock,
-            refund_pk,
-            user_id,
           },
-          networkUrl(targetAsset),
+          networkName(targetAsset) as "ethereum" | "polygon",
         );
-
-        console.log(
-          "Persisting swap data",
-          JSON.stringify({
-            key_index,
-            lendaswap_pk: swap.receiver_pk,
-            arkade_server_pk: swap.server_pk,
-            refund_locktime: swap.refund_locktime,
-            unilateral_claim_delay: swap.unilateral_claim_delay,
-            unilateral_refund_delay: swap.unilateral_refund_delay,
-            unilateral_refund_without_receiver_delay:
-              swap.unilateral_refund_without_receiver_delay,
-            network: swap.network,
-            vhtlc_address: swap.htlc_address_arkade,
-          }),
-        );
-
-        localStorage.setItem(
-          swap.id,
-          JSON.stringify({
-            key_index,
-            secret,
-            own_sk,
-            lendaswap_pk: swap.receiver_pk,
-            arkade_server_pk: swap.server_pk,
-            refund_locktime: swap.refund_locktime,
-            unilateral_claim_delay: swap.unilateral_claim_delay,
-            unilateral_refund_delay: swap.unilateral_refund_delay,
-            unilateral_refund_without_receiver_delay:
-              swap.unilateral_refund_without_receiver_delay,
-            network: swap.network,
-            vhtlc_address: swap.htlc_address_arkade,
-            created_at: swap.created_at,
-            source_token: swap.source_token,
-            target_token: swap.target_token,
-          }),
-        );
-
-        // Store in Dexie as well (with additional sensitive fields)
-        await addSwap({
-          ...swap,
-          secret,
-          own_sk,
-          refund_pk,
-        });
 
         trackSwapInitiation(swap);
         navigate(`/swap/${swap.id}/wizard`);
@@ -407,63 +344,18 @@ function HomePage() {
         if (targetAsset === "btc_arkade") {
           // EVM → Arkade
 
-          // Then derive swap params (keypair + preimage hash) from HD wallet (this increments the index)
-          const {
-            ownSk: own_sk,
-            ownPk: receiver_pk,
-            preimage: secret,
-            preimageHash,
-            userId: user_id,
-            keyIndex: key_index,
-          } = await deriveSwapParams();
-
-          // Preimage hash is hex-encoded, need to prepend 0x for hash_lock
-          const hash_lock = `0x${preimageHash}`;
-
           // Call EVM → Arkade API
           const swap = await api.createEvmToArkadeSwap(
             {
               target_address: targetAddress, // Arkade address
               source_amount: parseFloat(usdAmount),
               source_token: sourceAsset,
-              hash_lock,
-              receiver_pk,
               user_address: userEvmAddress,
-              user_id,
             },
-            networkUrl(sourceAsset),
+            networkName(sourceAsset) as "ethereum" | "polygon",
           );
 
-          // Store swap data (needed for claiming BTC later)
-          localStorage.setItem(
-            swap.id,
-            JSON.stringify({
-              key_index,
-              secret,
-              own_sk,
-              receiver_pk,
-              lendaswap_pk: swap.sender_pk,
-              arkade_server_pk: swap.server_pk,
-              refund_locktime: swap.refund_locktime,
-              unilateral_claim_delay: swap.unilateral_claim_delay,
-              unilateral_refund_delay: swap.unilateral_refund_delay,
-              unilateral_refund_without_receiver_delay:
-                swap.unilateral_refund_without_receiver_delay,
-              network: swap.network,
-              vhtlc_address: swap.htlc_address_arkade,
-              created_at: swap.created_at,
-              source_token: swap.source_token,
-              target_token: swap.target_token,
-            }),
-          );
-
-          // Store in Dexie as well (with additional sensitive fields)
-          await addSwap({
-            ...swap,
-            secret,
-            own_sk,
-            receiver_pk,
-          });
+          console.log(`Created swap ${swap.id}`);
 
           trackSwapInitiation(swap);
           navigate(`/swap/${swap.id}/wizard`);
@@ -471,10 +363,6 @@ function HomePage() {
 
         if (targetAsset === "btc_lightning") {
           // EVM → Lightning
-
-          // Then derive user ID from HD wallet (EVM-Lightning doesn't need keys or hash).
-          const { keyIndex: key_index, userId: user_id } =
-            await deriveSwapParams();
 
           // Resolve Lightning address to BOLT11 invoice if needed
           let bolt11Invoice = targetAddress;
@@ -499,33 +387,9 @@ function HomePage() {
               bolt11_invoice: bolt11Invoice,
               source_token: sourceAsset,
               user_address: userEvmAddress,
-              user_id,
             },
-            networkUrl(sourceAsset),
+            networkName(sourceAsset) as "ethereum" | "polygon",
           );
-
-          // Store swap data
-          localStorage.setItem(
-            swap.id,
-            JSON.stringify({
-              key_index,
-              lendaswap_pk: swap.sender_pk,
-              arkade_server_pk: swap.server_pk,
-              refund_locktime: swap.refund_locktime,
-              unilateral_claim_delay: swap.unilateral_claim_delay,
-              unilateral_refund_delay: swap.unilateral_refund_delay,
-              unilateral_refund_without_receiver_delay:
-                swap.unilateral_refund_without_receiver_delay,
-              network: swap.network,
-              vhtlc_address: swap.htlc_address_arkade,
-              created_at: swap.created_at,
-              source_token: swap.source_token,
-              target_token: swap.target_token,
-            }),
-          );
-
-          // Store in Dexie as well
-          await addSwap(swap);
 
           trackSwapInitiation(swap);
           navigate(`/swap/${swap.id}/wizard`);
@@ -1051,7 +915,7 @@ export default function App() {
 
   const handleDownloadSeedphrase = async () => {
     try {
-      const mnemonic = await getMnemonic();
+      const mnemonic = await api.getMnemonic();
 
       if (!mnemonic) {
         console.error("No mnemonic found");

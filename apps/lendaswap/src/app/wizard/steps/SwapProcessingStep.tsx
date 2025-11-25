@@ -1,8 +1,3 @@
-import {
-  claimVhtlc,
-  getAmountsForSwap,
-  initBrowserWallet,
-} from "@frontend/browser-wallet";
 import { useModal } from "connectkit";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,7 +10,7 @@ import {
 import { Button } from "#/components/ui/button";
 import {
   api,
-  type BtcToEvmSwapResponse,
+  type EvmToBtcSwapResponse,
   type GetSwapResponse,
 } from "../../api";
 import {
@@ -24,9 +19,6 @@ import {
   isEthereumToken,
   isPolygonToken,
 } from "../../utils/tokenUtils";
-
-const ARK_SERVER_URL =
-  import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
 
 // ReverseAtomicSwapHTLC ABI - claimSwap function
 const HTLC_ABI = [
@@ -65,19 +57,19 @@ interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;
   swapDirection: "btc-to-evm" | "evm-to-btc";
   swapId: string;
+  preimage: string | null;
 }
 
 export function SwapProcessingStep({
   swapData,
   swapDirection,
   swapId,
+  preimage,
 }: ConfirmingDepositStepProps) {
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const hasClaimedRef = useRef(false);
-  const [wasmInitialized, setWasmInitialized] = useState(false);
-  const [secret, setSecret] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 10;
 
@@ -89,41 +81,6 @@ export function SwapProcessingStep({
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
   const { setOpen } = useModal();
-
-  // Load secret from localStorage
-  useEffect(() => {
-    const swapData_local = localStorage.getItem(swapData.id);
-    console.log("Loading secret from localStorage for swapId:", swapData.id);
-    console.log("LocalStorage data:", swapData_local);
-
-    if (swapData_local) {
-      try {
-        const parsed = JSON.parse(swapData_local);
-        console.log("Parsed swap data:", parsed);
-        setSecret(parsed.secret || null);
-        console.log("Secret set to:", parsed.secret || null);
-      } catch (error) {
-        console.error("Failed to parse swap data from localStorage:", error);
-      }
-    } else {
-      console.warn(
-        "No swap data found in localStorage for swapId:",
-        swapData.id,
-      );
-    }
-  }, [swapData.id]);
-
-  // Initialize WASM module on mount
-  useEffect(() => {
-    initBrowserWallet()
-      .then(() => {
-        console.log("Browser wallet WASM initialized");
-        setWasmInitialized(true);
-      })
-      .catch((error) => {
-        console.error("Failed to initialize browser wallet:", error);
-      });
-  }, []);
 
   // Helper function to sleep
   const sleep = useCallback(
@@ -145,7 +102,6 @@ export function SwapProcessingStep({
     const autoClaimBtcToPolygonSwaps = async () => {
       if (swapDirection !== "btc-to-evm") return;
       if (swapData.status !== "serverfunded") return;
-      if (!secret) return;
 
       // For Ethereum tokens, don't auto-claim if wallet not connected
       if (isEthereumToken(swapData.target_token) && !address) {
@@ -175,11 +131,8 @@ export function SwapProcessingStep({
           await sleep(backoffMs);
         }
 
-        const cleanSecret = secret.startsWith("0x") ? secret.slice(2) : secret;
-
         console.log("Auto-claiming with parameters:", {
           swapId: swapData.id,
-          secret: cleanSecret,
           retryCount,
         });
 
@@ -187,12 +140,20 @@ export function SwapProcessingStep({
         localStorage.setItem(claimKey, Date.now().toString());
 
         if (isPolygonToken(swapData.target_token)) {
-          await api.claimGelato(swapData.id, cleanSecret);
+          // we rely on the wasm part knowing about the secret
+          await api.claimGelato(swapData.id);
         } else if (isEthereumToken(swapData.target_token)) {
           // Ethereum: claim using user's wallet
           if (!address) {
             setOpen(true);
             hasClaimedRef.current = false;
+            return;
+          }
+
+          console.log(`Claim Ethereum ${preimage}`);
+
+          if (!preimage) {
+            console.error(`Can't claim on ethereum without preimage`);
             return;
           }
 
@@ -213,7 +174,9 @@ export function SwapProcessingStep({
           const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
           // Convert UUID to bytes32 by removing hyphens and padding with zeros
           const swapIdBytes32 = uuidToHtlcSwapId(swapData.id);
-          const secretBytes32 = `0x${cleanSecret}` as `0x${string}`;
+
+          console.log(`Preimage ${preimage} and ${typeof preimage}`);
+          const secretBytes32 = `0x${preimage}` as `0x${string}`;
 
           console.log("Claiming Ethereum HTLC with wallet...", {
             htlcAddress,
@@ -285,7 +248,7 @@ export function SwapProcessingStep({
   }, [
     swapData,
     swapDirection,
-    secret,
+    preimage,
     isClaiming,
     retryCount,
     sleep,
@@ -300,14 +263,13 @@ export function SwapProcessingStep({
   // Auto-claim for evm-to-btc when server is funded
   useEffect(() => {
     const autoClaimPolygonToArkadeSwaps = async () => {
-      const polygonToBtcSwapData = swapData as BtcToEvmSwapResponse;
+      const polygonToBtcSwapData = swapData as EvmToBtcSwapResponse;
       if (swapDirection !== "evm-to-btc") return;
       if (polygonToBtcSwapData.target_token === "btc_lightning") {
         // this will be claimed by the lightning client
         return;
       }
       if (polygonToBtcSwapData.status !== "serverfunded") return;
-      if (!wasmInitialized) return;
       if (!polygonToBtcSwapData.user_address_arkade) {
         console.error("No user address for arkade provided");
         setClaimError("Missing Arkade address for claim");
@@ -337,12 +299,6 @@ export function SwapProcessingStep({
           await sleep(backoffMs);
         }
 
-        const fetchedAmounts = await getAmountsForSwap(
-          ARK_SERVER_URL,
-          polygonToBtcSwapData.id,
-        );
-        console.log(`Fetched amounts for swap`, fetchedAmounts);
-
         console.log("Auto-claiming with parameters:", {
           swapId: polygonToBtcSwapData.id,
           retryCount,
@@ -351,11 +307,7 @@ export function SwapProcessingStep({
         // Mark that we've attempted to claim
         localStorage.setItem(claimKey, Date.now().toString());
 
-        const txid = await claimVhtlc(
-          ARK_SERVER_URL,
-          polygonToBtcSwapData.id,
-          polygonToBtcSwapData.user_address_arkade,
-        );
+        const txid = await api.claimVhtlc(polygonToBtcSwapData.id);
         console.log(`Claim request sent successfully ${txid}`);
         // Success! Reset retry count
         setRetryCount(0);
@@ -392,7 +344,7 @@ export function SwapProcessingStep({
     };
 
     autoClaimPolygonToArkadeSwaps();
-  }, [swapData, swapDirection, wasmInitialized, isClaiming, retryCount, sleep]);
+  }, [swapData, swapDirection, isClaiming, retryCount, sleep]);
 
   const handleCopyTxId = async (txId: string) => {
     try {

@@ -1,9 +1,4 @@
-import {
-  getAmountsForSwap,
-  initBrowserWallet,
-  refundVhtlc,
-  type VhtlcAmounts,
-} from "@frontend/browser-wallet";
+import type { VhtlcAmounts } from "@lendaswap/sdk";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useMemo, useState } from "react";
@@ -12,13 +7,11 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
+  api,
   type BtcToEvmSwapResponse,
   getTokenDisplayName,
   getTokenIcon,
 } from "../../api";
-
-const ARK_SERVER_URL =
-  import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
 
 interface BtcToPolygonRefundStepProps {
   swapData: BtcToEvmSwapResponse;
@@ -32,7 +25,6 @@ export function BtcToPolygonRefundStep({
   arkAddress,
 }: BtcToPolygonRefundStepProps) {
   const posthog = usePostHog();
-  const [wasmInitialized, setWasmInitialized] = useState(false);
   const [refundAddress, setRefundAddress] = useState("");
   const [isRefunding, setIsRefunding] = useState(false);
   const [refundError, setRefundError] = useState<string | null>(null);
@@ -47,27 +39,14 @@ export function BtcToPolygonRefundStep({
     }
   }, [arkAddress, refundAddress]);
 
-  // Initialize WASM module on mount
+  // Fetch amounts once wallet is ready
   useEffect(() => {
-    initBrowserWallet()
-      .then(() => {
-        console.log("Browser wallet WASM initialized");
-        setWasmInitialized(true);
-      })
-      .catch((error) => {
-        console.error("Failed to initialize browser wallet:", error);
-        setRefundError("Failed to initialize wallet module");
-      });
-  }, []);
-
-  // Fetch amounts once WASM is initialized
-  useEffect(() => {
-    if (!wasmInitialized || !swapId || amounts !== null) return;
+    if (!swapId || amounts !== null) return;
 
     const fetchAmounts = async () => {
       setIsLoadingAmounts(true);
       try {
-        const fetchedAmounts = await getAmountsForSwap(ARK_SERVER_URL, swapId);
+        const fetchedAmounts = await api.amountsForSwap(swapId);
         setAmounts(fetchedAmounts);
       } catch (error) {
         console.error("Failed to fetch amounts:", error);
@@ -80,7 +59,7 @@ export function BtcToPolygonRefundStep({
     };
 
     fetchAmounts();
-  }, [wasmInitialized, swapId, amounts]);
+  }, [swapId, amounts]);
 
   // Calculate if swap can be refunded
   const canRefund = (() => {
@@ -136,11 +115,6 @@ export function BtcToPolygonRefundStep({
       return;
     }
 
-    if (!wasmInitialized) {
-      setRefundError("Wallet module not initialized yet. Please wait.");
-      return;
-    }
-
     if (!refundAddress.startsWith("tark") && !refundAddress.startsWith("ark")) {
       setRefundError("Please enter a valid Arkade address");
       return;
@@ -151,7 +125,7 @@ export function BtcToPolygonRefundStep({
     setRefundSuccess(null);
 
     try {
-      const txid = await refundVhtlc(ARK_SERVER_URL, swapId, refundAddress);
+      const txid = await api.refundVhtlc(swapId, refundAddress);
       setRefundSuccess(`Refund successful! Transaction ID: ${txid}`);
 
       // Track refund success
@@ -188,15 +162,6 @@ export function BtcToPolygonRefundStep({
 
       {/* Content */}
       <div className="space-y-6 p-6">
-        {/* WASM Initialization */}
-        {!wasmInitialized && (
-          <Alert>
-            <AlertDescription className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Initializing wallet module...
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Refund Status Banner */}
         {isLocktimePassed ? (
@@ -255,6 +220,13 @@ export function BtcToPolygonRefundStep({
                 (${swapData.usd_amount.toFixed(2)})
               </span>
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Swap Status</p>
+            <p className="text-xs text-muted-foreground font-mono break-all">
+              {swapData.status}
+            </p>
           </div>
 
           <div className="space-y-1">
@@ -347,12 +319,7 @@ export function BtcToPolygonRefundStep({
 
             <Button
               onClick={handleRefund}
-              disabled={
-                !wasmInitialized ||
-                isRefunding ||
-                !refundAddress.trim() ||
-                !canRefund
-              }
+              disabled={isRefunding || !refundAddress.trim() || !canRefund}
               className="w-full h-12 text-base font-semibold"
             >
               {isRefunding ? (

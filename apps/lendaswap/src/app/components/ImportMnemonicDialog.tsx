@@ -1,8 +1,3 @@
-import {
-  deriveSwapParamsAtIndex,
-  getUserIdXpub,
-  importMnemonic,
-} from "@frontend/browser-wallet";
 import { AlertTriangle, CheckCircle2, FileText, Upload, X } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -29,7 +24,7 @@ import { Label } from "#/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { Textarea } from "#/components/ui/textarea";
 import { api } from "../api";
-import { addSwap, clearAllSwaps } from "../db";
+import { clearAllSwaps } from "../db";
 
 interface ImportMnemonicDialogProps {
   open: boolean;
@@ -129,143 +124,22 @@ export function ImportMnemonicDialog({
 
     try {
       // Import the mnemonic (validates and stores it)
-      await importMnemonic(trimmedMnemonic);
+      await api.loadMnemonic(trimmedMnemonic);
 
       // Clear all swap data from IndexedDB and localStorage before recovery
+      // fixme: this shouldnot needed anymore
       await clearAllSwaps();
       clearLocalStorageSwaps();
-
-      // Recover swaps from the backend using Xpub
-      // 1. Get the user_id Xpub from the imported mnemonic
-      const xpub = await getUserIdXpub();
-      if (!xpub) {
-        throw new Error("Failed to derive Xpub from mnemonic");
-      }
 
       console.log(`Recovery: Using Xpub for recovery`);
 
       // 2. Call the recovery API with the Xpub
-      const { swaps: recoveredSwaps, highest_index } =
-        await api.recoverSwaps(xpub);
+      const recoveredSwaps = await api.recoverSwaps();
+
+      console.log(`Recovery: Found ${recoveredSwaps.length} swaps`);
 
       console.log(
-        `Recovery: Found ${recoveredSwaps.length} swaps, highest index: ${highest_index}`,
-      );
-
-      // 3. Restore recovered swaps to IndexedDB and localStorage
-      for (const recoveredSwap of recoveredSwaps) {
-        const { index, ...swap } = recoveredSwap;
-
-        // Re-derive and store swap params for VHTLC operations
-        if (swap.direction === "btc_to_evm") {
-          // BTC → EVM: derive secret and own_sk
-          const {
-            preimage: secret,
-            ownSk: own_sk,
-            ownPk: refund_pk,
-          } = await deriveSwapParamsAtIndex(index);
-
-          // Store swap info in IndexedDB
-          await addSwap({ ...swap, secret, own_sk, refund_pk });
-
-          localStorage.setItem(
-            swap.id,
-            JSON.stringify({
-              key_index: index,
-              secret,
-              own_sk,
-              lendaswap_pk: swap.receiver_pk,
-              arkade_server_pk: swap.server_pk,
-              refund_locktime: swap.refund_locktime,
-              unilateral_claim_delay: swap.unilateral_claim_delay,
-              unilateral_refund_delay: swap.unilateral_refund_delay,
-              unilateral_refund_without_receiver_delay:
-                swap.unilateral_refund_without_receiver_delay,
-              network: swap.network,
-              vhtlc_address: swap.htlc_address_arkade,
-              created_at: swap.created_at,
-              source_token: swap.source_token,
-              target_token: swap.target_token,
-            }),
-          );
-
-          console.log(
-            `Recovered BTC→EVM swap ${swap.id} with re-derived keys at index ${index}`,
-          );
-        } else if (swap.direction === "evm_to_btc") {
-          await addSwap(swap);
-
-          // EVM → BTC
-          if (swap.target_token === "btc_lightning") {
-            // Lightning delivery: don't derive keys (not used)
-            localStorage.setItem(
-              swap.id,
-              JSON.stringify({
-                key_index: index,
-                lendaswap_pk: swap.sender_pk,
-                arkade_server_pk: swap.server_pk,
-                refund_locktime: swap.refund_locktime,
-                unilateral_claim_delay: swap.unilateral_claim_delay,
-                unilateral_refund_delay: swap.unilateral_refund_delay,
-                unilateral_refund_without_receiver_delay:
-                  swap.unilateral_refund_without_receiver_delay,
-                network: swap.network,
-                vhtlc_address: swap.htlc_address_arkade,
-                created_at: swap.created_at,
-                source_token: swap.source_token,
-                target_token: swap.target_token,
-              }),
-            );
-
-            console.log(
-              `Recovered EVM→Lightning swap ${swap.id} (no key derivation needed) at index ${index}`,
-            );
-          } else {
-            // Arkade delivery: derive secret, own_sk, and receiver_pk
-            const {
-              preimage: secret,
-              ownSk: own_sk,
-              ownPk: receiver_pk,
-            } = await deriveSwapParamsAtIndex(index);
-
-            // Store swap info in IndexedDB
-            await addSwap({ ...swap, secret, own_sk, receiver_pk });
-
-            localStorage.setItem(
-              swap.id,
-              JSON.stringify({
-                key_index: index,
-                secret,
-                own_sk,
-                receiver_pk,
-                lendaswap_pk: swap.sender_pk,
-                arkade_server_pk: swap.server_pk,
-                refund_locktime: swap.refund_locktime,
-                unilateral_claim_delay: swap.unilateral_claim_delay,
-                unilateral_refund_delay: swap.unilateral_refund_delay,
-                unilateral_refund_without_receiver_delay:
-                  swap.unilateral_refund_without_receiver_delay,
-                network: swap.network,
-                vhtlc_address: swap.htlc_address_arkade,
-                created_at: swap.created_at,
-                source_token: swap.source_token,
-                target_token: swap.target_token,
-              }),
-            );
-
-            console.log(
-              `Recovered EVM→Arkade swap ${swap.id} with re-derived keys at index ${index}`,
-            );
-          }
-        }
-      }
-
-      // 4. Set the key derivation index to the highest recovered index + 1
-      const nextIndex = highest_index + 1;
-      localStorage.setItem("lendaswap_hd_index", nextIndex.toString());
-
-      console.log(
-        `Recovery complete: ${recoveredSwaps.length} swaps restored, next key index: ${nextIndex}`,
+        `Recovery complete: ${recoveredSwaps.length} swaps restored}`,
       );
 
       // Show success

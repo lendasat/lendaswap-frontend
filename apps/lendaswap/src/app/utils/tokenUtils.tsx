@@ -195,7 +195,9 @@ export function isPolygonToken(tokenId: TokenId): boolean {
 /**
  * Get the network name for a token, to be used as part of a URL
  */
-export function networkUrl(tokenId: TokenId): string {
+export function networkName(
+  tokenId: TokenId,
+): "ethereum" | "lightning" | "polygon" | "arkade" {
   switch (tokenId) {
     case "usdc_pol":
     case "usdt0_pol":

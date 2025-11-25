@@ -1,6 +1,6 @@
 import { useModal } from "connectkit";
 import { Loader } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useAccount,
   usePublicClient,
@@ -51,13 +51,21 @@ export function PolygonDepositStep({
   const chain = getViemChain(swapData.source_token);
 
   const { address } = useAccount();
-  const { data: walletClient } = useWalletClient({ chainId: chain?.id });
+  // Get wallet client without chain restriction - we'll switch chains in handleSign
+  const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
   const { setOpen } = useModal();
 
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState("");
+
+  // Open wallet connect dialog when landing on page if not connected
+  useEffect(() => {
+    if (!address) {
+      setOpen(true);
+    }
+  }, [address, setOpen]);
 
   const tokenSymbol = getTokenSymbol(swapData.source_token);
   const receiveAmount = swapData?.sats_receive
@@ -71,7 +79,8 @@ export function PolygonDepositStep({
     }
 
     if (!walletClient || !publicClient) {
-      setError("Wallet client not ready. Please try again.");
+      // Wallet just connected, clients may still be initializing - open modal to ensure connection is complete
+      setOpen(true);
       return;
     }
 

@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
 import { isValidSpeedWalletContext } from "../../../utils/speedWallet";
-import type { GetSwapResponse } from "../../api";
-import { getTokenSymbol } from "../../api";
+import {
+  type EvmToBtcSwapResponse,
+  type GetSwapResponse,
+  getTokenNetworkName,
+  getTokenSymbol,
+} from "../../api";
 import {
   getBlockexplorerAddressLink,
   getBlockexplorerTxLink,
@@ -70,8 +74,10 @@ export function SuccessStep({
     swapDirection === "btc-to-evm"
       ? {
           sentTokenSymbol: "sats",
+          sentTokenNetwork: getTokenNetworkName(swapData.source_token),
           sentAmount: swapData.sats_receive.toLocaleString(),
           receivedTokenSymbol: getTokenSymbol(swapData.target_token),
+          receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
           receivedAmount: swapData.usd_amount.toFixed(2),
           receiveAddress: swapData.user_address_evm,
           receiveAddressIsEvm: true,
@@ -82,14 +88,16 @@ export function SuccessStep({
         }
       : {
           sentTokenSymbol: getTokenSymbol(swapData.source_token),
+          sentTokenNetwork: getTokenNetworkName(swapData.source_token),
           sentAmount: swapData.usd_amount.toFixed(2),
           receivedTokenSymbol: "sats",
+          receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
           receivedAmount: swapData.sats_receive.toLocaleString(),
           // For Lightning swaps, show the invoice/address; for Arkade, show the Arkade address
           receiveAddress:
             swapData.target_token === "btc_lightning"
               ? swapData.ln_invoice
-              : swapData.user_address_arkade,
+              : (swapData as EvmToBtcSwapResponse).user_address_arkade,
           receiveAddressIsEvm: false,
           isLightning: swapData.target_token === "btc_lightning",
           swapTxId: swapData.bitcoin_htlc_claim_txid,
@@ -165,12 +173,15 @@ export function SuccessStep({
               <span className="text-muted-foreground">Amount Sent</span>
               <span className="font-medium">
                 {config.sentAmount} {config.sentTokenSymbol}
+                {" on "}
+                {config.sentTokenNetwork}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount Received</span>
               <span className="font-medium">
-                {config.receivedAmount} {config.receivedTokenSymbol}
+                {config.receivedAmount} {config.receivedTokenSymbol} {" on "}
+                {config.receivedTokenNetwork}
               </span>
             </div>
             {config.receiveAddress && (

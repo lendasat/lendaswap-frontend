@@ -1,12 +1,18 @@
+import { PriceFeedService, type PriceUpdateMessage } from "@lendaswap/sdk";
 import {
   createContext,
   type ReactNode,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
-import { type PriceUpdateMessage, priceFeedService, type TokenId } from "./api";
+import type { TokenId } from "./api";
 import { toPairName } from "./utils/tokenUtils";
+
+// Get API URL from environment
+const API_BASE_URL =
+  import.meta.env.VITE_LENDASWAP_API_URL || "http://localhost:3333";
 
 interface PriceFeedContextValue {
   // Latest price update from WebSocket
@@ -38,6 +44,12 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
   const [isLoadingPrice, setIsLoadingPrice] = useState(true);
   const [priceError, setPriceError] = useState<string | null>(null);
 
+  // Create PriceFeedService instance once
+  const priceFeedService = useMemo(
+    () => new PriceFeedService(API_BASE_URL),
+    [],
+  );
+
   useEffect(() => {
     const handlePriceUpdate = (update: PriceUpdateMessage) => {
       try {
@@ -59,7 +71,7 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [priceFeedService]);
 
   // Helper function to get exchange rate for a specific token pair and USD amount
   // Returns the exchange rate as: 1 sourceToken = X targetToken

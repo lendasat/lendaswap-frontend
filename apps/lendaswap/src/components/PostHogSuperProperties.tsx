@@ -1,6 +1,6 @@
-import { getUserIdXpub } from "@frontend/browser-wallet";
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
+import { api } from "../app/api";
 
 export function PostHogSuperProperties() {
   const posthog = usePostHog();
@@ -15,7 +15,7 @@ export function PostHogSuperProperties() {
       // Identify user by their xpub (same as used for swap recovery)
       // This enables retention tracking across browser sessions and devices
       try {
-        const xpub = await getUserIdXpub();
+        const xpub = await api.getUserIdXpub();
         if (xpub) {
           posthog.identify(xpub, {
             wallet_type: "browser_wallet",

@@ -7,9 +7,6 @@
     },
     {
       "path": "./packages/shadcn"
-    },
-    {
-      "path": "./packages/browser-wallet"
     }
   ]
 }

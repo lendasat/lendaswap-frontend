@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { cn } from "#/lib/utils";
 
 interface Step {
@@ -97,7 +98,7 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
           const isLast = index === steps.length - 1;
 
           return (
-            <React.Fragment key={step.label}>
+            <Fragment key={step.label}>
               {/* Step Button/Pill */}
               <div
                 className={cn(
@@ -127,7 +128,7 @@ export function WizardSteps({ steps, className }: WizardStepsProps) {
                   })}
                 />
               )}
-            </React.Fragment>
+            </Fragment>
           );
         })}
       </div>

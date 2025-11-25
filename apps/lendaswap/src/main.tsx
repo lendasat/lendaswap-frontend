@@ -2,10 +2,6 @@ import { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import "@radix-ui/themes/styles.css";
-import {
-  generateOrGetMnemonic,
-  initBrowserWallet,
-} from "@frontend/browser-wallet";
 import { Theme } from "@radix-ui/themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
@@ -46,44 +42,34 @@ const posthogOptions = createPostHogConfig(posthogHost);
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // Initialize browser wallet WASM before rendering
-(async () => {
-  try {
-    await initBrowserWallet();
-    // Generate or retrieve mnemonic to ensure wallet is ready
-    await generateOrGetMnemonic();
-  } catch (error) {
-    console.error("Failed to initialize browser wallet:", error);
-  }
-
-  root.render(
-    <StrictMode>
-      <PostHogProvider apiKey={posthogKey} options={posthogOptions}>
-        <PostHogSuperProperties />
-        <BrowserRouter>
-          <WagmiProvider config={config}>
-            <QueryClientProvider client={queryClient}>
-              <ConnectKitProvider
-                mode="auto"
-                options={{
-                  hideQuestionMarkCTA: true,
-                  hideNoWalletCTA: false,
-                  walletConnectCTA: "link",
-                }}
-              >
-                <Theme>
-                  <ThemeProvider>
-                    <PriceFeedProvider>
-                      <WalletBridgeProvider>
-                        <App />
-                      </WalletBridgeProvider>
-                    </PriceFeedProvider>
-                  </ThemeProvider>
-                </Theme>
-              </ConnectKitProvider>
-            </QueryClientProvider>
-          </WagmiProvider>
-        </BrowserRouter>
-      </PostHogProvider>
-    </StrictMode>,
-  );
-})();
+root.render(
+  <StrictMode>
+    <PostHogProvider apiKey={posthogKey} options={posthogOptions}>
+      <PostHogSuperProperties />
+      <BrowserRouter>
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            <ConnectKitProvider
+              mode="auto"
+              options={{
+                hideQuestionMarkCTA: true,
+                hideNoWalletCTA: false,
+                walletConnectCTA: "link",
+              }}
+            >
+              <Theme>
+                <ThemeProvider>
+                  <PriceFeedProvider>
+                    <WalletBridgeProvider>
+                      <App />
+                    </WalletBridgeProvider>
+                  </PriceFeedProvider>
+                </ThemeProvider>
+              </Theme>
+            </ConnectKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </BrowserRouter>
+    </PostHogProvider>
+  </StrictMode>,
+);

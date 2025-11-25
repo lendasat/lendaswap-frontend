@@ -3,4 +3,6 @@ packages:
   - "apps/**"
   # all packages in direct subdirs of packages/
   - "packages/*"
+  # client-sdk TypeScript SDK
+  - "../client-sdk/ts-sdk"
   - "!**/dist/**"

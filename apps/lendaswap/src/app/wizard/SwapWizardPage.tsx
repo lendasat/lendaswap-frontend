@@ -1,3 +1,4 @@
+import type { ExtendedSwapStorageData } from "@lendaswap/sdk";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
@@ -11,7 +12,6 @@ import {
   type SwapStatus,
   type TokenId,
 } from "../api";
-import { getSwapById, updateSwap } from "../db";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 import { useWalletBridge } from "../WalletBridgeContext";
 import {
@@ -56,7 +56,7 @@ const swapDirection = (
 };
 
 // Create mock swap data for debug mode
-function createMockSwapData(status: SwapStatus): GetSwapResponse {
+function createMockSwapData(status: SwapStatus): ExtendedSwapStorageData {
   const mockData = {
     direction: "btc_to_evm",
     id: DEBUG_SWAP_ID,
@@ -95,7 +95,9 @@ function createMockSwapData(status: SwapStatus): GetSwapResponse {
     evm_htlc_fund_txid: null,
   };
 
-  return mockData as GetSwapResponse;
+  return {
+    response: mockData as GetSwapResponse,
+  } as ExtendedSwapStorageData;
 }
 
 function determineStepFromStatus(
@@ -156,6 +158,7 @@ export function SwapWizardPage() {
   const lastStatusRef = useRef<SwapStatus | null>(null);
   const [displaySwapData, setDisplaySwapData] =
     useState<GetSwapResponse | null>(null);
+  const [preimage, setPreimage] = useState<string | null>(null);
   const { arkAddress } = useWalletBridge();
 
   // Get debug step from URL query params
@@ -177,22 +180,28 @@ export function SwapWizardPage() {
       const mockStatus: SwapStatus = debugStep || "pending";
       return createMockSwapData(mockStatus);
     }
-
-    return getSwapById(swapId);
+    const swap = await api.getSwap(swapId);
+    return swap;
   }, [swapId, debugStep]);
+
+  if (error) {
+    console.error(`Failed fetching swap ${error}`);
+  }
 
   // Update display data when swap data changes and status is different
   useEffect(() => {
-    if (swapData && swapData.status !== lastStatusRef.current) {
+    if (swapData && swapData.response.status !== lastStatusRef.current) {
       console.log(
-        `Status changed: ${lastStatusRef.current} -> ${swapData.status}`,
+        `Status changed: ${lastStatusRef.current} -> ${swapData.response.status}`,
       );
-      lastStatusRef.current = swapData.status;
-      setDisplaySwapData(swapData);
+      lastStatusRef.current = swapData.response.status;
+      setDisplaySwapData(swapData.response);
+      setPreimage(swapData.swap_params.preimage);
     } else if (swapData && !displaySwapData) {
       // Initial load
-      lastStatusRef.current = swapData.status;
-      setDisplaySwapData(swapData);
+      lastStatusRef.current = swapData.response.status;
+      setDisplaySwapData(swapData.response);
+      setPreimage(swapData.swap_params.preimage);
     }
   }, [swapData, displaySwapData]);
 
@@ -239,15 +248,10 @@ export function SwapWizardPage() {
         const updatedSwap = await api.getSwap(swapId);
 
         // Check if anything has changed
-        if (displaySwapData && updatedSwap.status !== displaySwapData.status) {
-          console.log("Swap data changed, updating database...", {
-            old: displaySwapData.status,
-            new: updatedSwap.status,
-          });
-
-          // Update the database with the latest data
-          await updateSwap(swapId, updatedSwap);
-
+        if (
+          displaySwapData &&
+          updatedSwap.response.status !== displaySwapData.status
+        ) {
           // Trigger a re-fetch to update the UI
           retry();
         }
@@ -271,7 +275,7 @@ export function SwapWizardPage() {
                 Failed to Load Swap
               </h3>
             </div>
-            <p className="text-muted-foreground">{error.message}</p>
+            <p className="text-muted-foreground">{JSON.stringify(error)}</p>
             <div className="flex gap-3">
               <button
                 type="button"
@@ -392,6 +396,7 @@ export function SwapWizardPage() {
               swapData={displaySwapData}
               swapDirection={swapDirectionValue}
               swapId={displaySwapData.id}
+              preimage={preimage}
             />
           )}
 

@@ -11,6 +11,10 @@ export default defineConfig({
     port: 4205,
     host: "0.0.0.0",
     cors: true,
+    fs: {
+      // Allow serving files from the client-sdk directory (outside frontend/)
+      allow: ["../..", "../../../client-sdk"],
+    },
   },
 
   preview: {
