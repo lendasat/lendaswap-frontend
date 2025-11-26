@@ -6,7 +6,30 @@
  * instead of displaying QR codes.
  *
  * @see https://docs.speed.app/mini-apps/receiving-payments
+ *
+ * URL Parameters passed by Speed Wallet:
+ * - acct: Account ID (e.g., "acct_li8hh2xyRuSBWnE4")
+ * - lang: Language preference (e.g., "en", "es", "de", "hi")
+ * - bal_btc: Bitcoin balance in Satoshis (1 BTC = 100,000,000 SATs)
+ * - bal_usdt: USDT balance in standard units
+ * - p_add: Lightning address (e.g., "user@speed.app")
+ *
+ * Example URL:
+ * https://app.com?acct=acct_li8hh2xyRuSBWnE4&lang=en&bal_btc=87636&bal_usdt=1975.29&p_add=abc%40speed.app
  */
+
+export interface SpeedWalletParams {
+  /** Account ID (e.g., "acct_li8hh2xyRuSBWnE4") */
+  accountId: string | null;
+  /** Language preference (e.g., "en", "es", "de", "hi") */
+  language: string | null;
+  /** Bitcoin balance in Satoshis */
+  balanceBtcSats: number | null;
+  /** USDT balance in standard units */
+  balanceUsdt: number | null;
+  /** Lightning address (e.g., "user@speed.app") */
+  lightningAddress: string | null;
+}
 
 export interface SpeedWalletPaymentRequest {
   version: "2022-10-15";
@@ -21,14 +44,51 @@ export interface SpeedWalletPaymentRequest {
 }
 
 /**
+ * Parses all Speed Wallet parameters from the URL.
+ * Call this once on app initialization and store the result.
+ */
+export const getSpeedWalletParams = (): SpeedWalletParams => {
+  if (typeof window === "undefined") {
+    return {
+      accountId: null,
+      language: null,
+      balanceBtcSats: null,
+      balanceUsdt: null,
+      lightningAddress: null,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+
+  const balBtcRaw = params.get("bal_btc");
+  const balUsdtRaw = params.get("bal_usdt");
+  const pAdd = params.get("p_add");
+
+  return {
+    accountId: params.get("acct"),
+    language: params.get("lang"),
+    balanceBtcSats: balBtcRaw ? parseInt(balBtcRaw, 10) : null,
+    balanceUsdt: balUsdtRaw ? parseFloat(balUsdtRaw) : null,
+    lightningAddress: pAdd ? decodeURIComponent(pAdd) : null,
+  };
+};
+
+/**
  * Detects if LendaSwap is running inside Speed Wallet's Mini App environment.
- *
- * Speed Wallet loads Mini Apps in an iframe/webview and exposes
- * message handlers for iOS, Android, and web.
+ * Checks for Speed Wallet URL parameters (acct with "acct_" prefix).
  */
 export const isSpeedWalletEnvironment = (): boolean => {
   if (typeof window === "undefined") return false;
 
+  const params = new URLSearchParams(window.location.search);
+  const acct = params.get("acct");
+
+  // Check for Speed Wallet account ID (starts with "acct_")
+  if (acct?.startsWith("acct_")) {
+    return true;
+  }
+
+  // Fallback: check for native message handlers
   return !!(
     window.Android ||
     window.webkit?.messageHandlers?.iosInterface ||
@@ -38,39 +98,68 @@ export const isSpeedWalletEnvironment = (): boolean => {
 
 /**
  * Gets the Speed Wallet account ID from the URL parameters.
- * Speed passes the account_id in the Mini App URL.
+ * @returns Account ID (e.g., "acct_li8hh2xyRuSBWnE4") or null
  */
 export const getSpeedAccountId = (): string | null => {
   if (typeof window === "undefined") return null;
 
   const params = new URLSearchParams(window.location.search);
-  return params.get("account_id");
+  return params.get("acct");
 };
 
 /**
  * Gets the user's Lightning address from Speed Wallet URL parameters.
- * Speed passes the user's LN address when launching Mini Apps.
- *
- * @returns Lightning address (e.g., "user@speed.app") or null if not available
+ * @returns Lightning address (e.g., "user@speed.app") or null
  */
 export const getSpeedLightningAddress = (): string | null => {
   if (typeof window === "undefined") return null;
 
   const params = new URLSearchParams(window.location.search);
-  // Try multiple possible parameter names
-  return (
-    params.get("ln_address") ||
-    params.get("lightning_address") ||
-    params.get("lnAddress") ||
-    null
-  );
+  const pAdd = params.get("p_add");
+  return pAdd ? decodeURIComponent(pAdd) : null;
 };
 
 /**
- * Checks if we have a valid Speed Wallet context (inside Speed + has account_id)
+ * Gets the user's Bitcoin balance in Satoshis from Speed Wallet URL parameters.
+ * @returns Balance in Satoshis or null
+ */
+export const getSpeedBalanceBtc = (): number | null => {
+  if (typeof window === "undefined") return null;
+
+  const params = new URLSearchParams(window.location.search);
+  const balBtc = params.get("bal_btc");
+  return balBtc ? parseInt(balBtc, 10) : null;
+};
+
+/**
+ * Gets the user's USDT balance from Speed Wallet URL parameters.
+ * @returns USDT balance or null
+ */
+export const getSpeedBalanceUsdt = (): number | null => {
+  if (typeof window === "undefined") return null;
+
+  const params = new URLSearchParams(window.location.search);
+  const balUsdt = params.get("bal_usdt");
+  return balUsdt ? parseFloat(balUsdt) : null;
+};
+
+/**
+ * Gets the user's language preference from Speed Wallet URL parameters.
+ * @returns Language code (e.g., "en", "es", "de") or null
+ */
+export const getSpeedLanguage = (): string | null => {
+  if (typeof window === "undefined") return null;
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("lang");
+};
+
+/**
+ * Checks if we have a valid Speed Wallet context (has account_id with correct prefix)
  */
 export const isValidSpeedWalletContext = (): boolean => {
-  return isSpeedWalletEnvironment() && getSpeedAccountId() !== null;
+  const accountId = getSpeedAccountId();
+  return accountId !== null && accountId.startsWith("acct_");
 };
 
 /**
