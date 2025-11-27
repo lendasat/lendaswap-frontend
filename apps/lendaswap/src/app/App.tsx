@@ -1047,22 +1047,25 @@ export default function App() {
 
                       <DropdownMenuSeparator />
 
-                      <ConnectKitButton.Custom>
-                        {({ isConnected, show, truncatedAddress, ensName }) => {
-                          return (
-                            <DropdownMenuItem onClick={show}>
-                              {isConnected ? (
-                                (ensName ?? truncatedAddress)
-                              ) : (
-                                <>
-                                  <Wallet className="w-4 h-4 mr-2" />
-                                  Connect
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          );
-                        }}
-                      </ConnectKitButton.Custom>
+                      {/* Hide Connect button in Speed Wallet - not needed */}
+                      {!isValidSpeedWalletContext() && (
+                        <ConnectKitButton.Custom>
+                          {({ isConnected, show, truncatedAddress, ensName }) => {
+                            return (
+                              <DropdownMenuItem onClick={show}>
+                                {isConnected ? (
+                                  (ensName ?? truncatedAddress)
+                                ) : (
+                                  <>
+                                    <Wallet className="w-4 h-4 mr-2" />
+                                    Connect
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            );
+                          }}
+                        </ConnectKitButton.Custom>
+                      )}
 
                       <DropdownMenuSeparator />
 
@@ -1131,27 +1134,30 @@ export default function App() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <ThemeToggle />
-                  <ConnectKitButton.Custom>
-                    {({ isConnected, show, truncatedAddress, ensName }) => {
-                      return (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={show}
-                          className="h-9"
-                        >
-                          {isConnected ? (
-                            (ensName ?? truncatedAddress)
-                          ) : (
-                            <>
-                              <Wallet className="w-3.5 h-3.5 mr-1.5" />
-                              Connect
-                            </>
-                          )}
-                        </Button>
-                      );
-                    }}
-                  </ConnectKitButton.Custom>
+                  {/* Hide Connect button in Speed Wallet - not needed */}
+                  {!isValidSpeedWalletContext() && (
+                    <ConnectKitButton.Custom>
+                      {({ isConnected, show, truncatedAddress, ensName }) => {
+                        return (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={show}
+                            className="h-9"
+                          >
+                            {isConnected ? (
+                              (ensName ?? truncatedAddress)
+                            ) : (
+                              <>
+                                <Wallet className="w-3.5 h-3.5 mr-1.5" />
+                                Connect
+                              </>
+                            )}
+                          </Button>
+                        );
+                      }}
+                    </ConnectKitButton.Custom>
+                  )}
                 </div>
               </div>
             </div>
