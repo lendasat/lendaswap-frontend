@@ -95,11 +95,20 @@ function HomePage() {
     : null;
 
   // Redirect to default if invalid tokens in URL
+  // For Speed Wallet users, default to usdc_pol -> btc_lightning (receive Lightning)
   useEffect(() => {
     if (!urlSourceToken || !urlTargetToken) {
-      navigate("/btc_lightning/usdc_pol", { replace: true });
+      const isSpeedWallet = isValidSpeedWalletContext();
+      if (isSpeedWallet) {
+        navigate("/usdc_pol/btc_lightning", { replace: true });
+      } else {
+        navigate("/btc_lightning/usdc_pol", { replace: true });
+      }
     }
   }, [urlSourceToken, urlTargetToken, navigate]);
+
+  // Check Speed Wallet context for defaults
+  const isSpeedWalletUser = isValidSpeedWalletContext();
 
   // State for home page
   const [bitcoinAmount, setBitcoinAmount] = useState("");
@@ -108,7 +117,7 @@ function HomePage() {
     urlSourceToken || "usdc_pol",
   );
   const [targetAsset, setTargetAsset] = useState<TokenId>(
-    urlTargetToken || "btc_arkade",
+    urlTargetToken || (isSpeedWalletUser ? "btc_lightning" : "btc_arkade"),
   );
   const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd");
   const [targetAddress, setTargetAddress] = useState("");
