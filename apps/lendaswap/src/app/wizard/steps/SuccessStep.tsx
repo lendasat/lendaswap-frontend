@@ -1,4 +1,4 @@
-import { Check, CheckCheck, Copy, ExternalLink, Twitter } from "lucide-react";
+import { Check, CheckCheck, Copy, ExternalLink, Heart, Twitter } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -9,6 +9,7 @@ import {
   getBlockexplorerAddressLink,
   getBlockexplorerTxLink,
 } from "../../utils/tokenUtils";
+import { isValidSpeedWalletContext } from "../../../utils/speedWallet";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
@@ -118,7 +119,13 @@ export function SuccessStep({
 
           {/* Success Message */}
           <div className="space-y-2 text-center">
-            <h3 className="text-2xl font-semibold">Swap Complete!</h3>
+            {isValidSpeedWalletContext() ? (
+              <h3 className="text-2xl font-semibold flex items-center justify-center gap-2">
+                Speed <Heart className="h-6 w-6 text-red-500 fill-red-500" /> LendaSwap
+              </h3>
+            ) : (
+              <h3 className="text-2xl font-semibold">Swap Complete!</h3>
+            )}
             <p className="text-muted-foreground text-sm">
               Your {config.receivedTokenSymbol} has been successfully sent to
               your address
