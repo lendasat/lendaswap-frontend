@@ -18,6 +18,37 @@
  * https://app.com?acct=acct_li8hh2xyRuSBWnE4&lang=en&bal_btc=87636&bal_usdt=1975.29&p_add=abc%40speed.app
  */
 
+const SPEED_WALLET_STORAGE_KEY = "speed_wallet_params";
+
+/**
+ * Persists Speed Wallet params to sessionStorage.
+ * Called automatically when params are first detected from URL.
+ */
+const persistSpeedWalletParams = (params: SpeedWalletParams): void => {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(SPEED_WALLET_STORAGE_KEY, JSON.stringify(params));
+  } catch {
+    // sessionStorage might not be available
+  }
+};
+
+/**
+ * Gets persisted Speed Wallet params from sessionStorage.
+ */
+const getPersistedSpeedWalletParams = (): SpeedWalletParams | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = sessionStorage.getItem(SPEED_WALLET_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as SpeedWalletParams;
+    }
+  } catch {
+    // sessionStorage might not be available or JSON parse failed
+  }
+  return null;
+};
+
 export interface SpeedWalletParams {
   /** Account ID (e.g., "acct_li8hh2xyRuSBWnE4") */
   accountId: string | null;
@@ -45,46 +76,58 @@ export interface SpeedWalletPaymentRequest {
 
 /**
  * Parses all Speed Wallet parameters from the URL.
- * Call this once on app initialization and store the result.
+ * If found in URL, persists to sessionStorage for later use after redirects.
+ * Falls back to sessionStorage if URL params are missing.
  */
 export const getSpeedWalletParams = (): SpeedWalletParams => {
+  const emptyParams: SpeedWalletParams = {
+    accountId: null,
+    language: null,
+    balanceBtcSats: null,
+    balanceUsdt: null,
+    lightningAddress: null,
+  };
+
   if (typeof window === "undefined") {
-    return {
-      accountId: null,
-      language: null,
-      balanceBtcSats: null,
-      balanceUsdt: null,
-      lightningAddress: null,
-    };
+    return emptyParams;
   }
 
-  const params = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(window.location.search);
+  const acct = urlParams.get("acct");
 
-  const balBtcRaw = params.get("bal_btc");
-  const balUsdtRaw = params.get("bal_usdt");
-  const pAdd = params.get("p_add");
+  // If we have Speed Wallet params in URL, parse and persist them
+  if (acct?.startsWith("acct_")) {
+    const balBtcRaw = urlParams.get("bal_btc");
+    const balUsdtRaw = urlParams.get("bal_usdt");
+    const pAdd = urlParams.get("p_add");
 
-  return {
-    accountId: params.get("acct"),
-    language: params.get("lang"),
-    balanceBtcSats: balBtcRaw ? parseInt(balBtcRaw, 10) : null,
-    balanceUsdt: balUsdtRaw ? parseFloat(balUsdtRaw) : null,
-    lightningAddress: pAdd ? decodeURIComponent(pAdd) : null,
-  };
+    const params: SpeedWalletParams = {
+      accountId: acct,
+      language: urlParams.get("lang"),
+      balanceBtcSats: balBtcRaw ? parseInt(balBtcRaw, 10) : null,
+      balanceUsdt: balUsdtRaw ? parseFloat(balUsdtRaw) : null,
+      lightningAddress: pAdd ? decodeURIComponent(pAdd) : null,
+    };
+
+    // Persist for use after redirects
+    persistSpeedWalletParams(params);
+    return params;
+  }
+
+  // Fallback to persisted params (survives redirects)
+  return getPersistedSpeedWalletParams() || emptyParams;
 };
 
 /**
  * Detects if LendaSwap is running inside Speed Wallet's Mini App environment.
- * Checks for Speed Wallet URL parameters (acct with "acct_" prefix).
+ * Checks URL params first, then falls back to persisted sessionStorage.
  */
 export const isSpeedWalletEnvironment = (): boolean => {
   if (typeof window === "undefined") return false;
 
-  const params = new URLSearchParams(window.location.search);
-  const acct = params.get("acct");
-
-  // Check for Speed Wallet account ID (starts with "acct_")
-  if (acct?.startsWith("acct_")) {
+  // Check if we have valid Speed Wallet context (URL or persisted)
+  const params = getSpeedWalletParams();
+  if (params.accountId?.startsWith("acct_")) {
     return true;
   }
 
@@ -97,65 +140,53 @@ export const isSpeedWalletEnvironment = (): boolean => {
 };
 
 /**
- * Gets the Speed Wallet account ID from the URL parameters.
+ * Gets the Speed Wallet account ID.
+ * Checks URL first, then falls back to persisted sessionStorage.
  * @returns Account ID (e.g., "acct_li8hh2xyRuSBWnE4") or null
  */
 export const getSpeedAccountId = (): string | null => {
-  if (typeof window === "undefined") return null;
-
-  const params = new URLSearchParams(window.location.search);
-  return params.get("acct");
+  return getSpeedWalletParams().accountId;
 };
 
 /**
- * Gets the user's Lightning address from Speed Wallet URL parameters.
+ * Gets the user's Lightning address from Speed Wallet.
+ * Checks URL first, then falls back to persisted sessionStorage.
  * @returns Lightning address (e.g., "user@speed.app") or null
  */
 export const getSpeedLightningAddress = (): string | null => {
-  if (typeof window === "undefined") return null;
-
-  const params = new URLSearchParams(window.location.search);
-  const pAdd = params.get("p_add");
-  return pAdd ? decodeURIComponent(pAdd) : null;
+  return getSpeedWalletParams().lightningAddress;
 };
 
 /**
- * Gets the user's Bitcoin balance in Satoshis from Speed Wallet URL parameters.
+ * Gets the user's Bitcoin balance in Satoshis from Speed Wallet.
+ * Checks URL first, then falls back to persisted sessionStorage.
  * @returns Balance in Satoshis or null
  */
 export const getSpeedBalanceBtc = (): number | null => {
-  if (typeof window === "undefined") return null;
-
-  const params = new URLSearchParams(window.location.search);
-  const balBtc = params.get("bal_btc");
-  return balBtc ? parseInt(balBtc, 10) : null;
+  return getSpeedWalletParams().balanceBtcSats;
 };
 
 /**
- * Gets the user's USDT balance from Speed Wallet URL parameters.
+ * Gets the user's USDT balance from Speed Wallet.
+ * Checks URL first, then falls back to persisted sessionStorage.
  * @returns USDT balance or null
  */
 export const getSpeedBalanceUsdt = (): number | null => {
-  if (typeof window === "undefined") return null;
-
-  const params = new URLSearchParams(window.location.search);
-  const balUsdt = params.get("bal_usdt");
-  return balUsdt ? parseFloat(balUsdt) : null;
+  return getSpeedWalletParams().balanceUsdt;
 };
 
 /**
- * Gets the user's language preference from Speed Wallet URL parameters.
+ * Gets the user's language preference from Speed Wallet.
+ * Checks URL first, then falls back to persisted sessionStorage.
  * @returns Language code (e.g., "en", "es", "de") or null
  */
 export const getSpeedLanguage = (): string | null => {
-  if (typeof window === "undefined") return null;
-
-  const params = new URLSearchParams(window.location.search);
-  return params.get("lang");
+  return getSpeedWalletParams().language;
 };
 
 /**
- * Checks if we have a valid Speed Wallet context (has account_id with correct prefix)
+ * Checks if we have a valid Speed Wallet context (has account_id with correct prefix).
+ * Works even after redirects that lose URL params, thanks to sessionStorage persistence.
  */
 export const isValidSpeedWalletContext = (): boolean => {
   const accountId = getSpeedAccountId();
@@ -183,9 +214,7 @@ export const triggerSpeedWalletPayment = (
   const accountId = getSpeedAccountId();
 
   if (!accountId) {
-    console.warn(
-      "Speed Wallet payment triggered but no account_id found in URL",
-    );
+    console.warn("Speed Wallet payment triggered but no account_id found");
     return false;
   }
 

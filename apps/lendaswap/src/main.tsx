@@ -18,6 +18,11 @@ import { ThemeProvider } from "./app/utils/theme-provider";
 import { WalletBridgeProvider } from "./app/WalletBridgeContext";
 import { PostHogSuperProperties } from "./components/PostHogSuperProperties";
 import { createPostHogConfig } from "./config/posthogConfig";
+import { getSpeedWalletParams } from "./utils/speedWallet";
+
+// Capture Speed Wallet params IMMEDIATELY before any routing/redirects happen.
+// This persists them to sessionStorage so they survive React Router redirects.
+getSpeedWalletParams();
 
 const config = createConfig(
   getDefaultConfig({
