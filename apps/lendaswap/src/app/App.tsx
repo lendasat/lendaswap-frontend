@@ -28,6 +28,12 @@ import {
 } from "lucide-react";
 import { useAsync } from "react-use";
 import { useAccount } from "wagmi";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "#/components/ui/accordion";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent } from "#/components/ui/card";
 import {
@@ -587,6 +593,7 @@ function HomePage() {
             <AssetDropDown
               value={sourceAsset}
               availableAssets={availableSourceAssets}
+              label="send"
               onChange={(asset) => {
                 if (
                   (asset === "usdc_pol" ||
@@ -686,6 +693,7 @@ function HomePage() {
                 setTargetAsset(asset);
               }}
               availableAssets={availableTargetAssets}
+              label="receive"
             />
           </div>
         </div>
@@ -823,8 +831,8 @@ function useStepInfo() {
   if (isHomePage) {
     return {
       title: isSpeedWallet
-        ? "⚡ Swap Bitcoin to USDC/USDT"
-        : "Swap Bitcoin to USDC/USDT",
+        ? "⚡ Trustless Near Instant Swaps"
+        : "Trustless Near Instant Swaps",
       description:
         "Fast, secure, and transparent swapping with the lowest rates on the market",
     };
@@ -894,26 +902,15 @@ export default function App() {
         }}
       />
 
-      {/* Modern Gradient Glows */}
+      {/* Modern Gradient Glows - Subtle */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        {/* Top Left - Orange to Purple Gradient */}
+        {/* Top Left - Orange Gradient */}
         <div
           className="absolute -top-48 -left-48 w-[600px] h-[600px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.15) 0%, rgba(249, 115, 22, 0.09) 25%, rgba(234, 88, 12, 0.05) 50%, transparent 70%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.06) 0%, rgba(249, 115, 22, 0.035) 25%, rgba(234, 88, 12, 0.02) 50%, transparent 70%)",
             filter: "blur(100px)",
-            mixBlendMode: "screen",
-          }}
-        />
-
-        {/* Top Left Secondary Layer */}
-        <div
-          className="absolute -top-32 -left-32 w-[500px] h-[500px]"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 100% at 30% 30%, rgba(255, 137, 51, 0.12) 0%, rgba(251, 113, 133, 0.07) 40%, transparent 65%)",
-            filter: "blur(80px)",
             mixBlendMode: "screen",
           }}
         />
@@ -923,30 +920,8 @@ export default function App() {
           className="absolute -bottom-40 -right-40 w-[550px] h-[550px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.13) 0%, rgba(249, 115, 22, 0.08) 30%, rgba(245, 158, 11, 0.05) 50%, transparent 68%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.05) 0%, rgba(249, 115, 22, 0.03) 30%, rgba(245, 158, 11, 0.02) 50%, transparent 68%)",
             filter: "blur(110px)",
-            mixBlendMode: "screen",
-          }}
-        />
-
-        {/* Center Right - Accent Glow */}
-        <div
-          className="absolute top-[35%] right-[15%] w-[450px] h-[450px]"
-          style={{
-            background:
-              "radial-gradient(ellipse 90% 110% at 40% 50%, rgba(249, 115, 22, 0.11) 0%, rgba(251, 146, 60, 0.06) 35%, transparent 60%)",
-            filter: "blur(120px)",
-            mixBlendMode: "screen",
-          }}
-        />
-
-        {/* Left Middle - Subtle Purple-Orange Mix */}
-        <div
-          className="absolute top-[50%] -left-20 w-[400px] h-[400px]"
-          style={{
-            background:
-              "radial-gradient(circle at center, rgba(234, 88, 12, 0.09) 0%, rgba(249, 115, 22, 0.05) 40%, transparent 65%)",
-            filter: "blur(90px)",
             mixBlendMode: "screen",
           }}
         />
@@ -1212,9 +1187,9 @@ export default function App() {
             {/* Info Cards - Only show on home page */}
             {isHomePage && (
               <div className="grid gap-4 md:grid-cols-3">
-                <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
                   <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black dark:bg-white">
                       <Zap className="h-5 w-5 text-white dark:text-black" />
                     </div>
                     <div className="space-y-1">
@@ -1225,9 +1200,9 @@ export default function App() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
                   <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black dark:bg-white">
                       <Shield className="h-5 w-5 text-white dark:text-black" />
                     </div>
                     <div className="space-y-1">
@@ -1238,9 +1213,9 @@ export default function App() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
                   <CardContent className="flex flex-col items-center justify-center gap-3 py-6 text-center">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black dark:bg-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black dark:bg-white">
                       <PiggyBank className="h-5 w-5 text-white dark:text-black" />
                     </div>
                     <div className="space-y-1">
@@ -1251,6 +1226,90 @@ export default function App() {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            )}
+
+            {/* FAQ Section - Only show on home page */}
+            {isHomePage && (
+              <div className="mt-24">
+                <h3 className="text-xl font-semibold mb-6 text-center">
+                  Frequently Asked Questions
+                </h3>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="how" className="border-border/50">
+                    <AccordionTrigger className="text-left">
+                      How does it work?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      LendaSwap uses Hash Time-Locked Contracts (HTLCs) to
+                      enable trustless atomic swaps. When you start a swap, both
+                      parties lock their funds in smart contracts. The swap
+                      either completes fully or both parties get refunded -
+                      there's no way for anyone to steal your funds. We support
+                      Bitcoin Lightning, Arkade (Bitcoin L2), and EVM chains
+                      like Polygon and Ethereum.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="custody" className="border-border/50">
+                    <AccordionTrigger className="text-left">
+                      Is LendaSwap self-custodial?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      Yes! LendaSwap is fully self-custodial. Your keys, your
+                      coins. You can backup your recovery phrase anytime by
+                      clicking the key icon in the header and selecting "View
+                      Backup Phrase". Store it safely - this phrase allows you
+                      to recover your funds if anything goes wrong.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="limits" className="border-border/50">
+                    <AccordionTrigger className="text-left">
+                      What is the maximum swap amount?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      Swap limits vary based on current liquidity and are shown
+                      dynamically when you enter an amount. Generally, you can
+                      swap from a few dollars up to several thousand dollars
+                      worth of Bitcoin. For larger amounts, contact us directly.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="stuck" className="border-border/50">
+                    <AccordionTrigger className="text-left">
+                      What if my swap gets stuck?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      LendaSwap uses atomic swaps, which means your funds are
+                      always safe. If a swap doesn't complete, you can always
+                      recover your funds. Go to Settings (gear icon in the
+                      header) to view your swap history and initiate a refund if
+                      needed. Note: depending on the swap currency, lock times
+                      may vary. In the worst case, your funds might be locked
+                      for up to 2 weeks before you can claim them back.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem
+                    value="opensource"
+                    className="border-border/50"
+                  >
+                    <AccordionTrigger className="text-left">
+                      Is LendaSwap open source?
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      Yes! LendaSwap is fully open source. You can review our
+                      code, contribute, or run your own instance. Check out our
+                      GitHub at{" "}
+                      <a
+                        href="https://github.com/lendasat/lendaswap"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-foreground"
+                      >
+                        github.com/lendasat/lendaswap
+                      </a>
+                      .
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             )}
           </div>

@@ -45,12 +45,14 @@ interface AssetDropDownProps {
   value: TokenId;
   onChange: (selectedAsset: TokenId) => void;
   availableAssets: TokenId[];
+  label?: "send" | "receive";
 }
 
 export function AssetDropDown({
   value,
   onChange,
   availableAssets,
+  label = "send",
 }: AssetDropDownProps) {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
@@ -165,7 +167,11 @@ export function AssetDropDown({
         </DrawerTrigger>
         <DrawerContent>
           <DrawerHeader className="border-b">
-            <DrawerTitle>Select Trading Pair</DrawerTitle>
+            <DrawerTitle>
+              {label === "receive"
+                ? "Select Receive Currency"
+                : "Select Send Currency"}
+            </DrawerTitle>
             {/* Search Input */}
             <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
