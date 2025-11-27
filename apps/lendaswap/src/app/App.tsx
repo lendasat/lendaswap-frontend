@@ -1055,7 +1055,12 @@ export default function App() {
                       {/* Hide Connect button in Speed Wallet - not needed */}
                       {!isValidSpeedWalletContext() && (
                         <ConnectKitButton.Custom>
-                          {({ isConnected, show, truncatedAddress, ensName }) => {
+                          {({
+                            isConnected,
+                            show,
+                            truncatedAddress,
+                            ensName,
+                          }) => {
                             return (
                               <DropdownMenuItem onClick={show}>
                                 {isConnected ? (

@@ -159,7 +159,7 @@ export const getSpeedLanguage = (): string | null => {
  */
 export const isValidSpeedWalletContext = (): boolean => {
   const accountId = getSpeedAccountId();
-  return accountId !== null && accountId.startsWith("acct_");
+  return !!accountId?.startsWith("acct_");
 };
 
 /**
