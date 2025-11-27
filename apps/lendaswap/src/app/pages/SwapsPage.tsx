@@ -1,15 +1,5 @@
-import { getMnemonic } from "@frontend/browser-wallet";
 import { format } from "date-fns";
-import {
-  ArrowRight,
-  Check,
-  Copy,
-  Download,
-  Eye,
-  EyeOff,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { ArrowRight, Check, Copy, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Alert, AlertDescription } from "#/components/ui/alert";
@@ -31,7 +21,6 @@ import {
   TableRow,
 } from "#/components/ui/table";
 import { getTokenIcon } from "../api";
-import { ImportMnemonicDialog } from "../components/ImportMnemonicDialog";
 import { VersionFooter } from "../components/VersionFooter";
 import { clearAllSwaps, deleteSwap, getAllSwaps, type StoredSwap } from "../db";
 
@@ -41,12 +30,6 @@ export function SwapsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
   const [swapToDelete, setSwapToDelete] = useState<string | null>(null);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [showSeedphrase, setShowSeedphrase] = useState(false);
-  const [mnemonic, setMnemonic] = useState<string | null>(null);
-  const [copiedWordIndex, setCopiedWordIndex] = useState<number | null>(null);
-  const [copiedAllWords, setCopiedAllWords] = useState(false);
   const navigate = useNavigate();
 
   const handleCopyId = async (e: React.MouseEvent, swapId: string) => {
@@ -93,77 +76,6 @@ export function SwapsPage() {
     }
   };
 
-  const handleDownloadSeedphrase = async () => {
-    setIsDownloading(true);
-    try {
-      const mnemonic = await getMnemonic();
-
-      if (!mnemonic) {
-        console.error("No mnemonic found");
-        return;
-      }
-
-      // Create a blob with the mnemonic
-      const blob = new Blob([mnemonic], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-
-      // Create a temporary link and trigger download
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `lendaswap-phrase-${new Date().toISOString().split("T")[0]}.txt`;
-      document.body.appendChild(link);
-      link.click();
-
-      // Cleanup
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download mnemonic:", error);
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const handleImportSuccess = () => {
-    // Reload the page to refresh wallet state
-    window.location.reload();
-  };
-
-  const handleToggleSeedphrase = async () => {
-    if (!showSeedphrase && !mnemonic) {
-      // Load mnemonic when showing for the first time
-      try {
-        const phrase = await getMnemonic();
-        setMnemonic(phrase);
-      } catch (error) {
-        console.error("Failed to load mnemonic:", error);
-        return;
-      }
-    }
-    setShowSeedphrase(!showSeedphrase);
-  };
-
-  const handleCopyWord = async (word: string, index: number) => {
-    try {
-      await navigator.clipboard.writeText(word);
-      setCopiedWordIndex(index);
-      setTimeout(() => setCopiedWordIndex(null), 2000);
-    } catch (error) {
-      console.error("Failed to copy word:", error);
-    }
-  };
-
-  const handleCopyAllWords = async () => {
-    if (!mnemonic) return;
-    try {
-      await navigator.clipboard.writeText(mnemonic);
-      setCopiedAllWords(true);
-      setTimeout(() => setCopiedAllWords(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy all words:", error);
-    }
-  };
-
   // Load all swaps from Dexie
   useEffect(() => {
     const loadSwaps = async () => {
@@ -184,136 +96,24 @@ export function SwapsPage() {
     loadSwaps();
   }, []);
 
-  const words = mnemonic ? mnemonic.split(" ") : [];
-
   return (
     <>
       <div className="container max-w-6xl mx-auto py-4 sm:py-8 px-4 h-screen flex flex-col">
-        <div className="flex flex-col items-center gap-4 mb-4">
-          {/* Seedphrase display section */}
-          <div className="w-full max-w-3xl">
+        {/* Action buttons */}
+        {swaps.length > 0 && (
+          <div className="flex justify-end items-center gap-2 mb-4">
             <Button
-              variant="outline"
+              variant="destructive"
               size="sm"
-              onClick={handleToggleSeedphrase}
-              className="gap-1.5 text-xs sm:text-sm w-full sm:w-auto"
-            >
-              {showSeedphrase ? (
-                <>
-                  <EyeOff className="h-4 w-4" />
-                  <span>Hide Seedphrase</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="h-4 w-4" />
-                  <span>Show Seedphrase</span>
-                </>
-              )}
-            </Button>
-
-            {showSeedphrase && mnemonic && (
-              <div className="mt-4 p-4 border rounded-lg bg-muted/30 ph-no-capture">
-                <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
-                  <AlertDescription className="text-amber-600 dark:text-amber-400 text-sm">
-                    <strong>Never share this phrase with anyone.</strong> Anyone
-                    with these words can access your funds.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {words.map((word, index) => (
-                    <div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: "using index here is ok, this list never changes"
-                      key={index}
-                      className="relative flex items-center gap-2 rounded-md border bg-background p-3"
-                    >
-                      <span className="text-xs text-muted-foreground w-6">
-                        {index + 1}.
-                      </span>
-                      <span className="flex-1 font-mono text-sm ph-no-capture">
-                        {word}
-                      </span>
-                      <button
-                        type={"button"}
-                        onClick={() => handleCopyWord(word, index)}
-                        className="p-1 hover:bg-muted rounded transition-colors"
-                        title="Copy word"
-                      >
-                        {copiedWordIndex === index ? (
-                          <Check className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <Copy className="h-3 w-3 text-muted-foreground" />
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyAllWords}
-                    className="gap-2"
-                  >
-                    {copiedAllWords ? (
-                      <>
-                        <Check className="h-4 w-4" />
-                        Copied All Words
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" />
-                        Copy All Words
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action buttons */}
-          <div className="flex justify-center items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadSeedphrase}
-              disabled={isDownloading}
+              onClick={handleClearAllClick}
               className="gap-1.5 text-xs sm:text-sm"
             >
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {isDownloading ? "Downloading..." : "Download Seedphrase"}
-              </span>
-              <span className="sm:hidden">
-                {isDownloading ? "Downloading..." : "Backup"}
-              </span>
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Clear History</span>
+              <span className="sm:hidden">Clear</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setImportDialogOpen(true)}
-              className="gap-1.5 text-xs sm:text-sm"
-            >
-              <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Import Seedphrase</span>
-              <span className="sm:hidden">Restore</span>
-            </Button>
-            {swaps.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearAllClick}
-                className="gap-1.5 text-xs sm:text-sm"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Clear History</span>
-                <span className="sm:hidden">Clear</span>
-              </Button>
-            )}
           </div>
-        </div>
+        )}
 
         {swaps.length === 0 ? (
           <Alert>
@@ -439,13 +239,6 @@ export function SwapsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Import seedphrase dialog */}
-      <ImportMnemonicDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        onImportSuccess={handleImportSuccess}
-      />
     </>
   );
 }

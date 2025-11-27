@@ -85,9 +85,7 @@ export function AddressInput({
           setAddressIsValid(false);
         }
       } else {
-        setValidationError(
-          "Invalid Lightning address or BOLT11 invoice. Expected: user@domain.com or lnbc...",
-        );
+        setValidationError("Invalid BOLT11 invoice. Expected format: lnbc...");
         setAddressIsValid(false);
       }
     } else if (targetToken === "btc_arkade") {
@@ -107,7 +105,7 @@ export function AddressInput({
   const getPlaceholder = () => {
     switch (targetToken) {
       case "btc_lightning":
-        return "Lightning address (user@domain.com) or BOLT11 invoice";
+        return "Paste a BOLT11 invoice";
       case "btc_arkade":
         return "Provide an Arkade address";
       case "usdc_pol":

@@ -9,11 +9,13 @@ import {
   useParams,
 } from "react-router";
 import "../assets/styles.css";
-import { deriveSwapParams } from "@frontend/browser-wallet";
+import { deriveSwapParams, getMnemonic } from "@frontend/browser-wallet";
 import { ConnectKitButton } from "connectkit";
 import {
+  ArrowLeftRight,
   Check,
   Download,
+  Eye,
   Github,
   Key,
   Loader,
@@ -23,7 +25,6 @@ import {
   Tag,
   Upload,
   Wallet,
-  Wrench,
   Zap,
 } from "lucide-react";
 import { useAsync } from "react-use";
@@ -712,50 +713,38 @@ function HomePage() {
         {/* EVM Wallet Address - only shown when source is EVM stablecoin (hidden in Speed Wallet) */}
         {isEvmToken(sourceAsset) && !isValidSpeedWalletContext() && (
           <div className="space-y-2">
-            <label
-              htmlFor={"connect-address"}
-              className="text-sm text-muted-foreground"
-            >
-              Connect a Web3 wallet with gas tokens to pay for gas fees
-            </label>
             {isConnected && userEvmAddress ? (
-              <div className="flex items-center gap-2">
-                <input
-                  id={"connect-address"}
-                  type="text"
-                  value={userEvmAddress}
-                  readOnly
-                  className="w-full rounded-lg border border-input px-3 py-2 text-sm bg-muted cursor-not-allowed min-h-[3rem] md:min-h-[3.5rem]"
-                />
-                <ConnectKitButton.Custom>
-                  {({ show }) => (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={show}
-                      className="shrink-0"
-                    >
-                      Change
-                    </Button>
-                  )}
-                </ConnectKitButton.Custom>
-              </div>
+              <>
+                <label
+                  htmlFor={"connect-address"}
+                  className="text-sm text-muted-foreground"
+                >
+                  Wallet connected for gas fees
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id={"connect-address"}
+                    type="text"
+                    value={userEvmAddress}
+                    readOnly
+                    className="w-full rounded-lg border border-input px-3 py-2 text-sm bg-muted cursor-not-allowed min-h-[3rem] md:min-h-[3.5rem]"
+                  />
+                  <ConnectKitButton.Custom>
+                    {({ show }) => (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={show}
+                        className="shrink-0"
+                      >
+                        Change
+                      </Button>
+                    )}
+                  </ConnectKitButton.Custom>
+                </div>
+              </>
             ) : (
-              <ConnectKitButton.Custom>
-                {({ show }) => (
-                  <Button
-                    variant="outline"
-                    onClick={show}
-                    className="w-full h-10 md:h-12 text-sm"
-                  >
-                    <Wallet className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                    Connect
-                  </Button>
-                )}
-              </ConnectKitButton.Custom>
-            )}
-            {!isConnected && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Connect your wallet to continue
               </p>
             )}
@@ -888,6 +877,34 @@ export default function App() {
   const isHomePage =
     location.pathname === "/" || /^\/[^/]+\/[^/]+$/.test(location.pathname);
 
+  const handleDownloadSeedphrase = async () => {
+    try {
+      const mnemonic = await getMnemonic();
+
+      if (!mnemonic) {
+        console.error("No mnemonic found");
+        return;
+      }
+
+      // Create a blob with the mnemonic
+      const blob = new Blob([mnemonic], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      // Create a temporary link and trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `lendaswap-phrase-${new Date().toISOString().split("T")[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download mnemonic:", error);
+    }
+  };
+
   return (
     <div className="bg-background min-h-screen relative overflow-hidden">
       {/* Grid Pattern Background */}
@@ -1003,8 +1020,8 @@ export default function App() {
                         onClick={() => navigate("/swaps")}
                         className="gap-2"
                       >
-                        <Wrench className="h-4 w-4" />
-                        Settings
+                        <ArrowLeftRight className="h-4 w-4" />
+                        Swaps
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
@@ -1013,8 +1030,16 @@ export default function App() {
                         onClick={() => setBackupDialogOpen(true)}
                         className="gap-2"
                       >
-                        <Key className="h-4 w-4" />
-                        View Backup Phrase
+                        <Eye className="h-4 w-4" />
+                        Show Seedphrase
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem
+                        onClick={handleDownloadSeedphrase}
+                        className="gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download Seedphrase
                       </DropdownMenuItem>
 
                       <DropdownMenuItem
@@ -1022,7 +1047,7 @@ export default function App() {
                         className="gap-2"
                       >
                         <Upload className="h-4 w-4" />
-                        Import Wallet
+                        Import Seedphrase
                       </DropdownMenuItem>
 
                       <DropdownMenuSeparator />
@@ -1086,9 +1111,9 @@ export default function App() {
                     size="sm"
                     onClick={() => navigate("/swaps")}
                     className="gap-2"
-                    title="Settings"
+                    title="Swaps"
                   >
-                    <Wrench className="h-4 w-4" />
+                    <ArrowLeftRight className="h-4 w-4" />
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1106,15 +1131,22 @@ export default function App() {
                         onClick={() => setBackupDialogOpen(true)}
                         className="gap-2"
                       >
+                        <Eye className="h-4 w-4" />
+                        Show Seedphrase
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={handleDownloadSeedphrase}
+                        className="gap-2"
+                      >
                         <Download className="h-4 w-4" />
-                        View Backup Phrase
+                        Download Seedphrase
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setImportDialogOpen(true)}
                         className="gap-2"
                       >
                         <Upload className="h-4 w-4" />
-                        Import Wallet
+                        Import Seedphrase
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1257,9 +1289,10 @@ export default function App() {
                     <AccordionContent className="text-muted-foreground">
                       Yes! LendaSwap is fully self-custodial. Your keys, your
                       coins. You can backup your recovery phrase anytime by
-                      clicking the key icon in the header and selecting "View
-                      Backup Phrase". Store it safely - this phrase allows you
-                      to recover your funds if anything goes wrong.
+                      clicking the key icon in the header - you can show,
+                      download, or import your seedphrase. Store it safely -
+                      this phrase allows you to recover your funds if anything
+                      goes wrong.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="limits" className="border-border/50">
@@ -1267,10 +1300,9 @@ export default function App() {
                       What is the maximum swap amount?
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">
-                      Swap limits vary based on current liquidity and are shown
-                      dynamically when you enter an amount. Generally, you can
-                      swap from a few dollars up to several thousand dollars
-                      worth of Bitcoin. For larger amounts, contact us directly.
+                      In general, you can swap $1-$1000 USD without any
+                      problems. For larger amounts, please contact us directly
+                      to confirm availability.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="stuck" className="border-border/50">
@@ -1280,11 +1312,11 @@ export default function App() {
                     <AccordionContent className="text-muted-foreground">
                       LendaSwap uses atomic swaps, which means your funds are
                       always safe. If a swap doesn't complete, you can always
-                      recover your funds. Go to Settings (gear icon in the
-                      header) to view your swap history and initiate a refund if
-                      needed. Note: depending on the swap currency, lock times
-                      may vary. In the worst case, your funds might be locked
-                      for up to 2 weeks before you can claim them back.
+                      recover your funds. Click the swap icon in the header to
+                      view your swap history and initiate a refund if needed.
+                      Note: depending on the swap currency, lock times may vary.
+                      In the worst case, your funds might be locked for up to 2
+                      weeks before you can claim them back.
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem
