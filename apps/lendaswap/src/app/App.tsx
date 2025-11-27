@@ -94,14 +94,10 @@ function HomePage() {
     ? params.targetToken
     : null;
 
-  // Redirect to default if invalid tokens in URL
-  // For Speed Wallet users, default to usdc_pol -> btc_lightning (receive Lightning)
+  // Redirect to default if invalid tokens in URL (skip for Speed Wallet to preserve params)
   useEffect(() => {
     if (!urlSourceToken || !urlTargetToken) {
-      const isSpeedWallet = isValidSpeedWalletContext();
-      if (isSpeedWallet) {
-        navigate("/usdc_pol/btc_lightning", { replace: true });
-      } else {
+      if (!isValidSpeedWalletContext()) {
         navigate("/btc_lightning/usdc_pol", { replace: true });
       }
     }
