@@ -539,58 +539,83 @@ function HomePage() {
     availableTargetAssets = ["btc_arkade", "btc_lightning"];
   }
 
-  return (
-    <div className="flex flex-col gap-2 px-4 md:px-4">
-      {/* Exchange Rate - centered at top */}
-      {displayedExchangeRate && !isLoadingPrice && (
-        <div className="text-sm text-muted-foreground text-center">
-          1{" "}
-          {sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
-            ? "BTC"
-            : getTokenSymbol(sourceAsset)}{" "}
-          ={" "}
-          {displayedExchangeRate.toLocaleString("en-US", {
-            minimumFractionDigits:
-              sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
-                ? 2
-                : 8,
-            maximumFractionDigits:
-              sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade"
-                ? 2
-                : 8,
-          })}{" "}
-          {targetAsset === "btc_lightning" || targetAsset === "btc_arkade"
-            ? "BTC"
-            : getTokenSymbol(targetAsset)}
-        </div>
-      )}
+  // Helper to format display values
+  const formatUsdDisplay = (val: string) => {
+    if (!val || val === "") return "0";
+    const num = Number.parseFloat(val);
+    if (Number.isNaN(num)) return val;
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
 
-      <div className="space-y-2">
-        <div className="text-sm text-muted-foreground">You send</div>
-        <div className="relative">
-          {isUsdToken(sourceAsset) ? (
-            <UsdInput
-              value={usdAmount}
-              onChange={(v) => {
-                setLastFieldEdited("usd");
-                setUsdAmount(v);
-              }}
-              className="pr-24 md:pr-32"
+  const formatBtcDisplay = (val: string) => {
+    if (!val || val === "") return "0";
+    const num = Number.parseFloat(val);
+    if (Number.isNaN(num)) return val;
+    return num.toFixed(8);
+  };
+
+  // Handle source amount input
+  const handleSourceInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/[^0-9.]/g, "");
+    if (isUsdToken(sourceAsset)) {
+      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
+        setLastFieldEdited("usd");
+        setUsdAmount(input);
+      }
+    } else {
+      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
+        setLastFieldEdited("btc");
+        setBitcoinAmount(input);
+      }
+    }
+  };
+
+  // Handle target amount input
+  const handleTargetInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value.replace(/[^0-9.]/g, "");
+    if (isUsdToken(targetAsset)) {
+      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
+        setLastFieldEdited("usd");
+        setUsdAmount(input);
+      }
+    } else {
+      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
+        setLastFieldEdited("btc");
+        setBitcoinAmount(input);
+      }
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-1 p-2">
+      {/* You Send */}
+      <div className="rounded-2xl bg-muted/50 p-4">
+        <div className="text-sm text-muted-foreground mb-2">You send</div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={isUsdToken(sourceAsset) ? usdAmount : bitcoinAmount}
+              onChange={handleSourceInput}
+              placeholder="0"
+              className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+              data-1p-ignore
+              data-lpignore="true"
+              autoComplete="off"
             />
-          ) : (
-            <BtcInput
-              value={bitcoinAmount}
-              onChange={(v) => {
-                setLastFieldEdited("btc");
-                setBitcoinAmount(v);
-              }}
-              className="pr-24 md:pr-32"
-            />
-          )}
-          <div
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-20 md:w-28"
-            id={"sourceAsset"}
-          >
+            <div className="text-sm text-muted-foreground mt-1">
+              {isUsdToken(sourceAsset) ? (
+                <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
+              ) : (
+                <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+              )}
+            </div>
+          </div>
+          <div className="shrink-0">
             <AssetDropDown
               value={sourceAsset}
               availableAssets={availableSourceAssets}
@@ -654,39 +679,38 @@ function HomePage() {
           </div>
         </div>
       </div>
-      <div className="space-y-2">
-        <label htmlFor="usdAmount" className="text-sm text-muted-foreground">
-          You receive
-        </label>
-        <div className="relative">
-          {targetAsset === "usdc_pol" ||
-          targetAsset === "usdt0_pol" ||
-          targetAsset === "usdc_eth" ||
-          targetAsset === "usdt_eth" ? (
-            <UsdInput
-              value={usdAmount}
-              onChange={(v) => {
-                setLastFieldEdited("usd");
-                setUsdAmount(v);
-              }}
-              className="pr-24 md:pr-32"
-              isLoading={isLoadingPrice}
-            />
-          ) : (
-            <BtcInput
-              value={bitcoinAmount}
-              onChange={(v) => {
-                setLastFieldEdited("btc");
-                setBitcoinAmount(v);
-              }}
-              className="pr-24 md:pr-32"
-              isLoading={isLoadingPrice}
-            />
-          )}
-          <div
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-20 md:w-28"
-            id={"targetAsset"}
-          >
+
+      {/* You Receive */}
+      <div className="rounded-2xl bg-muted/50 p-4">
+        <div className="text-sm text-muted-foreground mb-2">You receive</div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {isLoadingPrice ? (
+              <div className="h-10 flex items-center">
+                <Skeleton className="h-8 w-32" />
+              </div>
+            ) : (
+              <input
+                type="text"
+                inputMode="decimal"
+                value={isUsdToken(targetAsset) ? usdAmount : bitcoinAmount}
+                onChange={handleTargetInput}
+                placeholder="0"
+                className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+                data-1p-ignore
+                data-lpignore="true"
+                autoComplete="off"
+              />
+            )}
+            <div className="text-sm text-muted-foreground mt-1">
+              {isUsdToken(targetAsset) ? (
+                <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
+              ) : (
+                <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+              )}
+            </div>
+          </div>
+          <div className="shrink-0">
             <AssetDropDown
               value={targetAsset}
               onChange={(asset) => {
@@ -698,6 +722,10 @@ function HomePage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Address Input */}
+      <div className="pt-2">
         <AddressInput
           value={targetAddress}
           onChange={setTargetAddress}
