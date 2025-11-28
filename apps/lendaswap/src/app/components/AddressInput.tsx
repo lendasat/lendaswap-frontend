@@ -135,7 +135,7 @@ export function AddressInput({
           autoComplete="off"
         />
 
-        {/* Get Address Button - Only for Polygon addresses, hidden in Speed Wallet */}
+        {/* Get Address Button - Only for EVM addresses, hidden in Speed Wallet */}
         {isEvmTarget && !isSpeedWallet && (
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
             {isConnected && !value ? (

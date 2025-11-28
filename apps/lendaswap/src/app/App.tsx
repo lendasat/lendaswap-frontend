@@ -78,6 +78,8 @@ import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import {
   getViemChain,
+  isBtcToken,
+  isEthereumToken,
   isEvmToken,
   isUsdToken,
   isValidTokenId,
@@ -593,7 +595,7 @@ function HomePage() {
               <div className="flex items-baseline gap-1">
                 {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
                 {sourceInputMode === "converted" && (
-                  <span className="text-4xl font-medium text-muted-foreground">
+                  <span className="text-2xl md:text-4xl font-medium text-muted-foreground">
                     $
                   </span>
                 )}
@@ -625,7 +627,7 @@ function HomePage() {
                     }
                   }}
                   placeholder="0"
-                  className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+                  className="w-full bg-transparent text-2xl md:text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
                   data-1p-ignore
                   data-lpignore="true"
                   autoComplete="off"
@@ -754,7 +756,7 @@ function HomePage() {
                 <div className="flex items-baseline gap-1">
                   {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
                   {targetInputMode === "converted" && (
-                    <span className="text-4xl font-medium text-muted-foreground">
+                    <span className="text-2xl md:text-4xl font-medium text-muted-foreground">
                       $
                     </span>
                   )}
@@ -786,7 +788,7 @@ function HomePage() {
                       }
                     }}
                     placeholder="0"
-                    className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+                    className="w-full bg-transparent text-2xl md:text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
                     data-1p-ignore
                     data-lpignore="true"
                     autoComplete="off"
@@ -921,6 +923,19 @@ function HomePage() {
                 <Button onClick={show} className="w-full h-12 gap-2">
                   <Wallet className="h-4 w-4" />
                   Connect Wallet
+                </Button>
+              )}
+            </ConnectKitButton.Custom>
+          ) : /* Show Connect Wallet button when BTC source, Ethereum target, and wallet not connected */
+          isBtcToken(sourceAsset) &&
+            isEthereumToken(targetAsset) &&
+            !isValidSpeedWalletContext() &&
+            !isConnected ? (
+            <ConnectKitButton.Custom>
+              {({ show }) => (
+                <Button onClick={show} className="w-full h-12 gap-2">
+                  <Wallet className="h-4 w-4" />
+                  Connect Wallet to Pay Gas
                 </Button>
               )}
             </ConnectKitButton.Custom>

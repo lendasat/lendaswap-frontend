@@ -13,7 +13,7 @@ import {
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
-  swapDirection: "btc-to-polygon" | "polygon-to-btc";
+  swapDirection: "btc-to-evm" | "evm-to-btc";
   swapId: string;
 }
 
@@ -67,17 +67,17 @@ export function SuccessStep({
 
   // Define config based on swap direction
   const config =
-    swapDirection === "btc-to-polygon"
+    swapDirection === "btc-to-evm"
       ? {
           sentTokenSymbol: "sats",
           sentAmount: swapData.sats_receive.toLocaleString(),
           receivedTokenSymbol: getTokenSymbol(swapData.target_token),
           receivedAmount: swapData.usd_amount.toFixed(2),
           receiveAddress: swapData.user_address_evm,
-          receiveAddressIsPolygon: true,
+          receiveAddressIsEvm: true,
           isLightning: false,
           swapTxId: swapData.evm_htlc_claim_txid,
-          swapTxIdIsPolygon: true,
+          swapTxIdIsEvm: true,
           tweetText: `Swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         }
       : {
@@ -90,10 +90,10 @@ export function SuccessStep({
             swapData.target_token === "btc_lightning"
               ? swapData.ln_invoice
               : swapData.user_address_arkade,
-          receiveAddressIsPolygon: false,
+          receiveAddressIsEvm: false,
           isLightning: swapData.target_token === "btc_lightning",
           swapTxId: swapData.bitcoin_htlc_claim_txid,
-          swapTxIdIsPolygon: false,
+          swapTxIdIsEvm: false,
           tweetText: `Swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         };
 
@@ -173,66 +173,68 @@ export function SuccessStep({
                 {config.receivedAmount} {config.receivedTokenSymbol}
               </span>
             </div>
-            <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
-              <span className="text-muted-foreground">
-                {config.isLightning
-                  ? "Sent to Invoice/Address"
-                  : "Sent to Address"}
-              </span>
-              <div className="flex items-center gap-2">
-                {config.receiveAddressIsPolygon ? (
-                  <a
-                    href={`${getBlockexplorerAddressLink(swapData.target_token, config?.receiveAddress)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 break-all font-mono text-xs hover:underline"
-                  >
-                    {config.receiveAddress}
-                  </a>
-                ) : (
-                  <span className="flex-1 break-all font-mono text-xs">
-                    {config.receiveAddress}
-                  </span>
-                )}
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() =>
-                      handleCopyAddress(config.receiveAddress || "")
-                    }
-                    className="h-8 w-8"
-                  >
-                    {copiedAddress === config.receiveAddress ? (
-                      <CheckCheck className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                  {config.receiveAddressIsPolygon && (
+            {config.receiveAddress && (
+              <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
+                <span className="text-muted-foreground">
+                  {config.isLightning
+                    ? "Sent to Invoice/Address"
+                    : "Sent to Address"}
+                </span>
+                <div className="flex items-center gap-2">
+                  {config.receiveAddressIsEvm ? (
+                    <a
+                      href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 break-all font-mono text-xs hover:underline"
+                    >
+                      {config.receiveAddress}
+                    </a>
+                  ) : (
+                    <span className="flex-1 break-all font-mono text-xs">
+                      {config.receiveAddress}
+                    </span>
+                  )}
+                  <div className="flex shrink-0 gap-1">
                     <Button
                       size="icon"
                       variant="ghost"
-                      asChild
+                      onClick={() =>
+                        handleCopyAddress(config.receiveAddress ?? "")
+                      }
                       className="h-8 w-8"
                     >
-                      <a
-                        href={`${getBlockexplorerAddressLink(swapData.target_token, config?.receiveAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                      {copiedAddress === config.receiveAddress ? (
+                        <CheckCheck className="h-3 w-3" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
                     </Button>
-                  )}
+                    {config.receiveAddressIsEvm && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        asChild
+                        className="h-8 w-8"
+                      >
+                        <a
+                          href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
               <span className="text-muted-foreground">Transaction Hash</span>
               {config.swapTxId ? (
                 <div className="flex items-center gap-2">
-                  {config.swapTxIdIsPolygon ? (
+                  {config.swapTxIdIsEvm ? (
                     <a
                       href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
                       target="_blank"
@@ -259,7 +261,7 @@ export function SuccessStep({
                         <Copy className="h-3 w-3" />
                       )}
                     </Button>
-                    {config.swapTxIdIsPolygon && (
+                    {config.swapTxIdIsEvm && (
                       <Button
                         size="icon"
                         variant="ghost"
