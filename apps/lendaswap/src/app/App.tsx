@@ -156,10 +156,12 @@ function HomePage() {
     }
   }, [isConnected, connectedAddress]);
 
-  // Check if wallet is on the correct chain for the source asset
+  // Check if wallet is on the correct chain for the EVM asset (source or target)
   const expectedChain = isEvmToken(sourceAsset)
     ? getViemChain(sourceAsset)
-    : null;
+    : isEvmToken(targetAsset)
+      ? getViemChain(targetAsset)
+      : null;
   const isWrongChain =
     isConnected &&
     expectedChain &&
