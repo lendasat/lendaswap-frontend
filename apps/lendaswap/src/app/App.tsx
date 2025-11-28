@@ -37,7 +37,7 @@ import {
   AccordionTrigger,
 } from "#/components/ui/accordion";
 import { Button } from "#/components/ui/button";
-import { Card, CardContent } from "#/components/ui/card";
+import { Card } from "#/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,11 +67,9 @@ import {
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
-import { BtcInput } from "./components/BtcInput";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
-import { UsdInput } from "./components/UsdInput";
 import { addSwap } from "./db";
 import { usePriceFeed } from "./PriceFeedContext";
 import { RefundPage, SwapsPage } from "./pages";
@@ -125,8 +123,12 @@ function HomePage() {
   );
   const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd");
   // Track which denomination user wants to input (USD or BTC) for each box
-  const [sourceInputMode, setSourceInputMode] = useState<"native" | "converted">("native");
-  const [targetInputMode, setTargetInputMode] = useState<"native" | "converted">("native");
+  const [sourceInputMode, setSourceInputMode] = useState<
+    "native" | "converted"
+  >("native");
+  const [targetInputMode, setTargetInputMode] = useState<
+    "native" | "converted"
+  >("native");
   const [targetAddress, setTargetAddress] = useState("");
   const [addressValid, setAddressValid] = useState(false);
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
@@ -183,11 +185,6 @@ function HomePage() {
     targetAsset,
     Number.parseFloat(usdAmount),
   );
-
-  let displayedExchangeRate = exchangeRate;
-  if (exchangeRate && isEvmToken(sourceAsset)) {
-    displayedExchangeRate = 1 / exchangeRate;
-  }
 
   const {
     value: maybeAssetPairs,
@@ -527,7 +524,11 @@ function HomePage() {
     ...new Set([
       // All EVM tokens that can be targets (when selling BTC)
       ...assetPairs
-        .filter((a) => a.target.token_id === "btc_arkade" || a.target.token_id === "btc_lightning")
+        .filter(
+          (a) =>
+            a.target.token_id === "btc_arkade" ||
+            a.target.token_id === "btc_lightning",
+        )
         .map((a) => a.source.token_id),
       // All BTC tokens that can be targets (when selling EVM)
       "btc_arkade" as TokenId,
@@ -553,38 +554,6 @@ function HomePage() {
     return num.toFixed(8);
   };
 
-  // Handle source amount input
-  const handleSourceInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/[^0-9.]/g, "");
-    if (isUsdToken(sourceAsset)) {
-      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
-        setLastFieldEdited("usd");
-        setUsdAmount(input);
-      }
-    } else {
-      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
-        setLastFieldEdited("btc");
-        setBitcoinAmount(input);
-      }
-    }
-  };
-
-  // Handle target amount input
-  const handleTargetInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/[^0-9.]/g, "");
-    if (isUsdToken(targetAsset)) {
-      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
-        setLastFieldEdited("usd");
-        setUsdAmount(input);
-      }
-    } else {
-      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
-        setLastFieldEdited("btc");
-        setBitcoinAmount(input);
-      }
-    }
-  };
-
   return (
     <div className="flex flex-col p-3">
       {/* Sell/Buy container with arrow */}
@@ -597,18 +566,26 @@ function HomePage() {
               <div className="flex items-baseline gap-1">
                 {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
                 {sourceInputMode === "converted" && (
-                  <span className="text-4xl font-medium text-muted-foreground">$</span>
+                  <span className="text-4xl font-medium text-muted-foreground">
+                    $
+                  </span>
                 )}
                 <input
                   type="text"
                   inputMode="decimal"
-                  value={sourceInputMode === "native"
-                    ? (isUsdToken(sourceAsset) ? usdAmount : bitcoinAmount)
-                    : usdAmount
+                  value={
+                    sourceInputMode === "native"
+                      ? isUsdToken(sourceAsset)
+                        ? usdAmount
+                        : bitcoinAmount
+                      : usdAmount
                   }
                   onChange={(e) => {
                     const input = e.target.value.replace(/[^0-9.]/g, "");
-                    if (sourceInputMode === "converted" || isUsdToken(sourceAsset)) {
+                    if (
+                      sourceInputMode === "converted" ||
+                      isUsdToken(sourceAsset)
+                    ) {
                       if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
                         setLastFieldEdited("usd");
                         setUsdAmount(input);
@@ -630,17 +607,22 @@ function HomePage() {
               {/* Clickable toggle between native token and USD */}
               <button
                 type="button"
-                onClick={() => setSourceInputMode(sourceInputMode === "native" ? "converted" : "native")}
+                onClick={() =>
+                  setSourceInputMode(
+                    sourceInputMode === "native" ? "converted" : "native",
+                  )
+                }
                 className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
               >
                 {sourceInputMode === "native" ? (
                   <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+                ) : isUsdToken(sourceAsset) ? (
+                  <span>
+                    ≈ {formatUsdDisplay(usdAmount)}{" "}
+                    {getTokenSymbol(sourceAsset)}
+                  </span>
                 ) : (
-                  isUsdToken(sourceAsset) ? (
-                    <span>≈ {formatUsdDisplay(usdAmount)} {getTokenSymbol(sourceAsset)}</span>
-                  ) : (
-                    <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
-                  )
+                  <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
                 )}
               </button>
             </div>
@@ -734,101 +716,125 @@ function HomePage() {
 
         {/* Buy */}
         <div className="rounded-2xl bg-muted p-4 pt-5 mt-1">
-        <div className="text-sm text-muted-foreground mb-2">Buy</div>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            {isLoadingPrice ? (
-              <div className="h-10 flex items-center">
-                <Skeleton className="h-8 w-32" />
-              </div>
-            ) : (
-              <div className="flex items-baseline gap-1">
-                {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
-                {targetInputMode === "converted" && (
-                  <span className="text-4xl font-medium text-muted-foreground">$</span>
-                )}
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={targetInputMode === "native"
-                    ? (isUsdToken(targetAsset) ? usdAmount : bitcoinAmount)
-                    : usdAmount
-                  }
-                  onChange={(e) => {
-                    const input = e.target.value.replace(/[^0-9.]/g, "");
-                    if (targetInputMode === "converted" || isUsdToken(targetAsset)) {
-                      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
-                        setLastFieldEdited("usd");
-                        setUsdAmount(input);
-                      }
-                    } else {
-                      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
-                        setLastFieldEdited("btc");
-                        setBitcoinAmount(input);
-                      }
-                    }
-                  }}
-                  placeholder="0"
-                  className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
-                  data-1p-ignore
-                  data-lpignore="true"
-                  autoComplete="off"
-                />
-              </div>
-            )}
-            {/* Clickable toggle between native token and USD */}
-            <button
-              type="button"
-              onClick={() => setTargetInputMode(targetInputMode === "native" ? "converted" : "native")}
-              className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
-            >
-              {targetInputMode === "native" ? (
-                <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+          <div className="text-sm text-muted-foreground mb-2">Buy</div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {isLoadingPrice ? (
+                <div className="h-10 flex items-center">
+                  <Skeleton className="h-8 w-32" />
+                </div>
               ) : (
-                isUsdToken(targetAsset) ? (
-                  <span>≈ {formatUsdDisplay(usdAmount)} {getTokenSymbol(targetAsset)}</span>
+                <div className="flex items-baseline gap-1">
+                  {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
+                  {targetInputMode === "converted" && (
+                    <span className="text-4xl font-medium text-muted-foreground">
+                      $
+                    </span>
+                  )}
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={
+                      targetInputMode === "native"
+                        ? isUsdToken(targetAsset)
+                          ? usdAmount
+                          : bitcoinAmount
+                        : usdAmount
+                    }
+                    onChange={(e) => {
+                      const input = e.target.value.replace(/[^0-9.]/g, "");
+                      if (
+                        targetInputMode === "converted" ||
+                        isUsdToken(targetAsset)
+                      ) {
+                        if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
+                          setLastFieldEdited("usd");
+                          setUsdAmount(input);
+                        }
+                      } else {
+                        if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
+                          setLastFieldEdited("btc");
+                          setBitcoinAmount(input);
+                        }
+                      }
+                    }}
+                    placeholder="0"
+                    className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+                    data-1p-ignore
+                    data-lpignore="true"
+                    autoComplete="off"
+                  />
+                </div>
+              )}
+              {/* Clickable toggle between native token and USD */}
+              <button
+                type="button"
+                onClick={() =>
+                  setTargetInputMode(
+                    targetInputMode === "native" ? "converted" : "native",
+                  )
+                }
+                className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
+              >
+                {targetInputMode === "native" ? (
+                  <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+                ) : isUsdToken(targetAsset) ? (
+                  <span>
+                    ≈ {formatUsdDisplay(usdAmount)}{" "}
+                    {getTokenSymbol(targetAsset)}
+                  </span>
                 ) : (
                   <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
-                )
-              )}
-            </button>
-          </div>
-          <div className="shrink-0">
-            <AssetDropDown
-              value={targetAsset}
-              onChange={(asset) => {
-                // Check if new target is compatible with current source
-                const isBtcTarget = asset === "btc_arkade" || asset === "btc_lightning";
-                const isBtcSource = sourceAsset === "btc_arkade" || sourceAsset === "btc_lightning";
-                const isEvmTarget = asset === "usdc_pol" || asset === "usdt0_pol" || asset === "usdc_eth" || asset === "usdt_eth";
-                const isEvmSource = sourceAsset === "usdc_pol" || sourceAsset === "usdt0_pol" || sourceAsset === "usdc_eth" || sourceAsset === "usdt_eth";
+                )}
+              </button>
+            </div>
+            <div className="shrink-0">
+              <AssetDropDown
+                value={targetAsset}
+                onChange={(asset) => {
+                  // Check if new target is compatible with current source
+                  const isBtcTarget =
+                    asset === "btc_arkade" || asset === "btc_lightning";
+                  const isBtcSource =
+                    sourceAsset === "btc_arkade" ||
+                    sourceAsset === "btc_lightning";
+                  const isEvmTarget =
+                    asset === "usdc_pol" ||
+                    asset === "usdt0_pol" ||
+                    asset === "usdc_eth" ||
+                    asset === "usdt_eth";
+                  const isEvmSource =
+                    sourceAsset === "usdc_pol" ||
+                    sourceAsset === "usdt0_pol" ||
+                    sourceAsset === "usdc_eth" ||
+                    sourceAsset === "usdt_eth";
 
-                // If both are BTC or both are EVM, auto-switch source to make them compatible
-                if (isBtcTarget && isBtcSource) {
-                  // Buying BTC but selling BTC - switch source to default EVM stablecoin
-                  setSourceAsset("usdc_pol");
+                  // If both are BTC or both are EVM, auto-switch source to make them compatible
+                  if (isBtcTarget && isBtcSource) {
+                    // Buying BTC but selling BTC - switch source to default EVM stablecoin
+                    setSourceAsset("usdc_pol");
+                    setTargetAsset(asset);
+                    navigate(`/usdc_pol/${asset}`, { replace: true });
+                    return;
+                  }
+
+                  if (isEvmTarget && isEvmSource) {
+                    // Buying EVM but selling EVM - switch source to default BTC
+                    setSourceAsset("btc_arkade");
+                    setTargetAsset(asset);
+                    navigate(`/btc_arkade/${asset}`, { replace: true });
+                    return;
+                  }
+
+                  // Compatible pair, just update target
                   setTargetAsset(asset);
-                  navigate(`/usdc_pol/${asset}`, { replace: true });
-                  return;
-                }
-
-                if (isEvmTarget && isEvmSource) {
-                  // Buying EVM but selling EVM - switch source to default BTC
-                  setSourceAsset("btc_arkade");
-                  setTargetAsset(asset);
-                  navigate(`/btc_arkade/${asset}`, { replace: true });
-                  return;
-                }
-
-                // Compatible pair, just update target
-                setTargetAsset(asset);
-                navigate(`/${sourceAsset}/${asset}`, { replace: true });
-              }}
-              availableAssets={availableTargetAssets}
-              label="buy"
-            />
+                  navigate(`/${sourceAsset}/${asset}`, { replace: true });
+                }}
+                availableAssets={availableTargetAssets}
+                label="buy"
+              />
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -907,13 +913,12 @@ function HomePage() {
 
         <div className="pt-2">
           {/* Show Connect Wallet button when EVM source and wallet not connected */}
-          {isEvmToken(sourceAsset) && !isValidSpeedWalletContext() && !isConnected ? (
+          {isEvmToken(sourceAsset) &&
+          !isValidSpeedWalletContext() &&
+          !isConnected ? (
             <ConnectKitButton.Custom>
               {({ show }) => (
-                <Button
-                  onClick={show}
-                  className="w-full h-12 gap-2"
-                >
+                <Button onClick={show} className="w-full h-12 gap-2">
                   <Wallet className="h-4 w-4" />
                   Connect Wallet
                 </Button>
@@ -1332,14 +1337,19 @@ export default function App() {
           <div className="mx-auto max-w-2xl space-y-10">
             {/* Title */}
             <div className="space-y-2 text-center">
-              <h2 className="text-2xl md:text-5xl font-semibold">{stepInfo.title}</h2>
+              <h2 className="text-2xl md:text-5xl font-semibold">
+                {stepInfo.title}
+              </h2>
               <p className="text-muted-foreground">{stepInfo.description}</p>
             </div>
 
             {/* Step Card */}
             <div className="mx-auto max-w-lg">
               <Routes>
-                <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
+                <Route
+                  path="/swap/:swapId/wizard"
+                  element={<SwapWizardPage />}
+                />
                 <Route path="/swap/:swapId/refund" element={<RefundPage />} />
                 <Route
                   path="*"
@@ -1368,186 +1378,225 @@ export default function App() {
           {/* Stats & Features - Only show on home page */}
           {isHomePage && (
             <div className="mx-auto max-w-2xl mt-[100px] space-y-8">
-                {/* Volume Stats Card */}
-                <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-gradient-to-br from-card to-card/50 p-6">
-                  {/* Decorative chart illustration */}
-                  <div className="absolute right-0 top-0 h-full w-1/3 opacity-10">
-                    <svg viewBox="0 0 100 80" className="h-full w-full" preserveAspectRatio="none">
-                      <path
-                        d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20 L100 80 Z"
-                        fill="url(#chartGradient)"
-                      />
-                      <path
-                        d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className="text-orange-500"
-                      />
-                      <defs>
-                        <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="currentColor" className="text-orange-500" />
-                          <stop offset="100%" stopColor="transparent" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
+              {/* Volume Stats Card */}
+              <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-gradient-to-br from-card to-card/50 p-6">
+                {/* Decorative chart illustration */}
+                <div className="absolute right-0 top-0 h-full w-1/3 opacity-10">
+                  <svg
+                    viewBox="0 0 100 80"
+                    className="h-full w-full"
+                    preserveAspectRatio="none"
+                    aria-labelledby="volume-chart-title"
+                  >
+                    <title id="volume-chart-title">
+                      Volume chart decoration
+                    </title>
+                    <path
+                      d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20 L100 80 Z"
+                      fill="url(#chartGradient)"
+                    />
+                    <path
+                      d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="text-orange-500"
+                    />
+                    <defs>
+                      <linearGradient
+                        id="chartGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="0%"
+                        y2="100%"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="currentColor"
+                          className="text-orange-500"
+                        />
+                        <stop offset="100%" stopColor="transparent" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
 
-                  <div className="relative flex items-center justify-around">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold tracking-tight">$32.6K</div>
-                      <div className="text-sm text-muted-foreground">Total Volume</div>
+                <div className="relative flex items-center justify-around">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold tracking-tight">
+                      $32.6K
                     </div>
-                    <div className="h-12 w-px bg-border/50" />
-                    <div className="text-center">
-                      <div className="text-3xl font-bold tracking-tight">$0.8K</div>
-                      <div className="text-sm text-muted-foreground">24H Volume</div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Volume
+                    </div>
+                  </div>
+                  <div className="h-12 w-px bg-border/50" />
+                  <div className="text-center">
+                    <div className="text-3xl font-bold tracking-tight">
+                      $0.8K
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      24H Volume
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature Cards - Modern Bento Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Instant */}
+                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="relative flex flex-col items-center text-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                      <Zap className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">
+                        Instant
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Near-instant settlement
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Feature Cards - Modern Bento Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Instant */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <div className="relative flex flex-col items-center text-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                        <Zap className="h-6 w-6 text-orange-500" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-foreground">Instant</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">Near-instant settlement</div>
-                      </div>
+                {/* Atomic Swaps */}
+                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="relative flex flex-col items-center text-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                      <Shield className="h-6 w-6 text-orange-500" />
                     </div>
-                  </div>
-
-                  {/* Atomic Swaps */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <div className="relative flex flex-col items-center text-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                        <Shield className="h-6 w-6 text-orange-500" />
+                    <div>
+                      <div className="font-semibold text-foreground">
+                        Atomic Swaps
                       </div>
-                      <div>
-                        <div className="font-semibold text-foreground">Atomic Swaps</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">Trustless & secure</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 0% Fees */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <div className="relative flex flex-col items-center text-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                        <PiggyBank className="h-6 w-6 text-orange-500" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-foreground">0% Fees</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">No protocol fees</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Self-Custodial */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <div className="relative flex flex-col items-center text-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                        <Key className="h-6 w-6 text-orange-500" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-foreground">Self-Custodial</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">Your keys, your coins</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Trustless & secure
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* 0% Fees */}
+                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="relative flex flex-col items-center text-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                      <PiggyBank className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">
+                        0% Fees
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        No protocol fees
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Self-Custodial */}
+                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="relative flex flex-col items-center text-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                      <Key className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">
+                        Self-Custodial
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Your keys, your coins
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* FAQ Section - Only show on home page */}
           {isHomePage && (
             <div className="mx-auto max-w-2xl mt-24">
-                <h3 className="text-xl font-semibold mb-6 text-center">
-                  Frequently Asked Questions
-                </h3>
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="how" className="border-border/50">
-                    <AccordionTrigger className="text-left">
-                      How does it work?
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      LendaSwap uses Hash Time-Locked Contracts (HTLCs) to
-                      enable trustless atomic swaps. When you start a swap, both
-                      parties lock their funds in smart contracts. The swap
-                      either completes fully or both parties get refunded -
-                      there's no way for anyone to steal your funds. We support
-                      Bitcoin Lightning, Arkade (Bitcoin L2), and EVM chains
-                      like Polygon and Ethereum.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="custody" className="border-border/50">
-                    <AccordionTrigger className="text-left">
-                      Is LendaSwap self-custodial?
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      Yes! LendaSwap is fully self-custodial. Your keys, your
-                      coins. You can backup your recovery phrase anytime by
-                      clicking the key icon in the header - you can show,
-                      download, or import your seedphrase. Store it safely -
-                      this phrase allows you to recover your funds if anything
-                      goes wrong.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="limits" className="border-border/50">
-                    <AccordionTrigger className="text-left">
-                      What is the maximum swap amount?
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      In general, you can swap $1-$1000 USD without any
-                      problems. For larger amounts, please contact us directly
-                      to confirm availability.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="stuck" className="border-border/50">
-                    <AccordionTrigger className="text-left">
-                      What if my swap gets stuck?
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      LendaSwap uses atomic swaps, which means your funds are
-                      always safe. If a swap doesn't complete, you can always
-                      recover your funds. Click the swap icon in the header to
-                      view your swap history and initiate a refund if needed.
-                      Note: depending on the swap currency, lock times may vary.
-                      In the worst case, your funds might be locked for up to 2
-                      weeks before you can claim them back.
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem
-                    value="opensource"
-                    className="border-border/50"
-                  >
-                    <AccordionTrigger className="text-left">
-                      Is LendaSwap open source?
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      Yes! LendaSwap is fully open source. You can review our
-                      code, contribute, or run your own instance. Check out our
-                      GitHub at{" "}
-                      <a
-                        href="https://github.com/lendasat/lendaswap"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline hover:text-foreground"
-                      >
-                        github.com/lendasat/lendaswap
-                      </a>
-                      .
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+              <h3 className="text-xl font-semibold mb-6 text-center">
+                Frequently Asked Questions
+              </h3>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="how" className="border-border/50">
+                  <AccordionTrigger className="text-left">
+                    How does it work?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    LendaSwap uses Hash Time-Locked Contracts (HTLCs) to enable
+                    trustless atomic swaps. When you start a swap, both parties
+                    lock their funds in smart contracts. The swap either
+                    completes fully or both parties get refunded - there's no
+                    way for anyone to steal your funds. We support Bitcoin
+                    Lightning, Arkade (Bitcoin L2), and EVM chains like Polygon
+                    and Ethereum.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="custody" className="border-border/50">
+                  <AccordionTrigger className="text-left">
+                    Is LendaSwap self-custodial?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    Yes! LendaSwap is fully self-custodial. Your keys, your
+                    coins. You can backup your recovery phrase anytime by
+                    clicking the key icon in the header - you can show,
+                    download, or import your seedphrase. Store it safely - this
+                    phrase allows you to recover your funds if anything goes
+                    wrong.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="limits" className="border-border/50">
+                  <AccordionTrigger className="text-left">
+                    What is the maximum swap amount?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    In general, you can swap $1-$1000 USD without any problems.
+                    For larger amounts, please contact us directly to confirm
+                    availability.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="stuck" className="border-border/50">
+                  <AccordionTrigger className="text-left">
+                    What if my swap gets stuck?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    LendaSwap uses atomic swaps, which means your funds are
+                    always safe. If a swap doesn't complete, you can always
+                    recover your funds. Click the swap icon in the header to
+                    view your swap history and initiate a refund if needed.
+                    Note: depending on the swap currency, lock times may vary.
+                    In the worst case, your funds might be locked for up to 2
+                    weeks before you can claim them back.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="opensource" className="border-border/50">
+                  <AccordionTrigger className="text-left">
+                    Is LendaSwap open source?
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    Yes! LendaSwap is fully open source. You can review our
+                    code, contribute, or run your own instance. Check out our
+                    GitHub at{" "}
+                    <a
+                      href="https://github.com/lendasat/lendaswap"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline hover:text-foreground"
+                    >
+                      github.com/lendasat/lendaswap
+                    </a>
+                    .
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           )}
         </main>

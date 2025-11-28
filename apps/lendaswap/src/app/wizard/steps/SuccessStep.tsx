@@ -1,11 +1,4 @@
-import {
-  Check,
-  CheckCheck,
-  Copy,
-  ExternalLink,
-  Heart,
-  Twitter,
-} from "lucide-react";
+import { Check, CheckCheck, Copy, ExternalLink, Heart } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
