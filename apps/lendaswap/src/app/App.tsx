@@ -23,7 +23,6 @@ import {
   PiggyBank,
   Shield,
   Tag,
-  TrendingUp,
   Upload,
   Wallet,
   Zap,
@@ -1217,84 +1216,52 @@ export default function App() {
               />
             </Routes>
 
-            {/* Bento Grid - Only show on home page */}
+            {/* Dashboard Stats - Only show on home page */}
             {isHomePage && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-                {/* Total Volume - spans 2 cols on mobile, 2 cols on desktop */}
-                <Card className="col-span-2 from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
-                  <CardContent className="flex items-center gap-4 p-5">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-black dark:bg-white">
-                      <TrendingUp className="h-6 w-6 text-white dark:text-black" />
-                    </div>
-                    <div>
-                      <div className="text-3xl font-bold">$20,000</div>
-                      <div className="text-muted-foreground text-sm">
+              <div className="space-y-4">
+                {/* Volume Stats Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="border-0 bg-gradient-to-br from-orange-500/10 to-amber-500/5 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="text-muted-foreground text-sm font-medium mb-1">
                         Total Volume
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* 24H Volume */}
-                <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
-                  <CardContent className="flex flex-col items-center justify-center gap-2 p-5 text-center">
-                    <div className="text-2xl font-bold">$1,000</div>
-                    <div className="text-muted-foreground text-xs">
-                      24H Volume
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* 0% Fees */}
-                <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
-                  <CardContent className="flex flex-col items-center justify-center gap-2 p-5 text-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black dark:bg-white">
-                      <PiggyBank className="h-4 w-4 text-white dark:text-black" />
-                    </div>
-                    <div className="text-lg font-bold">0% Fees</div>
-                  </CardContent>
-                </Card>
-
-                {/* Quick */}
-                <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
-                  <CardContent className="flex flex-col items-center justify-center gap-2 p-5 text-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black dark:bg-white">
-                      <Zap className="h-4 w-4 text-white dark:text-black" />
-                    </div>
-                    <div className="text-sm font-semibold">Quick</div>
-                    <div className="text-muted-foreground text-xs">
-                      Don't blink
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Atomic */}
-                <Card className="from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
-                  <CardContent className="flex flex-col items-center justify-center gap-2 p-5 text-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black dark:bg-white">
-                      <Shield className="h-4 w-4 text-white dark:text-black" />
-                    </div>
-                    <div className="text-sm font-semibold">Atomic</div>
-                    <div className="text-muted-foreground text-xs">
-                      Swap with confidence
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Trustless - spans 2 cols */}
-                <Card className="col-span-2 from-primary/5 to-card rounded-xl border bg-gradient-to-t shadow-sm">
-                  <CardContent className="flex items-center justify-center gap-3 p-5 text-center">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black dark:bg-white">
-                      <Key className="h-5 w-5 text-white dark:text-black" />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-lg font-bold">Self-Custodial</div>
-                      <div className="text-muted-foreground text-sm">
-                        Your keys, your coins
+                      <div className="text-4xl font-bold tracking-tight">
+                        $20,000
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-0 bg-gradient-to-br from-orange-500/10 to-amber-500/5 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="text-muted-foreground text-sm font-medium mb-1">
+                        24H Volume
+                      </div>
+                      <div className="text-4xl font-bold tracking-tight">
+                        $1,000
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Feature Badges */}
+                <div className="flex flex-wrap justify-center gap-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
+                    <Zap className="h-3.5 w-3.5 text-orange-500" />
+                    <span className="font-medium">Instant</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
+                    <Shield className="h-3.5 w-3.5 text-orange-500" />
+                    <span className="font-medium">Atomic Swaps</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
+                    <PiggyBank className="h-3.5 w-3.5 text-orange-500" />
+                    <span className="font-medium">0% Fees</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
+                    <Key className="h-3.5 w-3.5 text-orange-500" />
+                    <span className="font-medium">Self-Custodial</span>
+                  </div>
+                </div>
               </div>
             )}
 
