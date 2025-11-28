@@ -1,8 +1,17 @@
-import { format } from "date-fns";
-import { ArrowRight, Check, Copy, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { format, formatDistanceToNow } from "date-fns";
+import {
+  Check,
+  ChevronRight,
+  Clock,
+  Copy,
+  Loader2,
+  MoreHorizontal,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import {
   Dialog,
@@ -13,19 +22,79 @@ import {
   DialogTitle,
 } from "#/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "#/components/ui/table";
-import { getTokenIcon } from "../api";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
+import { Input } from "#/components/ui/input";
+import { getTokenIcon, getTokenSymbol, type SwapStatus } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
 import { clearAllSwaps, deleteSwap, getAllSwaps, type StoredSwap } from "../db";
 
+// Get status display info with border color
+function getStatusInfo(status: SwapStatus): {
+  label: string;
+  textColor: string;
+  borderColor: string;
+  icon: React.ReactNode;
+  showIcon: boolean;
+} {
+  switch (status) {
+    case "completed":
+      return {
+        label: "Completed",
+        textColor: "text-green-600 dark:text-green-400",
+        borderColor: "border-l-green-500",
+        icon: <Check className="h-3 w-3" />,
+        showIcon: true,
+      };
+    case "pending":
+    case "clientfunding":
+    case "clientfunded":
+    case "serverclaiming":
+    case "serverclaimed":
+    case "clientclaiming":
+      return {
+        label: "In Progress",
+        textColor: "text-orange-600 dark:text-orange-400",
+        borderColor: "border-l-orange-500",
+        icon: <Loader2 className="h-3 w-3 animate-spin" />,
+        showIcon: true,
+      };
+    case "expired":
+    case "clientrefunded":
+    case "clientrefundedserverrefunded":
+      return {
+        label: status === "expired" ? "Expired" : "Refunded",
+        textColor: "text-muted-foreground",
+        borderColor: "border-l-muted-foreground/50",
+        icon: null,
+        showIcon: false,
+      };
+    case "clientinvalidfunded":
+    case "clientfundedtoolate":
+      return {
+        label: "Action Required",
+        textColor: "text-red-600 dark:text-red-400",
+        borderColor: "border-l-red-500",
+        icon: null,
+        showIcon: false,
+      };
+    default:
+      return {
+        label: "Unknown",
+        textColor: "text-muted-foreground",
+        borderColor: "border-l-muted-foreground/30",
+        icon: null,
+        showIcon: false,
+      };
+  }
+}
+
 export function SwapsPage() {
   const [swaps, setSwaps] = useState<StoredSwap[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
@@ -33,7 +102,8 @@ export function SwapsPage() {
   const navigate = useNavigate();
 
   const handleCopyId = async (e: React.MouseEvent, swapId: string) => {
-    e.stopPropagation(); // Prevent row click when copying
+    e.stopPropagation();
+    e.preventDefault();
     try {
       await navigator.clipboard.writeText(swapId);
       setCopiedId(swapId);
@@ -44,7 +114,8 @@ export function SwapsPage() {
   };
 
   const handleDeleteClick = (e: React.MouseEvent, swapId: string) => {
-    e.stopPropagation(); // Prevent row click when deleting
+    e.stopPropagation();
+    e.preventDefault();
     setSwapToDelete(swapId);
     setDeleteDialogOpen(true);
   };
@@ -76,17 +147,10 @@ export function SwapsPage() {
     }
   };
 
-  // Load all swaps from Dexie
   useEffect(() => {
     const loadSwaps = async () => {
       try {
-        console.log("Loading swaps from Dexie...");
         const dexieSwaps = await getAllSwaps();
-        console.log(
-          `Loaded ${dexieSwaps.length} swaps from Dexie:`,
-          dexieSwaps,
-        );
-
         setSwaps(dexieSwaps);
       } catch (error) {
         console.error("Failed to load swaps from Dexie:", error);
@@ -96,100 +160,270 @@ export function SwapsPage() {
     loadSwaps();
   }, []);
 
+  // Filter swaps based on search query
+  const filteredSwaps = useMemo(() => {
+    if (!searchQuery.trim()) return swaps;
+
+    const query = searchQuery.toLowerCase().trim();
+
+    return swaps.filter((swap) => {
+      // Search by token symbols
+      const sourceSymbol = getTokenSymbol(swap.source_token).toLowerCase();
+      const targetSymbol = getTokenSymbol(swap.target_token).toLowerCase();
+      if (sourceSymbol.includes(query) || targetSymbol.includes(query)) {
+        return true;
+      }
+
+      // Search by USD amount
+      const usdAmount = swap.usd_amount.toFixed(2);
+      if (usdAmount.includes(query) || `$${usdAmount}`.includes(query)) {
+        return true;
+      }
+
+      // Search by sats amount
+      const satsAmount = swap.sats_receive.toString();
+      if (satsAmount.includes(query.replace(/,/g, ""))) {
+        return true;
+      }
+
+      // Search by date (multiple formats)
+      const swapDate = new Date(swap.created_at);
+      const dateFormats = [
+        format(swapDate, "dd-MMM-yyyy"), // 28-Nov-2025
+        format(swapDate, "MMM"), // Nov
+        format(swapDate, "MMMM"), // November
+        format(swapDate, "yyyy"), // 2025
+        format(swapDate, "dd"), // 28
+        format(swapDate, "dd/MM/yyyy"), // 28/11/2025
+        format(swapDate, "MM/dd/yyyy"), // 11/28/2025
+      ];
+      if (dateFormats.some((f) => f.toLowerCase().includes(query))) {
+        return true;
+      }
+
+      // Search by status
+      const statusInfo = getStatusInfo(swap.status);
+      if (statusInfo.label.toLowerCase().includes(query)) {
+        return true;
+      }
+
+      // Search by swap ID
+      if (swap.id.toLowerCase().includes(query)) {
+        return true;
+      }
+
+      return false;
+    });
+  }, [swaps, searchQuery]);
+
+  // Format amounts for display - returns primary display string
+  const formatSwapAmount = (swap: StoredSwap) => {
+    const isBtcSource =
+      swap.source_token === "btc_arkade" ||
+      swap.source_token === "btc_lightning";
+
+    if (isBtcSource) {
+      return {
+        primary: `${swap.sats_receive.toLocaleString()} sats`,
+        secondary: `$${swap.usd_amount.toFixed(2)} ${getTokenSymbol(swap.target_token)}`,
+      };
+    } else {
+      return {
+        primary: `$${swap.usd_amount.toFixed(2)}`,
+        secondary: `${swap.sats_receive.toLocaleString()} sats`,
+      };
+    }
+  };
+
   return (
     <>
-      <div className="container max-w-6xl mx-auto py-4 sm:py-8 px-4 h-screen flex flex-col">
-        {/* Action buttons */}
+      <div className="p-4 space-y-3">
+        {/* Search Bar - only show when there are swaps */}
         {swaps.length > 0 && (
-          <div className="flex justify-end items-center gap-2 mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by amount, currency, date..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9 h-10 bg-muted/50 border-border/50 focus-visible:border-border"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Header with count and clear button */}
+        {swaps.length > 0 && (
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-muted-foreground">
+              {searchQuery ? (
+                <>
+                  {filteredSwaps.length} of {swaps.length} swap
+                  {swaps.length !== 1 ? "s" : ""}
+                </>
+              ) : (
+                <>
+                  {swaps.length} swap{swaps.length !== 1 ? "s" : ""}
+                </>
+              )}
+            </p>
             <Button
-              variant="destructive"
+              variant="ghost"
               size="sm"
               onClick={handleClearAllClick}
-              className="gap-1.5 text-xs sm:text-sm"
+              className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
             >
-              <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Clear History</span>
-              <span className="sm:hidden">Clear</span>
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Clear
             </Button>
           </div>
         )}
 
         {swaps.length === 0 ? (
-          <Alert>
-            <AlertDescription>
-              No swaps found in local storage. Create a swap first to see it
-              here.
-            </AlertDescription>
-          </Alert>
+          <div className="py-16 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted/50 mb-4">
+              <Clock className="h-7 w-7 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground font-medium">No swaps yet</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">
+              Your swap history will appear here
+            </p>
+          </div>
+        ) : filteredSwaps.length === 0 ? (
+          <div className="py-12 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted/50 mb-3">
+              <Search className="h-6 w-6 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground font-medium">
+              No matches found
+            </p>
+            <p className="text-sm text-muted-foreground/60 mt-1">
+              Try searching for a different amount, currency, or date
+            </p>
+          </div>
         ) : (
-          <div className="border rounded-lg overflow-auto flex-1">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Assets</TableHead>
-                  <TableHead>Swap ID</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {swaps.map((swap) => (
-                  <TableRow
-                    key={swap.id}
-                    onClick={() => navigate(`/swap/${swap.id}/wizard`)}
-                    className="cursor-pointer hover:bg-accent/50 transition-colors"
-                  >
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {format(swap.created_at, "dd-MMM-yyyy HH:mm")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {getTokenIcon(swap.source_token)}
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        {getTokenIcon(swap.target_token)}
+          <div className="space-y-2">
+            {filteredSwaps.map((swap) => {
+              const statusInfo = getStatusInfo(swap.status);
+              const amounts = formatSwapAmount(swap);
+              const timeAgo = formatDistanceToNow(new Date(swap.created_at), {
+                addSuffix: false,
+              });
+
+              return (
+                <button
+                  type="button"
+                  key={swap.id}
+                  onClick={() => navigate(`/swap/${swap.id}/wizard`)}
+                  className={`group relative w-full text-left rounded-xl border border-border/40 bg-card hover:bg-accent/30 hover:border-border transition-all cursor-pointer overflow-hidden border-l-[3px] ${statusInfo.borderColor}`}
+                >
+                  <div className="flex items-center gap-3 p-3 pr-2">
+                    {/* Overlapping Token Icons */}
+                    <div className="relative flex-shrink-0 w-12 h-8">
+                      {/* Source token (front) */}
+                      <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden z-10 shadow-sm">
+                        <div className="w-7 h-7 flex items-center justify-center">
+                          {getTokenIcon(swap.source_token)}
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      <div className="flex items-center gap-2">
-                        <span>
-                          {swap.id.slice(0, 8)}...{swap.id.slice(-8)}
+                      {/* Target token (behind) */}
+                      <div className="absolute left-4 top-0 w-8 h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
+                        <div className="w-7 h-7 flex items-center justify-center">
+                          {getTokenIcon(swap.target_token)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Primary: Amount */}
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-semibold text-base truncate">
+                          {amounts.primary}
                         </span>
-                        <button
-                          type={"button"}
-                          onClick={(e) => handleCopyId(e, swap.id)}
-                          className="inline-flex items-center justify-center rounded-md p-1 hover:bg-accent hover:text-accent-foreground transition-colors"
-                          title="Copy full swap ID"
-                        >
-                          {copiedId === swap.id ? (
-                            <Check className="h-3 w-3 text-green-600" />
-                          ) : (
-                            <Copy className="h-3 w-3" />
-                          )}
-                        </button>
+                        <span className="text-muted-foreground text-sm">
+                          → {amounts.secondary}
+                        </span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        type={"button"}
-                        onClick={(e) => handleDeleteClick(e, swap.id)}
-                        className="inline-flex items-center justify-center rounded-md p-1 hover:bg-destructive/10 hover:text-destructive transition-colors"
-                        title="Delete swap"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+
+                      {/* Secondary: Time and Status */}
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-muted-foreground/70">
+                          {timeAgo} ago
+                        </span>
+                        <span className="text-muted-foreground/30">·</span>
+                        <span
+                          className={`text-xs font-medium flex items-center gap-1 ${statusInfo.textColor}`}
+                        >
+                          {statusInfo.showIcon && statusInfo.icon}
+                          {statusInfo.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right side: Actions + Chevron */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {/* Dropdown Menu for actions */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-muted transition-all"
+                          >
+                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem
+                            onClick={(e) => handleCopyId(e, swap.id)}
+                            className="gap-2"
+                          >
+                            {copiedId === swap.id ? (
+                              <>
+                                <Check className="h-4 w-4 text-green-600" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4" />
+                                Copy Swap ID
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => handleDeleteClick(e, swap.id)}
+                            className="gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      {/* Chevron */}
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
-      </div>
 
-      {/* Version information */}
-      <div className="pb-6">
-        <VersionFooter />
+        {/* Version footer */}
+        <div className="pt-6">
+          <VersionFooter />
+        </div>
       </div>
 
       {/* Delete single swap dialog */}
