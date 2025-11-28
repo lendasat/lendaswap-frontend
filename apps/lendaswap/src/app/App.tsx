@@ -1267,7 +1267,7 @@ export default function App() {
           <div className="mx-auto max-w-2xl space-y-10">
             {/* Title */}
             <div className="space-y-2 text-center">
-              <h2 className="text-5xl font-semibold">{stepInfo.title}</h2>
+              <h2 className="text-2xl md:text-5xl font-semibold">{stepInfo.title}</h2>
               <p className="text-muted-foreground">{stepInfo.description}</p>
             </div>
 
@@ -1330,7 +1330,7 @@ export default function App() {
 
                   <div className="relative flex items-center justify-around">
                     <div className="text-center">
-                      <div className="text-3xl font-bold tracking-tight">$22.6K</div>
+                      <div className="text-3xl font-bold tracking-tight">$32.6K</div>
                       <div className="text-sm text-muted-foreground">Total Volume</div>
                     </div>
                     <div className="h-12 w-px bg-border/50" />
