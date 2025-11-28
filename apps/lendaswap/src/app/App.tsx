@@ -591,9 +591,9 @@ function HomePage() {
 
   return (
     <div className="flex flex-col gap-1 p-2">
-      {/* You Send */}
+      {/* Sell */}
       <div className="rounded-2xl bg-muted/50 p-4">
-        <div className="text-sm text-muted-foreground mb-2">You send</div>
+        <div className="text-sm text-muted-foreground mb-2">Sell</div>
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <input
@@ -619,7 +619,7 @@ function HomePage() {
             <AssetDropDown
               value={sourceAsset}
               availableAssets={availableSourceAssets}
-              label="send"
+              label="sell"
               onChange={(asset) => {
                 if (
                   (asset === "usdc_pol" ||
@@ -680,9 +680,9 @@ function HomePage() {
         </div>
       </div>
 
-      {/* You Receive */}
+      {/* Buy */}
       <div className="rounded-2xl bg-muted/50 p-4">
-        <div className="text-sm text-muted-foreground mb-2">You receive</div>
+        <div className="text-sm text-muted-foreground mb-2">Buy</div>
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             {isLoadingPrice ? (
@@ -718,7 +718,7 @@ function HomePage() {
                 setTargetAsset(asset);
               }}
               availableAssets={availableTargetAssets}
-              label="receive"
+              label="buy"
             />
           </div>
         </div>

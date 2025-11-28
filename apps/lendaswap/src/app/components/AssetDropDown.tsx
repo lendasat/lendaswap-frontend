@@ -19,14 +19,14 @@ interface AssetDropDownProps {
   value: TokenId;
   onChange: (selectedAsset: TokenId) => void;
   availableAssets: TokenId[];
-  label?: "send" | "receive";
+  label?: "sell" | "buy";
 }
 
 export function AssetDropDown({
   value,
   onChange,
   availableAssets,
-  label = "send",
+  label = "sell",
 }: AssetDropDownProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,7 +71,7 @@ export function AssetDropDown({
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
           <DialogHeader className="p-4 pb-0">
             <DialogTitle>
-              {label === "receive" ? "Select a token to receive" : "Select a token to send"}
+              {label === "buy" ? "Select a token to buy" : "Select a token to sell"}
             </DialogTitle>
           </DialogHeader>
 
