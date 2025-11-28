@@ -1182,8 +1182,8 @@ export default function App() {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-6 py-12">
-          <div className="mx-auto max-w-2xl space-y-8">
+        <main className="container mx-auto px-6 py-16">
+          <div className="mx-auto max-w-2xl space-y-10">
             {/* Title */}
             <div className="space-y-2 text-center">
               <h2 className="text-3xl font-semibold">{stepInfo.title}</h2>
