@@ -1,6 +1,7 @@
 import { useModal } from "connectkit";
-import { Loader } from "lucide-react";
+import { ArrowLeft, Loader } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import {
   useAccount,
   usePublicClient,
@@ -50,11 +51,16 @@ export function PolygonDepositStep({
 }: PolygonDepositStepProps) {
   const chain = getViemChain(swapData.source_token);
 
-  const { address } = useAccount();
+  const { address, chain: connectedChain } = useAccount();
   const { data: walletClient } = useWalletClient({ chainId: chain?.id });
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
   const { setOpen } = useModal();
+  const navigate = useNavigate();
+
+  // Check if wallet is on the wrong chain
+  const isWrongChain =
+    chain && connectedChain && connectedChain.id !== chain.id;
 
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState("");
@@ -71,7 +77,13 @@ export function PolygonDepositStep({
     }
 
     if (!walletClient || !publicClient) {
-      setError("Wallet client not ready. Please try again.");
+      if (isWrongChain) {
+        setError(
+          `Your wallet is connected to ${connectedChain?.name || "a different network"}. Please switch to ${chain?.name || "the correct network"} using your wallet, or disconnect and reconnect.`,
+        );
+      } else {
+        setError("Wallet client not ready. Please try again.");
+      }
       return;
     }
 
@@ -261,25 +273,52 @@ export function PolygonDepositStep({
           </div>
         )}
 
+        {/* Wrong Chain Warning */}
+        {address && isWrongChain && (
+          <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20">
+            <p className="font-medium mb-1">Wrong network detected</p>
+            <p>
+              Your wallet is connected to{" "}
+              {connectedChain?.name || "a different network"}, but this swap
+              requires {chain?.name || "a different network"}.
+            </p>
+            <p className="mt-2">
+              Please go back, switch your wallet to {chain?.name}, and start a
+              new swap.
+            </p>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
-          {/* Fund Swap button - always first */}
-          <Button
-            onClick={handleSign}
-            disabled={isSigning}
-            className="h-12 w-full text-base font-semibold"
-          >
-            {isSigning ? (
-              <>
-                <Loader className="animate-spin h-4 w-4 mr-2" />
-                Processing Transactions...
-              </>
-            ) : !address ? (
-              "Connect Wallet"
-            ) : (
-              "Fund Swap"
-            )}
-          </Button>
+          {/* Show Go Back button when on wrong chain */}
+          {address && isWrongChain ? (
+            <Button
+              onClick={() => navigate("/", { replace: true })}
+              variant="outline"
+              className="h-12 w-full text-base font-semibold"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back & Start New Swap
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSign}
+              disabled={isSigning}
+              className="h-12 w-full text-base font-semibold"
+            >
+              {isSigning ? (
+                <>
+                  <Loader className="animate-spin h-4 w-4 mr-2" />
+                  Processing Transactions...
+                </>
+              ) : !address ? (
+                "Connect Wallet"
+              ) : (
+                "Fund Swap"
+              )}
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -84,11 +84,15 @@ export function SwapProcessingStep({
   const chain = getViemChain(swapData.target_token);
 
   // Wallet client hooks for Ethereum claiming
-  const { address } = useAccount();
+  const { address, chain: connectedChain } = useAccount();
   const { data: walletClient } = useWalletClient({ chainId: chain?.id });
   const publicClient = usePublicClient({ chainId: chain?.id });
   const { switchChainAsync } = useSwitchChain();
   const { setOpen } = useModal();
+
+  // Check if wallet is on the wrong chain
+  const isWrongChain =
+    chain && connectedChain && connectedChain.id !== chain.id;
 
   // Load secret from localStorage
   useEffect(() => {
@@ -197,6 +201,11 @@ export function SwapProcessingStep({
           }
 
           if (!walletClient || !publicClient || !switchChainAsync) {
+            if (isWrongChain) {
+              throw new Error(
+                `Your wallet is connected to ${connectedChain?.name || "a different network"}. Please switch to ${chain?.name || "the correct network"} using your wallet, or disconnect and reconnect.`,
+              );
+            }
             throw new Error("Wallet client not ready. Please try again.");
           }
 
@@ -295,6 +304,8 @@ export function SwapProcessingStep({
     switchChainAsync,
     chain,
     setOpen,
+    isWrongChain,
+    connectedChain?.name,
   ]);
 
   // Auto-claim for evm-to-btc when server is funded

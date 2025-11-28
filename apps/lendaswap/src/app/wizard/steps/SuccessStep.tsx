@@ -75,6 +75,7 @@ export function SuccessStep({
           receivedAmount: swapData.usd_amount.toFixed(2),
           receiveAddress: swapData.user_address_evm,
           receiveAddressIsPolygon: true,
+          isLightning: false,
           swapTxId: swapData.evm_htlc_claim_txid,
           swapTxIdIsPolygon: true,
           tweetText: `Swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
@@ -84,8 +85,13 @@ export function SuccessStep({
           sentAmount: swapData.usd_amount.toFixed(2),
           receivedTokenSymbol: "sats",
           receivedAmount: swapData.sats_receive.toLocaleString(),
-          receiveAddress: swapData.user_address_arkade,
+          // For Lightning swaps, show the invoice/address; for Arkade, show the Arkade address
+          receiveAddress:
+            swapData.target_token === "btc_lightning"
+              ? swapData.ln_invoice
+              : swapData.user_address_arkade,
           receiveAddressIsPolygon: false,
+          isLightning: swapData.target_token === "btc_lightning",
           swapTxId: swapData.bitcoin_htlc_claim_txid,
           swapTxIdIsPolygon: false,
           tweetText: `Swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
@@ -168,7 +174,11 @@ export function SuccessStep({
               </span>
             </div>
             <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
-              <span className="text-muted-foreground">Sent to Address</span>
+              <span className="text-muted-foreground">
+                {config.isLightning
+                  ? "Sent to Invoice/Address"
+                  : "Sent to Address"}
+              </span>
               <div className="flex items-center gap-2">
                 {config.receiveAddressIsPolygon ? (
                   <a

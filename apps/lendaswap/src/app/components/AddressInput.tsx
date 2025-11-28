@@ -105,7 +105,7 @@ export function AddressInput({
   const getPlaceholder = () => {
     switch (targetToken) {
       case "btc_lightning":
-        return "Paste a BOLT11 invoice";
+        return "BOLT11 invoice or Lightning address (LNURL)";
       case "btc_arkade":
         return "Provide an Arkade address";
       case "usdc_pol":
