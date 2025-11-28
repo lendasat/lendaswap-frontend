@@ -29,7 +29,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useAsync } from "react-use";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import {
   Accordion,
   AccordionContent,
@@ -77,6 +77,7 @@ import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import {
+  getViemChain,
   isEvmToken,
   isUsdToken,
   isValidTokenId,
@@ -90,7 +91,12 @@ function HomePage() {
   const navigate = useNavigate();
   const posthog = usePostHog();
   const params = useParams<{ sourceToken?: string; targetToken?: string }>();
-  const { address: connectedAddress, isConnected } = useAccount();
+  const {
+    address: connectedAddress,
+    isConnected,
+    chain: connectedChain,
+  } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
 
   // Read tokens from URL params, validate them
   const urlSourceToken = isValidTokenId(params.sourceToken)
@@ -149,6 +155,25 @@ function HomePage() {
       setIsEvmAddressValid(false);
     }
   }, [isConnected, connectedAddress]);
+
+  // Check if wallet is on the correct chain for the source asset
+  const expectedChain = isEvmToken(sourceAsset)
+    ? getViemChain(sourceAsset)
+    : null;
+  const isWrongChain =
+    isConnected &&
+    expectedChain &&
+    connectedChain &&
+    connectedChain.id !== expectedChain.id;
+
+  // Auto-switch to correct chain when wrong chain detected
+  useEffect(() => {
+    if (isWrongChain && expectedChain && switchChainAsync) {
+      switchChainAsync({ chainId: expectedChain.id }).catch((err) => {
+        console.error("Failed to auto-switch chain:", err);
+      });
+    }
+  }, [isWrongChain, expectedChain, switchChainAsync]);
 
   // Auto-populate target address with arkAddress if embedded and target is btc_arkade
   useEffect(() => {
@@ -852,62 +877,35 @@ function HomePage() {
           disabled={isEmbedded && !!arkAddress && targetAsset === "btc_arkade"}
         />
 
-        {/* EVM Wallet Address - only shown when source is EVM stablecoin (hidden in Speed Wallet) */}
-        {isEvmToken(sourceAsset) && !isValidSpeedWalletContext() && (
-          <div className="space-y-2">
-            {isConnected && userEvmAddress ? (
-              <>
-                <label
-                  htmlFor={"connect-address"}
-                  className="text-sm text-muted-foreground"
-                >
-                  Wallet connected for gas fees
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    id={"connect-address"}
-                    type="text"
-                    value={userEvmAddress}
-                    readOnly
-                    className="w-full rounded-lg border border-input px-3 py-2 text-sm bg-muted cursor-not-allowed min-h-[3rem] md:min-h-[3.5rem]"
-                  />
-                  <ConnectKitButton.Custom>
-                    {({ show }) => (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={show}
-                        className="shrink-0"
-                      >
-                        Change
-                      </Button>
-                    )}
-                  </ConnectKitButton.Custom>
-                </div>
-              </>
-            ) : null}
-          </div>
-        )}
-
         {/* Fees - below inputs, above Continue button */}
         {isLoadingQuote ? (
-          <div className="text-xs text-muted-foreground/70 pt-2 flex flex-wrap justify-between gap-y-0.5">
-            <div className="flex items-center gap-1">
-              Network Fee: <Skeleton className="h-3 w-24" />
+          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
+            <div className="flex flex-wrap justify-between gap-y-0.5">
+              <div className="flex items-center gap-1">
+                Network Fee: <Skeleton className="h-3 w-24" />
+              </div>
+              <div className="flex items-center gap-1">
+                Protocol Fee: <Skeleton className="h-3 w-32" />
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              Protocol Fee: <Skeleton className="h-3 w-32" />
-            </div>
+            {isEvmToken(sourceAsset) && isConnected && (
+              <div>Gas Fee: check in wallet when signing</div>
+            )}
           </div>
         ) : quote ? (
-          <div className="text-xs text-muted-foreground/70 pt-2 flex flex-wrap justify-between gap-y-0.5">
-            <div>
-              Network Fee: {(quote.network_fee / 100_000_000).toFixed(8)} BTC
+          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
+            <div className="flex flex-wrap justify-between gap-y-0.5">
+              <div>
+                Network Fee: {(quote.network_fee / 100_000_000).toFixed(8)} BTC
+              </div>
+              <div>
+                Protocol Fee: {(quote.protocol_fee / 100_000_000).toFixed(8)}{" "}
+                BTC ({(quote.protocol_fee_rate * 100).toFixed(2)}%)
+              </div>
             </div>
-            <div>
-              Protocol Fee: {(quote.protocol_fee / 100_000_000).toFixed(8)} BTC
-              ({(quote.protocol_fee_rate * 100).toFixed(2)}%)
-            </div>
+            {isEvmToken(sourceAsset) && isConnected && (
+              <div>Gas Fee: check in wallet when signing</div>
+            )}
           </div>
         ) : null}
 
@@ -933,6 +931,7 @@ function HomePage() {
                 isLoadingPrice ||
                 !addressValid ||
                 isCreatingSwap ||
+                isWrongChain ||
                 (isEvmToken(sourceAsset) && !isEvmAddressValid)
               }
               className="w-full h-12"
@@ -941,6 +940,11 @@ function HomePage() {
                 <>
                   <Loader className="animate-spin h-4 w-4" />
                   Please Wait
+                </>
+              ) : isWrongChain ? (
+                <>
+                  <Loader className="animate-spin h-4 w-4" />
+                  Switching to {expectedChain?.name}...
                 </>
               ) : (
                 <>Continue</>
@@ -1214,14 +1218,10 @@ export default function App() {
                           }) => {
                             return (
                               <DropdownMenuItem onClick={show}>
-                                {isConnected ? (
-                                  (ensName ?? truncatedAddress)
-                                ) : (
-                                  <>
-                                    <Wallet className="w-4 h-4 mr-2" />
-                                    Connect
-                                  </>
-                                )}
+                                <Wallet className="w-4 h-4 mr-2" />
+                                {isConnected
+                                  ? (ensName ?? truncatedAddress)
+                                  : "Connect"}
                               </DropdownMenuItem>
                             );
                           }}
@@ -1313,14 +1313,10 @@ export default function App() {
                             onClick={show}
                             className="h-9"
                           >
-                            {isConnected ? (
-                              (ensName ?? truncatedAddress)
-                            ) : (
-                              <>
-                                <Wallet className="w-3.5 h-3.5 mr-1.5" />
-                                Connect
-                              </>
-                            )}
+                            <Wallet className="w-3.5 h-3.5 mr-1.5" />
+                            {isConnected
+                              ? (ensName ?? truncatedAddress)
+                              : "Connect"}
                           </Button>
                         );
                       }}
