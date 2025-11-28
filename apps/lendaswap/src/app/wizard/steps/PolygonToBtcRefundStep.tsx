@@ -1,6 +1,6 @@
-import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useAccount,
   usePublicClient,
@@ -117,8 +117,37 @@ export function PolygonToBtcRefundStep({
 
   const tokenSymbol = getTokenSymbol(swapData.source_token);
   const refundLocktimeDate = new Date(swapData.refund_locktime * 1000);
-  const isLocktimePassed =
-    Math.floor(Date.now() / 1000) >= swapData.refund_locktime;
+
+  // Countdown timer state
+  const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+
+  // Update countdown every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Math.floor(Date.now() / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const isLocktimePassed = now >= swapData.refund_locktime;
+
+  // Calculate time remaining
+  const timeRemaining = useMemo(() => {
+    if (isLocktimePassed) return null;
+
+    const secondsLeft = swapData.refund_locktime - now;
+    const hours = Math.floor(secondsLeft / 3600);
+    const minutes = Math.floor((secondsLeft % 3600) / 60);
+    const seconds = secondsLeft % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  }, [now, swapData.refund_locktime, isLocktimePassed]);
 
   // Format USD amount
   const refundAmount = `$${swapData.usd_amount.toFixed(2)} ${tokenSymbol}`;
@@ -281,19 +310,36 @@ export function PolygonToBtcRefundStep({
 
       {/* Content */}
       <div className="space-y-6 p-6">
-        {/* Refund Info */}
-        <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-500 rounded-lg p-4 space-y-3">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            <h3 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
-              Refund Available
-            </h3>
+        {/* Refund Status Banner */}
+        {isLocktimePassed ? (
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <h3 className="text-sm font-semibold text-green-900 dark:text-green-100">
+                Refund Available
+              </h3>
+            </div>
+            <p className="text-sm text-green-800 dark:text-green-200">
+              The refund locktime has passed. You can now refund your{" "}
+              {tokenSymbol} from this swap.
+            </p>
           </div>
-          <p className="text-sm text-orange-800 dark:text-orange-200">
-            The refund locktime has passed. You can now refund your{" "}
-            {tokenSymbol} from this swap.
-          </p>
-        </div>
+        ) : (
+          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-500 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <h3 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                Refund Locked
+              </h3>
+            </div>
+            <p className="text-sm text-orange-800 dark:text-orange-200">
+              Your funds are temporarily locked. Refund will be available in:
+            </p>
+            <div className="text-2xl font-bold text-orange-900 dark:text-orange-100 font-mono">
+              {timeRemaining}
+            </div>
+          </div>
+        )}
 
         {/* Refund Details */}
         <div className="space-y-4">
@@ -371,16 +417,6 @@ export function PolygonToBtcRefundStep({
             )}
           </div>
         </div>
-
-        {/* Refund not available warning */}
-        {!isLocktimePassed && (
-          <Alert>
-            <AlertDescription>
-              The refund locktime has not been reached yet. Please wait until
-              the locktime passes.
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Wallet Connection Warning */}
         {!address && (
