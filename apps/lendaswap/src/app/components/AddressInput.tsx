@@ -118,9 +118,9 @@ export function AddressInput({
   };
 
   return (
-    <div className="space-y-2">
-      <div className="text-sm text-muted-foreground">
-        {`Where would you like to receive the funds?`}
+    <div className="rounded-2xl bg-muted p-4">
+      <div className="text-sm text-muted-foreground mb-2">
+        Receive address
       </div>
       <div className="relative">
         <Input
@@ -129,8 +129,8 @@ export function AddressInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className={`px-4 py-2 md:py-2.5 min-h-[3rem] md:min-h-[3.5rem] bg-card border-2 rounded-lg hover:border-blue-300 transition-colors shadow-sm font-mono text-sm ${
-            isEvmTarget ? "pr-36 md:pr-40" : ""
+          className={`px-3 py-2 min-h-[2.75rem] bg-background border-0 rounded-xl text-sm font-mono placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-ring ${
+            isEvmTarget ? "pr-28" : ""
           } ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className}`}
           data-1p-ignore
           data-lpignore="true"
@@ -139,10 +139,10 @@ export function AddressInput({
 
         {/* Get Address Button - Only for Polygon addresses, hidden in Speed Wallet */}
         {isEvmTarget && !isSpeedWallet && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
             {isConnected && !value ? (
               <Button
-                variant="default"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   if (address) {
@@ -150,20 +150,21 @@ export function AddressInput({
                   }
                 }}
                 type="button"
+                className="h-7 text-xs px-2"
               >
-                Get Address
+                Use wallet
               </Button>
             ) : !isConnected ? (
               <ConnectKitButton.Custom>
                 {({ show }) => (
                   <Button
-                    variant="default"
+                    variant="secondary"
                     size="sm"
                     onClick={show}
                     type="button"
-                    className="h-8 text-xs md:h-9 md:text-sm px-2 md:px-3"
+                    className="h-7 text-xs px-2"
                   >
-                    <Wallet className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1 md:mr-1.5" />
+                    <Wallet className="w-3 h-3 mr-1" />
                     Connect
                   </Button>
                 )}
@@ -175,7 +176,7 @@ export function AddressInput({
 
       {/* Address Error Display */}
       {validationError && (
-        <p className="text-destructive text-xs">{validationError}</p>
+        <p className="text-destructive text-xs mt-2">{validationError}</p>
       )}
     </div>
   );

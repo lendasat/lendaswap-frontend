@@ -12,6 +12,7 @@ import "../assets/styles.css";
 import { deriveSwapParams, getMnemonic } from "@frontend/browser-wallet";
 import { ConnectKitButton } from "connectkit";
 import {
+  ArrowDown,
   ArrowLeftRight,
   Check,
   Download,
@@ -590,98 +591,109 @@ function HomePage() {
   };
 
   return (
-    <div className="flex flex-col gap-1 p-2">
-      {/* Sell */}
-      <div className="rounded-2xl bg-muted p-4">
-        <div className="text-sm text-muted-foreground mb-2">Sell</div>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <input
-              type="text"
-              inputMode="decimal"
-              value={isUsdToken(sourceAsset) ? usdAmount : bitcoinAmount}
-              onChange={handleSourceInput}
-              placeholder="0"
-              className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
-              data-1p-ignore
-              data-lpignore="true"
-              autoComplete="off"
-            />
-            <div className="text-sm text-muted-foreground mt-1">
-              {isUsdToken(sourceAsset) ? (
-                <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
-              ) : (
-                <span>≈ ${formatUsdDisplay(usdAmount)}</span>
-              )}
+    <div className="flex flex-col p-3">
+      {/* Sell/Buy container with arrow */}
+      <div className="relative">
+        {/* Sell */}
+        <div className="rounded-2xl bg-muted p-4 pb-5">
+          <div className="text-sm text-muted-foreground mb-2">Sell</div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <input
+                type="text"
+                inputMode="decimal"
+                value={isUsdToken(sourceAsset) ? usdAmount : bitcoinAmount}
+                onChange={handleSourceInput}
+                placeholder="0"
+                className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+                data-1p-ignore
+                data-lpignore="true"
+                autoComplete="off"
+              />
+              <div className="text-sm text-muted-foreground mt-1">
+                {isUsdToken(sourceAsset) ? (
+                  <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
+                ) : (
+                  <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+                )}
+              </div>
+            </div>
+            <div className="shrink-0">
+              <AssetDropDown
+                value={sourceAsset}
+                availableAssets={availableSourceAssets}
+                label="sell"
+                onChange={(asset) => {
+                  if (
+                    (asset === "usdc_pol" ||
+                      asset === "usdt0_pol" ||
+                      asset === "usdt_eth" ||
+                      asset === "usdc_eth") &&
+                    (targetAsset === "btc_arkade" ||
+                      targetAsset === "btc_lightning")
+                  ) {
+                    setSourceAsset(asset);
+                    setTargetAsset(targetAsset);
+                    navigate(`/${asset}/${targetAsset}`, { replace: true });
+                    return;
+                  }
+
+                  if (
+                    (asset === "btc_arkade" || asset === "btc_lightning") &&
+                    (targetAsset === "usdc_pol" ||
+                      targetAsset === "usdt0_pol" ||
+                      targetAsset === "usdc_eth" ||
+                      targetAsset === "usdt_eth")
+                  ) {
+                    setSourceAsset(asset);
+                    setTargetAsset(targetAsset);
+                    navigate(`/${asset}/${targetAsset}`, { replace: true });
+                    return;
+                  }
+
+                  if (
+                    (asset === "usdc_pol" ||
+                      asset === "usdt0_pol" ||
+                      asset === "usdt_eth" ||
+                      asset === "usdc_eth") &&
+                    (targetAsset === "usdc_pol" ||
+                      targetAsset === "usdt0_pol" ||
+                      targetAsset === "usdc_eth" ||
+                      targetAsset === "usdt_eth")
+                  ) {
+                    setSourceAsset(asset);
+                    setTargetAsset("btc_arkade");
+                    navigate(`/${asset}/btc_arkade`, { replace: true });
+                    return;
+                  }
+
+                  if (
+                    (asset === "btc_arkade" || asset === "btc_lightning") &&
+                    (targetAsset === "btc_arkade" ||
+                      targetAsset === "btc_lightning")
+                  ) {
+                    setSourceAsset(asset);
+                    setTargetAsset("usdc_pol");
+                    navigate(`/${asset}/usdc_pol`, { replace: true });
+                    return;
+                  }
+                }}
+              />
             </div>
           </div>
-          <div className="shrink-0">
-            <AssetDropDown
-              value={sourceAsset}
-              availableAssets={availableSourceAssets}
-              label="sell"
-              onChange={(asset) => {
-                if (
-                  (asset === "usdc_pol" ||
-                    asset === "usdt0_pol" ||
-                    asset === "usdt_eth" ||
-                    asset === "usdc_eth") &&
-                  (targetAsset === "btc_arkade" ||
-                    targetAsset === "btc_lightning")
-                ) {
-                  setSourceAsset(asset);
-                  setTargetAsset(targetAsset);
-                  navigate(`/${asset}/${targetAsset}`, { replace: true });
-                  return;
-                }
+        </div>
 
-                if (
-                  (asset === "btc_arkade" || asset === "btc_lightning") &&
-                  (targetAsset === "usdc_pol" ||
-                    targetAsset === "usdt0_pol" ||
-                    targetAsset === "usdc_eth" ||
-                    targetAsset === "usdt_eth")
-                ) {
-                  setSourceAsset(asset);
-                  setTargetAsset(targetAsset);
-                  navigate(`/${asset}/${targetAsset}`, { replace: true });
-                  return;
-                }
-
-                if (
-                  (asset === "usdc_pol" ||
-                    asset === "usdt0_pol" ||
-                    asset === "usdt_eth" ||
-                    asset === "usdc_eth") &&
-                  (targetAsset === "usdc_pol" ||
-                    targetAsset === "usdt0_pol" ||
-                    targetAsset === "usdc_eth" ||
-                    targetAsset === "usdt_eth")
-                ) {
-                  setSourceAsset(asset);
-                  setTargetAsset("btc_arkade");
-                  navigate(`/${asset}/btc_arkade`, { replace: true });
-                  return;
-                }
-
-                if (
-                  (asset === "btc_arkade" || asset === "btc_lightning") &&
-                  (targetAsset === "btc_arkade" ||
-                    targetAsset === "btc_lightning")
-                ) {
-                  setSourceAsset(asset);
-                  setTargetAsset("usdc_pol");
-                  navigate(`/${asset}/usdc_pol`, { replace: true });
-                  return;
-                }
-              }}
-            />
+        {/* Arrow divider - absolutely positioned */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <div className="bg-background rounded-xl p-1">
+            <div className="bg-muted rounded-lg p-1.5">
+              <ArrowDown className="h-5 w-5 text-muted-foreground" />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Buy */}
-      <div className="rounded-2xl bg-muted p-4">
+        {/* Buy */}
+        <div className="rounded-2xl bg-muted p-4 pt-5 mt-1">
         <div className="text-sm text-muted-foreground mb-2">Buy</div>
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -722,10 +734,11 @@ function HomePage() {
             />
           </div>
         </div>
+        </div>
       </div>
 
       {/* Address Input */}
-      <div className="pt-2">
+      <div className="pt-3">
         <AddressInput
           value={targetAddress}
           onChange={setTargetAddress}
@@ -848,10 +861,9 @@ function useStepInfo() {
   if (isHomePage) {
     return {
       title: isSpeedWallet
-        ? "⚡ Trustless Near Instant Swaps"
-        : "Trustless Near Instant Swaps",
-      description:
-        "Fast, secure, and transparent swapping with the lowest rates on the market",
+        ? "⚡ Trustless Secure Instant Swaps"
+        : "Trustless Secure Instant Swaps",
+      description: "",
     };
   } else if (location.pathname.includes("/send")) {
     return {
@@ -947,14 +959,14 @@ export default function App() {
         }}
       />
 
-      {/* Modern Gradient Glows - Subtle */}
+      {/* Modern Gradient Glows */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Top Left - Orange Gradient */}
         <div
           className="absolute -top-48 -left-48 w-[600px] h-[600px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.06) 0%, rgba(249, 115, 22, 0.035) 25%, rgba(234, 88, 12, 0.02) 50%, transparent 70%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.08) 0%, rgba(249, 115, 22, 0.05) 25%, rgba(234, 88, 12, 0.03) 50%, transparent 70%)",
             filter: "blur(100px)",
             mixBlendMode: "screen",
           }}
@@ -965,7 +977,7 @@ export default function App() {
           className="absolute -bottom-40 -right-40 w-[550px] h-[550px]"
           style={{
             background:
-              "radial-gradient(circle at center, rgba(251, 146, 60, 0.05) 0%, rgba(249, 115, 22, 0.03) 30%, rgba(245, 158, 11, 0.02) 50%, transparent 68%)",
+              "radial-gradient(circle at center, rgba(251, 146, 60, 0.07) 0%, rgba(249, 115, 22, 0.04) 30%, rgba(245, 158, 11, 0.03) 50%, transparent 68%)",
             filter: "blur(110px)",
             mixBlendMode: "screen",
           }}
@@ -1214,80 +1226,83 @@ export default function App() {
           <div className="mx-auto max-w-2xl space-y-10">
             {/* Title */}
             <div className="space-y-2 text-center">
-              <h2 className="text-3xl font-semibold">{stepInfo.title}</h2>
+              <h2 className="text-5xl font-semibold">{stepInfo.title}</h2>
               <p className="text-muted-foreground">{stepInfo.description}</p>
             </div>
 
             {/* Step Card */}
-            <Routes>
-              <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
-              <Route path="/swap/:swapId/refund" element={<RefundPage />} />
-              <Route
-                path="*"
-                element={
-                  <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
-                    <Routes>
-                      <Route
-                        path="/"
-                        element={
-                          <Navigate to="/btc_lightning/usdc_pol" replace />
-                        }
-                      />
-                      <Route
-                        path="/:sourceToken/:targetToken"
-                        element={<HomePage />}
-                      />
-                      <Route path="/swaps" element={<SwapsPage />} />
-                    </Routes>
-                  </Card>
-                }
-              />
-            </Routes>
+            <div className="mx-auto max-w-lg">
+              <Routes>
+                <Route path="/swap/:swapId/wizard" element={<SwapWizardPage />} />
+                <Route path="/swap/:swapId/refund" element={<RefundPage />} />
+                <Route
+                  path="*"
+                  element={
+                    <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                      <Routes>
+                        <Route
+                          path="/"
+                          element={
+                            <Navigate to="/btc_lightning/usdc_pol" replace />
+                          }
+                        />
+                        <Route
+                          path="/:sourceToken/:targetToken"
+                          element={<HomePage />}
+                        />
+                        <Route path="/swaps" element={<SwapsPage />} />
+                      </Routes>
+                    </Card>
+                  }
+                />
+              </Routes>
+            </div>
 
-            {/* Dashboard Stats - Only show on home page */}
+            {/* Stats & Features - Only show on home page */}
             {isHomePage && (
-              <div className="space-y-4">
-                {/* Volume Stats Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="border-0 bg-gradient-to-br from-orange-500/10 to-amber-500/5 shadow-sm">
-                    <CardContent className="p-6">
-                      <div className="text-muted-foreground text-sm font-medium mb-1">
-                        Total Volume
-                      </div>
-                      <div className="text-4xl font-bold tracking-tight">
-                        $20,000
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-0 bg-gradient-to-br from-orange-500/10 to-amber-500/5 shadow-sm">
-                    <CardContent className="p-6">
-                      <div className="text-muted-foreground text-sm font-medium mb-1">
-                        24H Volume
-                      </div>
-                      <div className="text-4xl font-bold tracking-tight">
-                        $1,000
-                      </div>
-                    </CardContent>
-                  </Card>
+              <div className="mt-16 space-y-6">
+                {/* Volume Stats */}
+                <div className="flex items-center justify-center gap-8 text-center">
+                  <div>
+                    <div className="text-3xl font-bold tracking-tight">$20,000</div>
+                    <div className="text-sm text-muted-foreground">Total Volume</div>
+                  </div>
+                  <div className="h-8 w-px bg-border" />
+                  <div>
+                    <div className="text-3xl font-bold tracking-tight">$1,000</div>
+                    <div className="text-sm text-muted-foreground">24H Volume</div>
+                  </div>
                 </div>
 
-                {/* Feature Badges */}
-                <div className="flex flex-wrap justify-center gap-2">
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
-                    <Zap className="h-3.5 w-3.5 text-orange-500" />
-                    <span className="font-medium">Instant</span>
+                {/* Feature Cards */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
+                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
+                      <Zap className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div className="font-semibold">Instant</div>
+                    <div className="text-sm text-muted-foreground">Near-instant settlement</div>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
-                    <Shield className="h-3.5 w-3.5 text-orange-500" />
-                    <span className="font-medium">Atomic Swaps</span>
+                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
+                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
+                      <Shield className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div className="font-semibold">Atomic Swaps</div>
+                    <div className="text-sm text-muted-foreground">Trustless & secure</div>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
-                    <PiggyBank className="h-3.5 w-3.5 text-orange-500" />
-                    <span className="font-medium">0% Fees</span>
+                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
+                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
+                      <PiggyBank className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div className="font-semibold">0% Fees</div>
+                    <div className="text-sm text-muted-foreground">No protocol fees</div>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-3 py-1.5 text-sm">
-                    <Key className="h-3.5 w-3.5 text-orange-500" />
-                    <span className="font-medium">Self-Custodial</span>
+                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
+                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
+                      <Key className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <div className="font-semibold">Self-Custodial</div>
+                    <div className="text-sm text-muted-foreground">Your keys, your coins</div>
                   </div>
                 </div>
               </div>

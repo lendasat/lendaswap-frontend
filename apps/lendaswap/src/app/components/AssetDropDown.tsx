@@ -57,9 +57,9 @@ export function AssetDropDown({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 rounded-full bg-background shadow-md hover:shadow-lg transition-all"
       >
-        <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-background">
+        <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center">
           {getTokenIcon(selectedAsset)}
         </div>
         <span className="font-semibold text-sm">{getTokenSymbol(selectedAsset)}</span>
