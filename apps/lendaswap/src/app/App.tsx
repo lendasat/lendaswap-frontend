@@ -124,6 +124,9 @@ function HomePage() {
     urlTargetToken || (isSpeedWalletUser ? "btc_lightning" : "btc_arkade"),
   );
   const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd");
+  // Track which denomination user wants to input (USD or BTC) for each box
+  const [sourceInputMode, setSourceInputMode] = useState<"native" | "converted">("native");
+  const [targetInputMode, setTargetInputMode] = useState<"native" | "converted">("native");
   const [targetAddress, setTargetAddress] = useState("");
   const [addressValid, setAddressValid] = useState(false);
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
@@ -591,24 +594,55 @@ function HomePage() {
           <div className="text-sm text-muted-foreground mb-2">Sell</div>
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={isUsdToken(sourceAsset) ? usdAmount : bitcoinAmount}
-                onChange={handleSourceInput}
-                placeholder="0"
-                className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
-                data-1p-ignore
-                data-lpignore="true"
-                autoComplete="off"
-              />
-              <div className="text-sm text-muted-foreground mt-1">
-                {isUsdToken(sourceAsset) ? (
-                  <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
-                ) : (
-                  <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+              <div className="flex items-baseline gap-1">
+                {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
+                {sourceInputMode === "converted" && (
+                  <span className="text-4xl font-medium text-muted-foreground">$</span>
                 )}
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={sourceInputMode === "native"
+                    ? (isUsdToken(sourceAsset) ? usdAmount : bitcoinAmount)
+                    : usdAmount
+                  }
+                  onChange={(e) => {
+                    const input = e.target.value.replace(/[^0-9.]/g, "");
+                    if (sourceInputMode === "converted" || isUsdToken(sourceAsset)) {
+                      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
+                        setLastFieldEdited("usd");
+                        setUsdAmount(input);
+                      }
+                    } else {
+                      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
+                        setLastFieldEdited("btc");
+                        setBitcoinAmount(input);
+                      }
+                    }
+                  }}
+                  placeholder="0"
+                  className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  autoComplete="off"
+                />
               </div>
+              {/* Clickable toggle between native token and USD */}
+              <button
+                type="button"
+                onClick={() => setSourceInputMode(sourceInputMode === "native" ? "converted" : "native")}
+                className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
+              >
+                {sourceInputMode === "native" ? (
+                  <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+                ) : (
+                  isUsdToken(sourceAsset) ? (
+                    <span>≈ {formatUsdDisplay(usdAmount)} {getTokenSymbol(sourceAsset)}</span>
+                  ) : (
+                    <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
+                  )
+                )}
+              </button>
             </div>
             <div className="shrink-0">
               <AssetDropDown
@@ -708,25 +742,56 @@ function HomePage() {
                 <Skeleton className="h-8 w-32" />
               </div>
             ) : (
-              <input
-                type="text"
-                inputMode="decimal"
-                value={isUsdToken(targetAsset) ? usdAmount : bitcoinAmount}
-                onChange={handleTargetInput}
-                placeholder="0"
-                className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
-                data-1p-ignore
-                data-lpignore="true"
-                autoComplete="off"
-              />
+              <div className="flex items-baseline gap-1">
+                {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
+                {targetInputMode === "converted" && (
+                  <span className="text-4xl font-medium text-muted-foreground">$</span>
+                )}
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={targetInputMode === "native"
+                    ? (isUsdToken(targetAsset) ? usdAmount : bitcoinAmount)
+                    : usdAmount
+                  }
+                  onChange={(e) => {
+                    const input = e.target.value.replace(/[^0-9.]/g, "");
+                    if (targetInputMode === "converted" || isUsdToken(targetAsset)) {
+                      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
+                        setLastFieldEdited("usd");
+                        setUsdAmount(input);
+                      }
+                    } else {
+                      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
+                        setLastFieldEdited("btc");
+                        setBitcoinAmount(input);
+                      }
+                    }
+                  }}
+                  placeholder="0"
+                  className="w-full bg-transparent text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  autoComplete="off"
+                />
+              </div>
             )}
-            <div className="text-sm text-muted-foreground mt-1">
-              {isUsdToken(targetAsset) ? (
-                <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
-              ) : (
+            {/* Clickable toggle between native token and USD */}
+            <button
+              type="button"
+              onClick={() => setTargetInputMode(targetInputMode === "native" ? "converted" : "native")}
+              className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
+            >
+              {targetInputMode === "native" ? (
                 <span>≈ ${formatUsdDisplay(usdAmount)}</span>
+              ) : (
+                isUsdToken(targetAsset) ? (
+                  <span>≈ {formatUsdDisplay(usdAmount)} {getTokenSymbol(targetAsset)}</span>
+                ) : (
+                  <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
+                )
               )}
-            </div>
+            </button>
           </div>
           <div className="shrink-0">
             <AssetDropDown
