@@ -41,7 +41,8 @@ function getStatusInfo(status: SwapStatus): {
   showIcon: boolean;
 } {
   switch (status) {
-    case "completed":
+    // Success state - swap fully completed
+    case "serverredeemed":
       return {
         label: "Completed",
         textColor: "text-green-600 dark:text-green-400",
@@ -49,12 +50,12 @@ function getStatusInfo(status: SwapStatus): {
         icon: <Check className="h-3 w-3" />,
         showIcon: true,
       };
+    // In progress states
     case "pending":
-    case "clientfunding":
     case "clientfunded":
-    case "serverclaiming":
-    case "serverclaimed":
-    case "clientclaiming":
+    case "serverfunded":
+    case "clientredeeming":
+    case "clientredeemed":
       return {
         label: "In Progress",
         textColor: "text-orange-600 dark:text-orange-400",
@@ -62,9 +63,11 @@ function getStatusInfo(status: SwapStatus): {
         icon: <Loader2 className="h-3 w-3 animate-spin" />,
         showIcon: true,
       };
+    // Refunded/expired states
     case "expired":
     case "clientrefunded":
     case "clientrefundedserverrefunded":
+    case "clientfundedserverrefunded":
       return {
         label: status === "expired" ? "Expired" : "Refunded",
         textColor: "text-muted-foreground",
@@ -72,8 +75,10 @@ function getStatusInfo(status: SwapStatus): {
         icon: null,
         showIcon: false,
       };
+    // Error states requiring user action
     case "clientinvalidfunded":
     case "clientfundedtoolate":
+    case "clientrefundedserverfunded":
       return {
         label: "Action Required",
         textColor: "text-red-600 dark:text-red-400",
