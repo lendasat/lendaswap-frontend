@@ -32,11 +32,10 @@ import { getTokenIcon, getTokenSymbol, type SwapStatus } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
 import { clearAllSwaps, deleteSwap, getAllSwaps, type StoredSwap } from "../db";
 
-// Get status display info with border color
+// Get status display info
 function getStatusInfo(status: SwapStatus): {
   label: string;
   textColor: string;
-  borderColor: string;
   icon: React.ReactNode;
   showIcon: boolean;
 } {
@@ -46,7 +45,6 @@ function getStatusInfo(status: SwapStatus): {
       return {
         label: "Completed",
         textColor: "text-green-600 dark:text-green-400",
-        borderColor: "border-l-green-500",
         icon: <Check className="h-3 w-3" />,
         showIcon: true,
       };
@@ -59,7 +57,6 @@ function getStatusInfo(status: SwapStatus): {
       return {
         label: "In Progress",
         textColor: "text-orange-600 dark:text-orange-400",
-        borderColor: "border-l-orange-500",
         icon: <Loader2 className="h-3 w-3 animate-spin" />,
         showIcon: true,
       };
@@ -71,7 +68,6 @@ function getStatusInfo(status: SwapStatus): {
       return {
         label: status === "expired" ? "Expired" : "Refunded",
         textColor: "text-muted-foreground",
-        borderColor: "border-l-muted-foreground/50",
         icon: null,
         showIcon: false,
       };
@@ -82,7 +78,6 @@ function getStatusInfo(status: SwapStatus): {
       return {
         label: "Action Required",
         textColor: "text-red-600 dark:text-red-400",
-        borderColor: "border-l-red-500",
         icon: null,
         showIcon: false,
       };
@@ -90,7 +85,6 @@ function getStatusInfo(status: SwapStatus): {
       return {
         label: "Unknown",
         textColor: "text-muted-foreground",
-        borderColor: "border-l-muted-foreground/30",
         icon: null,
         showIcon: false,
       };
@@ -331,7 +325,7 @@ export function SwapsPage() {
                   type="button"
                   key={swap.id}
                   onClick={() => navigate(`/swap/${swap.id}/wizard`)}
-                  className={`group relative w-full text-left rounded-xl border border-border/40 bg-card hover:bg-accent/30 hover:border-border transition-all cursor-pointer overflow-hidden border-l-[3px] ${statusInfo.borderColor}`}
+                  className="group relative w-full text-left rounded-xl border border-border/40 bg-card hover:bg-accent/30 hover:border-border transition-all cursor-pointer overflow-hidden"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 pr-1.5 sm:pr-2">
                     {/* Overlapping Token Icons */}
