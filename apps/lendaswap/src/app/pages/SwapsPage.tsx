@@ -237,23 +237,23 @@ export function SwapsPage() {
 
   return (
     <>
-      <div className="p-4 space-y-3">
+      <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3">
         {/* Search Bar - only show when there are swaps */}
         {swaps.length > 0 && (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search by amount, currency, date..."
+              placeholder="Search amount, currency, date..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 h-10 bg-muted/50 border-border/50 focus-visible:border-border"
+              className="pl-8 sm:pl-9 pr-8 sm:pr-9 h-9 sm:h-10 text-sm bg-muted/50 border-border/50 focus-visible:border-border"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted transition-colors"
+                className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-muted transition-colors"
               >
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -289,29 +289,31 @@ export function SwapsPage() {
         )}
 
         {swaps.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted/50 mb-4">
-              <Clock className="h-7 w-7 text-muted-foreground/50" />
+          <div className="py-12 sm:py-16 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-muted/50 mb-3 sm:mb-4">
+              <Clock className="h-6 w-6 sm:h-7 sm:w-7 text-muted-foreground/50" />
             </div>
-            <p className="text-muted-foreground font-medium">No swaps yet</p>
-            <p className="text-sm text-muted-foreground/60 mt-1">
+            <p className="text-sm sm:text-base text-muted-foreground font-medium">
+              No swaps yet
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground/60 mt-1">
               Your swap history will appear here
             </p>
           </div>
         ) : filteredSwaps.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted/50 mb-3">
-              <Search className="h-6 w-6 text-muted-foreground/50" />
+          <div className="py-10 sm:py-12 text-center">
+            <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-muted/50 mb-2 sm:mb-3">
+              <Search className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground/50" />
             </div>
-            <p className="text-muted-foreground font-medium">
+            <p className="text-sm sm:text-base text-muted-foreground font-medium">
               No matches found
             </p>
-            <p className="text-sm text-muted-foreground/60 mt-1">
-              Try searching for a different amount, currency, or date
+            <p className="text-xs sm:text-sm text-muted-foreground/60 mt-1">
+              Try a different amount, currency, or date
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {filteredSwaps.map((swap) => {
               const statusInfo = getStatusInfo(swap.status);
               const amounts = formatSwapAmount(swap);
@@ -326,18 +328,18 @@ export function SwapsPage() {
                   onClick={() => navigate(`/swap/${swap.id}/wizard`)}
                   className={`group relative w-full text-left rounded-xl border border-border/40 bg-card hover:bg-accent/30 hover:border-border transition-all cursor-pointer overflow-hidden border-l-[3px] ${statusInfo.borderColor}`}
                 >
-                  <div className="flex items-center gap-3 p-3 pr-2">
+                  <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 pr-1.5 sm:pr-2">
                     {/* Overlapping Token Icons */}
-                    <div className="relative flex-shrink-0 w-12 h-8">
+                    <div className="relative flex-shrink-0 w-10 h-7 sm:w-12 sm:h-8">
                       {/* Source token (front) */}
-                      <div className="absolute left-0 top-0 w-8 h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden z-10 shadow-sm">
-                        <div className="w-7 h-7 flex items-center justify-center">
+                      <div className="absolute left-0 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden z-10 shadow-sm">
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
                           {getTokenIcon(swap.source_token)}
                         </div>
                       </div>
                       {/* Target token (behind) */}
-                      <div className="absolute left-4 top-0 w-8 h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
-                        <div className="w-7 h-7 flex items-center justify-center">
+                      <div className="absolute left-3.5 sm:left-4 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
                           {getTokenIcon(swap.target_token)}
                         </div>
                       </div>
@@ -346,23 +348,23 @@ export function SwapsPage() {
                     {/* Main Content */}
                     <div className="flex-1 min-w-0">
                       {/* Primary: Amount */}
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-semibold text-base truncate">
+                      <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
+                        <span className="font-semibold text-sm sm:text-base truncate">
                           {amounts.primary}
                         </span>
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-muted-foreground text-xs sm:text-sm truncate">
                           → {amounts.secondary}
                         </span>
                       </div>
 
                       {/* Secondary: Time and Status */}
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-muted-foreground/70">
+                      <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground/70">
                           {timeAgo} ago
                         </span>
                         <span className="text-muted-foreground/30">·</span>
                         <span
-                          className={`text-xs font-medium flex items-center gap-1 ${statusInfo.textColor}`}
+                          className={`text-[10px] sm:text-xs font-medium flex items-center gap-0.5 sm:gap-1 ${statusInfo.textColor}`}
                         >
                           {statusInfo.showIcon && statusInfo.icon}
                           {statusInfo.label}
@@ -371,14 +373,14 @@ export function SwapsPage() {
                     </div>
 
                     {/* Right side: Actions + Chevron */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {/* Dropdown Menu for actions */}
+                    <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+                      {/* Dropdown Menu for actions - always visible on mobile */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-muted transition-all"
+                            className="p-1 sm:p-1.5 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 hover:bg-muted transition-all"
                           >
                             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                           </button>
@@ -411,7 +413,7 @@ export function SwapsPage() {
                       </DropdownMenu>
 
                       {/* Chevron */}
-                      <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
+                      <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </div>
                 </button>
