@@ -112,9 +112,13 @@ export function AssetDropDown({
                   <div className="font-semibold">{getTokenSymbol(asset)}</div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     {typeof getTokenNetworkIcon(asset) === "string" ? (
-                      <span className="text-xs">{getTokenNetworkIcon(asset)}</span>
+                      <span className="text-xs">
+                        {getTokenNetworkIcon(asset)}
+                      </span>
                     ) : (
-                      <div className="w-3 h-3">{getTokenNetworkIcon(asset)}</div>
+                      <div className="w-3 h-3">
+                        {getTokenNetworkIcon(asset)}
+                      </div>
                     )}
                     <span>{getTokenNetworkName(asset)}</span>
                   </div>
@@ -150,8 +154,12 @@ export function AssetDropDown({
           {getTokenIcon(selectedAsset)}
         </div>
         <div className="flex flex-col items-start">
-          <span className="font-semibold text-sm leading-tight">{getTokenSymbol(selectedAsset)}</span>
-          <span className="text-xs text-muted-foreground leading-tight">{getTokenNetworkName(selectedAsset)}</span>
+          <span className="font-semibold text-sm leading-tight">
+            {getTokenSymbol(selectedAsset)}
+          </span>
+          <span className="text-xs text-muted-foreground leading-tight">
+            {getTokenNetworkName(selectedAsset)}
+          </span>
         </div>
         <ChevronDown className="w-4 h-4 text-muted-foreground" />
       </button>
@@ -162,7 +170,9 @@ export function AssetDropDown({
           <DrawerContent>
             <DrawerHeader className="pb-0">
               <DrawerTitle>
-                {label === "buy" ? "Select a currency to buy" : "Select a currency to sell"}
+                {label === "buy"
+                  ? "Select a currency to buy"
+                  : "Select a currency to sell"}
               </DrawerTitle>
             </DrawerHeader>
             {tokenListContent}
@@ -174,7 +184,9 @@ export function AssetDropDown({
           <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
             <DialogHeader className="p-4 pb-0">
               <DialogTitle>
-                {label === "buy" ? "Select a currency to buy" : "Select a currency to sell"}
+                {label === "buy"
+                  ? "Select a currency to buy"
+                  : "Select a currency to sell"}
               </DialogTitle>
             </DialogHeader>
             {tokenListContent}

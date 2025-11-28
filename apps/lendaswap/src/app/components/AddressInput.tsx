@@ -119,9 +119,7 @@ export function AddressInput({
 
   return (
     <div className="rounded-2xl bg-muted p-4">
-      <div className="text-sm text-muted-foreground mb-2">
-        Receive address
-      </div>
+      <div className="text-sm text-muted-foreground mb-2">Receive address</div>
       <div className="relative">
         <Input
           type="text"
