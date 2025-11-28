@@ -62,7 +62,14 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
         <BrowserRouter>
           <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
-              <ConnectKitProvider mode="auto">
+              <ConnectKitProvider
+                mode="auto"
+                options={{
+                  hideQuestionMarkCTA: true,
+                  hideNoWalletCTA: false,
+                  walletConnectCTA: "link",
+                }}
+              >
                 <Theme>
                   <ThemeProvider>
                     <PriceFeedProvider>

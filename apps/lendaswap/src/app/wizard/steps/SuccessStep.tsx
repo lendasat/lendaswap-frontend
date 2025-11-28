@@ -146,15 +146,14 @@ export function SuccessStep({
               {/* Animated background effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent animate-shimmer" />
 
-              <div className="relative space-y-4 text-center">
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  Share your swap on 𝕏
+              <div className="relative text-center space-y-3">
+                <p className="text-sm font-semibold text-green-700 dark:text-green-300">
+                  GET A NO-FEE CODE BY SHARING YOUR SWAP ON 𝕏
                 </p>
                 <Button
                   onClick={handleShareOnTwitter}
-                  className="w-full gap-2 bg-black hover:bg-black/90 text-white dark:bg-white dark:hover:bg-white/90 dark:text-black"
+                  className="w-full bg-black hover:bg-black/90 text-white dark:bg-white dark:hover:bg-white/90 dark:text-black"
                 >
-                  <Twitter className="h-4 w-4" />
                   Share on 𝕏
                 </Button>
               </div>

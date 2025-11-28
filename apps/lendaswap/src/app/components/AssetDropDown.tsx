@@ -57,12 +57,15 @@ export function AssetDropDown({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 rounded-full bg-background shadow-md hover:shadow-lg transition-all"
+        className="flex items-center gap-2 px-3 py-2 rounded-full bg-background shadow-sm hover:shadow-md transition-all"
       >
         <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center">
           {getTokenIcon(selectedAsset)}
         </div>
-        <span className="font-semibold text-sm">{getTokenSymbol(selectedAsset)}</span>
+        <div className="flex flex-col items-start">
+          <span className="font-semibold text-sm leading-tight">{getTokenSymbol(selectedAsset)}</span>
+          <span className="text-xs text-muted-foreground leading-tight">{getTokenNetworkName(selectedAsset)}</span>
+        </div>
         <ChevronDown className="w-4 h-4 text-muted-foreground" />
       </button>
 
@@ -90,7 +93,7 @@ export function AssetDropDown({
           </div>
 
           {/* Token List */}
-          <div className="overflow-y-auto max-h-[50vh] px-2 pb-4">
+          <div className="overflow-y-auto max-h-[50vh] px-2 pb-4 scrollbar-thin">
             {filteredAssets.length > 0 ? (
               <div className="space-y-1">
                 {filteredAssets.map((asset) => (

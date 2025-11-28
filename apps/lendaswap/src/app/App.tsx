@@ -519,26 +519,18 @@ function HomePage() {
         .sort((a, b) => a.localeCompare(b)),
     ),
   ];
-  let availableTargetAssets: TokenId[];
-  if (sourceAsset === "btc_lightning" || sourceAsset === "btc_arkade") {
-    availableTargetAssets = [
-      ...new Set(
-        assetPairs
-          .filter((a) => {
-            return (
-              a.target.token_id === "btc_arkade" ||
-              a.target.token_id === "btc_lightning"
-            );
-          })
-          .map((a) => {
-            return a.source.token_id;
-          })
-          .sort((a, b) => a.localeCompare(b)),
-      ),
-    ];
-  } else {
-    availableTargetAssets = ["btc_arkade", "btc_lightning"];
-  }
+  // Always show all available tokens that can be bought (both BTC and EVM)
+  const availableTargetAssets: TokenId[] = [
+    ...new Set([
+      // All EVM tokens that can be targets (when selling BTC)
+      ...assetPairs
+        .filter((a) => a.target.token_id === "btc_arkade" || a.target.token_id === "btc_lightning")
+        .map((a) => a.source.token_id),
+      // All BTC tokens that can be targets (when selling EVM)
+      "btc_arkade" as TokenId,
+      "btc_lightning" as TokenId,
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
 
   // Helper to format display values
   const formatUsdDisplay = (val: string) => {
@@ -683,14 +675,28 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Arrow divider - absolutely positioned */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+        {/* Swap button - absolutely positioned (like Uniswap) */}
+        <button
+          type="button"
+          onClick={() => {
+            // Swap source and target tokens
+            const newSource = targetAsset;
+            const newTarget = sourceAsset;
+            setSourceAsset(newSource);
+            setTargetAsset(newTarget);
+            navigate(`/${newSource}/${newTarget}`, { replace: true });
+            // Clear target address since it may not be valid for the new target token type
+            setTargetAddress("");
+            setAddressValid(false);
+          }}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group"
+        >
           <div className="bg-background rounded-xl p-1">
-            <div className="bg-muted rounded-lg p-1.5">
+            <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover:bg-muted/80 group-active:scale-95">
               <ArrowDown className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
-        </div>
+        </button>
 
         {/* Buy */}
         <div className="rounded-2xl bg-muted p-4 pt-5 mt-1">
@@ -726,8 +732,32 @@ function HomePage() {
             <AssetDropDown
               value={targetAsset}
               onChange={(asset) => {
-                navigate(`/${sourceAsset}/${asset}`, { replace: true });
+                // Check if new target is compatible with current source
+                const isBtcTarget = asset === "btc_arkade" || asset === "btc_lightning";
+                const isBtcSource = sourceAsset === "btc_arkade" || sourceAsset === "btc_lightning";
+                const isEvmTarget = asset === "usdc_pol" || asset === "usdt0_pol" || asset === "usdc_eth" || asset === "usdt_eth";
+                const isEvmSource = sourceAsset === "usdc_pol" || sourceAsset === "usdt0_pol" || sourceAsset === "usdc_eth" || sourceAsset === "usdt_eth";
+
+                // If both are BTC or both are EVM, auto-switch source to make them compatible
+                if (isBtcTarget && isBtcSource) {
+                  // Buying BTC but selling BTC - switch source to default EVM stablecoin
+                  setSourceAsset("usdc_pol");
+                  setTargetAsset(asset);
+                  navigate(`/usdc_pol/${asset}`, { replace: true });
+                  return;
+                }
+
+                if (isEvmTarget && isEvmSource) {
+                  // Buying EVM but selling EVM - switch source to default BTC
+                  setSourceAsset("btc_arkade");
+                  setTargetAsset(asset);
+                  navigate(`/btc_arkade/${asset}`, { replace: true });
+                  return;
+                }
+
+                // Compatible pair, just update target
                 setTargetAsset(asset);
+                navigate(`/${sourceAsset}/${asset}`, { replace: true });
               }}
               availableAssets={availableTargetAssets}
               label="buy"
@@ -784,11 +814,7 @@ function HomePage() {
                   </ConnectKitButton.Custom>
                 </div>
               </>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Connect your wallet to continue
-              </p>
-            )}
+            ) : null}
           </div>
         )}
 
@@ -815,27 +841,42 @@ function HomePage() {
         ) : null}
 
         <div className="pt-2">
-          <Button
-            onClick={handleContinueToAddress}
-            disabled={
-              !targetAddress ||
-              !exchangeRate ||
-              isLoadingPrice ||
-              !addressValid ||
-              isCreatingSwap ||
-              (isEvmToken(sourceAsset) && !isEvmAddressValid)
-            }
-            className="w-full h-12"
-          >
-            {isCreatingSwap ? (
-              <>
-                <Loader className="animate-spin h-4 w-4" />
-                Please Wait
-              </>
-            ) : (
-              <>Continue</>
-            )}
-          </Button>
+          {/* Show Connect Wallet button when EVM source and wallet not connected */}
+          {isEvmToken(sourceAsset) && !isValidSpeedWalletContext() && !isConnected ? (
+            <ConnectKitButton.Custom>
+              {({ show }) => (
+                <Button
+                  onClick={show}
+                  className="w-full h-12 gap-2"
+                >
+                  <Wallet className="h-4 w-4" />
+                  Connect Wallet
+                </Button>
+              )}
+            </ConnectKitButton.Custom>
+          ) : (
+            <Button
+              onClick={handleContinueToAddress}
+              disabled={
+                !targetAddress ||
+                !exchangeRate ||
+                isLoadingPrice ||
+                !addressValid ||
+                isCreatingSwap ||
+                (isEvmToken(sourceAsset) && !isEvmAddressValid)
+              }
+              className="w-full h-12"
+            >
+              {isCreatingSwap ? (
+                <>
+                  <Loader className="animate-spin h-4 w-4" />
+                  Please Wait
+                </>
+              ) : (
+                <>Continue</>
+              )}
+            </Button>
+          )}
         </div>
 
         {/* Swap Error Display */}
@@ -861,8 +902,8 @@ function useStepInfo() {
   if (isHomePage) {
     return {
       title: isSpeedWallet
-        ? "⚡ Trustless Secure Instant Swaps"
-        : "Trustless Secure Instant Swaps",
+        ? "⚡ Lightning-fast Bitcoin to Stablecoins"
+        : "Lightning-fast Bitcoin to Stablecoins",
       description: "",
     };
   } else if (location.pathname.includes("/send")) {
@@ -1257,60 +1298,113 @@ export default function App() {
                 />
               </Routes>
             </div>
+          </div>
 
-            {/* Stats & Features - Only show on home page */}
-            {isHomePage && (
-              <div className="mt-16 space-y-6">
-                {/* Volume Stats */}
-                <div className="flex items-center justify-center gap-8 text-center">
-                  <div>
-                    <div className="text-3xl font-bold tracking-tight">$20,000</div>
-                    <div className="text-sm text-muted-foreground">Total Volume</div>
+          {/* Stats & Features - Only show on home page */}
+          {isHomePage && (
+            <div className="mx-auto max-w-2xl mt-[100px] space-y-8">
+                {/* Volume Stats Card */}
+                <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-gradient-to-br from-card to-card/50 p-6">
+                  {/* Decorative chart illustration */}
+                  <div className="absolute right-0 top-0 h-full w-1/3 opacity-10">
+                    <svg viewBox="0 0 100 80" className="h-full w-full" preserveAspectRatio="none">
+                      <path
+                        d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20 L100 80 Z"
+                        fill="url(#chartGradient)"
+                      />
+                      <path
+                        d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="text-orange-500"
+                      />
+                      <defs>
+                        <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="currentColor" className="text-orange-500" />
+                          <stop offset="100%" stopColor="transparent" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
                   </div>
-                  <div className="h-8 w-px bg-border" />
-                  <div>
-                    <div className="text-3xl font-bold tracking-tight">$1,000</div>
-                    <div className="text-sm text-muted-foreground">24H Volume</div>
+
+                  <div className="relative flex items-center justify-around">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold tracking-tight">$22.6K</div>
+                      <div className="text-sm text-muted-foreground">Total Volume</div>
+                    </div>
+                    <div className="h-12 w-px bg-border/50" />
+                    <div className="text-center">
+                      <div className="text-3xl font-bold tracking-tight">$0.8K</div>
+                      <div className="text-sm text-muted-foreground">24H Volume</div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Feature Cards */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
-                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
-                      <Zap className="h-5 w-5 text-orange-500" />
+                {/* Feature Cards - Modern Bento Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Instant */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="relative flex flex-col items-center text-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                        <Zap className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">Instant</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">Near-instant settlement</div>
+                      </div>
                     </div>
-                    <div className="font-semibold">Instant</div>
-                    <div className="text-sm text-muted-foreground">Near-instant settlement</div>
                   </div>
-                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
-                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
-                      <Shield className="h-5 w-5 text-orange-500" />
+
+                  {/* Atomic Swaps */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="relative flex flex-col items-center text-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                        <Shield className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">Atomic Swaps</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">Trustless & secure</div>
+                      </div>
                     </div>
-                    <div className="font-semibold">Atomic Swaps</div>
-                    <div className="text-sm text-muted-foreground">Trustless & secure</div>
                   </div>
-                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
-                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
-                      <PiggyBank className="h-5 w-5 text-orange-500" />
+
+                  {/* 0% Fees */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="relative flex flex-col items-center text-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                        <PiggyBank className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">0% Fees</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">No protocol fees</div>
+                      </div>
                     </div>
-                    <div className="font-semibold">0% Fees</div>
-                    <div className="text-sm text-muted-foreground">No protocol fees</div>
                   </div>
-                  <div className="group rounded-2xl border border-border/50 bg-card/50 p-4 transition-colors hover:border-border hover:bg-card">
-                    <div className="mb-2 inline-flex rounded-xl bg-orange-500/10 p-2.5">
-                      <Key className="h-5 w-5 text-orange-500" />
+
+                  {/* Self-Custodial */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="relative flex flex-col items-center text-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+                        <Key className="h-6 w-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-foreground">Self-Custodial</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">Your keys, your coins</div>
+                      </div>
                     </div>
-                    <div className="font-semibold">Self-Custodial</div>
-                    <div className="text-sm text-muted-foreground">Your keys, your coins</div>
                   </div>
                 </div>
-              </div>
-            )}
+            </div>
+          )}
 
-            {/* FAQ Section - Only show on home page */}
-            {isHomePage && (
-              <div className="mt-24">
+          {/* FAQ Section - Only show on home page */}
+          {isHomePage && (
+            <div className="mx-auto max-w-2xl mt-24">
                 <h3 className="text-xl font-semibold mb-6 text-center">
                   Frequently Asked Questions
                 </h3>
@@ -1389,9 +1483,8 @@ export default function App() {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </main>
 
         {/* Footer */}
