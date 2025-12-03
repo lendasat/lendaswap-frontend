@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   Check,
   ChevronRight,
@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
-import {api, getTokenIcon, getTokenSymbol, type SwapStatus} from "../api";
+import { api, getTokenIcon, getTokenSymbol, type SwapStatus } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
 import type { ExtendedSwapStorageData } from "@lendaswap/sdk";
 
@@ -124,7 +124,9 @@ export function SwapsPage() {
 
     try {
       await api.deleteSwap(swapToDelete);
-      setSwaps((prevSwaps) => prevSwaps.filter((s) => s.response.id !== swapToDelete));
+      setSwaps((prevSwaps) =>
+        prevSwaps.filter((s) => s.response.id !== swapToDelete),
+      );
       setDeleteDialogOpen(false);
       setSwapToDelete(null);
     } catch (error) {
@@ -167,8 +169,12 @@ export function SwapsPage() {
 
     return swaps.filter((swap) => {
       // Search by token symbols
-      const sourceSymbol = getTokenSymbol(swap.response.source_token).toLowerCase();
-      const targetSymbol = getTokenSymbol(swap.response.target_token).toLowerCase();
+      const sourceSymbol = getTokenSymbol(
+        swap.response.source_token,
+      ).toLowerCase();
+      const targetSymbol = getTokenSymbol(
+        swap.response.target_token,
+      ).toLowerCase();
       if (sourceSymbol.includes(query) || targetSymbol.includes(query)) {
         return true;
       }
@@ -207,11 +213,7 @@ export function SwapsPage() {
       }
 
       // Search by swap ID
-      if (swap.response.id.toLowerCase().includes(query)) {
-        return true;
-      }
-
-      return false;
+      return swap.response.id.toLowerCase().includes(query);
     });
   }, [swaps, searchQuery]);
 
@@ -233,6 +235,12 @@ export function SwapsPage() {
       };
     }
   };
+
+  const sortedFilteredSwaps = filteredSwaps.sort(
+    (a, b) =>
+      parseISO(b.response.created_at).getTime() -
+      parseISO(a.response.created_at).getTime(),
+  );
 
   return (
     <>
@@ -266,7 +274,7 @@ export function SwapsPage() {
             <p className="text-sm text-muted-foreground">
               {searchQuery ? (
                 <>
-                  {filteredSwaps.length} of {swaps.length} swap
+                  {sortedFilteredSwaps.length} of {swaps.length} swap
                   {swaps.length !== 1 ? "s" : ""}
                 </>
               ) : (
@@ -299,7 +307,7 @@ export function SwapsPage() {
               Your swap history will appear here
             </p>
           </div>
-        ) : filteredSwaps.length === 0 ? (
+        ) : sortedFilteredSwaps.length === 0 ? (
           <div className="py-10 sm:py-12 text-center">
             <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-muted/50 mb-2 sm:mb-3">
               <Search className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground/50" />
@@ -313,12 +321,15 @@ export function SwapsPage() {
           </div>
         ) : (
           <div className="space-y-1.5 sm:space-y-2">
-            {filteredSwaps.map((swap) => {
+            {sortedFilteredSwaps.map((swap) => {
               const statusInfo = getStatusInfo(swap.response.status);
               const amounts = formatSwapAmount(swap);
-              const timeAgo = formatDistanceToNow(new Date(swap.response.created_at), {
-                addSuffix: false,
-              });
+              const timeAgo = formatDistanceToNow(
+                new Date(swap.response.created_at),
+                {
+                  addSuffix: false,
+                },
+              );
 
               return (
                 <button
@@ -402,7 +413,9 @@ export function SwapsPage() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={(e) => handleDeleteClick(e, swap.response.id)}
+                            onClick={(e) =>
+                              handleDeleteClick(e, swap.response.id)
+                            }
                             className="gap-2 text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
