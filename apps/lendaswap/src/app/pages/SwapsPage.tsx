@@ -1,3 +1,4 @@
+import type { ExtendedSwapStorageData } from "@lendaswap/sdk";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   Check,
@@ -30,7 +31,6 @@ import {
 import { Input } from "#/components/ui/input";
 import { api, getTokenIcon, getTokenSymbol, type SwapStatus } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
-import type { ExtendedSwapStorageData } from "@lendaswap/sdk";
 
 // Get status display info
 function getStatusInfo(status: SwapStatus): {

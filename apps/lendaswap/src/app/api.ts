@@ -14,6 +14,7 @@ import {
   type RecoveredSwap,
   type RecoverSwapsResponse,
   Client as SdkClient,
+  STORAGE_KEYS,
   type SwapCommonFields,
   type SwapRequest,
   type SwapStatus,
@@ -21,7 +22,6 @@ import {
   type TokenInfo,
   type VersionInfo,
   type VhtlcAmounts,
-  STORAGE_KEYS,
 } from "@lendaswap/sdk";
 import { getReferralCode } from "./utils/referralCode";
 
