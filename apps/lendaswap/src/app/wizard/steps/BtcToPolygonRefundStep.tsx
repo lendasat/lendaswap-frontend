@@ -162,7 +162,6 @@ export function BtcToPolygonRefundStep({
 
       {/* Content */}
       <div className="space-y-6 p-6">
-
         {/* Refund Status Banner */}
         {isLocktimePassed ? (
           <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
