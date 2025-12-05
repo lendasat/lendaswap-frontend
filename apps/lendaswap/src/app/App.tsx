@@ -1307,10 +1307,11 @@ export default function App() {
                 <div className="relative flex items-center justify-around">
                   <div className="text-center">
                     <div className="text-3xl font-bold tracking-tight">
+                      {/* +15000 = undocumented swap volume */}
                       {volumeStats
-                        ? volumeStats.total_volume_usd >= 1000
-                          ? `$${(volumeStats.total_volume_usd / 1000).toFixed(1)}K`
-                          : `$${volumeStats.total_volume_usd.toFixed(0)}`
+                        ? volumeStats.total_volume_usd + 15000 >= 1000
+                          ? `$${((volumeStats.total_volume_usd + 15000) / 1000).toFixed(1)}K`
+                          : `$${(volumeStats.total_volume_usd + 15000).toFixed(0)}`
                         : "$--"}
                     </div>
                     <div className="text-sm text-muted-foreground">
