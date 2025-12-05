@@ -62,6 +62,7 @@ import {
   getTokenSymbol,
   type QuoteResponse,
   type TokenId,
+  type VolumeStats,
 } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AssetDropDown } from "./components/AssetDropDown";
@@ -144,7 +145,6 @@ function HomePage() {
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const { arkAddress, isEmbedded } = useWalletBridge();
-
   // Auto-populate Polygon address from connected wallet
   useEffect(() => {
     if (isConnected && connectedAddress) {
@@ -908,6 +908,12 @@ export default function App() {
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
+  const [volumeStats, setVolumeStats] = useState<VolumeStats | null>(null);
+
+  // Fetch volume stats on mount
+  useEffect(() => {
+    api.getStats().then(setVolumeStats).catch(console.error);
+  }, []);
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
   const isHomePage =
@@ -1301,7 +1307,11 @@ export default function App() {
                 <div className="relative flex items-center justify-around">
                   <div className="text-center">
                     <div className="text-3xl font-bold tracking-tight">
-                      $32.6K
+                      {volumeStats
+                        ? volumeStats.total_volume_usd >= 1000
+                          ? `$${(volumeStats.total_volume_usd / 1000).toFixed(1)}K`
+                          : `$${volumeStats.total_volume_usd.toFixed(0)}`
+                        : "$--"}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Total Volume
@@ -1310,7 +1320,11 @@ export default function App() {
                   <div className="h-12 w-px bg-border/50" />
                   <div className="text-center">
                     <div className="text-3xl font-bold tracking-tight">
-                      $0.8K
+                      {volumeStats
+                        ? volumeStats.volume_24h_usd >= 1000
+                          ? `$${(volumeStats.volume_24h_usd / 1000).toFixed(1)}K`
+                          : `$${volumeStats.volume_24h_usd.toFixed(0)}`
+                        : "$--"}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       24H Volume
@@ -1485,17 +1499,7 @@ export default function App() {
             <DebugNavigation />
 
             <div className="text-muted-foreground text-center text-sm">
-              <p>
-                © 2025 LendaSwap. All rights reserved.{" "}
-                <a
-                  href="https://lendasat.com/docs/tos"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-foreground transition-colors"
-                >
-                  Terms of Service
-                </a>
-              </p>
+              <p>© 2025 LendaSwap. All rights reserved.</p>
             </div>
           </div>
         </footer>

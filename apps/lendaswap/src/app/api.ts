@@ -238,7 +238,22 @@ export const api = {
     const client = await getSdkClient();
     return await client.deleteSwap(id);
   },
+
+  async getStats(): Promise<VolumeStats> {
+    const response = await fetch(`${API_BASE_URL}/stats`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch stats: ${response.statusText}`);
+    }
+    return response.json();
+  },
 };
+
+export interface VolumeStats {
+  total_volume_usd: number;
+  volume_24h_usd: number;
+  total_swaps: number;
+  swaps_24h: number;
+}
 
 // PriceFeedService
 export { PriceFeedService } from "@lendaswap/sdk";
