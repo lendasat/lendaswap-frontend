@@ -1351,23 +1351,23 @@ export default function App() {
                   stepInfo.isHomePage
                     ? {
                         maskImage:
-                          "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,1) 100%)",
+                          "linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,1) 100%)",
                         WebkitMaskImage:
-                          "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,1) 100%)",
+                          "linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,1) 100%)",
                       }
                     : undefined
                 }
               >
                 {stepInfo.isHomePage ? (
                   <>
-                    <span className="drop-shadow-sm">
+                    <span>
                       {stepInfo.title.includes("⚡") ? "⚡ " : ""}Lightning-fast{" "}
                     </span>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-400 drop-shadow-[0_0_6px_rgba(249,115,22,0.15)]">
                       Bitcoin
                     </span>
-                    <span className="drop-shadow-sm"> to </span>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]">
+                    <span> to </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500 drop-shadow-[0_0_6px_rgba(249,115,22,0.15)]">
                       Stablecoins
                     </span>
                   </>
