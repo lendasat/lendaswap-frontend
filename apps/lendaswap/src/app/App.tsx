@@ -984,6 +984,7 @@ function useStepInfo() {
         ? "⚡ Lightning-fast Bitcoin to Stablecoins"
         : "Lightning-fast Bitcoin to Stablecoins",
       description: "",
+      isHomePage: true,
     };
   } else if (location.pathname.includes("/send")) {
     return {
@@ -1129,12 +1130,7 @@ export default function App() {
                       <LendasatGrey className="h-5 w-5 shrink-0" />
                     )}
                   </div>
-                  <h1 className="text-xl font-semibold">
-                    <span className="drop-shadow-sm">Lenda</span>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.3)]">
-                      Swap
-                    </span>
-                  </h1>
+                  <h1 className="text-xl font-semibold">LendaSwap</h1>
                 </button>
 
                 {/* GitHub Link */}
@@ -1350,7 +1346,22 @@ export default function App() {
             {/* Title */}
             <div className="space-y-2 text-center">
               <h2 className="text-2xl md:text-5xl font-semibold">
-                {stepInfo.title}
+                {stepInfo.isHomePage ? (
+                  <>
+                    <span className="drop-shadow-sm">
+                      {stepInfo.title.includes("⚡") ? "⚡ " : ""}Lightning-fast{" "}
+                    </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-400 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]">
+                      Bitcoin
+                    </span>
+                    <span className="drop-shadow-sm"> to </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500 drop-shadow-[0_0_12px_rgba(249,115,22,0.4)]">
+                      Stablecoins
+                    </span>
+                  </>
+                ) : (
+                  stepInfo.title
+                )}
               </h2>
               <p className="text-muted-foreground">{stepInfo.description}</p>
             </div>
