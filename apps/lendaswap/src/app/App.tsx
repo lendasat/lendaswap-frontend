@@ -1623,63 +1623,102 @@ export default function App() {
                   <div className="relative h-full flex flex-col justify-between">
                     {/* Terminal Mockup - Centered and narrower */}
                     <div className="flex-1 flex items-center justify-center">
-                      <div className="w-[95%] rounded-2xl bg-zinc-900/95 dark:bg-zinc-950/95 border border-zinc-800/80 overflow-hidden shadow-2xl shadow-black/20">
+                      <div className="w-[95%] rounded-2xl bg-zinc-100 dark:bg-zinc-950/95 border border-zinc-300 dark:border-zinc-800/80 overflow-hidden shadow-2xl shadow-black/10 dark:shadow-black/20">
                         {/* Terminal Header - Minimal */}
-                        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-800/60">
+                        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800/60">
                           <div className="flex gap-1.5">
-                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-700 group-hover:bg-red-500/90 transition-colors" />
-                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-700 group-hover:bg-yellow-500/90 transition-colors" />
-                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-700 group-hover:bg-green-500/90 transition-colors" />
+                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-400 dark:bg-zinc-700 group-hover:bg-red-500/90 transition-colors" />
+                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-400 dark:bg-zinc-700 group-hover:bg-yellow-500/90 transition-colors" />
+                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-400 dark:bg-zinc-700 group-hover:bg-green-500/90 transition-colors" />
                           </div>
                         </div>
                         {/* Terminal Content */}
                         <div className="px-3 py-2.5 md:px-4 md:py-3 font-mono text-[8px] md:text-[10px] leading-[1.7]">
-                          <div className="docs-terminal-line docs-terminal-line-1 text-zinc-400">
-                            <span className="text-orange-400">$</span>{" "}
+                          <div className="docs-terminal-line docs-terminal-line-1 text-zinc-600 dark:text-zinc-400">
+                            <span className="text-orange-500 dark:text-orange-400">
+                              $
+                            </span>{" "}
                             <span className="text-zinc-500">npm i</span>{" "}
                             @lendaswap/sdk
                           </div>
-                          <div className="docs-terminal-line docs-terminal-line-2 mt-1.5 text-zinc-400">
-                            <span className="text-orange-400/70">import</span>{" "}
+                          <div className="docs-terminal-line docs-terminal-line-2 mt-1.5 text-zinc-600 dark:text-zinc-400">
+                            <span className="text-orange-600 dark:text-orange-400/70">
+                              import
+                            </span>{" "}
                             {"{"}{" "}
-                            <span className="text-orange-300">Client</span>,{" "}
-                            <span className="text-orange-300">
+                            <span className="text-orange-600 dark:text-orange-300">
+                              Client
+                            </span>
+                            ,{" "}
+                            <span className="text-orange-600 dark:text-orange-300">
                               createDexieSwapStorage
                             </span>{" "}
                             {"}"}
                           </div>
-                          <div className="docs-terminal-line docs-terminal-line-3 mt-1 text-zinc-400">
-                            <span className="text-orange-400/70">const</span>{" "}
-                            <span className="text-blue-300">client</span> ={" "}
-                            <span className="text-orange-400/70">await</span>{" "}
-                            <span className="text-orange-300">Client</span>.
-                            <span className="text-amber-200/90">create</span>(
-                            <span className="text-amber-200/90">url</span>,{" "}
-                            <span className="text-amber-200/90">storage</span>)
+                          <div className="docs-terminal-line docs-terminal-line-3 mt-1 text-zinc-600 dark:text-zinc-400">
+                            <span className="text-orange-600 dark:text-orange-400/70">
+                              const
+                            </span>{" "}
+                            <span className="text-blue-600 dark:text-blue-300">
+                              client
+                            </span>{" "}
+                            ={" "}
+                            <span className="text-orange-600 dark:text-orange-400/70">
+                              await
+                            </span>{" "}
+                            <span className="text-orange-600 dark:text-orange-300">
+                              Client
+                            </span>
+                            .
+                            <span className="text-amber-700 dark:text-amber-200/90">
+                              create
+                            </span>
+                            (
+                            <span className="text-amber-700 dark:text-amber-200/90">
+                              url
+                            </span>
+                            ,{" "}
+                            <span className="text-amber-700 dark:text-amber-200/90">
+                              storage
+                            </span>
+                            )
                           </div>
-                          <div className="docs-terminal-line docs-terminal-line-4 mt-1 text-zinc-400">
-                            <span className="text-orange-400/70">const</span>{" "}
-                            <span className="text-blue-300">swap</span> ={" "}
-                            <span className="text-orange-400/70">await</span>{" "}
+                          <div className="docs-terminal-line docs-terminal-line-4 mt-1 text-zinc-600 dark:text-zinc-400">
+                            <span className="text-orange-600 dark:text-orange-400/70">
+                              const
+                            </span>{" "}
+                            <span className="text-blue-600 dark:text-blue-300">
+                              swap
+                            </span>{" "}
+                            ={" "}
+                            <span className="text-orange-600 dark:text-orange-400/70">
+                              await
+                            </span>{" "}
                             client.
-                            <span className="text-amber-200/90">
+                            <span className="text-amber-700 dark:text-amber-200/90">
                               createEvmToArkadeSwap
                             </span>
                             ({"{"}
                           </div>
-                          <div className="docs-terminal-line docs-terminal-line-5 mt-1 text-zinc-400">
+                          <div className="docs-terminal-line docs-terminal-line-5 mt-1 text-zinc-600 dark:text-zinc-400">
                             {"  "}
-                            <span className="text-blue-300">source_token</span>:{" "}
-                            <span className="text-amber-200/90">
+                            <span className="text-blue-600 dark:text-blue-300">
+                              source_token
+                            </span>
+                            :{" "}
+                            <span className="text-amber-700 dark:text-amber-200/90">
                               'usdc_pol'
                             </span>
                             ,{" "}
-                            <span className="text-blue-300">
+                            <span className="text-blue-600 dark:text-blue-300">
                               target_address
                             </span>
-                            : <span className="text-amber-200/90">addr</span>{" "}
+                            :{" "}
+                            <span className="text-amber-700 dark:text-amber-200/90">
+                              addr
+                            </span>{" "}
                             {"}"})
-                            <span className="docs-terminal-cursor text-orange-400 ml-0.5">
+                            <span className="docs-terminal-cursor text-orange-500 dark:text-orange-400 ml-0.5">
                               |
                             </span>
                           </div>
