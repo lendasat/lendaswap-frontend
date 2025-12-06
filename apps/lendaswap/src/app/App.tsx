@@ -1351,9 +1351,9 @@ export default function App() {
                   stepInfo.isHomePage
                     ? {
                         maskImage:
-                          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 50%, rgba(0,0,0,0.85) 100%)",
+                          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,0.6) 100%)",
                         WebkitMaskImage:
-                          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 50%, rgba(0,0,0,0.85) 100%)",
+                          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,0.6) 100%)",
                       }
                     : undefined
                 }
