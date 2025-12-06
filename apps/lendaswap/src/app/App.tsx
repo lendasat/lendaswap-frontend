@@ -1363,8 +1363,8 @@ export default function App() {
                   element={
                     <div className="group relative">
                       {/* Orange glow effect on hover */}
-                      <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/0 opacity-0 blur-xl transition-all duration-500 group-hover:from-orange-500/20 group-hover:via-orange-400/15 group-hover:to-orange-500/20 group-hover:opacity-100" />
-                      <Card className="relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm transition-all duration-300 group-hover:border-orange-500/30 group-hover:shadow-lg group-hover:shadow-orange-500/10">
+                      <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/0 opacity-0 blur-xl transition-all duration-500 group-hover:from-orange-500/10 group-hover:via-orange-400/8 group-hover:to-orange-500/10 group-hover:opacity-100" />
+                      <Card className="relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm">
                         <Routes>
                           <Route
                             path="/"
