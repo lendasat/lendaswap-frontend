@@ -1345,7 +1345,19 @@ export default function App() {
           <div className="mx-auto max-w-2xl space-y-10">
             {/* Title */}
             <div className="space-y-2 text-center">
-              <h2 className="text-2xl md:text-5xl font-semibold">
+              <h2
+                className="text-xl md:text-3xl font-semibold"
+                style={
+                  stepInfo.isHomePage
+                    ? {
+                        maskImage:
+                          "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,1) 100%)",
+                        WebkitMaskImage:
+                          "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,1) 100%)",
+                      }
+                    : undefined
+                }
+              >
                 {stepInfo.isHomePage ? (
                   <>
                     <span className="drop-shadow-sm">
