@@ -352,7 +352,7 @@ function HomePage() {
     };
 
     fetchQuote();
-  }, [bitcoinAmount, sourceAsset, targetAsset]);
+  }, [bitcoinAmount, sourceAsset, targetAsset, lastFieldEdited]);
 
   const handleContinueToAddress = async () => {
     if (!targetAddress || !usdAmount || !addressValid) {
@@ -567,7 +567,11 @@ function HomePage() {
                         setEvmTokenAmount(input);
                         // Calculate BTC and USD from XAUT amount
                         const xautAmount = Number.parseFloat(input);
-                        if (exchangeRate && btcUsdRate && !Number.isNaN(xautAmount)) {
+                        if (
+                          exchangeRate &&
+                          btcUsdRate &&
+                          !Number.isNaN(xautAmount)
+                        ) {
                           // exchangeRate = XAUT per BTC, so BTC = XAUT / exchangeRate
                           const btcAmount = xautAmount / exchangeRate;
                           const usdValue = btcAmount * btcUsdRate;
@@ -745,7 +749,11 @@ function HomePage() {
                           setEvmTokenAmount(input);
                           // Calculate BTC and USD from XAUT amount
                           const xautAmount = Number.parseFloat(input);
-                          if (exchangeRate && btcUsdRate && !Number.isNaN(xautAmount)) {
+                          if (
+                            exchangeRate &&
+                            btcUsdRate &&
+                            !Number.isNaN(xautAmount)
+                          ) {
                             // exchangeRate = XAUT per BTC, so BTC = XAUT / exchangeRate
                             const btcAmount = xautAmount / exchangeRate;
                             const usdValue = btcAmount * btcUsdRate;
@@ -1386,14 +1394,14 @@ export default function App() {
                     "https://api.dicebear.com/7.x/avataaars/svg?seed=Oscar&backgroundColor=fdba74",
                     "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=f97316",
                     "https://api.dicebear.com/7.x/avataaars/svg?seed=Max&backgroundColor=ea580c",
-                  ].map((src, idx) => (
+                  ].map((src) => (
                     <div
-                      key={idx}
+                      key={src}
                       className="relative transition-all duration-300 hover:z-10 hover:scale-110"
                     >
                       <img
                         src={src}
-                        alt={`User ${idx + 1}`}
+                        alt="User avatar"
                         className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-background shadow-lg bg-orange-500/20"
                       />
                     </div>
@@ -1492,8 +1500,10 @@ export default function App() {
                   <div
                     className="volume-text-container absolute inset-0 flex items-start justify-center pointer-events-none overflow-hidden pt-1 md:pt-2"
                     style={{
-                      maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 70%)',
-                      WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 70%)'
+                      maskImage:
+                        "linear-gradient(to bottom, black 0%, black 40%, transparent 70%)",
+                      WebkitMaskImage:
+                        "linear-gradient(to bottom, black 0%, black 40%, transparent 70%)",
                     }}
                   >
                     <span className="volume-text text-[100px] md:text-[160px] font-black tracking-tighter select-none text-transparent bg-clip-text">
@@ -1511,12 +1521,31 @@ export default function App() {
                       viewBox="0 0 400 100"
                       className="w-full h-auto max-h-[60%]"
                       preserveAspectRatio="xMidYMax meet"
+                      aria-hidden="true"
                     >
                       <defs>
-                        <linearGradient id="chartGradientDynamic" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
-                          <stop offset="70%" stopColor="#f97316" stopOpacity="0.05" />
-                          <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                        <linearGradient
+                          id="chartGradientDynamic"
+                          x1="0%"
+                          y1="0%"
+                          x2="0%"
+                          y2="100%"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="#f97316"
+                            stopOpacity="0.2"
+                          />
+                          <stop
+                            offset="70%"
+                            stopColor="#f97316"
+                            stopOpacity="0.05"
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="#f97316"
+                            stopOpacity="0"
+                          />
                         </linearGradient>
                       </defs>
                       {/* Gradient fill only - no solid mask */}
@@ -1534,7 +1563,13 @@ export default function App() {
                         opacity="0.5"
                       />
                       {/* End point */}
-                      <circle cx="400" cy="5" r="2.5" fill="#f97316" opacity="0.4" />
+                      <circle
+                        cx="400"
+                        cy="5"
+                        r="2.5"
+                        fill="#f97316"
+                        opacity="0.4"
+                      />
                     </svg>
                   </div>
 
@@ -1545,7 +1580,8 @@ export default function App() {
                         Total Volume
                       </div>
                       <div className="mt-1.5 text-xs md:text-sm font-medium text-orange-500">
-                        24H: {volumeStats
+                        24H:{" "}
+                        {volumeStats
                           ? volumeStats.volume_24h_usd >= 1000
                             ? `$${(volumeStats.volume_24h_usd / 1000).toFixed(1)}K`
                             : `$${volumeStats.volume_24h_usd.toFixed(0)}`
@@ -1599,20 +1635,53 @@ export default function App() {
                         {/* Terminal Content */}
                         <div className="px-3 py-2.5 md:px-4 md:py-3 font-mono text-[8px] md:text-[10px] leading-[1.7]">
                           <div className="docs-terminal-line docs-terminal-line-1 text-zinc-400">
-                            <span className="text-orange-400">$</span> <span className="text-zinc-500">npm i</span> @lendaswap/sdk
+                            <span className="text-orange-400">$</span>{" "}
+                            <span className="text-zinc-500">npm i</span>{" "}
+                            @lendaswap/sdk
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-2 mt-1.5 text-zinc-400">
-                            <span className="text-orange-400/70">import</span> {"{"} <span className="text-orange-300">Client</span>, <span className="text-orange-300">createDexieSwapStorage</span> {"}"}
+                            <span className="text-orange-400/70">import</span>{" "}
+                            {"{"}{" "}
+                            <span className="text-orange-300">Client</span>,{" "}
+                            <span className="text-orange-300">
+                              createDexieSwapStorage
+                            </span>{" "}
+                            {"}"}
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-3 mt-1 text-zinc-400">
-                            <span className="text-orange-400/70">const</span> <span className="text-blue-300">client</span> = <span className="text-orange-400/70">await</span> <span className="text-orange-300">Client</span>.<span className="text-amber-200/90">create</span>(<span className="text-amber-200/90">url</span>, <span className="text-amber-200/90">storage</span>)
+                            <span className="text-orange-400/70">const</span>{" "}
+                            <span className="text-blue-300">client</span> ={" "}
+                            <span className="text-orange-400/70">await</span>{" "}
+                            <span className="text-orange-300">Client</span>.
+                            <span className="text-amber-200/90">create</span>(
+                            <span className="text-amber-200/90">url</span>,{" "}
+                            <span className="text-amber-200/90">storage</span>)
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-4 mt-1 text-zinc-400">
-                            <span className="text-orange-400/70">const</span> <span className="text-blue-300">swap</span> = <span className="text-orange-400/70">await</span> client.<span className="text-amber-200/90">createEvmToArkadeSwap</span>({"{"}
+                            <span className="text-orange-400/70">const</span>{" "}
+                            <span className="text-blue-300">swap</span> ={" "}
+                            <span className="text-orange-400/70">await</span>{" "}
+                            client.
+                            <span className="text-amber-200/90">
+                              createEvmToArkadeSwap
+                            </span>
+                            ({"{"}
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-5 mt-1 text-zinc-400">
-                            {"  "}<span className="text-blue-300">source_token</span>: <span className="text-amber-200/90">'usdc_pol'</span>, <span className="text-blue-300">target_address</span>: <span className="text-amber-200/90">addr</span> {"}"})
-                            <span className="docs-terminal-cursor text-orange-400 ml-0.5">|</span>
+                            {"  "}
+                            <span className="text-blue-300">source_token</span>:{" "}
+                            <span className="text-amber-200/90">
+                              'usdc_pol'
+                            </span>
+                            ,{" "}
+                            <span className="text-blue-300">
+                              target_address
+                            </span>
+                            : <span className="text-amber-200/90">addr</span>{" "}
+                            {"}"})
+                            <span className="docs-terminal-cursor text-orange-400 ml-0.5">
+                              |
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1677,46 +1746,50 @@ export default function App() {
                         {/* Frame 1 - legs out */}
                         <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] absolute inset-0 invader-frame1">
                           {[
-                            [0,0,1,0,0,0,0,0,1,0,0],
-                            [0,0,0,1,0,0,0,1,0,0,0],
-                            [0,0,1,1,1,1,1,1,1,0,0],
-                            [0,1,1,0,1,1,1,0,1,1,0],
-                            [1,1,1,1,1,1,1,1,1,1,1],
-                            [1,0,1,1,1,1,1,1,1,0,1],
-                            [1,0,1,0,0,0,0,0,1,0,1],
-                            [0,0,0,1,1,0,1,1,0,0,0],
-                          ].flat().map((filled, i) => (
-                            <div
-                              key={i}
-                              className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
-                                filled
-                                  ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
-                                  : "bg-transparent"
-                              }`}
-                            />
-                          ))}
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+                            [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],
+                          ]
+                            .flat()
+                            .map((filled, i) => (
+                              <div
+                                key={`p1-${i.toString()}`}
+                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
+                                  filled
+                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                    : "bg-transparent"
+                                }`}
+                              />
+                            ))}
                         </div>
                         {/* Frame 2 - legs in */}
                         <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] invader-frame2">
                           {[
-                            [0,0,1,0,0,0,0,0,1,0,0],
-                            [1,0,0,1,0,0,0,1,0,0,1],
-                            [1,0,1,1,1,1,1,1,1,0,1],
-                            [1,1,1,0,1,1,1,0,1,1,1],
-                            [1,1,1,1,1,1,1,1,1,1,1],
-                            [0,1,1,1,1,1,1,1,1,1,0],
-                            [0,0,1,0,0,0,0,0,1,0,0],
-                            [0,1,0,0,0,0,0,0,0,1,0],
-                          ].flat().map((filled, i) => (
-                            <div
-                              key={i}
-                              className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
-                                filled
-                                  ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
-                                  : "bg-transparent"
-                              }`}
-                            />
-                          ))}
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                            [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                          ]
+                            .flat()
+                            .map((filled, i) => (
+                              <div
+                                key={`p2-${i.toString()}`}
+                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
+                                  filled
+                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                    : "bg-transparent"
+                                }`}
+                              />
+                            ))}
                         </div>
                       </div>
                     </div>
@@ -1772,18 +1845,31 @@ export default function App() {
                         <div
                           className="instant-coin-left w-14 h-14 md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center shadow-xl relative"
                           style={{
-                            perspective: '1000px',
-                            transformStyle: 'preserve-3d',
-                            background: 'linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.8) 50%, rgba(234,88,12,0.9) 100%)',
-                            boxShadow: '0 8px 32px rgba(249,115,22,0.3), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            backdropFilter: 'blur(8px)',
+                            perspective: "1000px",
+                            transformStyle: "preserve-3d",
+                            background:
+                              "linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.8) 50%, rgba(234,88,12,0.9) 100%)",
+                            boxShadow:
+                              "0 8px 32px rgba(249,115,22,0.3), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                            backdropFilter: "blur(8px)",
                           }}
                         >
-                          <div className="absolute inset-1 rounded-full" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)' }} />
+                          <div
+                            className="absolute inset-1 rounded-full"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)",
+                            }}
+                          />
                           {/* Tether T Symbol */}
-                          <svg viewBox="0 0 339.43 295.27" className="relative w-7 h-7 md:w-9 md:h-9" fill="white">
-                            <path d="M191.19,144.8v0c-1.2.09-7.4,0.46-21.23,0.46-11,0-18.81-.33-21.55-0.46v0c-42.51-1.87-74.24-9.27-74.24-18.13s31.73-16.25,74.24-18.15v28.91c2.78,0.2,10.74.67,21.74,0.67,13.2,0,19.81-.55,21-0.66v-28.9c42.42,1.89,74.08,9.29,74.08,18.13s-31.65,16.24-74.08,18.12h0Zm0-39.25V79.68h59.2V40.23H89.21V79.68h59.19v25.86c-48.11,2.21-84.29,11.74-84.29,23.16s36.18,20.94,84.29,23.16v82.9h42.78v-82.93c48-2.21,84.12-11.73,84.12-23.14s-36.09-20.93-84.12-23.15h0Z"/>
+                          <svg
+                            viewBox="0 0 339.43 295.27"
+                            className="relative w-7 h-7 md:w-9 md:h-9"
+                            fill="white"
+                            aria-hidden="true"
+                          >
+                            <path d="M191.19,144.8v0c-1.2.09-7.4,0.46-21.23,0.46-11,0-18.81-.33-21.55-0.46v0c-42.51-1.87-74.24-9.27-74.24-18.13s31.73-16.25,74.24-18.15v28.91c2.78,0.2,10.74.67,21.74,0.67,13.2,0,19.81-.55,21-0.66v-28.9c42.42,1.89,74.08,9.29,74.08,18.13s-31.65,16.24-74.08,18.12h0Zm0-39.25V79.68h59.2V40.23H89.21V79.68h59.19v25.86c-48.11,2.21-84.29,11.74-84.29,23.16s36.18,20.94,84.29,23.16v82.9h42.78v-82.93c48-2.21,84.12-11.73,84.12-23.14s-36.09-20.93-84.12-23.15h0Z" />
                           </svg>
                         </div>
                         {/* Swap arrows */}
@@ -1794,15 +1880,23 @@ export default function App() {
                         <div
                           className="instant-coin-right w-14 h-14 md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center shadow-xl relative"
                           style={{
-                            perspective: '1000px',
-                            transformStyle: 'preserve-3d',
-                            background: 'linear-gradient(135deg, rgba(251,146,60,0.95) 0%, rgba(249,115,22,0.85) 50%, rgba(194,65,12,0.95) 100%)',
-                            boxShadow: '0 8px 32px rgba(249,115,22,0.3), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            backdropFilter: 'blur(8px)',
+                            perspective: "1000px",
+                            transformStyle: "preserve-3d",
+                            background:
+                              "linear-gradient(135deg, rgba(251,146,60,0.95) 0%, rgba(249,115,22,0.85) 50%, rgba(194,65,12,0.95) 100%)",
+                            boxShadow:
+                              "0 8px 32px rgba(249,115,22,0.3), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                            backdropFilter: "blur(8px)",
                           }}
                         >
-                          <div className="absolute inset-1 rounded-full" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)' }} />
+                          <div
+                            className="absolute inset-1 rounded-full"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)",
+                            }}
+                          />
                           {/* Bitcoin Logo */}
                           <BitcoinIcon className="relative w-7 h-7 md:w-9 md:h-9 [&_path]:fill-white" />
                         </div>
@@ -1858,25 +1952,53 @@ export default function App() {
                           <div
                             className="p2p-node w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center relative"
                             style={{
-                              background: 'linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.85) 50%, rgba(234,88,12,0.9) 100%)',
-                              boxShadow: '0 4px 20px rgba(249,115,22,0.25), inset 0 1px 2px rgba(255,255,255,0.2)',
-                              border: '1px solid rgba(255,255,255,0.15)',
+                              background:
+                                "linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.85) 50%, rgba(234,88,12,0.9) 100%)",
+                              boxShadow:
+                                "0 4px 20px rgba(249,115,22,0.25), inset 0 1px 2px rgba(255,255,255,0.2)",
+                              border: "1px solid rgba(255,255,255,0.15)",
                             }}
                           >
                             <Key className="w-6 h-6 md:w-7 md:h-7 text-white" />
                           </div>
-                          <span className="text-[10px] md:text-xs text-muted-foreground font-medium">You</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground font-medium">
+                            You
+                          </span>
                         </div>
 
                         {/* Connection Line with Checkmark */}
                         <div className="relative flex items-center">
-                          <svg width="80" height="40" viewBox="0 0 80 40" className="md:w-[120px]">
+                          <svg
+                            width="80"
+                            height="40"
+                            viewBox="0 0 80 40"
+                            className="md:w-[120px]"
+                            aria-hidden="true"
+                          >
                             {/* Dashed connection line */}
-                            <line x1="0" y1="20" x2="80" y2="20" className="p2p-line" stroke="#f97316" strokeWidth="1.5" />
+                            <line
+                              x1="0"
+                              y1="20"
+                              x2="80"
+                              y2="20"
+                              className="p2p-line"
+                              stroke="#f97316"
+                              strokeWidth="1.5"
+                            />
                             {/* Center checkmark circle */}
-                            <g className="p2p-check" style={{ transformOrigin: '40px 20px' }}>
+                            <g
+                              className="p2p-check"
+                              style={{ transformOrigin: "40px 20px" }}
+                            >
                               <circle cx="40" cy="20" r="12" fill="#f97316" />
-                              <path d="M34 20 L38 24 L46 16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                              <path
+                                d="M34 20 L38 24 L46 16"
+                                stroke="white"
+                                strokeWidth="2"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </g>
                           </svg>
                         </div>
@@ -1886,14 +2008,18 @@ export default function App() {
                           <div
                             className="p2p-node w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center"
                             style={{
-                              background: 'linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.85) 50%, rgba(234,88,12,0.9) 100%)',
-                              boxShadow: '0 4px 20px rgba(249,115,22,0.25), inset 0 1px 2px rgba(255,255,255,0.2)',
-                              border: '1px solid rgba(255,255,255,0.15)',
+                              background:
+                                "linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.85) 50%, rgba(234,88,12,0.9) 100%)",
+                              boxShadow:
+                                "0 4px 20px rgba(249,115,22,0.25), inset 0 1px 2px rgba(255,255,255,0.2)",
+                              border: "1px solid rgba(255,255,255,0.15)",
                             }}
                           >
                             <Shield className="w-6 h-6 md:w-7 md:h-7 text-white" />
                           </div>
-                          <span className="text-[10px] md:text-xs text-muted-foreground font-medium">Peer</span>
+                          <span className="text-[10px] md:text-xs text-muted-foreground font-medium">
+                            Peer
+                          </span>
                         </div>
                       </div>
                     </div>
