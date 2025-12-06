@@ -20,12 +20,11 @@ import {
   Key,
   Loader,
   Menu,
-  PiggyBank,
   Shield,
+  Star,
   Tag,
   Upload,
   Wallet,
-  Zap,
 } from "lucide-react";
 import { useAsync } from "react-use";
 import { useAccount, useSwitchChain } from "wagmi";
@@ -45,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
+import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
@@ -80,6 +80,7 @@ import {
   isBtcToken,
   isEthereumToken,
   isEvmToken,
+  isNonUsdEvmToken,
   isUsdToken,
   isValidTokenId,
   networkName,
@@ -122,13 +123,17 @@ function HomePage() {
   // State for home page
   const [bitcoinAmount, setBitcoinAmount] = useState("");
   const [usdAmount, setUsdAmount] = useState("50");
+  // For non-USD EVM tokens like XAUT (gold)
+  const [evmTokenAmount, setEvmTokenAmount] = useState("");
   const [sourceAsset, setSourceAsset] = useState<TokenId>(
     urlSourceToken || "usdc_pol",
   );
   const [targetAsset, setTargetAsset] = useState<TokenId>(
     urlTargetToken || (isSpeedWalletUser ? "btc_lightning" : "btc_arkade"),
   );
-  const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc">("usd");
+  const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc" | "evm">(
+    "usd",
+  );
   // Track which denomination user wants to input (USD or BTC) for each box
   const [sourceInputMode, setSourceInputMode] = useState<
     "native" | "converted"
@@ -205,13 +210,16 @@ function HomePage() {
   }, [targetAsset, targetAddress]);
 
   // Get price feed from context
-  const { getExchangeRate, isLoadingPrice } = usePriceFeed();
+  const { getExchangeRate, getBtcUsdRate, isLoadingPrice } = usePriceFeed();
 
   const exchangeRate = getExchangeRate(
     sourceAsset,
     targetAsset,
     Number.parseFloat(usdAmount),
   );
+
+  // Get BTC/USD rate for displaying USD equivalents (needed for non-USD tokens like XAUT)
+  const btcUsdRate = getBtcUsdRate(Number.parseFloat(usdAmount));
 
   const {
     value: maybeAssetPairs,
@@ -230,23 +238,67 @@ function HomePage() {
     if (isLoadingPrice || !exchangeRate) {
       return;
     }
-    if (lastFieldEdited === "usd") {
-      const usdAmountNumber = Number.parseFloat(usdAmount);
-      const calculatedBtcAmount =
-        exchangeRate && !Number.isNaN(usdAmountNumber)
-          ? (usdAmountNumber / exchangeRate).toFixed(8)
-          : "";
-      setBitcoinAmount(calculatedBtcAmount);
+
+    // Check if we're dealing with a non-USD EVM token (like XAUT)
+    const hasNonUsdEvmToken =
+      isNonUsdEvmToken(sourceAsset) || isNonUsdEvmToken(targetAsset);
+
+    if (hasNonUsdEvmToken) {
+      // For BTC ↔ XAUT swaps:
+      // - exchangeRate = XAUT per BTC (e.g., ~21)
+      // - btcUsdRate = USD per BTC (e.g., ~89,000)
+      // Use btcUsdRate for USD display calculations
+      const usdRateToUse = btcUsdRate || exchangeRate; // fallback to exchangeRate if btcUsdRate not available
+
+      if (lastFieldEdited === "btc") {
+        const btcAmountNumber = Number.parseFloat(bitcoinAmount);
+        if (!Number.isNaN(btcAmountNumber)) {
+          // USD equivalent from BTC (using actual BTC/USD rate, not XAUT/BTC rate)
+          const calculatedUsdAmount = (btcAmountNumber * usdRateToUse).toFixed(
+            2,
+          );
+          setUsdAmount(calculatedUsdAmount);
+          // XAUT amount will be set by quote fetch
+        }
+      } else if (lastFieldEdited === "usd") {
+        const usdAmountNumber = Number.parseFloat(usdAmount);
+        if (!Number.isNaN(usdAmountNumber)) {
+          // BTC amount from USD (using actual BTC/USD rate)
+          const calculatedBtcAmount = (usdAmountNumber / usdRateToUse).toFixed(
+            8,
+          );
+          setBitcoinAmount(calculatedBtcAmount);
+        }
+      }
+    } else {
+      // Standard USD ↔ BTC conversion (stablecoins)
+      if (lastFieldEdited === "usd") {
+        const usdAmountNumber = Number.parseFloat(usdAmount);
+        const calculatedBtcAmount =
+          exchangeRate && !Number.isNaN(usdAmountNumber)
+            ? (usdAmountNumber / exchangeRate).toFixed(8)
+            : "";
+        setBitcoinAmount(calculatedBtcAmount);
+      }
+      if (lastFieldEdited === "btc") {
+        const bitcoinAmountNumber = Number.parseFloat(bitcoinAmount);
+        const calculatedUsdAmount =
+          exchangeRate && !Number.isNaN(bitcoinAmountNumber)
+            ? (bitcoinAmountNumber * exchangeRate).toFixed(2)
+            : "";
+        setUsdAmount(calculatedUsdAmount);
+      }
     }
-    if (lastFieldEdited === "btc") {
-      const bitcoinAmountNumber = Number.parseFloat(bitcoinAmount);
-      const calculatedUsdAmount =
-        exchangeRate && !Number.isNaN(bitcoinAmountNumber)
-          ? (bitcoinAmountNumber * exchangeRate).toFixed(2)
-          : "";
-      setUsdAmount(calculatedUsdAmount);
-    }
-  }, [exchangeRate, isLoadingPrice, lastFieldEdited, bitcoinAmount, usdAmount]);
+  }, [
+    exchangeRate,
+    btcUsdRate,
+    isLoadingPrice,
+    lastFieldEdited,
+    bitcoinAmount,
+    usdAmount,
+    sourceAsset,
+    targetAsset,
+  ]);
 
   // Fetch quote when bitcoin amount changes
   useEffect(() => {
@@ -254,6 +306,7 @@ function HomePage() {
       const btcAmount = Number.parseFloat(bitcoinAmount);
       if (!btcAmount || Number.isNaN(btcAmount) || btcAmount <= 0) {
         setQuote(null);
+        setEvmTokenAmount("");
         return;
       }
 
@@ -267,9 +320,32 @@ function HomePage() {
           base_amount: sats,
         });
         setQuote(quoteResponse);
+
+        // Calculate EVM token amount for non-USD tokens like XAUT
+        // BUT only if user is NOT currently editing the EVM token field
+        if (
+          (isNonUsdEvmToken(sourceAsset) || isNonUsdEvmToken(targetAsset)) &&
+          lastFieldEdited !== "evm"
+        ) {
+          const rate = Number.parseFloat(quoteResponse.exchange_rate);
+          if (!Number.isNaN(rate) && rate > 0) {
+            // The quote exchange_rate is always XAUT per BTC (e.g., ~21)
+            // regardless of swap direction
+            if (isNonUsdEvmToken(targetAsset)) {
+              // Buying XAUT with BTC: XAUT received = BTC * rate
+              const xautAmount = btcAmount * rate;
+              setEvmTokenAmount(xautAmount.toFixed(6));
+            } else if (isNonUsdEvmToken(sourceAsset)) {
+              // Selling XAUT for BTC: XAUT needed = BTC desired * rate
+              const xautAmount = btcAmount * rate;
+              setEvmTokenAmount(xautAmount.toFixed(6));
+            }
+          }
+        }
       } catch (error) {
         console.error("Failed to fetch quote:", error);
         setQuote(null);
+        setEvmTokenAmount("");
       } finally {
         setIsLoadingQuote(false);
       }
@@ -470,7 +546,9 @@ function HomePage() {
                     sourceInputMode === "native"
                       ? isUsdToken(sourceAsset)
                         ? usdAmount
-                        : bitcoinAmount
+                        : isNonUsdEvmToken(sourceAsset)
+                          ? evmTokenAmount
+                          : bitcoinAmount
                       : usdAmount
                   }
                   onChange={(e) => {
@@ -482,6 +560,21 @@ function HomePage() {
                       if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
                         setLastFieldEdited("usd");
                         setUsdAmount(input);
+                      }
+                    } else if (isNonUsdEvmToken(sourceAsset)) {
+                      // For XAUT and similar, allow 6 decimals
+                      if (input === "" || /^\d*\.?\d{0,6}$/.test(input)) {
+                        setEvmTokenAmount(input);
+                        // Calculate BTC and USD from XAUT amount
+                        const xautAmount = Number.parseFloat(input);
+                        if (exchangeRate && btcUsdRate && !Number.isNaN(xautAmount)) {
+                          // exchangeRate = XAUT per BTC, so BTC = XAUT / exchangeRate
+                          const btcAmount = xautAmount / exchangeRate;
+                          const usdValue = btcAmount * btcUsdRate;
+                          setBitcoinAmount(btcAmount.toFixed(8));
+                          setUsdAmount(usdValue.toFixed(2));
+                        }
+                        setLastFieldEdited("evm"); // Track that user is editing EVM token field
                       }
                     } else {
                       if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
@@ -514,6 +607,10 @@ function HomePage() {
                     ≈ {formatUsdDisplay(usdAmount)}{" "}
                     {getTokenSymbol(sourceAsset)}
                   </span>
+                ) : isNonUsdEvmToken(sourceAsset) ? (
+                  <span>
+                    ≈ {evmTokenAmount || "0"} {getTokenSymbol(sourceAsset)}
+                  </span>
                 ) : (
                   <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
                 )}
@@ -525,54 +622,50 @@ function HomePage() {
                 availableAssets={availableSourceAssets}
                 label="sell"
                 onChange={(asset) => {
-                  if (
-                    (asset === "usdc_pol" ||
-                      asset === "usdt0_pol" ||
-                      asset === "usdt_eth" ||
-                      asset === "usdc_eth") &&
-                    (targetAsset === "btc_arkade" ||
-                      targetAsset === "btc_lightning")
-                  ) {
+                  const isEvmAsset =
+                    asset === "usdc_pol" ||
+                    asset === "usdt0_pol" ||
+                    asset === "usdt_eth" ||
+                    asset === "usdc_eth" ||
+                    asset === "xaut_eth";
+                  const isBtcAsset =
+                    asset === "btc_arkade" || asset === "btc_lightning";
+                  const isEvmTarget =
+                    targetAsset === "usdc_pol" ||
+                    targetAsset === "usdt0_pol" ||
+                    targetAsset === "usdc_eth" ||
+                    targetAsset === "usdt_eth" ||
+                    targetAsset === "xaut_eth";
+                  const isBtcTarget =
+                    targetAsset === "btc_arkade" ||
+                    targetAsset === "btc_lightning";
+
+                  // EVM source + BTC target = valid pair
+                  if (isEvmAsset && isBtcTarget) {
                     setSourceAsset(asset);
                     setTargetAsset(targetAsset);
                     navigate(`/${asset}/${targetAsset}`, { replace: true });
                     return;
                   }
 
-                  if (
-                    (asset === "btc_arkade" || asset === "btc_lightning") &&
-                    (targetAsset === "usdc_pol" ||
-                      targetAsset === "usdt0_pol" ||
-                      targetAsset === "usdc_eth" ||
-                      targetAsset === "usdt_eth")
-                  ) {
+                  // BTC source + EVM target = valid pair
+                  if (isBtcAsset && isEvmTarget) {
                     setSourceAsset(asset);
                     setTargetAsset(targetAsset);
                     navigate(`/${asset}/${targetAsset}`, { replace: true });
                     return;
                   }
 
-                  if (
-                    (asset === "usdc_pol" ||
-                      asset === "usdt0_pol" ||
-                      asset === "usdt_eth" ||
-                      asset === "usdc_eth") &&
-                    (targetAsset === "usdc_pol" ||
-                      targetAsset === "usdt0_pol" ||
-                      targetAsset === "usdc_eth" ||
-                      targetAsset === "usdt_eth")
-                  ) {
+                  // EVM source + EVM target = invalid, switch target to BTC
+                  if (isEvmAsset && isEvmTarget) {
                     setSourceAsset(asset);
                     setTargetAsset("btc_arkade");
                     navigate(`/${asset}/btc_arkade`, { replace: true });
                     return;
                   }
 
-                  if (
-                    (asset === "btc_arkade" || asset === "btc_lightning") &&
-                    (targetAsset === "btc_arkade" ||
-                      targetAsset === "btc_lightning")
-                  ) {
+                  // BTC source + BTC target = invalid, switch target to default stablecoin
+                  if (isBtcAsset && isBtcTarget) {
                     setSourceAsset(asset);
                     setTargetAsset("usdc_pol");
                     navigate(`/${asset}/usdc_pol`, { replace: true });
@@ -631,7 +724,9 @@ function HomePage() {
                       targetInputMode === "native"
                         ? isUsdToken(targetAsset)
                           ? usdAmount
-                          : bitcoinAmount
+                          : isNonUsdEvmToken(targetAsset)
+                            ? evmTokenAmount
+                            : bitcoinAmount
                         : usdAmount
                     }
                     onChange={(e) => {
@@ -643,6 +738,21 @@ function HomePage() {
                         if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
                           setLastFieldEdited("usd");
                           setUsdAmount(input);
+                        }
+                      } else if (isNonUsdEvmToken(targetAsset)) {
+                        // For XAUT and similar, allow 6 decimals
+                        if (input === "" || /^\d*\.?\d{0,6}$/.test(input)) {
+                          setEvmTokenAmount(input);
+                          // Calculate BTC and USD from XAUT amount
+                          const xautAmount = Number.parseFloat(input);
+                          if (exchangeRate && btcUsdRate && !Number.isNaN(xautAmount)) {
+                            // exchangeRate = XAUT per BTC, so BTC = XAUT / exchangeRate
+                            const btcAmount = xautAmount / exchangeRate;
+                            const usdValue = btcAmount * btcUsdRate;
+                            setBitcoinAmount(btcAmount.toFixed(8));
+                            setUsdAmount(usdValue.toFixed(2));
+                          }
+                          setLastFieldEdited("evm"); // Track that user is editing EVM token field
                         }
                       } else {
                         if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
@@ -676,6 +786,10 @@ function HomePage() {
                     ≈ {formatUsdDisplay(usdAmount)}{" "}
                     {getTokenSymbol(targetAsset)}
                   </span>
+                ) : isNonUsdEvmToken(targetAsset) ? (
+                  <span>
+                    ≈ {evmTokenAmount || "0"} {getTokenSymbol(targetAsset)}
+                  </span>
                 ) : (
                   <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
                 )}
@@ -695,12 +809,14 @@ function HomePage() {
                     asset === "usdc_pol" ||
                     asset === "usdt0_pol" ||
                     asset === "usdc_eth" ||
-                    asset === "usdt_eth";
+                    asset === "usdt_eth" ||
+                    asset === "xaut_eth";
                   const isEvmSource =
                     sourceAsset === "usdc_pol" ||
                     sourceAsset === "usdt0_pol" ||
                     sourceAsset === "usdc_eth" ||
-                    sourceAsset === "usdt_eth";
+                    sourceAsset === "usdt_eth" ||
+                    sourceAsset === "xaut_eth";
 
                   // If both are BTC or both are EVM, auto-switch source to make them compatible
                   if (isBtcTarget && isBtcSource) {
@@ -1237,7 +1353,7 @@ export default function App() {
                 <Route
                   path="*"
                   element={
-                    <Card className="from-primary/5 to-card rounded-2xl border bg-gradient-to-t shadow-sm">
+                    <Card className="rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm">
                       <Routes>
                         <Route
                           path="/"
@@ -1260,149 +1376,535 @@ export default function App() {
 
           {/* Stats & Features - Only show on home page */}
           {isHomePage && (
-            <div className="mx-auto max-w-2xl mt-[100px] space-y-8">
-              {/* Volume Stats Card */}
-              <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-gradient-to-br from-card to-card/50 p-6">
-                {/* Decorative chart illustration */}
-                <div className="absolute right-0 top-0 h-full w-1/3 opacity-10">
-                  <svg
-                    viewBox="0 0 100 80"
-                    className="h-full w-full"
-                    preserveAspectRatio="none"
-                    aria-labelledby="volume-chart-title"
-                  >
-                    <title id="volume-chart-title">
-                      Volume chart decoration
-                    </title>
-                    <path
-                      d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20 L100 80 Z"
-                      fill="url(#chartGradient)"
-                    />
-                    <path
-                      d="M0 80 L10 65 L20 70 L30 50 L40 55 L50 35 L60 40 L70 25 L80 30 L90 15 L100 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="text-orange-500"
-                    />
-                    <defs>
-                      <linearGradient
-                        id="chartGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="0%"
-                        y2="100%"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="currentColor"
-                          className="text-orange-500"
-                        />
-                        <stop offset="100%" stopColor="transparent" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </div>
-
-                <div className="relative flex items-center justify-around">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold tracking-tight">
-                      {/* +15000 = undocumented swap volume */}
-                      {volumeStats
-                        ? volumeStats.total_volume_usd + 15000 >= 1000
-                          ? `$${((volumeStats.total_volume_usd + 15000) / 1000).toFixed(1)}K`
-                          : `$${(volumeStats.total_volume_usd + 15000).toFixed(0)}`
-                        : "$--"}
+            <div className="mx-auto max-w-5xl mt-[240px] space-y-4 px-4">
+              {/* Social Proof */}
+              <div className="flex flex-col items-center justify-center mb-8">
+                <div className="flex items-center -space-x-3 mb-3">
+                  {[
+                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f97316",
+                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Mia&backgroundColor=fb923c",
+                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Oscar&backgroundColor=fdba74",
+                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=f97316",
+                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Max&backgroundColor=ea580c",
+                  ].map((src, idx) => (
+                    <div
+                      key={idx}
+                      className="relative transition-all duration-300 hover:z-10 hover:scale-110"
+                    >
+                      <img
+                        src={src}
+                        alt={`User ${idx + 1}`}
+                        className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-background shadow-lg bg-orange-500/20"
+                      />
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Total Volume
+                  ))}
+                </div>
+                <p className="text-sm md:text-base text-muted-foreground font-medium flex items-center gap-1.5">
+                  <span className="flex items-center text-orange-500">
+                    <Star className="w-4 h-4 fill-current" />
+                    <Star className="w-4 h-4 fill-current" />
+                    <Star className="w-4 h-4 fill-current" />
+                    <Star className="w-4 h-4 fill-current" />
+                    <Star className="w-4 h-4 fill-current" />
+                  </span>
+                  <span className="ml-1">
+                    Trusted by{" "}
+                    <span className="text-foreground font-bold">2,812+</span>{" "}
+                    Bitcoiners
+                  </span>
+                </p>
+              </div>
+
+              {/* Top Row - Bento Grid: Square left, Wide right */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {/* Mobile App Promo - Square */}
+                <div className="md:col-span-2 group relative aspect-square md:aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="relative h-full flex flex-col">
+                    {/* Phone Mockup */}
+                    <div className="flex-1 flex items-start justify-center pt-2 overflow-hidden">
+                      <div
+                        className="relative transition-transform duration-500 ease-out group-hover:-translate-y-2"
+                        style={{ perspective: "1000px" }}
+                      >
+                        {/* Phone Frame */}
+                        <div className="relative w-[100px] md:w-[130px] h-[200px] md:h-[260px] rounded-[20px] md:rounded-[28px] bg-gradient-to-b from-zinc-700 to-zinc-900 dark:from-zinc-600 dark:to-zinc-800 p-[3px] md:p-[4px] shadow-xl shadow-black/20">
+                          {/* Inner bezel */}
+                          <div className="relative w-full h-full rounded-[17px] md:rounded-[24px] bg-black overflow-hidden">
+                            {/* Dynamic Island */}
+                            <div className="absolute top-2 md:top-3 left-1/2 -translate-x-1/2 w-[40px] md:w-[50px] h-[12px] md:h-[16px] bg-black rounded-full z-10" />
+                            {/* Screen */}
+                            <div className="w-full h-full bg-gradient-to-br from-orange-100 via-orange-50 to-white dark:from-orange-500/20 dark:via-orange-600/10 dark:to-orange-500/5 flex items-center justify-center">
+                              {/* Placeholder - will be replaced with app screenshot */}
+                              <div className="text-orange-600/60 dark:text-orange-500/40 text-[8px] md:text-[10px] font-medium tracking-wider">
+                                COMING SOON
+                              </div>
+                            </div>
+                            {/* Screen reflection */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
+                          </div>
+                          {/* Side buttons */}
+                          <div className="absolute -right-[2px] top-[60px] md:top-[80px] w-[3px] h-[30px] md:h-[40px] bg-zinc-600 dark:bg-zinc-500 rounded-r-sm" />
+                          <div className="absolute -left-[2px] top-[50px] md:top-[65px] w-[3px] h-[20px] md:h-[25px] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
+                          <div className="absolute -left-[2px] top-[75px] md:top-[95px] w-[3px] h-[35px] md:h-[45px] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
+                        </div>
+                      </div>
+                    </div>
+                    {/* Text */}
+                    <div className="pt-2">
+                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
+                        Get the App
+                      </div>
+                      <a
+                        href="https://freewaitlists.com/w/cmino8qw1016rls018q9glmbi"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
+                      >
+                        Join waitlist
+                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
+                      </a>
                     </div>
                   </div>
-                  <div className="h-12 w-px bg-border/50" />
-                  <div className="text-center">
-                    <div className="text-3xl font-bold tracking-tight">
+                </div>
+
+                {/* Volume Stats with Chart - Wide */}
+                <div className="md:col-span-3 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-auto">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <style>{`
+                    .volume-text-container {
+                      transition: transform 0.5s ease-out;
+                    }
+                    .group:hover .volume-text-container {
+                      transform: translateY(-8px);
+                    }
+                    .volume-text {
+                      transition: all 0.5s ease-out;
+                      background-image: linear-gradient(to bottom, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.08) 50%, rgba(249, 115, 22, 0.02) 100%);
+                    }
+                    .group:hover .volume-text {
+                      background-image: linear-gradient(to bottom, rgba(249, 115, 22, 0.35) 0%, rgba(249, 115, 22, 0.2) 50%, rgba(249, 115, 22, 0.08) 100%);
+                      filter: drop-shadow(0 0 30px rgba(249, 115, 22, 0.3));
+                    }
+                  `}</style>
+
+                  {/* Giant Background Volume Text - Apple Style with mask */}
+                  <div
+                    className="volume-text-container absolute inset-0 flex items-start justify-center pointer-events-none overflow-hidden pt-1 md:pt-2"
+                    style={{
+                      maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 70%)',
+                      WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 70%)'
+                    }}
+                  >
+                    <span className="volume-text text-[100px] md:text-[160px] font-black tracking-tighter select-none text-transparent bg-clip-text">
                       {volumeStats
-                        ? volumeStats.volume_24h_usd >= 1000
-                          ? `$${(volumeStats.volume_24h_usd / 1000).toFixed(1)}K`
-                          : `$${volumeStats.volume_24h_usd.toFixed(0)}`
-                        : "$--"}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      24H Volume
+                        ? volumeStats.total_volume_usd + 15000 >= 1000
+                          ? `$${Math.round((volumeStats.total_volume_usd + 15000) / 1000)}K`
+                          : `$${Math.round(volumeStats.total_volume_usd + 15000)}`
+                        : "$15K"}
+                    </span>
+                  </div>
+
+                  {/* Background Chart - Clean smooth curve */}
+                  <div className="absolute inset-0 flex items-end justify-center overflow-hidden pointer-events-none pb-[72px] md:pb-[88px]">
+                    <svg
+                      viewBox="0 0 400 100"
+                      className="w-full h-auto max-h-[60%]"
+                      preserveAspectRatio="xMidYMax meet"
+                    >
+                      <defs>
+                        <linearGradient id="chartGradientDynamic" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
+                          <stop offset="70%" stopColor="#f97316" stopOpacity="0.05" />
+                          <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      {/* Gradient fill only - no solid mask */}
+                      <path
+                        d="M0 90 C80 88 120 80 180 65 S280 30 340 15 S380 8 400 5 L400 100 L0 100 Z"
+                        fill="url(#chartGradientDynamic)"
+                      />
+                      <path
+                        d="M0 90 C80 88 120 80 180 65 S280 30 340 15 S380 8 400 5"
+                        fill="none"
+                        stroke="#f97316"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity="0.5"
+                      />
+                      {/* End point */}
+                      <circle cx="400" cy="5" r="2.5" fill="#f97316" opacity="0.4" />
+                    </svg>
+                  </div>
+
+                  {/* Bottom text - styled like Get the App */}
+                  <div className="relative h-full flex flex-col justify-end">
+                    <div className="pt-2">
+                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
+                        Total Volume
+                      </div>
+                      <div className="mt-1.5 text-xs md:text-sm font-medium text-orange-500">
+                        24H: {volumeStats
+                          ? volumeStats.volume_24h_usd >= 1000
+                            ? `$${(volumeStats.volume_24h_usd / 1000).toFixed(1)}K`
+                            : `$${volumeStats.volume_24h_usd.toFixed(0)}`
+                          : "$0"}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Feature Cards - Modern Bento Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Instant */}
-                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                      <Zap className="h-6 w-6 text-orange-500" />
+              {/* Middle Row - Bento Grid: Wide left, Square right */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {/* Developer Docs - Wide */}
+                <div className="md:col-span-3 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-auto">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <style>{`
+                    @keyframes typewriter {
+                      from { max-width: 0; }
+                      to { max-width: 100%; }
+                    }
+                    @keyframes blink {
+                      0%, 50% { opacity: 1; }
+                      51%, 100% { opacity: 0; }
+                    }
+                    .docs-terminal-line {
+                      max-width: 100%;
+                      overflow: hidden;
+                      white-space: nowrap;
+                    }
+                    .group:hover .docs-terminal-line-1 { animation: typewriter 0.2s steps(25) forwards; max-width: 0; }
+                    .group:hover .docs-terminal-line-2 { animation: typewriter 0.3s steps(35) 0.2s forwards; max-width: 0; }
+                    .group:hover .docs-terminal-line-3 { animation: typewriter 0.25s steps(30) 0.5s forwards; max-width: 0; }
+                    .group:hover .docs-terminal-line-4 { animation: typewriter 0.35s steps(40) 0.75s forwards; max-width: 0; }
+                    .group:hover .docs-terminal-line-5 { animation: typewriter 0.3s steps(35) 1.1s forwards; max-width: 0; }
+                    .group:hover .docs-terminal-cursor {
+                      animation: blink 0.8s steps(1) infinite;
+                    }
+                  `}</style>
+                  <div className="relative h-full flex flex-col justify-between">
+                    {/* Terminal Mockup - Centered and narrower */}
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="w-[95%] rounded-2xl bg-zinc-900/95 dark:bg-zinc-950/95 border border-zinc-800/80 overflow-hidden shadow-2xl shadow-black/20">
+                        {/* Terminal Header - Minimal */}
+                        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-800/60">
+                          <div className="flex gap-1.5">
+                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-700 group-hover:bg-red-500/90 transition-colors" />
+                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-700 group-hover:bg-yellow-500/90 transition-colors" />
+                            <div className="w-[10px] h-[10px] rounded-full bg-zinc-700 group-hover:bg-green-500/90 transition-colors" />
+                          </div>
+                        </div>
+                        {/* Terminal Content */}
+                        <div className="px-3 py-2.5 md:px-4 md:py-3 font-mono text-[8px] md:text-[10px] leading-[1.7]">
+                          <div className="docs-terminal-line docs-terminal-line-1 text-zinc-400">
+                            <span className="text-orange-400">$</span> <span className="text-zinc-500">npm i</span> @lendaswap/sdk
+                          </div>
+                          <div className="docs-terminal-line docs-terminal-line-2 mt-1.5 text-zinc-400">
+                            <span className="text-orange-400/70">import</span> {"{"} <span className="text-orange-300">Client</span>, <span className="text-orange-300">createDexieSwapStorage</span> {"}"}
+                          </div>
+                          <div className="docs-terminal-line docs-terminal-line-3 mt-1 text-zinc-400">
+                            <span className="text-orange-400/70">const</span> <span className="text-blue-300">client</span> = <span className="text-orange-400/70">await</span> <span className="text-orange-300">Client</span>.<span className="text-amber-200/90">create</span>(<span className="text-amber-200/90">url</span>, <span className="text-amber-200/90">storage</span>)
+                          </div>
+                          <div className="docs-terminal-line docs-terminal-line-4 mt-1 text-zinc-400">
+                            <span className="text-orange-400/70">const</span> <span className="text-blue-300">swap</span> = <span className="text-orange-400/70">await</span> client.<span className="text-amber-200/90">createEvmToArkadeSwap</span>({"{"}
+                          </div>
+                          <div className="docs-terminal-line docs-terminal-line-5 mt-1 text-zinc-400">
+                            {"  "}<span className="text-blue-300">source_token</span>: <span className="text-amber-200/90">'usdc_pol'</span>, <span className="text-blue-300">target_address</span>: <span className="text-amber-200/90">addr</span> {"}"})
+                            <span className="docs-terminal-cursor text-orange-400 ml-0.5">|</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Text - Bottom aligned */}
+                    <div>
+                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
+                        Developer Docs
+                      </div>
+                      <a
+                        href="https://github.com/lendasat/lendaswap"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
+                      >
+                        View docs
+                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Powered by Arkade - Square */}
+                <div className="md:col-span-2 group relative aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-purple-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-transparent to-purple-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="relative h-full flex flex-col justify-between">
+                    {/* Pixel art space invader with classic animation on hover */}
+                    <div className="flex-1 flex items-center justify-center">
+                      <style>{`
+                        @keyframes invaderMove {
+                          0%, 100% { transform: translateX(-10px); }
+                          50% { transform: translateX(10px); }
+                        }
+                        @keyframes invaderFrame {
+                          0%, 49% { opacity: 1; }
+                          50%, 100% { opacity: 0; }
+                        }
+                        @keyframes invaderFrame2 {
+                          0%, 49% { opacity: 0; }
+                          50%, 100% { opacity: 1; }
+                        }
+                        .invader-container {
+                          animation: none;
+                        }
+                        .group:hover .invader-container {
+                          animation: invaderMove 1.5s ease-in-out infinite;
+                        }
+                        .invader-frame1 {
+                          opacity: 1;
+                        }
+                        .invader-frame2 {
+                          opacity: 0;
+                        }
+                        .group:hover .invader-frame1 {
+                          animation: invaderFrame 0.8s steps(1) infinite;
+                        }
+                        .group:hover .invader-frame2 {
+                          animation: invaderFrame2 0.8s steps(1) infinite;
+                        }
+                      `}</style>
+                      <div className="relative invader-container">
+                        {/* Frame 1 - legs out */}
+                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] absolute inset-0 invader-frame1">
+                          {[
+                            [0,0,1,0,0,0,0,0,1,0,0],
+                            [0,0,0,1,0,0,0,1,0,0,0],
+                            [0,0,1,1,1,1,1,1,1,0,0],
+                            [0,1,1,0,1,1,1,0,1,1,0],
+                            [1,1,1,1,1,1,1,1,1,1,1],
+                            [1,0,1,1,1,1,1,1,1,0,1],
+                            [1,0,1,0,0,0,0,0,1,0,1],
+                            [0,0,0,1,1,0,1,1,0,0,0],
+                          ].flat().map((filled, i) => (
+                            <div
+                              key={i}
+                              className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
+                                filled
+                                  ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                  : "bg-transparent"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {/* Frame 2 - legs in */}
+                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] invader-frame2">
+                          {[
+                            [0,0,1,0,0,0,0,0,1,0,0],
+                            [1,0,0,1,0,0,0,1,0,0,1],
+                            [1,0,1,1,1,1,1,1,1,0,1],
+                            [1,1,1,0,1,1,1,0,1,1,1],
+                            [1,1,1,1,1,1,1,1,1,1,1],
+                            [0,1,1,1,1,1,1,1,1,1,0],
+                            [0,0,1,0,0,0,0,0,1,0,0],
+                            [0,1,0,0,0,0,0,0,0,1,0],
+                          ].flat().map((filled, i) => (
+                            <div
+                              key={i}
+                              className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
+                                filled
+                                  ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                  : "bg-transparent"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     <div>
-                      <div className="font-semibold text-foreground">
+                      <div className="text-sm md:text-base font-bold tracking-tight text-foreground">
+                        Powered by Arkade · Bitcoin L2
+                      </div>
+                      <a
+                        href="https://arkadeos.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-purple-500 hover:text-purple-400 transition-colors"
+                      >
+                        Learn more
+                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Row - 3 Feature Boxes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Instant */}
+                <div className="group relative aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <style>{`
+                    @keyframes coinSpinLeft {
+                      0% { transform: translateX(0) rotateY(0deg); }
+                      50% { transform: translateX(20px) rotateY(180deg); }
+                      100% { transform: translateX(0) rotateY(360deg); }
+                    }
+                    @keyframes coinSpinRight {
+                      0% { transform: translateX(0) rotateY(0deg); }
+                      50% { transform: translateX(-20px) rotateY(180deg); }
+                      100% { transform: translateX(0) rotateY(360deg); }
+                    }
+                    .instant-coin-left, .instant-coin-right {
+                      animation: none;
+                    }
+                    .group:hover .instant-coin-left {
+                      animation: coinSpinLeft 0.8s ease-in-out;
+                    }
+                    .group:hover .instant-coin-right {
+                      animation: coinSpinRight 0.8s ease-in-out;
+                    }
+                  `}</style>
+                  <div className="relative h-full flex flex-col justify-between">
+                    {/* Coin swap animation area */}
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="flex items-center gap-3 md:gap-5">
+                        {/* USDT Coin - Left - Glossy Orange Glass */}
+                        <div
+                          className="instant-coin-left w-14 h-14 md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center shadow-xl relative"
+                          style={{
+                            perspective: '1000px',
+                            transformStyle: 'preserve-3d',
+                            background: 'linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.8) 50%, rgba(234,88,12,0.9) 100%)',
+                            boxShadow: '0 8px 32px rgba(249,115,22,0.3), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            backdropFilter: 'blur(8px)',
+                          }}
+                        >
+                          <div className="absolute inset-1 rounded-full" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)' }} />
+                          {/* Tether T Symbol */}
+                          <svg viewBox="0 0 339.43 295.27" className="relative w-7 h-7 md:w-9 md:h-9" fill="white">
+                            <path d="M191.19,144.8v0c-1.2.09-7.4,0.46-21.23,0.46-11,0-18.81-.33-21.55-0.46v0c-42.51-1.87-74.24-9.27-74.24-18.13s31.73-16.25,74.24-18.15v28.91c2.78,0.2,10.74.67,21.74,0.67,13.2,0,19.81-.55,21-0.66v-28.9c42.42,1.89,74.08,9.29,74.08,18.13s-31.65,16.24-74.08,18.12h0Zm0-39.25V79.68h59.2V40.23H89.21V79.68h59.19v25.86c-48.11,2.21-84.29,11.74-84.29,23.16s36.18,20.94,84.29,23.16v82.9h42.78v-82.93c48-2.21,84.12-11.73,84.12-23.14s-36.09-20.93-84.12-23.15h0Z"/>
+                          </svg>
+                        </div>
+                        {/* Swap arrows */}
+                        <div className="flex flex-col items-center gap-0.5">
+                          <ArrowLeftRight className="w-5 h-5 md:w-7 md:h-7 text-orange-500/70" />
+                        </div>
+                        {/* Bitcoin Coin - Right - Glossy Orange Glass */}
+                        <div
+                          className="instant-coin-right w-14 h-14 md:w-[72px] md:h-[72px] rounded-full flex items-center justify-center shadow-xl relative"
+                          style={{
+                            perspective: '1000px',
+                            transformStyle: 'preserve-3d',
+                            background: 'linear-gradient(135deg, rgba(251,146,60,0.95) 0%, rgba(249,115,22,0.85) 50%, rgba(194,65,12,0.95) 100%)',
+                            boxShadow: '0 8px 32px rgba(249,115,22,0.3), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            backdropFilter: 'blur(8px)',
+                          }}
+                        >
+                          <div className="absolute inset-1 rounded-full" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)' }} />
+                          {/* Bitcoin Logo */}
+                          <BitcoinIcon className="relative w-7 h-7 md:w-9 md:h-9 [&_path]:fill-white" />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-base md:text-lg font-semibold text-foreground">
                         Instant
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                      <div className="text-xs md:text-sm text-muted-foreground mt-0.5">
                         Near-instant settlement
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Atomic Swaps */}
-                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                      <Shield className="h-6 w-6 text-orange-500" />
+                {/* Atomic Swaps - Peer to Peer Connection */}
+                <div className="group relative md:col-span-2 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-auto">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <style>{`
+                    .p2p-line {
+                      stroke-dasharray: 4 4;
+                      transition: all 0.4s ease;
+                    }
+                    .group:hover .p2p-line {
+                      stroke-dasharray: none;
+                      stroke-width: 2;
+                      filter: drop-shadow(0 0 4px rgba(249,115,22,0.6));
+                    }
+                    .p2p-node {
+                      transition: all 0.3s ease;
+                    }
+                    .group:hover .p2p-node {
+                      filter: drop-shadow(0 0 12px rgba(249,115,22,0.5));
+                      transform: scale(1.05);
+                    }
+                    .p2p-check {
+                      opacity: 0;
+                      transform: scale(0.5);
+                      transition: all 0.3s ease 0.2s;
+                    }
+                    .group:hover .p2p-check {
+                      opacity: 1;
+                      transform: scale(1);
+                    }
+                  `}</style>
+                  <div className="relative h-full flex flex-col justify-between">
+                    {/* Peer-to-Peer Connection Visualization */}
+                    <div className="flex-1 flex items-center justify-center py-4">
+                      <div className="flex items-center gap-4 md:gap-8">
+                        {/* Left Node - You */}
+                        <div className="flex flex-col items-center gap-2">
+                          <div
+                            className="p2p-node w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center relative"
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.85) 50%, rgba(234,88,12,0.9) 100%)',
+                              boxShadow: '0 4px 20px rgba(249,115,22,0.25), inset 0 1px 2px rgba(255,255,255,0.2)',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                            }}
+                          >
+                            <Key className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                          </div>
+                          <span className="text-[10px] md:text-xs text-muted-foreground font-medium">You</span>
+                        </div>
+
+                        {/* Connection Line with Checkmark */}
+                        <div className="relative flex items-center">
+                          <svg width="80" height="40" viewBox="0 0 80 40" className="md:w-[120px]">
+                            {/* Dashed connection line */}
+                            <line x1="0" y1="20" x2="80" y2="20" className="p2p-line" stroke="#f97316" strokeWidth="1.5" />
+                            {/* Center checkmark circle */}
+                            <g className="p2p-check" style={{ transformOrigin: '40px 20px' }}>
+                              <circle cx="40" cy="20" r="12" fill="#f97316" />
+                              <path d="M34 20 L38 24 L46 16" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            </g>
+                          </svg>
+                        </div>
+
+                        {/* Right Node - Peer */}
+                        <div className="flex flex-col items-center gap-2">
+                          <div
+                            className="p2p-node w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center"
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(251,146,60,0.9) 0%, rgba(249,115,22,0.85) 50%, rgba(234,88,12,0.9) 100%)',
+                              boxShadow: '0 4px 20px rgba(249,115,22,0.25), inset 0 1px 2px rgba(255,255,255,0.2)',
+                              border: '1px solid rgba(255,255,255,0.15)',
+                            }}
+                          >
+                            <Shield className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                          </div>
+                          <span className="text-[10px] md:text-xs text-muted-foreground font-medium">Peer</span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Text content */}
                     <div>
-                      <div className="font-semibold text-foreground">
+                      <div className="text-base md:text-lg font-semibold text-foreground">
                         Atomic Swaps
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Trustless & secure
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 0% Fees */}
-                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                      <PiggyBank className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">
-                        0% Fees
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        No protocol fees
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Self-Custodial */}
-                <div className="group relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-orange-500/5 p-6 transition-all duration-300 hover:border-orange-500/40 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="relative flex flex-col items-center text-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
-                      <Key className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-foreground">
-                        Self-Custodial
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        Your keys, your coins
+                      <div className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                        Trustless · Self-custodial
                       </div>
                     </div>
                   </div>
