@@ -106,11 +106,12 @@ export function PolygonDepositStep({
       const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
       const tokenAddress = swapData.source_token_address as `0x${string}`;
 
+      // FIXME: the decimal places need to be dynamic basd on the asset
       // Parse the amount needed for this swap
       // Convert USD amount to token amount with 6 decimals (USDC/USDT use 6 decimals)
       const decimals = 6;
       const amountNeeded = BigInt(
-        Math.floor(swapData.usd_amount * 10 ** decimals),
+        Math.floor(swapData.asset_amount * 10 ** decimals),
       );
 
       console.log("Checking current allowance...");
@@ -232,7 +233,7 @@ export function PolygonDepositStep({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
-              ${swapData.usd_amount.toFixed(2)} {tokenSymbol} on{" "}
+              {swapData.asset_amount.toFixed(2)} {tokenSymbol} on{" "}
               {getTokenNetworkName(swapData.source_token)}
             </span>
           </div>

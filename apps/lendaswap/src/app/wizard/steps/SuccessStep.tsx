@@ -43,7 +43,7 @@ export function SuccessStep({
       swap_direction: swapDirection,
       source_token: swapData.source_token,
       target_token: swapData.target_token,
-      amount_usd: swapData.usd_amount,
+      amount_usd: swapData.asset_amount,
       amount_sats: swapData.sats_receive,
       fee_sats: swapData.fee_sats,
       duration_seconds: swapDurationSeconds,
@@ -78,18 +78,18 @@ export function SuccessStep({
           sentAmount: swapData.sats_receive.toLocaleString(),
           receivedTokenSymbol: getTokenSymbol(swapData.target_token),
           receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
-          receivedAmount: swapData.usd_amount.toFixed(2),
+          receivedAmount: swapData.asset_amount.toString(),
           receiveAddress: swapData.user_address_evm,
           receiveAddressIsEvm: true,
           isLightning: false,
           swapTxId: swapData.evm_htlc_claim_txid,
           swapTxIdIsEvm: true,
-          tweetText: `Swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
+          tweetText: `Swapped ${swapData.sats_receive.toLocaleString()} sats → $${swapData.asset_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         }
       : {
           sentTokenSymbol: getTokenSymbol(swapData.source_token),
           sentTokenNetwork: getTokenNetworkName(swapData.source_token),
-          sentAmount: swapData.usd_amount.toFixed(2),
+          sentAmount: swapData.asset_amount.toFixed(2),
           receivedTokenSymbol: "sats",
           receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
           receivedAmount: swapData.sats_receive.toLocaleString(),
@@ -102,7 +102,7 @@ export function SuccessStep({
           isLightning: swapData.target_token === "btc_lightning",
           swapTxId: swapData.bitcoin_htlc_claim_txid,
           swapTxIdIsEvm: false,
-          tweetText: `Swapped $${swapData.usd_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
+          tweetText: `Swapped $${swapData.asset_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
         };
 
   const handleShareOnTwitter = () => {

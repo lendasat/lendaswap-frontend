@@ -77,11 +77,10 @@ import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import {
   getViemChain,
+  isAssetToken,
   isBtcToken,
   isEthereumToken,
   isEvmToken,
-  isNonUsdEvmToken,
-  isUsdToken,
   isValidTokenId,
   networkName,
 } from "./utils/tokenUtils";
@@ -122,17 +121,15 @@ function HomePage() {
 
   // State for home page
   const [bitcoinAmount, setBitcoinAmount] = useState("");
-  const [usdAmount, setUsdAmount] = useState("50");
-  // For non-USD EVM tokens like XAUT (gold)
-  const [evmTokenAmount, setEvmTokenAmount] = useState("");
+  const [assetAmount, setAssetAmount] = useState("50");
   const [sourceAsset, setSourceAsset] = useState<TokenId>(
     urlSourceToken || "usdc_pol",
   );
   const [targetAsset, setTargetAsset] = useState<TokenId>(
     urlTargetToken || (isSpeedWalletUser ? "btc_lightning" : "btc_arkade"),
   );
-  const [lastFieldEdited, setLastFieldEdited] = useState<"usd" | "btc" | "evm">(
-    "usd",
+  const [lastFieldEdited, setLastFieldEdited] = useState<"asset" | "btc">(
+    "asset",
   );
   // Track which denomination user wants to input (USD or BTC) for each box
   const [sourceInputMode, setSourceInputMode] = useState<
@@ -210,94 +207,72 @@ function HomePage() {
   }, [targetAsset, targetAddress]);
 
   // Get price feed from context
-  const { getExchangeRate, getBtcUsdRate, isLoadingPrice } = usePriceFeed();
+  const { getExchangeRate, isLoadingPrice } = usePriceFeed();
 
   const exchangeRate = getExchangeRate(
     sourceAsset,
     targetAsset,
-    Number.parseFloat(usdAmount),
+    Number.parseFloat(assetAmount),
   );
 
-  // Get BTC/USD rate for displaying USD equivalents (needed for non-USD tokens like XAUT)
-  const btcUsdRate = getBtcUsdRate(Number.parseFloat(usdAmount));
+  const { value: maybeAssetPairs, error: loadingAssetPairsError } = useAsync(
+    async () => {
+      return await api.getAssetPairs();
+    },
+  );
+  if (loadingAssetPairsError) {
+    console.error("Failed loading asset pairs", loadingAssetPairsError);
+  }
 
-  const {
-    value: maybeAssetPairs,
-    error: loadingTokensError,
-    loading: isLoadingTokens,
-  } = useAsync(async () => {
-    return await api.getAssetPairs();
-  });
-  if (isLoadingTokens || loadingTokensError) {
+  const { value: maybeTokens, error: loadingTokensError } = useAsync(
+    async () => {
+      return await api.getTokens();
+    },
+  );
+  if (loadingTokensError) {
     console.error("Failed loading tokens", loadingTokensError);
   }
 
   const assetPairs = maybeAssetPairs || [];
+  const tokens = maybeTokens || [];
+
+  const assetDecimalPlaces = assetPairs.find(
+    (pair) => pair.target.tokenId === targetAsset,
+  )?.target.decimals;
 
   useEffect(() => {
     if (isLoadingPrice || !exchangeRate) {
       return;
     }
+    if (lastFieldEdited === "asset") {
+      const parsedAssetAmount = Number.parseFloat(assetAmount);
 
-    // Check if we're dealing with a non-USD EVM token (like XAUT)
-    const hasNonUsdEvmToken =
-      isNonUsdEvmToken(sourceAsset) || isNonUsdEvmToken(targetAsset);
+      if (Number.isNaN(parsedAssetAmount)) {
+        setBitcoinAmount("");
+        return;
+      }
 
-    if (hasNonUsdEvmToken) {
-      // For BTC ↔ XAUT swaps:
-      // - exchangeRate = XAUT per BTC (e.g., ~21)
-      // - btcUsdRate = USD per BTC (e.g., ~89,000)
-      // Use btcUsdRate for USD display calculations
-      const usdRateToUse = btcUsdRate || exchangeRate; // fallback to exchangeRate if btcUsdRate not available
+      const calculatedBtcAmount = (parsedAssetAmount * exchangeRate).toFixed(8);
+      setBitcoinAmount(calculatedBtcAmount);
+    }
+    if (lastFieldEdited === "btc") {
+      const bitcoinAmountNumber = Number.parseFloat(bitcoinAmount);
+      if (Number.isNaN(bitcoinAmountNumber)) {
+        setAssetAmount("");
+      }
 
-      if (lastFieldEdited === "btc") {
-        const btcAmountNumber = Number.parseFloat(bitcoinAmount);
-        if (!Number.isNaN(btcAmountNumber)) {
-          // USD equivalent from BTC (using actual BTC/USD rate, not XAUT/BTC rate)
-          const calculatedUsdAmount = (btcAmountNumber * usdRateToUse).toFixed(
-            2,
-          );
-          setUsdAmount(calculatedUsdAmount);
-          // XAUT amount will be set by quote fetch
-        }
-      } else if (lastFieldEdited === "usd") {
-        const usdAmountNumber = Number.parseFloat(usdAmount);
-        if (!Number.isNaN(usdAmountNumber)) {
-          // BTC amount from USD (using actual BTC/USD rate)
-          const calculatedBtcAmount = (usdAmountNumber / usdRateToUse).toFixed(
-            8,
-          );
-          setBitcoinAmount(calculatedBtcAmount);
-        }
-      }
-    } else {
-      // Standard USD ↔ BTC conversion (stablecoins)
-      if (lastFieldEdited === "usd") {
-        const usdAmountNumber = Number.parseFloat(usdAmount);
-        const calculatedBtcAmount =
-          exchangeRate && !Number.isNaN(usdAmountNumber)
-            ? (usdAmountNumber / exchangeRate).toFixed(8)
-            : "";
-        setBitcoinAmount(calculatedBtcAmount);
-      }
-      if (lastFieldEdited === "btc") {
-        const bitcoinAmountNumber = Number.parseFloat(bitcoinAmount);
-        const calculatedUsdAmount =
-          exchangeRate && !Number.isNaN(bitcoinAmountNumber)
-            ? (bitcoinAmountNumber * exchangeRate).toFixed(2)
-            : "";
-        setUsdAmount(calculatedUsdAmount);
-      }
+      const calculatedAssetAmount = (
+        bitcoinAmountNumber / exchangeRate
+      ).toFixed(assetDecimalPlaces);
+      setAssetAmount(calculatedAssetAmount);
     }
   }, [
     exchangeRate,
-    btcUsdRate,
     isLoadingPrice,
     lastFieldEdited,
     bitcoinAmount,
-    usdAmount,
-    sourceAsset,
-    targetAsset,
+    assetAmount,
+    assetDecimalPlaces,
   ]);
 
   // Fetch quote when bitcoin amount changes
@@ -306,7 +281,6 @@ function HomePage() {
       const btcAmount = Number.parseFloat(bitcoinAmount);
       if (!btcAmount || Number.isNaN(btcAmount) || btcAmount <= 0) {
         setQuote(null);
-        setEvmTokenAmount("");
         return;
       }
 
@@ -320,42 +294,19 @@ function HomePage() {
           base_amount: sats,
         });
         setQuote(quoteResponse);
-
-        // Calculate EVM token amount for non-USD tokens like XAUT
-        // BUT only if user is NOT currently editing the EVM token field
-        if (
-          (isNonUsdEvmToken(sourceAsset) || isNonUsdEvmToken(targetAsset)) &&
-          lastFieldEdited !== "evm"
-        ) {
-          const rate = Number.parseFloat(quoteResponse.exchange_rate);
-          if (!Number.isNaN(rate) && rate > 0) {
-            // The quote exchange_rate is always XAUT per BTC (e.g., ~21)
-            // regardless of swap direction
-            if (isNonUsdEvmToken(targetAsset)) {
-              // Buying XAUT with BTC: XAUT received = BTC * rate
-              const xautAmount = btcAmount * rate;
-              setEvmTokenAmount(xautAmount.toFixed(6));
-            } else if (isNonUsdEvmToken(sourceAsset)) {
-              // Selling XAUT for BTC: XAUT needed = BTC desired * rate
-              const xautAmount = btcAmount * rate;
-              setEvmTokenAmount(xautAmount.toFixed(6));
-            }
-          }
-        }
       } catch (error) {
         console.error("Failed to fetch quote:", error);
         setQuote(null);
-        setEvmTokenAmount("");
       } finally {
         setIsLoadingQuote(false);
       }
     };
 
     fetchQuote();
-  }, [bitcoinAmount, sourceAsset, targetAsset, lastFieldEdited]);
+  }, [bitcoinAmount, sourceAsset, targetAsset]);
 
   const handleContinueToAddress = async () => {
-    if (!targetAddress || !usdAmount || !addressValid) {
+    if (!targetAddress || !assetAmount || !addressValid) {
       return;
     }
 
@@ -374,7 +325,7 @@ function HomePage() {
       swap_direction: swapDirection,
       source_token: swap.source_token,
       target_token: swap.target_token,
-      amount_usd: swap.usd_amount,
+      amount_asset: swap.asset_amount,
       amount_sats: swap.sats_receive,
       has_referral_code: hasReferralCode(),
     });
@@ -392,7 +343,7 @@ function HomePage() {
       if (isBtcSource) {
         // BTC → EVM
 
-        let targetAmount = parseFloat(usdAmount);
+        let targetAmount = parseFloat(assetAmount);
         if (targetAsset === "btc_arkade" || targetAsset === "btc_lightning") {
           targetAmount = parseFloat(bitcoinAmount);
         }
@@ -413,7 +364,7 @@ function HomePage() {
 
         // Validate EVM address
         if (!isEvmAddressValid) {
-          setSwapError(`Please provide a valid wallet address`);
+          setSwapError(`)Please provide a valid wallet address`);
           return;
         }
 
@@ -424,7 +375,7 @@ function HomePage() {
           const swap = await api.createEvmToArkadeSwap(
             {
               target_address: targetAddress, // Arkade address
-              source_amount: parseFloat(usdAmount),
+              source_amount: parseFloat(assetAmount),
               source_token: sourceAsset,
               user_address: userEvmAddress,
             },
@@ -484,7 +435,7 @@ function HomePage() {
   const availableSourceAssets: TokenId[] = [
     ...new Set(
       assetPairs
-        .map((a) => a.source.token_id)
+        .map((a) => a.source.tokenId)
         .sort((a, b) => a.localeCompare(b)),
     ),
   ];
@@ -495,10 +446,10 @@ function HomePage() {
       ...assetPairs
         .filter(
           (a) =>
-            a.target.token_id === "btc_arkade" ||
-            a.target.token_id === "btc_lightning",
+            a.target.tokenId === "btc_arkade" ||
+            a.target.tokenId === "btc_lightning",
         )
-        .map((a) => a.source.token_id),
+        .map((a) => a.source.tokenId),
       // All BTC tokens that can be targets (when selling EVM)
       "btc_arkade" as TokenId,
       "btc_lightning" as TokenId,
@@ -543,42 +494,23 @@ function HomePage() {
                   type="text"
                   inputMode="decimal"
                   value={
-                    sourceInputMode === "native"
-                      ? isUsdToken(sourceAsset)
-                        ? usdAmount
-                        : isNonUsdEvmToken(sourceAsset)
-                          ? evmTokenAmount
-                          : bitcoinAmount
-                      : usdAmount
+                    isAssetToken(sourceAsset) ? assetAmount : bitcoinAmount
                   }
                   onChange={(e) => {
                     const input = e.target.value.replace(/[^0-9.]/g, "");
-                    if (
-                      sourceInputMode === "converted" ||
-                      isUsdToken(sourceAsset)
-                    ) {
-                      if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
-                        setLastFieldEdited("usd");
-                        setUsdAmount(input);
-                      }
-                    } else if (isNonUsdEvmToken(sourceAsset)) {
-                      // For XAUT and similar, allow 6 decimals
-                      if (input === "" || /^\d*\.?\d{0,6}$/.test(input)) {
-                        setEvmTokenAmount(input);
-                        // Calculate BTC and USD from XAUT amount
-                        const xautAmount = Number.parseFloat(input);
-                        if (
-                          exchangeRate &&
-                          btcUsdRate &&
-                          !Number.isNaN(xautAmount)
-                        ) {
-                          // exchangeRate = XAUT per BTC, so BTC = XAUT / exchangeRate
-                          const btcAmount = xautAmount / exchangeRate;
-                          const usdValue = btcAmount * btcUsdRate;
-                          setBitcoinAmount(btcAmount.toFixed(8));
-                          setUsdAmount(usdValue.toFixed(2));
-                        }
-                        setLastFieldEdited("evm"); // Track that user is editing EVM token field
+                    if (isAssetToken(sourceAsset)) {
+                      const decimals = tokens.find(
+                        (t) => t.tokenId === sourceAsset,
+                      )?.decimals;
+
+                      // If decimals undefined, allow any decimal places
+                      const regex =
+                        decimals !== undefined
+                          ? new RegExp(`^\\d*\\.?\\d{0,${decimals}}$`)
+                          : /^\d*\.?\d*$/;
+                      if (input === "" || regex.test(input)) {
+                        setLastFieldEdited("asset");
+                        setAssetAmount(input);
                       }
                     } else {
                       if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
@@ -597,6 +529,7 @@ function HomePage() {
               {/* Clickable toggle between native token and USD */}
               <button
                 type="button"
+                disabled={true}
                 onClick={() =>
                   setSourceInputMode(
                     sourceInputMode === "native" ? "converted" : "native",
@@ -605,15 +538,11 @@ function HomePage() {
                 className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
               >
                 {sourceInputMode === "native" ? (
-                  <span>≈ ${formatUsdDisplay(usdAmount)}</span>
-                ) : isUsdToken(sourceAsset) ? (
+                  <span>≈ ${formatUsdDisplay(assetAmount)}</span>
+                ) : isAssetToken(sourceAsset) ? (
                   <span>
-                    ≈ {formatUsdDisplay(usdAmount)}{" "}
+                    ≈ {formatUsdDisplay(assetAmount)}{" "}
                     {getTokenSymbol(sourceAsset)}
-                  </span>
-                ) : isNonUsdEvmToken(sourceAsset) ? (
-                  <span>
-                    ≈ {evmTokenAmount || "0"} {getTokenSymbol(sourceAsset)}
                   </span>
                 ) : (
                   <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
@@ -626,23 +555,10 @@ function HomePage() {
                 availableAssets={availableSourceAssets}
                 label="sell"
                 onChange={(asset) => {
-                  const isEvmAsset =
-                    asset === "usdc_pol" ||
-                    asset === "usdt0_pol" ||
-                    asset === "usdt_eth" ||
-                    asset === "usdc_eth" ||
-                    asset === "xaut_eth";
-                  const isBtcAsset =
-                    asset === "btc_arkade" || asset === "btc_lightning";
-                  const isEvmTarget =
-                    targetAsset === "usdc_pol" ||
-                    targetAsset === "usdt0_pol" ||
-                    targetAsset === "usdc_eth" ||
-                    targetAsset === "usdt_eth" ||
-                    targetAsset === "xaut_eth";
-                  const isBtcTarget =
-                    targetAsset === "btc_arkade" ||
-                    targetAsset === "btc_lightning";
+                  const isEvmAsset = isEvmToken(asset);
+                  const isBtcAsset = isBtcToken(asset);
+                  const isEvmTarget = isEvmToken(targetAsset);
+                  const isBtcTarget = isBtcToken(targetAsset);
 
                   // EVM source + BTC target = valid pair
                   if (isEvmAsset && isBtcTarget) {
@@ -726,41 +642,30 @@ function HomePage() {
                     inputMode="decimal"
                     value={
                       targetInputMode === "native"
-                        ? isUsdToken(targetAsset)
-                          ? usdAmount
-                          : isNonUsdEvmToken(targetAsset)
-                            ? evmTokenAmount
-                            : bitcoinAmount
-                        : usdAmount
+                        ? isAssetToken(targetAsset)
+                          ? assetAmount
+                          : bitcoinAmount
+                        : assetAmount
                     }
                     onChange={(e) => {
                       const input = e.target.value.replace(/[^0-9.]/g, "");
                       if (
                         targetInputMode === "converted" ||
-                        isUsdToken(targetAsset)
+                        isAssetToken(targetAsset)
                       ) {
-                        if (input === "" || /^\d*\.?\d{0,2}$/.test(input)) {
-                          setLastFieldEdited("usd");
-                          setUsdAmount(input);
-                        }
-                      } else if (isNonUsdEvmToken(targetAsset)) {
-                        // For XAUT and similar, allow 6 decimals
-                        if (input === "" || /^\d*\.?\d{0,6}$/.test(input)) {
-                          setEvmTokenAmount(input);
-                          // Calculate BTC and USD from XAUT amount
-                          const xautAmount = Number.parseFloat(input);
-                          if (
-                            exchangeRate &&
-                            btcUsdRate &&
-                            !Number.isNaN(xautAmount)
-                          ) {
-                            // exchangeRate = XAUT per BTC, so BTC = XAUT / exchangeRate
-                            const btcAmount = xautAmount / exchangeRate;
-                            const usdValue = btcAmount * btcUsdRate;
-                            setBitcoinAmount(btcAmount.toFixed(8));
-                            setUsdAmount(usdValue.toFixed(2));
-                          }
-                          setLastFieldEdited("evm"); // Track that user is editing EVM token field
+                        const decimals = tokens.find(
+                          (t) => t.tokenId === sourceAsset,
+                        )?.decimals;
+
+                        // If decimals undefined, allow any decimal places
+                        const regex =
+                          decimals !== undefined
+                            ? new RegExp(`^\\d*\\.?\\d{0,${decimals}}$`)
+                            : /^\d*\.?\d*$/;
+
+                        if (input === "" || regex.test(input)) {
+                          setLastFieldEdited("asset");
+                          setAssetAmount(input);
                         }
                       } else {
                         if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
@@ -780,6 +685,7 @@ function HomePage() {
               {/* Clickable toggle between native token and USD */}
               <button
                 type="button"
+                disabled={true}
                 onClick={() =>
                   setTargetInputMode(
                     targetInputMode === "native" ? "converted" : "native",
@@ -788,15 +694,11 @@ function HomePage() {
                 className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
               >
                 {targetInputMode === "native" ? (
-                  <span>≈ ${formatUsdDisplay(usdAmount)}</span>
-                ) : isUsdToken(targetAsset) ? (
+                  <span>≈ ${formatUsdDisplay(assetAmount)}</span>
+                ) : isAssetToken(targetAsset) ? (
                   <span>
-                    ≈ {formatUsdDisplay(usdAmount)}{" "}
+                    ≈ {formatUsdDisplay(assetAmount)}{" "}
                     {getTokenSymbol(targetAsset)}
-                  </span>
-                ) : isNonUsdEvmToken(targetAsset) ? (
-                  <span>
-                    ≈ {evmTokenAmount || "0"} {getTokenSymbol(targetAsset)}
                   </span>
                 ) : (
                   <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
@@ -813,18 +715,8 @@ function HomePage() {
                   const isBtcSource =
                     sourceAsset === "btc_arkade" ||
                     sourceAsset === "btc_lightning";
-                  const isEvmTarget =
-                    asset === "usdc_pol" ||
-                    asset === "usdt0_pol" ||
-                    asset === "usdc_eth" ||
-                    asset === "usdt_eth" ||
-                    asset === "xaut_eth";
-                  const isEvmSource =
-                    sourceAsset === "usdc_pol" ||
-                    sourceAsset === "usdt0_pol" ||
-                    sourceAsset === "usdc_eth" ||
-                    sourceAsset === "usdt_eth" ||
-                    sourceAsset === "xaut_eth";
+                  const isEvmTarget = isEvmToken(asset);
+                  const isEvmSource = isEvmToken(sourceAsset);
 
                   // If both are BTC or both are EVM, auto-switch source to make them compatible
                   if (isBtcTarget && isBtcSource) {

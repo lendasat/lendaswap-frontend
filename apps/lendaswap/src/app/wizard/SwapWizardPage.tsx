@@ -46,6 +46,7 @@ const swapDirection = (
   if (
     source_token === "usdt0_pol" ||
     source_token === "usdc_pol" ||
+    source_token === "pol_pol" ||
     source_token === "usdt_eth" ||
     source_token === "usdc_eth"
   ) {
@@ -76,7 +77,7 @@ function createMockSwapData(status: SwapStatus): ExtendedSwapStorageData {
       "lnbc1000u1pjqqqqqpp5qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqdqqcqzpgxqrrsssp5qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9qyyssqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     sats_receive: 10000,
     sats_required: 10100, // sats_receive + fee_sats
-    usd_amount: 100,
+    asset_amount: 100,
     created_at: new Date().toISOString(),
     sender_pk:
       "02cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
@@ -350,7 +351,7 @@ export function SwapWizardPage() {
                 lightningAddress={displaySwapData.ln_invoice}
                 unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${displaySwapData.sats_receive / 100_000_000}`}
                 swapData={displaySwapData as BtcToEvmSwapResponse}
-                usdcAmount={displaySwapData.usd_amount.toFixed(2)}
+                tokenAmount={displaySwapData.asset_amount.toString()}
                 tokenSymbol={getTokenSymbol(displaySwapData.target_token)}
                 swapId={displaySwapData.id}
               />

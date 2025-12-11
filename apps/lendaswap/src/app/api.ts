@@ -125,6 +125,11 @@ export const api = {
     return await client.getAssetPairs();
   },
 
+  async getTokens(): Promise<TokenInfo[]> {
+    const client = await getSdkClient();
+    return await client.getTokens();
+  },
+
   async getQuote(request: QuoteRequest): Promise<QuoteResponse> {
     const client = await getSdkClient();
     return await client.getQuote(

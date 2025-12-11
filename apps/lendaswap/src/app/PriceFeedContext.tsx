@@ -21,14 +21,14 @@ interface PriceFeedContextValue {
   isLoadingPrice: boolean;
   // Error state
   priceError: string | null;
-  // Helper to get exchange rate for a specific token and amount
+  // Helper to get exchange rate for a specific token and amount (in quote asset units)
   getExchangeRate: (
     sourceToken: TokenId,
     targetToken: TokenId,
-    usdAmount: number,
+    assetAmount: number,
   ) => number | null;
   // Helper to get BTC price in USD (always returns USD/BTC rate from stablecoin pair)
-  getBtcUsdRate: (usdAmount: number) => number | null;
+  getBtcUsdRate: (assetAmount: number) => number | null;
 }
 
 const PriceFeedContext = createContext<PriceFeedContextValue | undefined>(
@@ -75,12 +75,12 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
     };
   }, [priceFeedService]);
 
-  // Helper function to get exchange rate for a specific token pair and USD amount
+  // Helper function to get exchange rate for a specific token pair and asset amount
   // Returns the exchange rate as: 1 sourceToken = X targetToken
   const getExchangeRate = (
     sourceToken: TokenId,
     targetToken: TokenId,
-    usdAmount: number,
+    assetAmount: number,
   ): number | null => {
     if (!priceUpdate) return null;
 
@@ -95,24 +95,25 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
       return null;
     }
 
-    // Select tier based on USD amount
+    // Select tier based on quote asset amount
     let rate: number;
-    if (usdAmount >= 5000) {
-      rate = pair.tiers.usd_5000;
-    } else if (usdAmount >= 1000) {
-      rate = pair.tiers.usd_1000;
-    } else if (usdAmount >= 100) {
-      rate = pair.tiers.usd_100;
+    if (assetAmount >= 5000) {
+      rate = pair.tiers.tier_5000;
+    } else if (assetAmount >= 1000) {
+      rate = pair.tiers.tier_1000;
+    } else if (assetAmount >= 100) {
+      rate = pair.tiers.tier_100;
     } else {
-      rate = pair.tiers.usd_1;
+      rate = pair.tiers.tier_1;
     }
 
     return rate;
   };
 
+  // FIXME: this is ugly as f**k
   // Helper to get BTC price in USD (from a stablecoin pair)
   // This is needed for displaying USD equivalents when dealing with non-USD tokens like XAUT
-  const getBtcUsdRate = (usdAmount: number): number | null => {
+  const getBtcUsdRate = (assetAmount: number): number | null => {
     if (!priceUpdate) return null;
 
     // Try to get rate from USDC_ETH-BTC first (most liquid), fallback to others
@@ -128,16 +129,16 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
         (p) => p.pair.toLowerCase() === pairName,
       );
       if (pair) {
-        // Select tier based on USD amount
+        // Select tier based on asset amount
         let rate: number;
-        if (usdAmount >= 5000) {
-          rate = pair.tiers.usd_5000;
-        } else if (usdAmount >= 1000) {
-          rate = pair.tiers.usd_1000;
-        } else if (usdAmount >= 100) {
-          rate = pair.tiers.usd_100;
+        if (assetAmount >= 5000) {
+          rate = pair.tiers.tier_5000;
+        } else if (assetAmount >= 1000) {
+          rate = pair.tiers.tier_1000;
+        } else if (assetAmount >= 100) {
+          rate = pair.tiers.tier_100;
         } else {
-          rate = pair.tiers.usd_1;
+          rate = pair.tiers.tier_1;
         }
         return rate;
       }

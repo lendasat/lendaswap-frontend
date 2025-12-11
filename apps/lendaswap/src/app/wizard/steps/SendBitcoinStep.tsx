@@ -15,7 +15,7 @@ interface SendBitcoinStepProps {
   lightningAddress: string | null;
   unifiedAddress: string;
   swapData: BtcToEvmSwapResponse;
-  usdcAmount: string;
+  tokenAmount: string;
   tokenSymbol?: string; // e.g., "USDC", "USDT"
   swapId: string;
 }
@@ -25,7 +25,7 @@ export function SendBitcoinStep({
   lightningAddress,
   unifiedAddress,
   swapData,
-  usdcAmount,
+  tokenAmount,
   tokenSymbol = "USDC",
   swapId,
 }: SendBitcoinStepProps) {
@@ -92,7 +92,7 @@ export function SendBitcoinStep({
     const success = triggerSpeedWalletPayment(
       lightningAddress,
       swapData.sats_receive,
-      `LendaSwap: ${usdcAmount} ${tokenSymbol} swap`,
+      `LendaSwap: ${tokenAmount} ${tokenSymbol} swap`,
     );
 
     if (success) {
@@ -268,7 +268,7 @@ export function SendBitcoinStep({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Receive</span>
             <span className="font-medium">
-              {usdcAmount} {tokenSymbol} on{" "}
+              {tokenAmount} {tokenSymbol} on{" "}
               {getTokenNetworkName(swapData.target_token)}
             </span>
           </div>
