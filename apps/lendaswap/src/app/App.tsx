@@ -1763,7 +1763,7 @@ export default function App() {
                         Developer Docs
                       </div>
                       <a
-                        href="https://github.com/lendasat/lendaswap"
+                        href="https://github.com/lendasat/lendaswap-sdk"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
@@ -2177,7 +2177,7 @@ export default function App() {
                     code, contribute, or run your own instance. Check out our
                     GitHub at{" "}
                     <a
-                      href="https://github.com/lendasat/lendaswap"
+                      href="https://github.com/lendasat/lendaswap-sdk"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline hover:text-foreground"
