@@ -382,7 +382,7 @@ function HomePage() {
 
         // Validate EVM address
         if (!isEvmAddressValid) {
-          setSwapError(`)Please provide a valid wallet address`);
+          setSwapError(`Please provide a valid wallet address`);
           return;
         }
 
