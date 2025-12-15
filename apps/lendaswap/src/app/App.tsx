@@ -65,6 +65,7 @@ import {
   type VolumeStats,
 } from "./api";
 import { AddressInput } from "./components/AddressInput";
+import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
 import { DebugNavigation } from "./components/DebugNavigation";
@@ -120,8 +121,10 @@ function HomePage() {
   const isSpeedWalletUser = isValidSpeedWalletContext();
 
   // State for home page
-  const [bitcoinAmount, setBitcoinAmount] = useState("");
-  const [assetAmount, setAssetAmount] = useState("50");
+  const [bitcoinAmount, setBitcoinAmount] = useState<number | undefined>(
+    undefined,
+  );
+  const [assetAmount, setAssetAmount] = useState<number | undefined>(50);
   const [sourceAsset, setSourceAsset] = useState<TokenId>(
     urlSourceToken || "usdc_pol",
   );
@@ -131,13 +134,6 @@ function HomePage() {
   const [lastFieldEdited, setLastFieldEdited] = useState<"asset" | "btc">(
     "asset",
   );
-  // Track which denomination user wants to input (USD or BTC) for each box
-  const [sourceInputMode, setSourceInputMode] = useState<
-    "native" | "converted"
-  >("native");
-  const [targetInputMode, setTargetInputMode] = useState<
-    "native" | "converted"
-  >("native");
   const [targetAddress, setTargetAddress] = useState("");
   const [addressValid, setAddressValid] = useState(false);
   const [isCreatingSwap, setIsCreatingSwap] = useState(false);
@@ -212,8 +208,32 @@ function HomePage() {
   const exchangeRate = getExchangeRate(
     sourceAsset,
     targetAsset,
-    Number.parseFloat(assetAmount),
+    assetAmount ?? 0,
   );
+
+  // Fetch USD prices for all supported tokens from CoinGecko
+  const [usdPrices, setUsdPrices] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const priceMap = await api.getTokenUsdPrices();
+      setUsdPrices(priceMap);
+    };
+
+    fetchPrices();
+    // Refresh prices every 60 seconds
+    const interval = setInterval(fetchPrices, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Helper to get USD price for a token (defaults to 1 for stablecoins if not found)
+  const getUsdPerToken = (tokenId: TokenId): number => {
+    const price = usdPrices.get(tokenId);
+    if (price !== undefined) return price;
+    // Fallback: assume stablecoins are $1
+    if (tokenId.includes("usdc") || tokenId.includes("usdt")) return 1;
+    return 0;
+  };
 
   const { value: maybeAssetPairs, error: loadingAssetPairsError } = useAsync(
     async () => {
@@ -245,27 +265,25 @@ function HomePage() {
       return;
     }
     if (lastFieldEdited === "asset") {
-      const parsedAssetAmount = Number.parseFloat(assetAmount);
-
-      if (Number.isNaN(parsedAssetAmount)) {
-        setBitcoinAmount("");
+      if (assetAmount === undefined) {
+        setBitcoinAmount(undefined);
         return;
       }
 
-      const calculatedBtcAmount = (parsedAssetAmount * exchangeRate).toFixed(8);
-      setBitcoinAmount(calculatedBtcAmount);
+      const calculatedBtcAmount = assetAmount * exchangeRate;
+      setBitcoinAmount(Number.parseFloat(calculatedBtcAmount.toFixed(8)));
     }
     if (lastFieldEdited === "btc") {
-      const bitcoinAmountNumber = Number.parseFloat(bitcoinAmount);
-      if (Number.isNaN(bitcoinAmountNumber)) {
-        setAssetAmount("");
+      if (bitcoinAmount === undefined) {
+        setAssetAmount(undefined);
         return;
       }
 
-      const calculatedAssetAmount = (
-        bitcoinAmountNumber / exchangeRate
-      ).toFixed(assetDecimalPlaces);
-      setAssetAmount(calculatedAssetAmount);
+      const calculatedAssetAmount = bitcoinAmount / exchangeRate;
+      const decimals = assetDecimalPlaces ?? 2;
+      setAssetAmount(
+        Number.parseFloat(calculatedAssetAmount.toFixed(decimals)),
+      );
     }
   }, [
     exchangeRate,
@@ -279,8 +297,7 @@ function HomePage() {
   // Fetch quote when bitcoin amount changes
   useEffect(() => {
     const fetchQuote = async () => {
-      const btcAmount = Number.parseFloat(bitcoinAmount);
-      if (!btcAmount || Number.isNaN(btcAmount) || btcAmount <= 0) {
+      if (bitcoinAmount === undefined || bitcoinAmount <= 0) {
         setQuote(null);
         return;
       }
@@ -288,7 +305,7 @@ function HomePage() {
       setIsLoadingQuote(true);
       try {
         // Convert BTC to satoshis
-        const sats = Math.round(btcAmount * 100_000_000);
+        const sats = Math.round(bitcoinAmount * 100_000_000);
         const quoteResponse = await api.getQuote({
           from: sourceAsset,
           to: targetAsset,
@@ -344,9 +361,9 @@ function HomePage() {
       if (isBtcSource) {
         // BTC → EVM
 
-        let targetAmount = parseFloat(assetAmount);
+        let targetAmount = assetAmount ?? 0;
         if (targetAsset === "btc_arkade" || targetAsset === "btc_lightning") {
-          targetAmount = parseFloat(bitcoinAmount);
+          targetAmount = bitcoinAmount ?? 0;
         }
 
         const swap = await api.createArkadeToEvmSwap(
@@ -376,7 +393,7 @@ function HomePage() {
           const swap = await api.createEvmToArkadeSwap(
             {
               target_address: targetAddress, // Arkade address
-              source_amount: parseFloat(assetAmount),
+              source_amount: assetAmount ?? 0,
               source_token: sourceAsset,
               user_address: userEvmAddress,
             },
@@ -396,7 +413,7 @@ function HomePage() {
           let bolt11Invoice = targetAddress;
           if (isLightningAddress(targetAddress)) {
             try {
-              const amountSats = parseFloat(bitcoinAmount) * 100_000_000; // Convert BTC to sats
+              const amountSats = (bitcoinAmount ?? 0) * 100_000_000; // Convert BTC to sats
               bolt11Invoice = await resolveLightningAddress(
                 targetAddress,
                 amountSats,
@@ -457,24 +474,6 @@ function HomePage() {
     ]),
   ].sort((a, b) => a.localeCompare(b));
 
-  // Helper to format display values
-  const formatUsdDisplay = (val: string) => {
-    if (!val || val === "") return "0";
-    const num = Number.parseFloat(val);
-    if (Number.isNaN(num)) return val;
-    return num.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  };
-
-  const formatBtcDisplay = (val: string) => {
-    if (!val || val === "") return "0";
-    const num = Number.parseFloat(val);
-    if (Number.isNaN(num)) return val;
-    return num.toFixed(8);
-  };
-
   return (
     <div className="flex flex-col p-3">
       {/* Sell/Buy container with arrow */}
@@ -483,73 +482,28 @@ function HomePage() {
         <div className="rounded-2xl bg-muted p-4 pb-5">
           <div className="text-sm text-muted-foreground mb-2">Sell</div>
           <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-1">
-                {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
-                {sourceInputMode === "converted" && (
-                  <span className="text-2xl md:text-4xl font-medium text-muted-foreground">
-                    $
-                  </span>
-                )}
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={
-                    isAssetToken(sourceAsset) ? assetAmount : bitcoinAmount
-                  }
-                  onChange={(e) => {
-                    const input = e.target.value.replace(/[^0-9.]/g, "");
-                    if (isAssetToken(sourceAsset)) {
-                      const decimals = tokens.find(
-                        (t) => t.tokenId === sourceAsset,
-                      )?.decimals;
-
-                      // If decimals undefined, allow any decimal places
-                      const regex =
-                        decimals !== undefined
-                          ? new RegExp(`^\\d*\\.?\\d{0,${decimals}}$`)
-                          : /^\d*\.?\d*$/;
-                      if (input === "" || regex.test(input)) {
-                        setLastFieldEdited("asset");
-                        setAssetAmount(input);
-                      }
-                    } else {
-                      if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
-                        setLastFieldEdited("btc");
-                        setBitcoinAmount(input);
-                      }
-                    }
-                  }}
-                  placeholder="0"
-                  className="w-full bg-transparent text-2xl md:text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
-                  data-1p-ignore
-                  data-lpignore="true"
-                  autoComplete="off"
-                />
-              </div>
-              {/* Clickable toggle between native token and USD */}
-              <button
-                type="button"
-                disabled={true}
-                onClick={() =>
-                  setSourceInputMode(
-                    sourceInputMode === "native" ? "converted" : "native",
-                  )
+            <AmountInput
+              value={isAssetToken(sourceAsset) ? assetAmount : bitcoinAmount}
+              onChange={(value) => {
+                if (isAssetToken(sourceAsset)) {
+                  setLastFieldEdited("asset");
+                  setAssetAmount(value);
+                } else {
+                  setLastFieldEdited("btc");
+                  setBitcoinAmount(value);
                 }
-                className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
-              >
-                {sourceInputMode === "native" ? (
-                  <span>≈ ${formatUsdDisplay(assetAmount)}</span>
-                ) : isAssetToken(sourceAsset) ? (
-                  <span>
-                    ≈ {formatUsdDisplay(assetAmount)}{" "}
-                    {getTokenSymbol(sourceAsset)}
-                  </span>
-                ) : (
-                  <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
-                )}
-              </button>
-            </div>
+              }}
+              decimals={
+                isAssetToken(sourceAsset)
+                  ? tokens.find((t) => t.tokenId === sourceAsset)?.decimals
+                  : 8
+              }
+              showCurrencyPrefix={true}
+              usdPerToken={getUsdPerToken(sourceAsset)}
+              tokenSymbol={
+                isAssetToken(sourceAsset) ? getTokenSymbol(sourceAsset) : "BTC"
+              }
+            />
             <div className="shrink-0">
               <AssetDropDown
                 value={sourceAsset}
@@ -625,87 +579,29 @@ function HomePage() {
         <div className="rounded-2xl bg-muted p-4 pt-5 mt-1">
           <div className="text-sm text-muted-foreground mb-2">Buy</div>
           <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              {isLoadingPrice ? (
-                <div className="h-10 flex items-center">
-                  <Skeleton className="h-8 w-32" />
-                </div>
-              ) : (
-                <div className="flex items-baseline gap-1">
-                  {/* Currency prefix - show $ only when in converted mode (USD denomination) */}
-                  {targetInputMode === "converted" && (
-                    <span className="text-2xl md:text-4xl font-medium text-muted-foreground">
-                      $
-                    </span>
-                  )}
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={
-                      targetInputMode === "native"
-                        ? isAssetToken(targetAsset)
-                          ? assetAmount
-                          : bitcoinAmount
-                        : assetAmount
-                    }
-                    onChange={(e) => {
-                      const input = e.target.value.replace(/[^0-9.]/g, "");
-                      if (
-                        targetInputMode === "converted" ||
-                        isAssetToken(targetAsset)
-                      ) {
-                        const decimals = tokens.find(
-                          (t) => t.tokenId === sourceAsset,
-                        )?.decimals;
-
-                        // If decimals undefined, allow any decimal places
-                        const regex =
-                          decimals !== undefined
-                            ? new RegExp(`^\\d*\\.?\\d{0,${decimals}}$`)
-                            : /^\d*\.?\d*$/;
-
-                        if (input === "" || regex.test(input)) {
-                          setLastFieldEdited("asset");
-                          setAssetAmount(input);
-                        }
-                      } else {
-                        if (input === "" || /^\d*\.?\d{0,8}$/.test(input)) {
-                          setLastFieldEdited("btc");
-                          setBitcoinAmount(input);
-                        }
-                      }
-                    }}
-                    placeholder="0"
-                    className="w-full bg-transparent text-2xl md:text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
-                    data-1p-ignore
-                    data-lpignore="true"
-                    autoComplete="off"
-                  />
-                </div>
-              )}
-              {/* Clickable toggle between native token and USD */}
-              <button
-                type="button"
-                disabled={true}
-                onClick={() =>
-                  setTargetInputMode(
-                    targetInputMode === "native" ? "converted" : "native",
-                  )
+            <AmountInput
+              value={isAssetToken(targetAsset) ? assetAmount : bitcoinAmount}
+              onChange={(value) => {
+                if (isAssetToken(targetAsset)) {
+                  setLastFieldEdited("asset");
+                  setAssetAmount(value);
+                } else {
+                  setLastFieldEdited("btc");
+                  setBitcoinAmount(value);
                 }
-                className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
-              >
-                {targetInputMode === "native" ? (
-                  <span>≈ ${formatUsdDisplay(assetAmount)}</span>
-                ) : isAssetToken(targetAsset) ? (
-                  <span>
-                    ≈ {formatUsdDisplay(assetAmount)}{" "}
-                    {getTokenSymbol(targetAsset)}
-                  </span>
-                ) : (
-                  <span>≈ {formatBtcDisplay(bitcoinAmount)} BTC</span>
-                )}
-              </button>
-            </div>
+              }}
+              decimals={
+                isAssetToken(targetAsset)
+                  ? tokens.find((t) => t.tokenId === sourceAsset)?.decimals
+                  : 8
+              }
+              showCurrencyPrefix={true}
+              isLoading={isLoadingPrice}
+              usdPerToken={getUsdPerToken(targetAsset)}
+              tokenSymbol={
+                isAssetToken(targetAsset) ? getTokenSymbol(targetAsset) : "BTC"
+              }
+            />
             <div className="shrink-0">
               <AssetDropDown
                 value={targetAsset}
@@ -757,7 +653,7 @@ function HomePage() {
           setAddressIsValid={setAddressValid}
           setBitcoinAmount={(amount) => {
             setLastFieldEdited("btc");
-            setBitcoinAmount(amount.toString());
+            setBitcoinAmount(amount);
           }}
           disabled={isEmbedded && !!arkAddress && targetAsset === "btc_arkade"}
         />

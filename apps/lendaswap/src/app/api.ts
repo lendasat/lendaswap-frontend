@@ -10,6 +10,7 @@ import {
   type EvmToLightningSwapRequest,
   type ExtendedSwapStorageData,
   type GetSwapResponse,
+  getUsdPrices,
   type QuoteResponseInfo,
   type RecoveredSwap,
   type RecoverSwapsResponse,
@@ -250,6 +251,31 @@ export const api = {
       throw new Error(`Failed to fetch stats: ${response.statusText}`);
     }
     return response.json();
+  },
+
+  /**
+   * Fetch USD prices for all supported tokens from CoinGecko.
+   * Returns a Map of tokenId -> USD price.
+   */
+  async getTokenUsdPrices(): Promise<Map<string, number>> {
+    const tokenIds: TokenIdString[] = [
+      "btc_lightning",
+      "btc_arkade",
+      "usdc_pol",
+      "usdt0_pol",
+      "usdc_eth",
+      "usdt_eth",
+      "xaut_eth",
+    ];
+
+    const results = await getUsdPrices(tokenIds);
+    const priceMap = new Map<string, number>();
+    for (const result of results) {
+      if (result.usdPrice !== null) {
+        priceMap.set(result.tokenId, result.usdPrice);
+      }
+    }
+    return priceMap;
   },
 };
 
