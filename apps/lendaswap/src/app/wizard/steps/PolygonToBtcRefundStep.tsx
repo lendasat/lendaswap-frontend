@@ -149,9 +149,8 @@ export function PolygonToBtcRefundStep({
     }
   }, [now, swapData.refund_locktime, isLocktimePassed]);
 
-  // Format USD amount
-  // FIXME: the decimal places must depent on the asset
-  const refundAmount = `$${swapData.asset_amount.toFixed(2)} ${tokenSymbol}`;
+  // Format token amount
+  const refundAmount = `$${swapData.asset_amount.toString()} ${tokenSymbol}`;
 
   // Fetch swap data from contract
   useEffect(() => {
@@ -365,8 +364,7 @@ export function PolygonToBtcRefundStep({
                 </span>
               </div>
               <span className="text-xs text-muted-foreground ml-2">
-                {/*// FIXME: the decimal places must depent on the asset*/}
-                (${swapData.asset_amount.toFixed(2)})
+                (${swapData.asset_amount.toString()})
               </span>
             </div>
           </div>

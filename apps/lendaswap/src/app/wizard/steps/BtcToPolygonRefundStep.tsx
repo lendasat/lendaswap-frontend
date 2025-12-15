@@ -216,8 +216,7 @@ export function BtcToPolygonRefundStep({
                 </span>
               </div>
               <span className="text-xs text-muted-foreground ml-2">
-                {/*// FIXME: the decimal places must depend on the amount */}
-                (${swapData.asset_amount.toFixed(2)})
+                (${swapData.asset_amount.toString()})
               </span>
             </div>
           </div>

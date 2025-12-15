@@ -12,6 +12,7 @@ import {
   type EvmToBtcSwapResponse,
   getTokenNetworkName,
   getTokenSymbol,
+  type TokenInfo,
 } from "../../api";
 import { getViemChain } from "../../utils/tokenUtils";
 
@@ -42,11 +43,14 @@ const ERC20_ABI = [
 interface PolygonDepositStepProps {
   swapData: EvmToBtcSwapResponse;
   swapId: string;
+  // the token which is being swapped
+  tokenInfo: TokenInfo;
 }
 
 export function PolygonDepositStep({
   swapData,
   swapId,
+  tokenInfo,
 }: PolygonDepositStepProps) {
   const chain = getViemChain(swapData.source_token);
 
@@ -106,10 +110,8 @@ export function PolygonDepositStep({
       const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
       const tokenAddress = swapData.source_token_address as `0x${string}`;
 
-      // FIXME: the decimal places need to be dynamic basd on the asset
       // Parse the amount needed for this swap
-      // Convert USD amount to token amount with 6 decimals (USDC/USDT use 6 decimals)
-      const decimals = 6;
+      const decimals = tokenInfo.decimals;
       const amountNeeded = BigInt(
         Math.floor(swapData.asset_amount * 10 ** decimals),
       );
@@ -233,8 +235,8 @@ export function PolygonDepositStep({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
-              {swapData.asset_amount.toFixed(2)} {tokenSymbol} on{" "}
-              {getTokenNetworkName(swapData.source_token)}
+              {swapData.asset_amount.toFixed(tokenInfo.decimals)} {tokenSymbol}{" "}
+              on {getTokenNetworkName(swapData.source_token)}
             </span>
           </div>
           <div className="flex justify-between text-sm">

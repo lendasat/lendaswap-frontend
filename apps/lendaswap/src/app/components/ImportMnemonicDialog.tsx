@@ -127,7 +127,7 @@ export function ImportMnemonicDialog({
       await api.loadMnemonic(trimmedMnemonic);
 
       // Clear all swap data from IndexedDB and localStorage before recovery
-      // fixme: this shouldnot needed anymore
+      // fixme: this should not be needed anymore
       await clearAllSwaps();
       clearLocalStorageSwaps();
 

@@ -1,8 +1,8 @@
-import type { ExtendedSwapStorageData } from "@lendaswap/sdk";
+import type { ExtendedSwapStorageData, TokenInfo } from "@lendaswap/sdk";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { useAsyncRetry } from "react-use";
+import { useAsync, useAsyncRetry } from "react-use";
 import {
   api,
   type BtcToEvmSwapResponse,
@@ -13,6 +13,7 @@ import {
   type TokenId,
 } from "../api";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
+import { isAssetToken } from "../utils/tokenUtils";
 import { useWalletBridge } from "../WalletBridgeContext";
 import {
   BtcToPolygonRefundStep,
@@ -39,17 +40,15 @@ type StepId =
 const swapDirection = (
   source_token: undefined | TokenId,
 ): SwapDirection | undefined => {
+  if (!source_token) {
+    return undefined;
+  }
+
   if (source_token === "btc_arkade" || source_token === "btc_lightning") {
     return "btc-to-evm";
   }
 
-  if (
-    source_token === "usdt0_pol" ||
-    source_token === "usdc_pol" ||
-    source_token === "pol_pol" ||
-    source_token === "usdt_eth" ||
-    source_token === "usdc_eth"
-  ) {
+  if (isAssetToken(source_token)) {
     return "evm-to-btc";
   }
 
@@ -181,8 +180,7 @@ export function SwapWizardPage() {
       const mockStatus: SwapStatus = debugStep || "pending";
       return createMockSwapData(mockStatus);
     }
-    const swap = await api.getSwap(swapId);
-    return swap;
+    return await api.getSwap(swapId);
   }, [swapId, debugStep]);
 
   if (error) {
@@ -263,6 +261,28 @@ export function SwapWizardPage() {
 
     return () => clearInterval(pollInterval);
   }, [swapId, retry, displaySwapData, swapData]);
+
+  const { value: maybeTokens, error: loadingTokensError } = useAsync(
+    async () => {
+      return await api.getTokens();
+    },
+  );
+  if (loadingTokensError) {
+    console.error("Failed loading tokens", loadingTokensError);
+  }
+
+  const tokens = maybeTokens || [];
+  let targetTokenInfo: TokenInfo | undefined;
+
+  if (swapData && isAssetToken(swapData.response.target_token)) {
+    targetTokenInfo = tokens.find(
+      (t) => t.tokenId === swapData.response.target_token,
+    );
+  } else {
+    targetTokenInfo = tokens.find(
+      (t) => t.tokenId === swapData?.response.source_token,
+    );
+  }
 
   return (
     <>
@@ -356,12 +376,13 @@ export function SwapWizardPage() {
                 swapId={displaySwapData.id}
               />
             )}
-
-          {currentStep === "user-deposit" &&
+          {targetTokenInfo &&
+            currentStep === "user-deposit" &&
             swapDirectionValue === "evm-to-btc" && (
               <PolygonDepositStep
                 swapData={displaySwapData as EvmToBtcSwapResponse}
                 swapId={displaySwapData.id}
+                tokenInfo={targetTokenInfo}
               />
             )}
 
