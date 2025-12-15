@@ -256,8 +256,7 @@ export function isValidTokenId(token: string | undefined): token is TokenId {
   );
 }
 
-// FIXME: let's use a different approach
-// Validate if this is an asset token an not BTC
+// Validate if this is an asset token and not BTC
 export function isAssetToken(tokenId: TokenId): boolean {
   switch (tokenId) {
     case "usdc_pol":
