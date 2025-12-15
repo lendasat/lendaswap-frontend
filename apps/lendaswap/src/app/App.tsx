@@ -259,6 +259,7 @@ function HomePage() {
       const bitcoinAmountNumber = Number.parseFloat(bitcoinAmount);
       if (Number.isNaN(bitcoinAmountNumber)) {
         setAssetAmount("");
+        return;
       }
 
       const calculatedAssetAmount = (
