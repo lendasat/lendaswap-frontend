@@ -23,7 +23,7 @@ import {
   type TokenInfo,
   type VersionInfo,
   type VhtlcAmounts,
-} from "@lendaswap/sdk";
+} from "@lendasat/lendaswap-sdk";
 import { getReferralCode } from "./utils/referralCode";
 
 // Re-export SDK types for use throughout the frontend
@@ -53,7 +53,7 @@ export type {
   PriceTiers,
   PriceUpdateMessage,
   TradingPairPrices,
-} from "@lendaswap/sdk";
+} from "@lendasat/lendaswap-sdk";
 
 // Quote request type
 export interface QuoteRequest {
@@ -287,4 +287,4 @@ export interface VolumeStats {
 }
 
 // PriceFeedService
-export { PriceFeedService } from "@lendaswap/sdk";
+export { PriceFeedService } from "@lendasat/lendaswap-sdk";

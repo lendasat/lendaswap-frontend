@@ -1,4 +1,7 @@
-import type { ExtendedSwapStorageData, TokenInfo } from "@lendaswap/sdk";
+import type {
+  ExtendedSwapStorageData,
+  TokenInfo,
+} from "@lendasat/lendaswap-sdk";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";

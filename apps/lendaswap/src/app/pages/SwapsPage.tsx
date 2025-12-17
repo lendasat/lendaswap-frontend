@@ -1,4 +1,4 @@
-import type { ExtendedSwapStorageData } from "@lendaswap/sdk";
+import type { ExtendedSwapStorageData } from "@lendasat/lendaswap-sdk";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   Check,

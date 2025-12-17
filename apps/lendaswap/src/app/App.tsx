@@ -1460,7 +1460,7 @@ export default function App() {
                               $
                             </span>{" "}
                             <span className="text-zinc-500">npm i</span>{" "}
-                            @lendaswap/sdk
+                            @lendasat/lendaswap-sdk
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-2 mt-1.5 text-zinc-600 dark:text-zinc-400">
                             <span className="text-orange-600 dark:text-orange-400/70">

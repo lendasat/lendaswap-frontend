@@ -1,4 +1,7 @@
-import { PriceFeedService, type PriceUpdateMessage } from "@lendaswap/sdk";
+import {
+  PriceFeedService,
+  type PriceUpdateMessage,
+} from "@lendasat/lendaswap-sdk";
 import {
   createContext,
   type ReactNode,

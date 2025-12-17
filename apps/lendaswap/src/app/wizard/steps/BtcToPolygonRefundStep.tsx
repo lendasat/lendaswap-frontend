@@ -1,4 +1,4 @@
-import type { VhtlcAmounts } from "@lendaswap/sdk";
+import type { VhtlcAmounts } from "@lendasat/lendaswap-sdk";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useMemo, useState } from "react";

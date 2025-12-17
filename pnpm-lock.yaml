@@ -71,7 +71,7 @@ importers:
       '@lendasat/lendasat-wallet-bridge':
         specifier: ^0.0.90
         version: 0.0.90
-      '@lendaswap/sdk':
+      '@lendasat/lendaswap-sdk':
         specifier: workspace:*
         version: link:../../../client-sdk/ts-sdk
       '@noble/secp256k1':
