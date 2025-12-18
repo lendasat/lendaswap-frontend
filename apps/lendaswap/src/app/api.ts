@@ -4,6 +4,7 @@ import {
   type BtcToEvmSwapResponse,
   type Chain,
   createDexieSwapStorage,
+  createDexieVtxoSwapStorage,
   createDexieWalletStorage,
   type EvmToArkadeSwapRequest,
   type EvmToBtcSwapResponse,
@@ -23,7 +24,6 @@ import {
   type TokenInfo,
   type VersionInfo,
   type VhtlcAmounts,
-  createDexieVtxoSwapStorage,
 } from "@lendasat/lendaswap-sdk";
 import { getReferralCode } from "./utils/referralCode";
 
