@@ -23,6 +23,7 @@ import {
   type TokenInfo,
   type VersionInfo,
   type VhtlcAmounts,
+  createDexieVtxoSwapStorage,
 } from "@lendasat/lendaswap-sdk";
 import { getReferralCode } from "./utils/referralCode";
 
@@ -84,10 +85,14 @@ async function getSdkClient(): Promise<SdkClient> {
   if (!sdkClient) {
     const walletStorage = createDexieWalletStorage("lendaswap-wallet-v1");
     const swapStorage = createDexieSwapStorage("lendaswap-v1");
+    const vtxoSwapStorage = createDexieVtxoSwapStorage(
+      "lendaswap-vtxo-swaps-v1",
+    );
     sdkClient = await SdkClient.create(
       API_BASE_URL,
       walletStorage,
       swapStorage,
+      vtxoSwapStorage,
       // TODO: this should be dynamic
       "bitcoin",
       ARK_SERVER_URL,
