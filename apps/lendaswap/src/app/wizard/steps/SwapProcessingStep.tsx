@@ -12,6 +12,7 @@ import {
   api,
   type EvmToBtcSwapResponse,
   type GetSwapResponse,
+  SwapStatus,
 } from "../../api";
 import {
   getBlockexplorerTxLink,
@@ -101,7 +102,7 @@ export function SwapProcessingStep({
   useEffect(() => {
     const autoClaimBtcToPolygonSwaps = async () => {
       if (swapDirection !== "btc-to-evm") return;
-      if (swapData.status !== "serverfunded") return;
+      if (swapData.status !== SwapStatus.ServerFunded) return;
 
       // For Ethereum tokens, don't auto-claim if wallet not connected
       if (isEthereumToken(swapData.target_token) && !address) {
@@ -265,11 +266,11 @@ export function SwapProcessingStep({
     const autoClaimPolygonToArkadeSwaps = async () => {
       const polygonToBtcSwapData = swapData as EvmToBtcSwapResponse;
       if (swapDirection !== "evm-to-btc") return;
-      if (polygonToBtcSwapData.target_token === "btc_lightning") {
+      if (polygonToBtcSwapData.target_token.isLightning()) {
         // this will be claimed by the lightning client
         return;
       }
-      if (polygonToBtcSwapData.status !== "serverfunded") return;
+      if (polygonToBtcSwapData.status !== SwapStatus.ServerFunded) return;
       if (!polygonToBtcSwapData.user_address_arkade) {
         console.error("No user address for arkade provided");
         setClaimError("Missing Arkade address for claim");
@@ -556,7 +557,7 @@ export function SwapProcessingStep({
                 </div>
               )}
               {/* Show claiming status inline when server is funded */}
-              {swapData.status === "serverfunded" && (
+              {swapData.status === SwapStatus.ServerFunded && (
                 <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
                   <p className="text-sm font-medium">
                     {isClaiming
@@ -570,7 +571,7 @@ export function SwapProcessingStep({
                   <p className="text-muted-foreground text-xs">
                     {isClaiming
                       ? swapDirection === "evm-to-btc"
-                        ? swapData.target_token === "btc_lightning"
+                        ? swapData.target_token.isLightning()
                           ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
                           : "Lightning invoice is pending..."
                         : isEthereumToken(swapData.target_token)

@@ -94,12 +94,11 @@ export function SuccessStep({
           receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
           receivedAmount: swapData.sats_receive.toLocaleString(),
           // For Lightning swaps, show the invoice/address; for Arkade, show the Arkade address
-          receiveAddress:
-            swapData.target_token === "btc_lightning"
-              ? swapData.ln_invoice
-              : (swapData as EvmToBtcSwapResponse).user_address_arkade,
+          receiveAddress: swapData.target_token.isLightning()
+            ? swapData.ln_invoice
+            : (swapData as EvmToBtcSwapResponse).user_address_arkade,
           receiveAddressIsEvm: false,
-          isLightning: swapData.target_token === "btc_lightning",
+          isLightning: swapData.target_token.isLightning(),
           swapTxId: swapData.bitcoin_htlc_claim_txid,
           swapTxIdIsEvm: false,
           tweetText: `Swapped $${swapData.asset_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${swapData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
@@ -192,20 +191,14 @@ export function SuccessStep({
                     : "Sent to Address"}
                 </span>
                 <div className="flex items-center gap-2">
-                  {config.receiveAddressIsEvm ? (
-                    <a
-                      href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 break-all font-mono text-xs hover:underline"
-                    >
-                      {config.receiveAddress}
-                    </a>
-                  ) : (
-                    <span className="flex-1 break-all font-mono text-xs">
-                      {config.receiveAddress}
-                    </span>
-                  )}
+                  <a
+                    href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 break-all font-mono text-xs hover:underline"
+                  >
+                    {config.receiveAddress}
+                  </a>
                   <div className="flex shrink-0 gap-1">
                     <Button
                       size="icon"
@@ -221,22 +214,20 @@ export function SuccessStep({
                         <Copy className="h-3 w-3" />
                       )}
                     </Button>
-                    {config.receiveAddressIsEvm && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        asChild
-                        className="h-8 w-8"
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      asChild
+                      className="h-8 w-8"
+                    >
+                      <a
+                        href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <a
-                          href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </Button>
-                    )}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -245,20 +236,14 @@ export function SuccessStep({
               <span className="text-muted-foreground">Transaction Hash</span>
               {config.swapTxId ? (
                 <div className="flex items-center gap-2">
-                  {config.swapTxIdIsEvm ? (
-                    <a
-                      href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 break-all font-mono text-xs hover:underline"
-                    >
-                      {config.swapTxId}
-                    </a>
-                  ) : (
-                    <span className="flex-1 break-all font-mono text-xs">
-                      {config.swapTxId}
-                    </span>
-                  )}
+                  <a
+                    href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 break-all font-mono text-xs hover:underline"
+                  >
+                    {config.swapTxId}
+                  </a>
                   <div className="flex shrink-0 gap-1">
                     <Button
                       size="icon"
@@ -272,22 +257,20 @@ export function SuccessStep({
                         <Copy className="h-3 w-3" />
                       )}
                     </Button>
-                    {config.swapTxIdIsEvm && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        asChild
-                        className="h-8 w-8"
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      asChild
+                      className="h-8 w-8"
+                    >
+                      <a
+                        href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <a
-                          href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </Button>
-                    )}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
                   </div>
                 </div>
               ) : (

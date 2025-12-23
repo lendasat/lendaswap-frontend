@@ -69,7 +69,7 @@ export function SendBitcoinStep({
       // Send Bitcoin using the wallet bridge
       await client.sendToAddress(
         arkadeAddress,
-        swapData.sats_receive,
+        Number(swapData.sats_receive),
         "bitcoin",
       );
 
@@ -91,7 +91,7 @@ export function SendBitcoinStep({
 
     const success = triggerSpeedWalletPayment(
       lightningAddress,
-      swapData.sats_receive,
+      Number(swapData.sats_receive),
       `LendaSwap: ${tokenAmount} ${tokenSymbol} swap`,
     );
 

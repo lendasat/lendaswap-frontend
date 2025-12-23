@@ -9,11 +9,8 @@ import {
 } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import {
-  type EvmToBtcSwapResponse,
-  getTokenDisplayName,
-  getTokenSymbol,
-} from "../../api";
+import { getTokenDisplayName, getTokenSymbol } from "../../api";
+import type { StoredSwap } from "../../db";
 import { getTokenIcon, getViemChain } from "../../utils/tokenUtils";
 
 // Helper function to convert UUID to bytes32
@@ -92,7 +89,7 @@ interface ContractSwap {
 }
 
 interface PolygonToBtcRefundStepProps {
-  swapData: EvmToBtcSwapResponse;
+  swapData: StoredSwap;
   swapId: string;
 }
 

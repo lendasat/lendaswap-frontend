@@ -52,7 +52,8 @@ export function RefundPage() {
   }, [swapId]);
 
   // Determine swap direction
-  const swapDirection = swapData?.direction;
+  const isBtcToEvmSwap = swapData?.source_token.isBtc();
+  const isEvmToBtcSwap = swapData?.source_token.isEvmToken();
 
   if (isLoading) {
     return (
@@ -108,7 +109,7 @@ export function RefundPage() {
 
   return (
     <div className="container max-w-2xl mx-auto py-8 px-4">
-      {swapDirection === "btc_to_evm" && (
+      {isBtcToEvmSwap && (
         <BtcToPolygonRefundStep
           swapData={swapData}
           swapId={swapId}
@@ -116,11 +117,11 @@ export function RefundPage() {
         />
       )}
 
-      {swapDirection === "evm_to_btc" && (
+      {isEvmToBtcSwap && (
         <PolygonToBtcRefundStep swapData={swapData} swapId={swapId} />
       )}
 
-      {!swapDirection && (
+      {!isEvmToBtcSwap && !isBtcToEvmSwap && (
         <Alert variant="destructive">
           <AlertDescription>
             Unknown swap direction. Cannot display refund interface.

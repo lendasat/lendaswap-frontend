@@ -12,29 +12,26 @@ import {
   type ExtendedSwapStorageData,
   type GetSwapResponse,
   getUsdPrices,
-  type QuoteResponseInfo,
+  type QuoteResponse,
   type RecoveredSwap,
   type RecoverSwapsResponse,
   Client as SdkClient,
   STORAGE_KEYS,
-  type SwapCommonFields,
   type SwapRequest,
-  type SwapStatus,
+  SwapStatus,
   type TokenIdString,
   type TokenInfo,
-  type VersionInfo,
+  type Version,
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk";
 import { getReferralCode } from "./utils/referralCode";
 
 // Re-export SDK types for use throughout the frontend
 export type {
-  TokenIdString as TokenId,
+  TokenIdString,
   Chain,
   TokenInfo,
   AssetPair,
-  SwapStatus,
-  SwapCommonFields,
   BtcToEvmSwapResponse,
   EvmToBtcSwapResponse,
   GetSwapResponse,
@@ -43,11 +40,9 @@ export type {
   EvmToLightningSwapRequest,
   RecoveredSwap,
   RecoverSwapsResponse,
+  QuoteResponse,
 };
-
-// Re-export with frontend-friendly names
-export type QuoteResponse = QuoteResponseInfo;
-export type Version = VersionInfo;
+export { SwapStatus };
 
 // Price feed types
 export type {
@@ -162,7 +157,11 @@ export const api = {
 
   async getSwap(id: string): Promise<ExtendedSwapStorageData> {
     const client = await getSdkClient();
-    return await client.getSwap(id);
+    const swapStorageData = await client.getSwap(id);
+    if (!swapStorageData) {
+      throw new Error("Swap not found");
+    }
+    return swapStorageData;
   },
 
   async listAllSwaps(): Promise<ExtendedSwapStorageData[]> {

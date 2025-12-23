@@ -45,5 +45,9 @@ export function createPostHogConfig(
     persistence: "localStorage+cookie",
     cookie_expiration: 365,
     secure_cookie: true,
+    // Suppress console errors when adblockers block PostHog requests
+    on_request_error: () => {
+      // Silently ignore - user likely has an adblocker
+    },
   };
 }

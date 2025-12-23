@@ -259,9 +259,9 @@ export function BtcToPolygonRefundStep({
                     Recoverable: {amounts.recoverable.toLocaleString()} sats
                   </p>
                 )}
-                {amounts.spendable === 0 &&
-                  amounts.spent === 0 &&
-                  amounts.recoverable === 0 && (
+                {amounts.spendable === 0n &&
+                  amounts.spent === 0n &&
+                  amounts.recoverable === 0n && (
                     <p className="text-xs text-muted-foreground">
                       Not yet funded
                     </p>
@@ -289,9 +289,9 @@ export function BtcToPolygonRefundStep({
         {!canRefund && amounts !== null && isLocktimePassed && (
           <Alert>
             <AlertDescription>
-              {amounts.spent > 0 && amounts.spendable === 0
+              {amounts.spent > 0 && amounts.spendable === 0n
                 ? "This VHTLC has already been refunded."
-                : amounts.spendable === 0
+                : amounts.spendable === 0n
                   ? "No spendable funds available for this swap."
                   : "This swap cannot be refunded at this time."}
             </AlertDescription>

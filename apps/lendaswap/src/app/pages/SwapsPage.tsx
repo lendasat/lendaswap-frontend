@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
-import { api, getTokenIcon, getTokenSymbol, type SwapStatus } from "../api";
+import { api, getTokenIcon, getTokenSymbol, SwapStatus } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
 
 // Get status display info
@@ -42,7 +42,7 @@ function getStatusInfo(status: SwapStatus): {
 } {
   switch (status) {
     // Success state - swap fully completed
-    case "serverredeemed":
+    case SwapStatus.ServerRedeemed:
       return {
         label: "Completed",
         textColor: "text-green-600 dark:text-green-400",
@@ -50,11 +50,11 @@ function getStatusInfo(status: SwapStatus): {
         showIcon: true,
       };
     // In progress states
-    case "pending":
-    case "clientfunded":
-    case "serverfunded":
-    case "clientredeeming":
-    case "clientredeemed":
+    case SwapStatus.Pending:
+    case SwapStatus.ClientFunded:
+    case SwapStatus.ServerFunded:
+    case SwapStatus.ClientRedeeming:
+    case SwapStatus.ClientRedeemed:
       return {
         label: "In Progress",
         textColor: "text-orange-600 dark:text-orange-400",
@@ -62,20 +62,20 @@ function getStatusInfo(status: SwapStatus): {
         showIcon: true,
       };
     // Refunded/expired states
-    case "expired":
-    case "clientrefunded":
-    case "clientrefundedserverrefunded":
-    case "clientfundedserverrefunded":
+    case SwapStatus.Expired:
+    case SwapStatus.ClientRefunded:
+    case SwapStatus.ClientRefundedServerRefunded:
+    case SwapStatus.ClientFundedServerRefunded:
       return {
-        label: status === "expired" ? "Expired" : "Refunded",
+        label: status === SwapStatus.Expired ? "Expired" : "Refunded",
         textColor: "text-muted-foreground",
         icon: null,
         showIcon: false,
       };
     // Error states requiring user action
-    case "clientinvalidfunded":
-    case "clientfundedtoolate":
-    case "clientrefundedserverfunded":
+    case SwapStatus.ClientInvalidFunded:
+    case SwapStatus.ClientFundedTooLate:
+    case SwapStatus.ClientRefundedServerFunded:
       return {
         label: "Action Required",
         textColor: "text-red-600 dark:text-red-400",
@@ -236,8 +236,8 @@ export function SwapsPage() {
       }
 
       // Search by asset amount (USD value)
-      const assetAmount = swap.response.asset_amount.toFixed(2);
-      if (assetAmount.includes(query) || `$${assetAmount}`.includes(query)) {
+      const asset_amount = swap.response.asset_amount.toFixed(2);
+      if (asset_amount.includes(query) || `$${asset_amount}`.includes(query)) {
         return true;
       }
 
@@ -275,9 +275,7 @@ export function SwapsPage() {
 
   // Format amounts for display - returns primary display string
   const formatSwapAmount = (swap: ExtendedSwapStorageData) => {
-    const isBtcSource =
-      swap.response.source_token === "btc_arkade" ||
-      swap.response.source_token === "btc_lightning";
+    const isBtcSource = swap.response.source_token.isBtc();
 
     if (isBtcSource) {
       return {
@@ -292,11 +290,12 @@ export function SwapsPage() {
     }
   };
 
-  const sortedFilteredSwaps = filteredSwaps.sort(
-    (a, b) =>
+  const sortedFilteredSwaps = filteredSwaps.sort((a, b) => {
+    return (
       parseISO(b.response.created_at).getTime() -
-      parseISO(a.response.created_at).getTime(),
-  );
+      parseISO(a.response.created_at).getTime()
+    );
+  });
 
   return (
     <>

@@ -1,3 +1,4 @@
+import type { TokenId } from "@lendasat/lendaswap-sdk";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -13,12 +14,7 @@ import {
   DrawerTitle,
 } from "#/components/ui/drawer";
 import { Input } from "#/components/ui/input";
-import {
-  getTokenIcon,
-  getTokenNetworkName,
-  getTokenSymbol,
-  type TokenId,
-} from "../api";
+import { getTokenIcon, getTokenNetworkName, getTokenSymbol } from "../api";
 import { getTokenNetworkIcon } from "../utils/tokenUtils";
 
 // Hook to detect mobile viewport
@@ -66,7 +62,7 @@ export function AssetDropDown({
     const symbol = getTokenSymbol(asset).toLowerCase();
     const network = getTokenNetworkName(asset).toLowerCase();
     return (
-      asset.toLowerCase().includes(query) ||
+      asset.toString().toLowerCase().includes(query) ||
       symbol.includes(query) ||
       network.includes(query)
     );
@@ -95,7 +91,7 @@ export function AssetDropDown({
           <div className="space-y-1">
             {filteredAssets.map((asset) => (
               <button
-                key={asset}
+                key={asset.toString()}
                 type="button"
                 onClick={() => handleSelect(asset)}
                 className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-muted transition-colors text-left"

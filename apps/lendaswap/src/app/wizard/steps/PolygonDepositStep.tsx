@@ -73,7 +73,7 @@ export function PolygonDepositStep({
 
   const tokenSymbol = getTokenSymbol(swapData.source_token);
   const receiveAmount = swapData?.sats_receive
-    ? (swapData.sats_receive / 100_000_000).toFixed(8)
+    ? (Number(swapData.sats_receive) / 100_000_000).toFixed(8)
     : 0;
 
   const handleSign = async () => {
@@ -240,10 +240,10 @@ export function PolygonDepositStep({
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            {swapData?.target_token === "btc_lightning" && (
+            {swapData?.target_token.isLightning() && (
               <span className="text-muted-foreground">We will send</span>
             )}
-            {swapData?.target_token === "btc_arkade" && (
+            {swapData?.target_token.isArkade() && (
               <span className="text-muted-foreground">You receive</span>
             )}
             <span className="font-medium">

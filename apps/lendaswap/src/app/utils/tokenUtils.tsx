@@ -1,3 +1,4 @@
+import type { TokenId } from "@lendasat/lendaswap-sdk";
 import type { ReactElement } from "react";
 import { type Chain, mainnet, polygon } from "viem/chains";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
@@ -10,7 +11,7 @@ import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
 import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
 import { ReactComponent as Usdt0Icon } from "../../assets/usdt0.svg";
 import { ReactComponent as XautIcon } from "../../assets/xaut.svg";
-import type { TokenId } from "../api";
+import type { TokenIdString } from "../api";
 
 export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
   const isSourceEvm = isEvmToken(sourceToken);
@@ -31,7 +32,8 @@ export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
  * Get the display symbol for a token
  */
 export function getTokenSymbol(tokenId: TokenId): string {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdc_eth":
       return "USDC";
@@ -55,7 +57,8 @@ export function getTokenSymbol(tokenId: TokenId): string {
  * Get the full display name for a token (including network)
  */
 export function getTokenDisplayName(tokenId: TokenId): string {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "btc_arkade":
       return "BTC (Arkade)";
     case "btc_lightning":
@@ -85,7 +88,8 @@ export function getTokenIcon(
   width?: number,
   height?: number,
 ): ReactElement {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "btc_lightning":
       return <BitcoinIcon width={width} height={height} />;
     case "btc_arkade":
@@ -111,7 +115,8 @@ export function getTokenIcon(
  * Get the icon component for a token's network
  */
 export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "btc_lightning":
       return <BitcoinLightningIcon width={8} height={8} />;
     case "btc_arkade":
@@ -134,7 +139,8 @@ export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
  * Get the network name for a token
  */
 export function getTokenNetworkName(tokenId: TokenId): string {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "btc_arkade":
       return "Arkade";
     case "btc_lightning":
@@ -156,7 +162,8 @@ export function getTokenNetworkName(tokenId: TokenId): string {
  * Get viem chain
  */
 export function getViemChain(tokenId: TokenId): Chain | undefined {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -174,7 +181,8 @@ export function getViemChain(tokenId: TokenId): Chain | undefined {
  * Check if a token is from an EVM chain
  */
 export function isEvmToken(tokenId: TokenId): boolean {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -194,7 +202,8 @@ export function isEvmToken(tokenId: TokenId): boolean {
  * Check if a token is from Ethereum
  */
 export function isEthereumToken(tokenId: TokenId): boolean {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
@@ -208,7 +217,8 @@ export function isEthereumToken(tokenId: TokenId): boolean {
  * Check if a token is from Polygon
  */
 export function isPolygonToken(tokenId: TokenId): boolean {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -224,7 +234,8 @@ export function isPolygonToken(tokenId: TokenId): boolean {
 export function networkName(
   tokenId: TokenId,
 ): "ethereum" | "lightning" | "polygon" | "arkade" | "unknown" {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -243,7 +254,7 @@ export function networkName(
 }
 
 // Validate that the URL tokens are valid
-export function isValidTokenId(token: string | undefined): token is TokenId {
+export function isValidTokenId(token: string | undefined): boolean {
   return (
     token === "btc_lightning" ||
     token === "btc_arkade" ||
@@ -258,7 +269,8 @@ export function isValidTokenId(token: string | undefined): token is TokenId {
 
 // Validate if this is an asset token and not BTC
 export function isAssetToken(tokenId: TokenId): boolean {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -276,7 +288,8 @@ export function isAssetToken(tokenId: TokenId): boolean {
 
 // Validate if this is a btc token or not
 export function isBtcToken(tokenId: TokenId): boolean {
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -299,7 +312,8 @@ export function getBlockexplorerTxLink(
   if (!txid) {
     return "";
   }
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -309,8 +323,9 @@ export function getBlockexplorerTxLink(
     case "xaut_eth":
       return `https://etherscan.com/tx/${txid}`;
     case "btc_arkade":
+      return `https://arkade.space/tx/${txid}`;
     case "btc_lightning":
-      return txid;
+      return `https://arkade.space/tx/${txid}`;
     default:
       return txid;
   }
@@ -323,7 +338,8 @@ export function getBlockexplorerAddressLink(
   if (!address) {
     return "";
   }
-  switch (tokenId) {
+  const tokenIdString = tokenId.toString() as TokenIdString;
+  switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -333,8 +349,9 @@ export function getBlockexplorerAddressLink(
     case "xaut_eth":
       return `https://etherscan.com/address/${address}`;
     case "btc_arkade":
+      return `https://arkade.space/address/${address}`;
     case "btc_lightning":
-      return address;
+      return `https://arkade.space/address/${address}`;
     default:
       return address;
   }
