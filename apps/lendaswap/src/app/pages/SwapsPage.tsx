@@ -1,6 +1,7 @@
 import type { ExtendedSwapStorageData } from "@lendasat/lendaswap-sdk";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
+  AlertTriangle,
   Check,
   ChevronRight,
   Clock,
@@ -97,7 +98,11 @@ export function SwapsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
+  const [corruptedDialogOpen, setCorruptedDialogOpen] = useState(false);
   const [swapToDelete, setSwapToDelete] = useState<string | null>(null);
+  const [corruptedIds, setCorruptedIds] = useState<string[]>([]);
+  const [isDeletingCorrupted, setIsDeletingCorrupted] = useState(false);
+  const [isRepairingCorrupted, setIsRepairingCorrupted] = useState(false);
   const navigate = useNavigate();
 
   const handleCopyId = async (e: React.MouseEvent, swapId: string) => {
@@ -148,11 +153,62 @@ export function SwapsPage() {
     }
   };
 
+  const handleDeleteCorruptedConfirm = async () => {
+    setIsDeletingCorrupted(true);
+    try {
+      const deletedCount = await api.deleteCorruptedSwaps();
+      console.log(`Deleted ${deletedCount} corrupted swap entries`);
+      setCorruptedIds([]);
+      setCorruptedDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to delete corrupted swaps:", error);
+    } finally {
+      setIsDeletingCorrupted(false);
+    }
+  };
+
+  const handleRepairCorruptedConfirm = async () => {
+    setIsRepairingCorrupted(true);
+    try {
+      const result = await api.repairCorruptedSwaps();
+      console.log(
+        `Repaired ${result.repaired} corrupted swap entries, ${result.failed.length} failed`,
+      );
+
+      if (result.repaired > 0) {
+        // Reload swaps to show repaired entries
+        const dexieSwaps = await api.listAllSwaps();
+        setSwaps(dexieSwaps);
+      }
+
+      // Update corrupted IDs to only show failures
+      setCorruptedIds(result.failed);
+
+      if (result.failed.length === 0) {
+        setCorruptedDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Failed to repair corrupted swaps:", error);
+    } finally {
+      setIsRepairingCorrupted(false);
+    }
+  };
+
   useEffect(() => {
     const loadSwaps = async () => {
       try {
         const dexieSwaps = await api.listAllSwaps();
         setSwaps(dexieSwaps);
+
+        // Check for corrupted entries that failed to deserialize
+        const corrupted = api.getCorruptedSwapIds();
+        if (corrupted.length > 0) {
+          console.warn(
+            `Found ${corrupted.length} corrupted swap entries:`,
+            corrupted,
+          );
+          setCorruptedIds(corrupted);
+        }
       } catch (error) {
         console.error("Failed to load swaps from Dexie:", error);
       }
@@ -179,9 +235,9 @@ export function SwapsPage() {
         return true;
       }
 
-      // Search by USD amount
-      const usdAmount = swap.response.usd_amount.toFixed(2);
-      if (usdAmount.includes(query) || `$${usdAmount}`.includes(query)) {
+      // Search by asset amount (USD value)
+      const assetAmount = swap.response.asset_amount.toFixed(2);
+      if (assetAmount.includes(query) || `$${assetAmount}`.includes(query)) {
         return true;
       }
 
@@ -226,11 +282,11 @@ export function SwapsPage() {
     if (isBtcSource) {
       return {
         primary: `${swap.response.sats_receive.toLocaleString()} sats`,
-        secondary: `$${swap.response.usd_amount.toFixed(2)} ${getTokenSymbol(swap.response.target_token)}`,
+        secondary: `$${swap.response.asset_amount.toFixed(2)} ${getTokenSymbol(swap.response.target_token)}`,
       };
     } else {
       return {
-        primary: `$${swap.response.usd_amount.toFixed(2)}`,
+        primary: `$${swap.response.asset_amount.toFixed(2)}`,
         secondary: `${swap.response.sats_receive.toLocaleString()} sats`,
       };
     }
@@ -295,6 +351,28 @@ export function SwapsPage() {
           </div>
         )}
 
+        {/* Warning banner for corrupted entries */}
+        {corruptedIds.length > 0 && (
+          <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm text-amber-600 dark:text-amber-400">
+                {corruptedIds.length} swap
+                {corruptedIds.length !== 1 ? "s" : ""} could not be loaded due
+                to data corruption.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCorruptedDialogOpen(true)}
+              className="h-7 px-2 text-xs border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+            >
+              Clean Up
+            </Button>
+          </div>
+        )}
+
         {swaps.length === 0 ? (
           <div className="py-12 sm:py-16 text-center">
             <div className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-muted/50 mb-3 sm:mb-4">
@@ -332,10 +410,17 @@ export function SwapsPage() {
               );
 
               return (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   key={swap.response.id}
                   onClick={() => navigate(`/swap/${swap.response.id}/wizard`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/swap/${swap.response.id}/wizard`);
+                    }
+                  }}
                   className="group relative w-full text-left rounded-xl border border-border/40 bg-card hover:bg-accent/30 hover:border-border transition-all cursor-pointer overflow-hidden"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 pr-1.5 sm:pr-2">
@@ -428,7 +513,7 @@ export function SwapsPage() {
                       <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground/50 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -483,6 +568,69 @@ export function SwapsPage() {
             </Button>
             <Button variant="destructive" onClick={handleClearAllConfirm}>
               Clear All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clean up corrupted swaps dialog */}
+      <Dialog open={corruptedDialogOpen} onOpenChange={setCorruptedDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Repair Corrupted Entries</DialogTitle>
+            <DialogDescription>
+              {corruptedIds.length} swap{corruptedIds.length !== 1 ? "s" : ""}{" "}
+              failed to load due to missing data. This can happen when the app
+              was updated with incompatible data format changes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 text-sm text-muted-foreground">
+            <p className="mb-2">You can:</p>
+            <ul className="list-disc list-inside space-y-1 text-xs">
+              <li>
+                <strong>Repair</strong> - fetch missing data from the server
+                (recommended)
+              </li>
+              <li>
+                <strong>Delete</strong> - permanently remove these entries
+              </li>
+            </ul>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setCorruptedDialogOpen(false)}
+              disabled={isDeletingCorrupted || isRepairingCorrupted}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCorruptedConfirm}
+              disabled={isDeletingCorrupted || isRepairingCorrupted}
+            >
+              {isDeletingCorrupted ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleRepairCorruptedConfirm}
+              disabled={isDeletingCorrupted || isRepairingCorrupted}
+            >
+              {isRepairingCorrupted ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Repairing...
+                </>
+              ) : (
+                "Repair"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

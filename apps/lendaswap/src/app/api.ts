@@ -245,6 +245,26 @@ export const api = {
     return await client.deleteSwap(id);
   },
 
+  getCorruptedSwapIds(): string[] {
+    if (!sdkClient) {
+      return [];
+    }
+    return sdkClient.getCorruptedSwapIds();
+  },
+
+  async deleteCorruptedSwaps(): Promise<number> {
+    const client = await getSdkClient();
+    return await client.deleteCorruptedSwaps();
+  },
+
+  async repairCorruptedSwaps(): Promise<{
+    repaired: number;
+    failed: string[];
+  }> {
+    const client = await getSdkClient();
+    return await client.repairCorruptedSwaps();
+  },
+
   async getStats(): Promise<VolumeStats> {
     const response = await fetch(`${API_BASE_URL}/stats`);
     if (!response.ok) {
