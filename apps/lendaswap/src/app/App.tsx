@@ -72,7 +72,7 @@ import { DebugNavigation } from "./components/DebugNavigation";
 import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { usePriceFeed } from "./PriceFeedContext";
-import { RefundPage, SwapsPage } from "./pages";
+import { RefundPage, SwapsPage, TermsOfServicePage } from "./pages";
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
@@ -1175,6 +1175,7 @@ export default function App() {
                   element={<SwapWizardPage />}
                 />
                 <Route path="/swap/:swapId/refund" element={<RefundPage />} />
+                <Route path="/terms" element={<TermsOfServicePage />} />
                 <Route
                   path="*"
                   element={
@@ -1987,8 +1988,17 @@ export default function App() {
             {/* Debug Navigation */}
             <DebugNavigation />
 
-            <div className="text-muted-foreground text-center text-sm">
-              <p>© 2025 LendaSwap. All rights reserved.</p>
+            <div className="text-muted-foreground text-center text-sm space-y-2">
+              <p>© 2026 LendaSwap. All rights reserved.</p>
+              <p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/terms")}
+                  className="underline hover:text-foreground transition-colors"
+                >
+                  Terms of Service
+                </button>
+              </p>
             </div>
           </div>
         </footer>
