@@ -65,7 +65,6 @@ function getStatusInfo(status: SwapStatus): {
     case SwapStatus.Expired:
     case SwapStatus.ClientRefunded:
     case SwapStatus.ClientRefundedServerRefunded:
-    case SwapStatus.ClientFundedServerRefunded:
       return {
         label: status === SwapStatus.Expired ? "Expired" : "Refunded",
         textColor: "text-muted-foreground",
@@ -73,6 +72,7 @@ function getStatusInfo(status: SwapStatus): {
         showIcon: false,
       };
     // Error states requiring user action
+    case SwapStatus.ClientFundedServerRefunded:
     case SwapStatus.ClientInvalidFunded:
     case SwapStatus.ClientFundedTooLate:
     case SwapStatus.ClientRefundedServerFunded:
@@ -259,12 +259,6 @@ export function SwapsPage() {
         format(swapDate, "MM/dd/yyyy"), // 11/28/2025
       ];
       if (dateFormats.some((f) => f.toLowerCase().includes(query))) {
-        return true;
-      }
-
-      // Search by status
-      const statusInfo = getStatusInfo(swap.response.status);
-      if (statusInfo.label.toLowerCase().includes(query)) {
         return true;
       }
 
