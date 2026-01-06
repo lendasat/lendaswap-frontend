@@ -166,6 +166,7 @@ export function SwapWizardPage() {
   const lastStatusRef = useRef<SwapStatus | null>(null);
   const [displaySwapData, setDisplaySwapData] =
     useState<GetSwapResponse | null>(null);
+  const [currentStep, setCurrentStep] = useState<StepId | undefined>();
   const [preimage, setPreimage] = useState<string | null>(null);
   const { arkAddress } = useWalletBridge();
 
@@ -204,17 +205,17 @@ export function SwapWizardPage() {
       lastStatusRef.current = swapData.response.status;
       setDisplaySwapData(swapData.response);
       setPreimage(swapData.swap_params.preimage);
+      setCurrentStep(determineStepFromStatus(swapData.response));
     } else if (swapData && !displaySwapData) {
       // Initial load
       lastStatusRef.current = swapData.response.status;
       setDisplaySwapData(swapData.response);
       setPreimage(swapData.swap_params.preimage);
+      setCurrentStep(determineStepFromStatus(swapData.response));
     }
   }, [swapData, displaySwapData]);
 
   const swapDirectionValue = swapDirection(displaySwapData?.source_token);
-
-  const currentStep = determineStepFromStatus(displaySwapData);
 
   // Poll swap status every 2 seconds in the background
   useEffect(() => {
@@ -254,12 +255,17 @@ export function SwapWizardPage() {
         // Fetch latest swap data from API
         const updatedSwap = await api.getSwap(swapId);
 
+        // check if we can refund already
+        const possibleNextStep = determineStepFromStatus(updatedSwap.response);
+
         // Check if anything has changed
         if (
           displaySwapData &&
           updatedSwap.response.status !== displaySwapData.status
         ) {
           // Trigger a re-fetch to update the UI
+          retry();
+        } else if (possibleNextStep && possibleNextStep === "refundable") {
           retry();
         }
       } catch (error) {

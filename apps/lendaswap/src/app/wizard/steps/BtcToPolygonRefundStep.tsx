@@ -1,4 +1,4 @@
-import type { VhtlcAmounts } from "@lendasat/lendaswap-sdk";
+import { swapStatusToString, type VhtlcAmounts } from "@lendasat/lendaswap-sdk";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useMemo, useState } from "react";
@@ -66,9 +66,6 @@ export function BtcToPolygonRefundStep({
     if (!swapData || amounts === null) return false;
 
     const now = Math.floor(Date.now() / 1000);
-    console.log(
-      `Amounts ${amounts.spendable}, ${amounts.spent}, ${amounts.recoverable}`,
-    );
 
     const hasSpendableAmount = amounts.spendable > 0;
     const isLocktimePassed = now >= swapData.refund_locktime;
@@ -147,6 +144,11 @@ export function BtcToPolygonRefundStep({
     }
   };
 
+  const alreadyRefunded =
+    amounts !== null &&
+    Number(amounts.spendable) === 0 &&
+    Number(amounts.spent) > 0;
+
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
       {/* Swap ID Header */}
@@ -163,7 +165,21 @@ export function BtcToPolygonRefundStep({
       {/* Content */}
       <div className="space-y-6 p-6">
         {/* Refund Status Banner */}
-        {isLocktimePassed ? (
+        {alreadyRefunded && (
+          <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <h3 className="text-sm font-semibold text-green-900 dark:text-green-100">
+                Already Refunded
+              </h3>
+            </div>
+            <p className="text-sm text-green-800 dark:text-green-200">
+              This swap has already been refunded
+            </p>
+          </div>
+        )}
+
+        {!alreadyRefunded && isLocktimePassed && (
           <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-3">
               <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -176,7 +192,8 @@ export function BtcToPolygonRefundStep({
               from this swap.
             </p>
           </div>
-        ) : (
+        )}
+        {!alreadyRefunded && !isLocktimePassed && (
           <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-500 rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-3">
               <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
@@ -224,7 +241,7 @@ export function BtcToPolygonRefundStep({
           <div className="space-y-1">
             <p className="text-sm font-medium">Swap Status</p>
             <p className="text-xs text-muted-foreground font-mono break-all">
-              {swapData.status}
+              {swapStatusToString(swapData.status)}
             </p>
           </div>
 
