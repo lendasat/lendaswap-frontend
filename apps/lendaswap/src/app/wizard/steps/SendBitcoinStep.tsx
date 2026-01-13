@@ -7,28 +7,18 @@ import {
   isValidSpeedWalletContext,
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
-import { type BtcToEvmSwapResponse, getTokenNetworkName } from "../../api";
+import {
+  type BtcToEvmSwapResponse,
+  getTokenNetworkName,
+  getTokenSymbol,
+} from "../../api";
 import { useWalletBridge } from "../../WalletBridgeContext";
 
 interface SendBitcoinStepProps {
-  arkadeAddress: string | null;
-  lightningAddress: string | null;
-  unifiedAddress: string;
   swapData: BtcToEvmSwapResponse;
-  tokenAmount: string;
-  tokenSymbol?: string; // e.g., "USDC", "USDT"
-  swapId: string;
 }
 
-export function SendBitcoinStep({
-  arkadeAddress,
-  lightningAddress,
-  unifiedAddress,
-  swapData,
-  tokenAmount,
-  tokenSymbol = "USDC",
-  swapId,
-}: SendBitcoinStepProps) {
+export function SendBitcoinStep({ swapData }: SendBitcoinStepProps) {
   const navigate = useNavigate();
   const { client, isEmbedded, isReady } = useWalletBridge();
   const [isSending, setIsSending] = useState(false);
@@ -36,6 +26,13 @@ export function SendBitcoinStep({
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [showQrCode, setShowQrCode] = useState(false);
   const [speedPaymentTriggered, setSpeedPaymentTriggered] = useState(false);
+
+  const arkadeAddress = swapData.htlc_address_arkade;
+  const lightningAddress = swapData.ln_invoice;
+  const unifiedAddress = `bitcoin:?arkade=${swapData.htlc_address_arkade}&lightning=${swapData.ln_invoice}&amount=${(Number(swapData.sats_receive) / 100_000_000).toFixed(8)}`;
+  const swapId = swapData.id;
+  const tokenAmount = swapData.asset_amount.toString();
+  const tokenSymbol = getTokenSymbol(swapData.target_token);
 
   // Check if we're running inside Speed Wallet
   const isSpeedWallet = isValidSpeedWalletContext();

@@ -1,3 +1,4 @@
+import type { BtcToEvmSwapResponse } from "@lendasat/lendaswap-sdk";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -111,7 +112,7 @@ export function RefundPage() {
     <div className="container max-w-2xl mx-auto py-8 px-4">
       {isBtcToEvmSwap && (
         <BtcToPolygonRefundStep
-          swapData={swapData}
+          swapData={swapData as BtcToEvmSwapResponse}
           swapId={swapId}
           arkAddress={arkAddress}
         />

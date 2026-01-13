@@ -1,6 +1,8 @@
 // Re-export types from SDK - single source of truth
 import {
   type AssetPair,
+  type BtcToArkadeSwapRequest,
+  type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type Chain,
   createDexieSwapStorage,
@@ -32,6 +34,8 @@ export type {
   Chain,
   TokenInfo,
   AssetPair,
+  BtcToArkadeSwapRequest,
+  BtcToArkadeSwapResponse,
   BtcToEvmSwapResponse,
   EvmToBtcSwapResponse,
   GetSwapResponse,
@@ -73,6 +77,11 @@ const API_BASE_URL =
 const ARK_SERVER_URL =
   import.meta.env.VITE_ARKADE_URL || "https://arkade.computer";
 
+const BITCOIN_NETWORK = import.meta.env.VITE_BITCOIN_NETWORK || "bitcoin";
+
+const ESPLORA_URL =
+  import.meta.env.VITE_ESPLORA_URL || "https://mempool.space/api";
+
 // Lazy-initialized SDK API client
 let sdkClient: SdkClient | null = null;
 
@@ -88,9 +97,9 @@ async function getSdkClient(): Promise<SdkClient> {
       walletStorage,
       swapStorage,
       vtxoSwapStorage,
-      // TODO: this should be dynamic
-      "bitcoin",
+      BITCOIN_NETWORK,
       ARK_SERVER_URL,
+      ESPLORA_URL,
     );
     if (!sdkClient) {
       throw Error("Failed setting up sdk client");
@@ -219,6 +228,30 @@ export const api = {
     );
   },
 
+  async createBitcoinToArkadeSwap(
+    request: BtcToArkadeSwapRequest,
+  ): Promise<BtcToArkadeSwapResponse> {
+    const referralCode = getReferralCode();
+    const client = await getSdkClient();
+    return await client.createBitcoinToArkadeSwap({
+      ...request,
+      referral_code: referralCode || undefined,
+    });
+  },
+
+  async claimBtcToArkadeVhtlc(swapId: string): Promise<string> {
+    const client = await getSdkClient();
+    return await client.claimBtcToArkadeVhtlc(swapId);
+  },
+
+  async refundOnchainHtlc(
+    swapId: string,
+    refundAddress: string,
+  ): Promise<string> {
+    const client = await getSdkClient();
+    return await client.refundOnchainHtlc(swapId, refundAddress);
+  },
+
   async getVersion(): Promise<Version> {
     const client = await getSdkClient();
     return await client.getVersion();
@@ -285,6 +318,7 @@ export const api = {
     const tokenIds: TokenIdString[] = [
       "btc_lightning",
       "btc_arkade",
+      "btc_onchain",
       "usdc_pol",
       "usdt0_pol",
       "usdc_eth",

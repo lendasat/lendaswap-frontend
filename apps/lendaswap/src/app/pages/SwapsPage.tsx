@@ -51,6 +51,7 @@ function getStatusInfo(status: SwapStatus): {
       };
     // In progress states
     case SwapStatus.Pending:
+    case SwapStatus.ClientFundingSeen:
     case SwapStatus.ClientFunded:
     case SwapStatus.ServerFunded:
     case SwapStatus.ClientRedeeming:
@@ -235,12 +236,6 @@ export function SwapsPage() {
         return true;
       }
 
-      // Search by asset amount (USD value)
-      const asset_amount = swap.response.asset_amount.toFixed(2);
-      if (asset_amount.includes(query) || `$${asset_amount}`.includes(query)) {
-        return true;
-      }
-
       // Search by sats amount
       const satsAmount = swap.response.sats_receive.toString();
       if (satsAmount.includes(query.replace(/,/g, ""))) {
@@ -274,12 +269,10 @@ export function SwapsPage() {
     if (isBtcSource) {
       return {
         primary: `${swap.response.sats_receive.toLocaleString()} sats`,
-        secondary: `$${swap.response.asset_amount.toFixed(2)} ${getTokenSymbol(swap.response.target_token)}`,
       };
     } else {
       return {
-        primary: `$${swap.response.asset_amount.toFixed(2)}`,
-        secondary: `${swap.response.sats_receive.toLocaleString()} sats`,
+        primary: `$${Number(swap.response.asset_amount).toFixed(2)}`,
       };
     }
   };
@@ -439,9 +432,6 @@ export function SwapsPage() {
                       <div className="flex items-baseline gap-1 sm:gap-2 flex-wrap">
                         <span className="font-semibold text-sm sm:text-base truncate">
                           {amounts.primary}
-                        </span>
-                        <span className="text-muted-foreground text-xs sm:text-sm truncate">
-                          → {amounts.secondary}
                         </span>
                       </div>
 

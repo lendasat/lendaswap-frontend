@@ -1,6 +1,5 @@
 import type {
   ExtendedSwapStorageData,
-  TokenId,
   TokenInfo,
 } from "@lendasat/lendaswap-sdk";
 import { AlertCircle } from "lucide-react";
@@ -9,27 +8,31 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAsync, useAsyncRetry } from "react-use";
 import {
   api,
+  type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type EvmToBtcSwapResponse,
   type GetSwapResponse,
-  getTokenSymbol,
   SwapStatus,
 } from "../api";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 import { useWalletBridge } from "../WalletBridgeContext";
 import {
+  BtcToArkadeProcessingStep,
   BtcToPolygonRefundStep,
+  OnchainBtcRefundStep,
   PolygonDepositStep,
   PolygonToBtcRefundStep,
   SendBitcoinStep,
+  SendOnchainBtcStep,
   SuccessStep,
   SwapProcessingStep,
 } from "./steps";
 
-type SwapDirection = "btc-to-evm" | "evm-to-btc";
+export type SwapDirection = "btc-to-evm" | "evm-to-btc" | "btc-to-arkade";
 
 type StepId =
   | "user-deposit"
+  | "user-deposit-seen"
   | "server-depositing"
   | "server-deposit"
   | "user-redeem"
@@ -40,21 +43,30 @@ type StepId =
   | "refunded";
 
 const swapDirection = (
-  source_token: undefined | TokenId,
+  swapData: undefined | null | GetSwapResponse,
 ): SwapDirection | undefined => {
-  if (!source_token) {
+  if (!swapData) {
     return undefined;
   }
 
-  if (source_token.isBtc()) {
+  if (
+    (swapData.source_token.isArkade() || swapData.source_token.isLightning()) &&
+    swapData.target_token.isEvmToken()
+  ) {
     return "btc-to-evm";
-  }
-
-  if (source_token.isEvmToken()) {
+  } else if (
+    (swapData.target_token.isArkade() || swapData.target_token.isLightning()) &&
+    swapData.source_token.isEvmToken()
+  ) {
     return "evm-to-btc";
+  } else if (
+    swapData.source_token.isBtcOnchain() &&
+    swapData.target_token.isArkade()
+  ) {
+    return "btc-to-arkade";
+  } else {
+    return undefined;
   }
-
-  return undefined;
 };
 
 // Create mock swap data for debug mode
@@ -115,16 +127,28 @@ function determineStepFromStatus(
     return undefined;
   }
 
-  const refundLocktimeDate = new Date(swapData.refund_locktime * 1000);
+  // Get refund locktime based on swap type
+  // BtcToArkadeSwapResponse has btc_refund_locktime, others have refund_locktime
+  const refundLocktime =
+    "btc_refund_locktime" in swapData
+      ? swapData.btc_refund_locktime
+      : "refund_locktime" in swapData
+        ? swapData.refund_locktime
+        : undefined;
+
+  const refundLocktimeDate = refundLocktime
+    ? new Date(Number(refundLocktime) * 1000)
+    : undefined;
 
   const status = swapData.status;
   switch (status) {
+    case SwapStatus.ClientFundingSeen:
     case SwapStatus.ClientFunded:
     case SwapStatus.ServerFunded:
     case SwapStatus.ClientFundedServerRefunded:
     case SwapStatus.ClientInvalidFunded:
     case SwapStatus.ClientFundedTooLate:
-      if (refundLocktimeDate < new Date()) {
+      if (refundLocktimeDate && refundLocktimeDate < new Date()) {
         console.warn(`Refund timelock expired. Ready to refund.`);
         return "refundable";
       }
@@ -134,9 +158,12 @@ function determineStepFromStatus(
       break;
   }
 
+  console.log(`Status ${status}`);
   switch (status) {
     case SwapStatus.Pending:
       return "user-deposit";
+    case SwapStatus.ClientFundingSeen:
+      return "user-deposit-seen";
     case SwapStatus.ClientFunded:
       return "server-depositing";
     case SwapStatus.ServerFunded:
@@ -215,7 +242,7 @@ export function SwapWizardPage() {
     }
   }, [swapData, displaySwapData]);
 
-  const swapDirectionValue = swapDirection(displaySwapData?.source_token);
+  const swapDirectionValue = swapDirection(displaySwapData);
 
   // Poll swap status every 2 seconds in the background
   useEffect(() => {
@@ -383,12 +410,13 @@ export function SwapWizardPage() {
           {currentStep === "user-deposit" &&
             swapDirectionValue === "btc-to-evm" && (
               <SendBitcoinStep
-                arkadeAddress={displaySwapData.htlc_address_arkade}
-                lightningAddress={displaySwapData.ln_invoice}
-                unifiedAddress={`bitcoin:?arkade=${displaySwapData.htlc_address_arkade}&lightning=${displaySwapData.ln_invoice}&amount=${(Number(displaySwapData.sats_receive) / 100_000_000).toFixed(8)}`}
                 swapData={displaySwapData as BtcToEvmSwapResponse}
-                tokenAmount={displaySwapData.asset_amount.toString()}
-                tokenSymbol={getTokenSymbol(displaySwapData.target_token)}
+              />
+            )}
+          {currentStep === "user-deposit" &&
+            swapDirectionValue === "btc-to-arkade" && (
+              <SendOnchainBtcStep
+                swapData={displaySwapData as BtcToArkadeSwapResponse}
                 swapId={displaySwapData.id}
               />
             )}
@@ -429,14 +457,26 @@ export function SwapWizardPage() {
             </div>
           )}
 
-          {swapDirectionValue && currentStep === "server-depositing" && (
-            <SwapProcessingStep
-              swapData={displaySwapData}
-              swapDirection={swapDirectionValue}
-              swapId={displaySwapData.id}
-              preimage={preimage}
-            />
-          )}
+          {swapDirectionValue &&
+            (currentStep === "user-deposit-seen" ||
+              currentStep === "server-depositing") &&
+            swapDirectionValue !== "btc-to-arkade" && (
+              <SwapProcessingStep
+                swapData={displaySwapData}
+                swapDirection={swapDirectionValue}
+                swapId={displaySwapData.id}
+                preimage={preimage}
+              />
+            )}
+          {(currentStep === "user-deposit-seen" ||
+            currentStep === "server-depositing") &&
+            swapDirectionValue === "btc-to-arkade" && (
+              <BtcToArkadeProcessingStep
+                swapData={displaySwapData as BtcToArkadeSwapResponse}
+                swapId={displaySwapData.id}
+                preimage={preimage}
+              />
+            )}
 
           {currentStep === "success" && swapDirectionValue && (
             <SuccessStep
@@ -485,6 +525,14 @@ export function SwapWizardPage() {
             swapDirectionValue === "evm-to-btc" && (
               <PolygonToBtcRefundStep
                 swapData={displaySwapData as EvmToBtcSwapResponse}
+                swapId={displaySwapData.id}
+              />
+            )}
+
+          {currentStep === "refundable" &&
+            swapDirectionValue === "btc-to-arkade" && (
+              <OnchainBtcRefundStep
+                swapData={displaySwapData as BtcToArkadeSwapResponse}
                 swapId={displaySwapData.id}
               />
             )}

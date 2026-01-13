@@ -14,15 +14,17 @@ import { ReactComponent as XautIcon } from "../../assets/xaut.svg";
 import type { TokenIdString } from "../api";
 
 export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
-  const isSourceEvm = isEvmToken(sourceToken);
-  const isTargetEvm = isEvmToken(targetToken);
-  const isSourceBtc = isBtcToken(sourceToken);
-  const isTargetBtc = isBtcToken(targetToken);
+  const isSourceEvm = sourceToken.isEvmToken();
+  const isTargetEvm = targetToken.isEvmToken();
+  const isSourceBtc = sourceToken.isBtc();
+  const isTargetBtc = targetToken.isBtc();
 
   if (isSourceEvm && isTargetBtc) {
-    return `${sourceToken}-btc`;
+    return `${sourceToken}-${targetToken}`;
   } else if (isSourceBtc && isTargetEvm) {
-    return `btc-${targetToken}`;
+    return `${sourceToken}-${targetToken}`;
+  } else if (sourceToken.isBtcOnchain() && targetToken.isArkade()) {
+    return `${sourceToken}-${targetToken}`;
   } else {
     throw Error("Unsupported token pair");
   }
@@ -45,6 +47,7 @@ export function getTokenSymbol(tokenId: TokenId): string {
       return "XAUt";
     case "btc_arkade":
     case "btc_lightning":
+    case "btc_onchain":
       return "BTC";
     case "pol_pol":
       return "POL";
@@ -63,6 +66,8 @@ export function getTokenDisplayName(tokenId: TokenId): string {
       return "BTC (Arkade)";
     case "btc_lightning":
       return "BTC (Lightning)";
+    case "btc_onchain":
+      return "BTC (On-chain)";
     case "usdc_eth":
       return "USDC (Ethereum)";
     case "usdc_pol":
@@ -91,8 +96,8 @@ export function getTokenIcon(
   const tokenIdString = tokenId.toString() as TokenIdString;
   switch (tokenIdString) {
     case "btc_lightning":
-      return <BitcoinIcon width={width} height={height} />;
     case "btc_arkade":
+    case "btc_onchain":
       return <BitcoinIcon width={width} height={height} />;
     case "usdc_pol":
     case "usdc_eth":
@@ -121,6 +126,8 @@ export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
       return <BitcoinLightningIcon width={8} height={8} />;
     case "btc_arkade":
       return <ArkadeIcon width={8} height={8} />;
+    case "btc_onchain":
+      return <BitcoinIcon width={8} height={8} />;
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -145,6 +152,8 @@ export function getTokenNetworkName(tokenId: TokenId): string {
       return "Arkade";
     case "btc_lightning":
       return "Lightning";
+    case "btc_onchain":
+      return "Bitcoin";
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
@@ -192,6 +201,7 @@ export function isEvmToken(tokenId: TokenId): boolean {
       return true;
     case "btc_arkade":
     case "btc_lightning":
+    case "btc_onchain":
       return false;
     default:
       return false;
@@ -233,7 +243,7 @@ export function isPolygonToken(tokenId: TokenId): boolean {
  */
 export function networkName(
   tokenId: TokenId,
-): "ethereum" | "lightning" | "polygon" | "arkade" | "unknown" {
+): "ethereum" | "lightning" | "polygon" | "arkade" | "bitcoin" | "unknown" {
   const tokenIdString = tokenId.toString() as TokenIdString;
   switch (tokenIdString) {
     case "usdc_pol":
@@ -248,6 +258,8 @@ export function networkName(
       return "arkade";
     case "btc_lightning":
       return "lightning";
+    case "btc_onchain":
+      return "bitcoin";
     default:
       return "unknown";
   }
@@ -258,6 +270,7 @@ export function isValidTokenId(token: string | undefined): boolean {
   return (
     token === "btc_lightning" ||
     token === "btc_arkade" ||
+    token === "btc_onchain" ||
     token === "usdc_pol" ||
     token === "usdt0_pol" ||
     token === "pol_pol" ||
@@ -280,6 +293,7 @@ export function isAssetToken(tokenId: TokenId): boolean {
       return true;
     case "btc_arkade":
     case "btc_lightning":
+    case "btc_onchain":
       return false;
     default:
       return false;
@@ -299,6 +313,7 @@ export function isBtcToken(tokenId: TokenId): boolean {
       return false;
     case "btc_arkade":
     case "btc_lightning":
+    case "btc_onchain":
       return true;
     default:
       return false;
@@ -322,6 +337,8 @@ export function getBlockexplorerTxLink(
     case "usdt_eth":
     case "xaut_eth":
       return `https://etherscan.com/tx/${txid}`;
+    case "btc_onchain":
+      return `https://mempool.space/tx/${txid}`;
     case "btc_arkade":
       return `https://arkade.space/tx/${txid}`;
     case "btc_lightning":
@@ -348,6 +365,8 @@ export function getBlockexplorerAddressLink(
     case "usdt_eth":
     case "xaut_eth":
       return `https://etherscan.com/address/${address}`;
+    case "btc_onchain":
+      return `https://mempool.space/address/${address}`;
     case "btc_arkade":
       return `https://arkade.space/address/${address}`;
     case "btc_lightning":

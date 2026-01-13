@@ -1,6 +1,7 @@
 import {
   PriceFeedService,
   type PriceUpdateMessage,
+  type TokenId,
 } from "@lendasat/lendaswap-sdk";
 import {
   createContext,
@@ -10,7 +11,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { TokenId } from "./api";
+import { computeExchangeRate, selectTierRate } from "./utils/priceUtils";
 import { toPairName } from "./utils/tokenUtils";
 
 // Get API URL from environment
@@ -89,26 +90,21 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
     const pairName = toPairName(sourceToken, targetToken);
 
     const pair = priceUpdate.pairs.find(
-      (p) => p.pair.toLowerCase() === pairName,
+      (p) =>
+        p.source.toString() === sourceToken.toString() &&
+        p.target.toString() === targetToken.toString(),
     );
     if (!pair) {
       console.warn(`Price pair not found: ${pairName}`);
       return null;
     }
 
-    // Select tier based on quote asset amount
-    let rate: number;
-    if (assetAmount >= 5000) {
-      rate = pair.tiers.tier_5000;
-    } else if (assetAmount >= 1000) {
-      rate = pair.tiers.tier_1000;
-    } else if (assetAmount >= 100) {
-      rate = pair.tiers.tier_100;
-    } else {
-      rate = pair.tiers.tier_1;
-    }
-
-    return rate;
+    const rate = selectTierRate(pair.tiers, assetAmount);
+    return computeExchangeRate(
+      rate,
+      sourceToken.isBtc(),
+      targetToken.isEvmToken(),
+    );
   };
 
   const value: PriceFeedContextValue = {
