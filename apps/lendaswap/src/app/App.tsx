@@ -356,12 +356,15 @@ function HomePage() {
         }
 
         const sats = Math.round(amount * 100_000_000);
-        const quoteResponse = await api.getQuote({
-          from: sourceAsset.toString(),
-          to: targetAsset.toString(),
-          base_amount: sats,
-        });
-        setQuote(quoteResponse);
+        console.log(`Sats amount is ${sats}`);
+        if (sats > 0) {
+          const quoteResponse = await api.getQuote({
+            from: sourceAsset.toString(),
+            to: targetAsset.toString(),
+            base_amount: sats,
+          });
+          setQuote(quoteResponse);
+        }
       } catch (error) {
         console.error("Failed to fetch quote:", error);
         setQuote(null);
