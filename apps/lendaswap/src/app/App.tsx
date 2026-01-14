@@ -62,7 +62,6 @@ import {
   type GetSwapResponse,
   getTokenSymbol,
   type QuoteResponse,
-  type VolumeStats,
 } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
@@ -910,12 +909,6 @@ export default function App() {
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
-  const [volumeStats, setVolumeStats] = useState<VolumeStats | null>(null);
-
-  // Fetch volume stats on mount
-  useEffect(() => {
-    api.getStats().then(setVolumeStats).catch(console.error);
-  }, []);
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
   const isHomePage =
@@ -1386,126 +1379,117 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Volume Stats with Chart - Wide */}
-                <div className="md:col-span-3 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-auto">
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                  <style>{`
-                    .volume-text-container {
-                      transition: transform 0.5s ease-out;
-                    }
-                    .group:hover .volume-text-container {
-                      transform: translateY(-8px);
-                    }
-                    .volume-text {
-                      transition: all 0.5s ease-out;
-                      background-image: linear-gradient(to bottom, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.08) 50%, rgba(249, 115, 22, 0.02) 100%);
-                    }
-                    .group:hover .volume-text {
-                      background-image: linear-gradient(to bottom, rgba(249, 115, 22, 0.35) 0%, rgba(249, 115, 22, 0.2) 50%, rgba(249, 115, 22, 0.08) 100%);
-                      filter: drop-shadow(0 0 30px rgba(249, 115, 22, 0.3));
-                    }
-                  `}</style>
-
-                  {/* Giant Background Volume Text - Apple Style with mask */}
-                  <div
-                    className="volume-text-container absolute inset-0 flex items-start justify-center pointer-events-none overflow-hidden pt-1 md:pt-2"
-                    style={{
-                      maskImage:
-                        "linear-gradient(to bottom, black 0%, black 40%, transparent 70%)",
-                      WebkitMaskImage:
-                        "linear-gradient(to bottom, black 0%, black 40%, transparent 70%)",
-                    }}
-                  >
-                    <span className="volume-text text-[100px] md:text-[160px] font-black tracking-tighter select-none text-transparent bg-clip-text">
-                      {volumeStats
-                        ? volumeStats.total_volume_usd + 15000 >= 1000
-                          ? `$${Math.round((volumeStats.total_volume_usd + 15000) / 1000)}K`
-                          : `$${Math.round(volumeStats.total_volume_usd + 15000)}`
-                        : "$15K"}
-                    </span>
-                  </div>
-
-                  {/* Background Chart - Clean smooth curve */}
-                  <div className="absolute inset-0 flex items-end justify-center overflow-hidden pointer-events-none pb-[72px] md:pb-[88px]">
-                    <svg
-                      viewBox="0 0 400 100"
-                      className="w-full h-auto max-h-[60%]"
-                      preserveAspectRatio="xMidYMax meet"
-                      aria-hidden="true"
-                    >
-                      <defs>
-                        <linearGradient
-                          id="chartGradientDynamic"
-                          x1="0%"
-                          y1="0%"
-                          x2="0%"
-                          y2="100%"
-                        >
-                          <stop
-                            offset="0%"
-                            stopColor="#f97316"
-                            stopOpacity="0.2"
-                          />
-                          <stop
-                            offset="70%"
-                            stopColor="#f97316"
-                            stopOpacity="0.05"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#f97316"
-                            stopOpacity="0"
-                          />
-                        </linearGradient>
-                      </defs>
-                      {/* Gradient fill only - no solid mask */}
-                      <path
-                        d="M0 90 C80 88 120 80 180 65 S280 30 340 15 S380 8 400 5 L400 100 L0 100 Z"
-                        fill="url(#chartGradientDynamic)"
-                      />
-                      <path
-                        d="M0 90 C80 88 120 80 180 65 S280 30 340 15 S380 8 400 5"
-                        fill="none"
-                        stroke="#f97316"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        opacity="0.5"
-                      />
-                      {/* End point */}
-                      <circle
-                        cx="400"
-                        cy="5"
-                        r="2.5"
-                        fill="#f97316"
-                        opacity="0.4"
-                      />
-                    </svg>
-                  </div>
-
-                  {/* Bottom text - styled like Get the App */}
-                  <div className="relative h-full flex flex-col justify-end">
-                    <div className="pt-2">
+                {/* Powered by Arkade */}
+                <div className="md:col-span-3 group relative aspect-square md:aspect-auto overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-purple-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-transparent to-purple-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="relative h-full flex flex-col justify-between">
+                    {/* Pixel art space invader with classic animation on hover */}
+                    <div className="flex-1 flex items-center justify-center">
+                      <style>{`
+                        @keyframes invaderMove {
+                          0%, 100% { transform: translateX(-10px); }
+                          50% { transform: translateX(10px); }
+                        }
+                        @keyframes invaderFrame {
+                          0%, 49% { opacity: 1; }
+                          50%, 100% { opacity: 0; }
+                        }
+                        @keyframes invaderFrame2 {
+                          0%, 49% { opacity: 0; }
+                          50%, 100% { opacity: 1; }
+                        }
+                        .invader-container {
+                          animation: none;
+                        }
+                        .group:hover .invader-container {
+                          animation: invaderMove 1.5s ease-in-out infinite;
+                        }
+                        .invader-frame1 {
+                          opacity: 1;
+                        }
+                        .invader-frame2 {
+                          opacity: 0;
+                        }
+                        .group:hover .invader-frame1 {
+                          animation: invaderFrame 0.8s steps(1) infinite;
+                        }
+                        .group:hover .invader-frame2 {
+                          animation: invaderFrame2 0.8s steps(1) infinite;
+                        }
+                      `}</style>
+                      <div className="relative invader-container">
+                        {/* Frame 1 - legs out */}
+                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] absolute inset-0 invader-frame1">
+                          {[
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+                            [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],
+                          ]
+                            .flat()
+                            .map((filled, i) => (
+                              <div
+                                key={`p1-${i.toString()}`}
+                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
+                                  filled
+                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                    : "bg-transparent"
+                                }`}
+                              />
+                            ))}
+                        </div>
+                        {/* Frame 2 - legs in */}
+                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] invader-frame2">
+                          {[
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                            [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                          ]
+                            .flat()
+                            .map((filled, i) => (
+                              <div
+                                key={`p2-${i.toString()}`}
+                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
+                                  filled
+                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                    : "bg-transparent"
+                                }`}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
                       <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
-                        Total Volume
+                        Powered by Arkade · Bitcoin L2
                       </div>
-                      <div className="mt-1.5 text-xs md:text-sm font-medium text-orange-500">
-                        24H:{" "}
-                        {volumeStats
-                          ? volumeStats.volume_24h_usd >= 1000
-                            ? `$${(volumeStats.volume_24h_usd / 1000).toFixed(1)}K`
-                            : `$${volumeStats.volume_24h_usd.toFixed(0)}`
-                          : "$0"}
-                      </div>
+                      <a
+                        href="https://arkadeos.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-purple-500 hover:text-purple-400 transition-colors"
+                      >
+                        Learn more
+                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
+                      </a>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Middle Row - Bento Grid: Wide left, Square right */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {/* Developer Docs - Wide */}
-                <div className="md:col-span-3 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-auto">
+              {/* Developer Docs Row - Full Width */}
+              <div className="grid grid-cols-1 gap-4">
+                {/* Developer Docs - Full Width */}
+                <div className="group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-[4/3] md:aspect-[3/1]">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                   <style>{`
                     @keyframes typewriter {
@@ -1652,118 +1636,12 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-
-                {/* Powered by Arkade - Square */}
-                <div className="md:col-span-2 group relative aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-purple-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/5">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-transparent to-purple-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                  <div className="relative h-full flex flex-col justify-between">
-                    {/* Pixel art space invader with classic animation on hover */}
-                    <div className="flex-1 flex items-center justify-center">
-                      <style>{`
-                        @keyframes invaderMove {
-                          0%, 100% { transform: translateX(-10px); }
-                          50% { transform: translateX(10px); }
-                        }
-                        @keyframes invaderFrame {
-                          0%, 49% { opacity: 1; }
-                          50%, 100% { opacity: 0; }
-                        }
-                        @keyframes invaderFrame2 {
-                          0%, 49% { opacity: 0; }
-                          50%, 100% { opacity: 1; }
-                        }
-                        .invader-container {
-                          animation: none;
-                        }
-                        .group:hover .invader-container {
-                          animation: invaderMove 1.5s ease-in-out infinite;
-                        }
-                        .invader-frame1 {
-                          opacity: 1;
-                        }
-                        .invader-frame2 {
-                          opacity: 0;
-                        }
-                        .group:hover .invader-frame1 {
-                          animation: invaderFrame 0.8s steps(1) infinite;
-                        }
-                        .group:hover .invader-frame2 {
-                          animation: invaderFrame2 0.8s steps(1) infinite;
-                        }
-                      `}</style>
-                      <div className="relative invader-container">
-                        {/* Frame 1 - legs out */}
-                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] absolute inset-0 invader-frame1">
-                          {[
-                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-                            [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-                            [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-                            [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
-                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-                            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-                            [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],
-                          ]
-                            .flat()
-                            .map((filled, i) => (
-                              <div
-                                key={`p1-${i.toString()}`}
-                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
-                                  filled
-                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
-                                    : "bg-transparent"
-                                }`}
-                              />
-                            ))}
-                        </div>
-                        {/* Frame 2 - legs in */}
-                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] invader-frame2">
-                          {[
-                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-                            [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-                            [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
-                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-                            [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                          ]
-                            .flat()
-                            .map((filled, i) => (
-                              <div
-                                key={`p2-${i.toString()}`}
-                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
-                                  filled
-                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
-                                    : "bg-transparent"
-                                }`}
-                              />
-                            ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm md:text-base font-bold tracking-tight text-foreground">
-                        Powered by Arkade · Bitcoin L2
-                      </div>
-                      <a
-                        href="https://arkadeos.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-purple-500 hover:text-purple-400 transition-colors"
-                      >
-                        Learn more
-                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Bottom Row - 3 Feature Boxes */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Instant */}
-                <div className="group relative aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
+                <div className="group relative aspect-[4/3] md:aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                   <style>{`
                     @keyframes coinSpinLeft {
@@ -1863,7 +1741,7 @@ export default function App() {
                 </div>
 
                 {/* Atomic Swaps - Peer to Peer Connection */}
-                <div className="group relative md:col-span-2 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-auto">
+                <div className="group relative md:col-span-2 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-[4/3] md:aspect-auto">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                   <style>{`
                     .p2p-line {
