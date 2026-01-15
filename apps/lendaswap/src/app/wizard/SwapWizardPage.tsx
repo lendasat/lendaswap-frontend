@@ -1,5 +1,6 @@
-import type {
+import {
   ExtendedSwapStorageData,
+  TokenId,
   TokenInfo,
 } from "@lendasat/lendaswap-sdk";
 import { AlertCircle } from "lucide-react";
@@ -22,11 +23,12 @@ import {
   OnchainBtcRefundStep,
   PolygonDepositStep,
   PolygonToBtcRefundStep,
-  SendBitcoinStep,
+  SendArkadeStep,
   SendOnchainBtcStep,
   SuccessStep,
   SwapProcessingStep,
 } from "./steps";
+import { SendLightningStep } from "./steps/SendLightningStep";
 
 export type SwapDirection = "btc-to-evm" | "evm-to-btc" | "btc-to-arkade";
 
@@ -158,7 +160,6 @@ function determineStepFromStatus(
       break;
   }
 
-  console.log(`Status ${status}`);
   switch (status) {
     case SwapStatus.Pending:
       return "user-deposit";
@@ -408,8 +409,18 @@ export function SwapWizardPage() {
       {displaySwapData && !error && (
         <>
           {currentStep === "user-deposit" &&
-            swapDirectionValue === "btc-to-evm" && (
-              <SendBitcoinStep
+            swapDirectionValue === "btc-to-evm" &&
+            swapData?.response.source_token.toString() ===
+              TokenId.btcArkade().toString() && (
+              <SendArkadeStep
+                swapData={displaySwapData as BtcToEvmSwapResponse}
+              />
+            )}
+          {currentStep === "user-deposit" &&
+            swapDirectionValue === "btc-to-evm" &&
+            swapData?.response.source_token.toString() ===
+              TokenId.btcLightning().toString() && (
+              <SendLightningStep
                 swapData={displaySwapData as BtcToEvmSwapResponse}
               />
             )}

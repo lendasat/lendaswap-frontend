@@ -149,6 +149,21 @@ export const api = {
     );
   },
 
+  async createLightningToEvmSwap(
+    request: SwapRequest,
+    targetNetwork: "ethereum" | "polygon",
+  ): Promise<BtcToEvmSwapResponse> {
+    const referralCode = getReferralCode();
+    const client = await getSdkClient();
+    return await client.createLightningToEvmSwap(
+      {
+        ...request,
+        referral_code: referralCode || undefined,
+      },
+      targetNetwork,
+    );
+  },
+
   async createArkadeToEvmSwap(
     request: SwapRequest,
     targetNetwork: "ethereum" | "polygon",

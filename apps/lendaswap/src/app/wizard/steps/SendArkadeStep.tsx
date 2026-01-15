@@ -18,7 +18,7 @@ interface SendBitcoinStepProps {
   swapData: BtcToEvmSwapResponse;
 }
 
-export function SendBitcoinStep({ swapData }: SendBitcoinStepProps) {
+export function SendArkadeStep({ swapData }: SendBitcoinStepProps) {
   const navigate = useNavigate();
   const { client, isEmbedded, isReady } = useWalletBridge();
   const [isSending, setIsSending] = useState(false);
@@ -154,46 +154,6 @@ export function SendBitcoinStep({ swapData }: SendBitcoinStepProps) {
               </div>
             </div>
           </>
-        )}
-
-        {/* Standard Mode: Lightning Address */}
-        {!isSpeedWallet && (
-          <div className="w-full space-y-2">
-            <div className="text-muted-foreground text-sm font-medium">
-              Lightning Invoice
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="dark:bg-muted/50 border-border flex-1 rounded-lg border bg-white p-3 font-mono text-xs">
-                {lightningAddress ? (
-                  <>
-                    {/* Show shortened on mobile, full on desktop */}
-                    <span className="md:hidden">
-                      {shortenAddress(lightningAddress)}
-                    </span>
-                    <span className="hidden md:inline break-all">
-                      {lightningAddress}
-                    </span>
-                  </>
-                ) : (
-                  "N/A"
-                )}
-              </div>
-              {lightningAddress && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => handleCopyAddress(lightningAddress)}
-                  className="shrink-0"
-                >
-                  {copiedAddress === lightningAddress ? (
-                    <CheckCheck className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
         )}
 
         {/* Standard Mode: Arkade Address */}

@@ -428,23 +428,59 @@ function HomePage() {
 
       if (isBtcSource && !isOnchainBtcSource) {
         // BTC (Arkade/Lightning) → EVM
+        let sourceAmount: bigint | undefined;
+        let targetAmount: number | undefined;
 
-        let targetAmount = targetAssetAmount ?? 0;
-        if (targetAsset.isBtc()) {
-          targetAmount = targetAssetAmount ?? 0;
+        if (lastFieldEdited === "targetAsset") {
+          targetAmount = targetAssetAmount;
+          console.log(
+            `Creating a swap to receive ${targetAmount} ${targetAsset.toString()}`,
+          );
+        } else {
+          sourceAmount = sourceAssetAmount
+            ? BigInt(Math.round(sourceAssetAmount * 100000000))
+            : undefined;
+          console.log(`Creating a swap to send ${sourceAmount} sats`);
         }
 
-        const swap = await api.createArkadeToEvmSwap(
-          {
-            target_address: targetAddress,
-            target_amount: targetAmount,
-            target_token: targetAsset.toString(),
-          },
-          networkName(targetAsset) as "ethereum" | "polygon",
-        );
+        const parsedNetworkName = networkName(targetAsset) as
+          | "ethereum"
+          | "polygon";
+        switch (sourceAsset.toString()) {
+          case TokenId.btcLightning().toString(): {
+            const swap = await api.createLightningToEvmSwap(
+              {
+                target_address: targetAddress,
+                source_amount: sourceAmount,
+                target_amount: targetAmount,
+                target_token: targetAsset.toString(),
+              },
+              parsedNetworkName,
+            );
 
-        trackSwapInitiation(swap);
-        navigate(`/swap/${swap.id}/wizard`);
+            trackSwapInitiation(swap);
+            navigate(`/swap/${swap.id}/wizard`);
+            break;
+          }
+          case TokenId.btcArkade().toString(): {
+            const swap = await api.createArkadeToEvmSwap(
+              {
+                target_address: targetAddress,
+                source_amount: sourceAmount,
+                target_amount: targetAmount,
+                target_token: targetAsset.toString(),
+              },
+              parsedNetworkName,
+            );
+
+            trackSwapInitiation(swap);
+            navigate(`/swap/${swap.id}/wizard`);
+            break;
+          }
+          default:
+            console.error(`Invalid source asset ${sourceAsset}`);
+            return;
+        }
       } else if (isEvmSource) {
         // EVM → Bitcoin
 

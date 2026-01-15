@@ -3,7 +3,7 @@ export { BtcToPolygonRefundStep } from "./BtcToPolygonRefundStep";
 export { OnchainBtcRefundStep } from "./OnchainBtcRefundStep";
 export { PolygonDepositStep } from "./PolygonDepositStep";
 export { PolygonToBtcRefundStep } from "./PolygonToBtcRefundStep";
-export { SendBitcoinStep } from "./SendBitcoinStep";
+export { SendArkadeStep } from "./SendArkadeStep";
 export { SendOnchainBtcStep } from "./SendOnchainBtcStep";
 export { SuccessStep } from "./SuccessStep";
 export { SwapProcessingStep } from "./SwapProcessingStep";
