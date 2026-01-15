@@ -60,5 +60,14 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      // Don't bundle Node.js-only native addon
+      external: ["@lendasat/lendaswap-sdk-native"],
+    },
+  },
+
+  optimizeDeps: {
+    // Exclude Node.js-only native addon from pre-bundling
+    exclude: ["@lendasat/lendaswap-sdk-native"],
   },
 });

@@ -5,9 +5,6 @@ import {
   type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type Chain,
-  createDexieSwapStorage,
-  createDexieVtxoSwapStorage,
-  createDexieWalletStorage,
   type EvmToArkadeSwapRequest,
   type EvmToBtcSwapResponse,
   type EvmToLightningSwapRequest,
@@ -18,7 +15,6 @@ import {
   type RecoveredSwap,
   type RecoverSwapsResponse,
   Client as SdkClient,
-  STORAGE_KEYS,
   type SwapRequest,
   SwapStatus,
   type TokenIdString,
@@ -87,38 +83,16 @@ let sdkClient: SdkClient | null = null;
 
 async function getSdkClient(): Promise<SdkClient> {
   if (!sdkClient) {
-    const walletStorage = createDexieWalletStorage("lendaswap-wallet-v1");
-    const swapStorage = createDexieSwapStorage("lendaswap-v1");
-    const vtxoSwapStorage = createDexieVtxoSwapStorage(
-      "lendaswap-vtxo-swaps-v1",
-    );
-    sdkClient = await SdkClient.create(
-      API_BASE_URL,
-      walletStorage,
-      swapStorage,
-      vtxoSwapStorage,
-      BITCOIN_NETWORK,
-      ARK_SERVER_URL,
-      ESPLORA_URL,
-    );
+    sdkClient = await SdkClient.builder()
+      .url(API_BASE_URL)
+      .withIdbStorage()
+      .network(BITCOIN_NETWORK)
+      .arkadeUrl(ARK_SERVER_URL)
+      .esploraUrl(ESPLORA_URL)
+      .build();
+
     if (!sdkClient) {
       throw Error("Failed setting up sdk client");
-    }
-
-    const old_mnemonic =
-      localStorage.getItem(STORAGE_KEYS.MNEMONIC) ?? undefined;
-
-    await sdkClient.init(old_mnemonic);
-
-    if (old_mnemonic) {
-      console.info("Recovering from old mnemonic");
-      await sdkClient
-        .recoverSwaps()
-        .catch((e) =>
-          console.error(`Failed recovering swaps ${JSON.stringify(e)}`),
-        );
-      localStorage.setItem("old_lendaswap_hd_mnemonic", old_mnemonic);
-      localStorage.removeItem(STORAGE_KEYS.MNEMONIC);
     }
   }
   return sdkClient;
@@ -297,24 +271,26 @@ export const api = {
     return await client.deleteSwap(id);
   },
 
+  // TODO: remove concept of corrupted swaps
   getCorruptedSwapIds(): string[] {
     if (!sdkClient) {
       return [];
     }
-    return sdkClient.getCorruptedSwapIds();
+    return [];
   },
 
   async deleteCorruptedSwaps(): Promise<number> {
-    const client = await getSdkClient();
-    return await client.deleteCorruptedSwaps();
+    return 0;
   },
 
   async repairCorruptedSwaps(): Promise<{
     repaired: number;
     failed: string[];
   }> {
-    const client = await getSdkClient();
-    return await client.repairCorruptedSwaps();
+    return {
+      repaired: 0,
+      failed: [],
+    };
   },
 
   async getStats(): Promise<VolumeStats> {
