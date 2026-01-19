@@ -91,6 +91,8 @@ async function getSdkClient(): Promise<SdkClient> {
       .esploraUrl(ESPLORA_URL)
       .build();
 
+    await sdkClient.init();
+
     if (!sdkClient) {
       throw Error("Failed setting up sdk client");
     }
