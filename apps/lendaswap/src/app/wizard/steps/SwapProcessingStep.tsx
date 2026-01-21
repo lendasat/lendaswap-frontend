@@ -13,8 +13,8 @@ import {
   type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type EvmToBtcSwapResponse,
-  type OnchainToEvmSwapResponse,
   type GetSwapResponse,
+  type OnchainToEvmSwapResponse,
   SwapStatus,
 } from "../../api";
 import {

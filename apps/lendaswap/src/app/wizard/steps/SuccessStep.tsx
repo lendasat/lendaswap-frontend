@@ -11,7 +11,7 @@ import {
   type GetSwapResponse,
   getTokenNetworkName,
   getTokenSymbol,
-  OnchainToEvmSwapResponse,
+  type OnchainToEvmSwapResponse,
 } from "../../api";
 import {
   getBlockexplorerAddressLink,

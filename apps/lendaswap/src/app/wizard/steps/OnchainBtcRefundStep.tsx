@@ -1,5 +1,5 @@
 import {
-  OnchainToEvmSwapResponse,
+  type OnchainToEvmSwapResponse,
   swapStatusToString,
 } from "@lendasat/lendaswap-sdk";
 import { ArrowRight, Clock, ExternalLink, Loader2, Unlock } from "lucide-react";

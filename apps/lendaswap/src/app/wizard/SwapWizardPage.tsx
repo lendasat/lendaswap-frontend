@@ -1,6 +1,6 @@
 import {
   type ExtendedSwapStorageData,
-  OnchainToEvmSwapResponse,
+  type OnchainToEvmSwapResponse,
   swapStatusToString,
   TokenId,
   type TokenInfo,
