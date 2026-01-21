@@ -177,8 +177,15 @@ export function SwapProcessingStep({
           console.log("Switching to chain:", chain.name);
           await switchChainAsync({ chainId: chain.id });
 
-          const htlcAddress = (swapData as BtcToEvmSwapResponse)
-            .htlc_address_evm as `0x${string}`;
+          let htlcAddress: `0x${string}`;
+          if (swapData.source_token.isBtc()) {
+            htlcAddress = (swapData as OnchainToEvmSwapResponse)
+              .evm_htlc_address as `0x${string}`;
+          } else {
+            htlcAddress = (swapData as BtcToEvmSwapResponse)
+              .htlc_address_evm as `0x${string}`;
+          }
+
           // Convert UUID to bytes32 by removing hyphens and padding with zeros
           const swapIdBytes32 = uuidToHtlcSwapId(swapData.id);
 
