@@ -13,6 +13,7 @@ import {
   type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type EvmToBtcSwapResponse,
+  type OnchainToEvmSwapResponse,
   type GetSwapResponse,
   SwapStatus,
 } from "../../api";
@@ -104,7 +105,8 @@ export function SwapProcessingStep({
   // Auto-claim for btc-to-evm when server is funded
   useEffect(() => {
     const autoClaimBtcToPolygonSwaps = async () => {
-      if (swapDirection !== "btc-to-evm") return;
+      if (swapDirection !== "btc-to-evm" && swapDirection !== "onchain-to-evm")
+        return;
       if (swapData.status !== SwapStatus.ServerFunded) return;
 
       // For Ethereum tokens, don't auto-claim if wallet not connected
@@ -485,6 +487,25 @@ export function SwapProcessingStep({
         step3IsEvm: false,
         step4Label: "Server Redeemed",
         step4TxId: swap.evm_htlc_claim_txid,
+        step4IsEvm: true,
+      };
+    }
+
+    if (swapDirection === "onchain-to-evm") {
+      const swap = swapData as OnchainToEvmSwapResponse;
+      return {
+        step1Label: "User Funded",
+        step1TxId: swap.btc_fund_txid,
+        step1IsEvm: true,
+        step2LabelActive: "Server Funding",
+        step2LabelComplete: "Server Funded",
+        step2TxId: swap.evm_fund_txid,
+        step2IsEvm: false,
+        step3Label: "Client Redeeming",
+        step3TxId: swap.evm_claim_txid,
+        step3IsEvm: false,
+        step4Label: "Server Redeemed",
+        step4TxId: swap.btc_claim_txid,
         step4IsEvm: true,
       };
     }

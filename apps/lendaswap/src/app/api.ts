@@ -11,6 +11,8 @@ import {
   type ExtendedSwapStorageData,
   type GetSwapResponse,
   getUsdPrices,
+  type OnchainToEvmSwapRequest,
+  type OnchainToEvmSwapResponse,
   type QuoteResponse,
   type RecoveredSwap,
   type RecoverSwapsResponse,
@@ -38,9 +40,12 @@ export type {
   SwapRequest,
   EvmToArkadeSwapRequest,
   EvmToLightningSwapRequest,
+  OnchainToEvmSwapRequest,
+  OnchainToEvmSwapResponse,
   RecoveredSwap,
   RecoverSwapsResponse,
   QuoteResponse,
+  Version,
 };
 export { SwapStatus };
 
@@ -228,6 +233,21 @@ export const api = {
       ...request,
       referral_code: referralCode || undefined,
     });
+  },
+
+  async createOnchainToEvmSwap(
+    request: OnchainToEvmSwapRequest,
+    targetNetwork: "ethereum" | "polygon",
+  ): Promise<OnchainToEvmSwapResponse> {
+    const referralCode = getReferralCode();
+    const client = await getSdkClient();
+    return await client.createOnchainToEvmSwap(
+      {
+        ...request,
+        referral_code: referralCode || undefined,
+      },
+      targetNetwork,
+    );
   },
 
   async claimBtcToArkadeVhtlc(swapId: string): Promise<string> {

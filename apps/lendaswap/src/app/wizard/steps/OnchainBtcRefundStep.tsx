@@ -1,4 +1,7 @@
-import { swapStatusToString } from "@lendasat/lendaswap-sdk";
+import {
+  OnchainToEvmSwapResponse,
+  swapStatusToString,
+} from "@lendasat/lendaswap-sdk";
 import { ArrowRight, Clock, ExternalLink, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useMemo, useState } from "react";
@@ -6,10 +9,15 @@ import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { api, type BtcToArkadeSwapResponse } from "../../api";
+import {
+  api,
+  type BtcToArkadeSwapResponse,
+  getTokenNetworkName,
+  getTokenSymbol,
+} from "../../api";
 
 interface OnchainBtcRefundStepProps {
-  swapData: BtcToArkadeSwapResponse;
+  swapData: BtcToArkadeSwapResponse | OnchainToEvmSwapResponse;
   swapId: string;
 }
 
@@ -153,9 +161,15 @@ export function OnchainBtcRefundStep({
           <div className="space-y-1">
             <p className="text-sm font-medium">Swap</p>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium">BTC (On-chain)</span>
+              <span className="text-xs font-medium">
+                {getTokenSymbol(swapData.source_token)} on{" "}
+                {getTokenNetworkName(swapData.source_token)}
+              </span>
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium">BTC (Arkade)</span>
+              <span className="text-xs font-medium">
+                {getTokenSymbol(swapData.target_token)} on{" "}
+                {getTokenNetworkName(swapData.target_token)}
+              </span>
             </div>
           </div>
 
@@ -186,7 +200,7 @@ export function OnchainBtcRefundStep({
           <div className="space-y-1">
             <p className="text-sm font-medium">Amount Sent</p>
             <p className="text-xs text-muted-foreground">
-              {swapData.asset_amount.toLocaleString()} sats
+              {swapData.source_amount.toLocaleString()} sats
             </p>
           </div>
 

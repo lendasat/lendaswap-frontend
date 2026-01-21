@@ -237,7 +237,7 @@ export function SwapsPage() {
       }
 
       // Search by sats amount
-      const satsAmount = swap.response.sats_receive.toString();
+      const satsAmount = swap.response.source_amount.toString();
       if (satsAmount.includes(query.replace(/,/g, ""))) {
         return true;
       }
@@ -268,11 +268,11 @@ export function SwapsPage() {
 
     if (isBtcSource) {
       return {
-        primary: `${swap.response.sats_receive.toLocaleString()} sats`,
+        primary: `${swap.response.source_amount.toLocaleString()} sats`,
       };
     } else {
       return {
-        primary: `$${Number(swap.response.asset_amount).toFixed(2)}`,
+        primary: `$${Number(swap.response.source_amount).toFixed(2)}`,
       };
     }
   };

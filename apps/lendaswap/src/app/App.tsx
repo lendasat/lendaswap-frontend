@@ -355,7 +355,6 @@ function HomePage() {
         }
 
         const sats = Math.round(amount * 100_000_000);
-        console.log(`Sats amount is ${sats}`);
         if (sats > 0) {
           const quoteResponse = await api.getQuote({
             from: sourceAsset.toString(),
@@ -388,13 +387,20 @@ function HomePage() {
     const swapDirection = swap.source_token.isBtc()
       ? "btc-to-evm"
       : "evm-to-btc";
+    // Use sats_receive if available, otherwise use btc_expected_sats for onchain-to-evm swaps
+    const amountSats =
+      "sats_receive" in swap
+        ? swap.sats_receive
+        : "btc_expected_sats" in swap
+          ? swap.btc_expected_sats
+          : 0;
     posthog?.capture("swap_initiated", {
       swap_id: swap.id,
       swap_direction: swapDirection,
       source_token: swap.source_token,
       target_token: swap.target_token,
-      amount_asset: swap.asset_amount,
-      amount_sats: swap.sats_receive,
+      amount_asset: swap.source_amount,
+      amount_sats: amountSats,
       has_referral_code: hasReferralCode(),
     });
   };
@@ -420,6 +426,30 @@ function HomePage() {
           target_arkade_address: targetAddress,
           sats_receive: satsToReceive,
         });
+
+        trackSwapInitiation(swap);
+        navigate(`/swap/${swap.id}/wizard`);
+        return;
+      }
+
+      // On-chain BTC → EVM
+      if (isOnchainBtcSource && targetAsset.isEvmToken()) {
+        const sourceAmount = sourceAssetAmount
+          ? BigInt(Math.round(sourceAssetAmount * 100_000_000))
+          : BigInt(0);
+
+        const parsedNetworkName = networkName(targetAsset) as
+          | "ethereum"
+          | "polygon";
+
+        const swap = await api.createOnchainToEvmSwap(
+          {
+            target_address: targetAddress,
+            source_amount: sourceAmount,
+            target_token: targetAsset.toString(),
+          },
+          parsedNetworkName,
+        );
 
         trackSwapInitiation(swap);
         navigate(`/swap/${swap.id}/wizard`);
@@ -561,19 +591,42 @@ function HomePage() {
       assetPairs.map((a) => [a.source.token_id.toString(), a.source.token_id]),
     ).values(),
   ].sort((a, b) => a.toString().localeCompare(b.toString()));
+
   // Always show all available tokens that can be bought (both BTC and EVM)
   const availableTargetAssets: TokenId[] = (() => {
-    if (sourceAsset.toString() === TokenId.btcOnchain().toString()) {
-      // On-chain BTC can only be swapped to Arkade
-      return [TokenId.btcArkade()];
+    if (sourceAsset.isBtcOnchain()) {
+      // On-chain BTC can be swapped to Arkade or EVM tokens
+      return [
+        TokenId.btcArkade(),
+        ...availableSourceAssets.filter(
+          (a) => a.isEvmToken() && !a.isBtcOnchain() && !a.isLightning(),
+        ),
+      ].sort((a, b) => a.toString().localeCompare(b.toString()));
+    }
+
+    if (sourceAsset.isEvmToken()) {
+      // EVM BTC can be swapped to Arkade or Lightning tokens
+      return [
+        ...availableSourceAssets.filter(
+          (a) =>
+            !a.isEvmToken() &&
+            a.toString() !== sourceAsset.toString() &&
+            !a.isBtcOnchain(),
+        ),
+      ].sort((a, b) => a.toString().localeCompare(b.toString()));
+    }
+
+    if (sourceAsset.isBtc()) {
+      // Any BTC can be swapped to Arkade or EVM tokens
+      return [...availableSourceAssets.filter((a) => a.isEvmToken())].sort(
+        (a, b) => a.toString().localeCompare(b.toString()),
+      );
     }
 
     return [
       ...new Map(
         [
-          ...assetPairs
-            .filter((a) => a.target.token_id.isBtc())
-            .map((a) => a.source.token_id),
+          ...availableSourceAssets.filter((a) => !a.isBtc()),
           TokenId.btcLightning(),
           TokenId.btcArkade(),
         ].map((t) => [t.toString(), t]),
@@ -614,13 +667,17 @@ function HomePage() {
                 availableAssets={availableSourceAssets}
                 label="sell"
                 onChange={(asset) => {
-                  // Special case: btc_onchain can only be swapped to btc_arkade
+                  // Special case: btc_onchain can be swapped to btc_arkade or EVM tokens
                   if (asset.isBtcOnchain()) {
-                    const targetAsset = TokenId.btcArkade();
+                    // Keep current target if it's Arkade or EVM, otherwise default to usdc_pol
+                    const newTarget =
+                      targetAsset.isArkade() || targetAsset.isEvmToken()
+                        ? targetAsset
+                        : TokenId.fromString("usdc_pol");
                     setSourceAsset(asset);
-                    setTargetAsset(TokenId.btcArkade());
+                    setTargetAsset(newTarget);
                     setSourceAssetAmount(0.001);
-                    navigate(`/${asset}/${targetAsset}`, {
+                    navigate(`/${asset}/${newTarget}`, {
                       replace: true,
                     });
                     return;
@@ -723,12 +780,15 @@ function HomePage() {
                 availableAssets={availableTargetAssets}
                 value={targetAsset}
                 onChange={(asset) => {
-                  // Special case: when source is btc_onchain, only btc_arkade is allowed
-                  // (already enforced by availableTargetAssets, but be explicit)
+                  // Special case: when source is btc_onchain, allow btc_arkade or EVM tokens
                   if (sourceAsset.isBtcOnchain()) {
-                    setTargetAsset(TokenId.btcArkade());
-                    navigate(`/${sourceAsset}/btc_arkade`, { replace: true });
-
+                    if (asset.isArkade() || asset.isEvmToken()) {
+                      setTargetAsset(asset);
+                      navigate(`/${sourceAsset}/${asset}`, { replace: true });
+                      // Clear target address since it may not be valid for the new target token type
+                      setTargetAddress("");
+                      setAddressValid(false);
+                    }
                     return;
                   }
 

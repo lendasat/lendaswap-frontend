@@ -11,6 +11,7 @@ import {
   type GetSwapResponse,
   getTokenNetworkName,
   getTokenSymbol,
+  OnchainToEvmSwapResponse,
 } from "../../api";
 import {
   getBlockexplorerAddressLink,
@@ -19,7 +20,11 @@ import {
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
-  swapDirection: "btc-to-evm" | "evm-to-btc" | "btc-to-arkade";
+  swapDirection:
+    | "btc-to-evm"
+    | "evm-to-btc"
+    | "btc-to-arkade"
+    | "onchain-to-evm";
   swapId: string;
 }
 
@@ -43,9 +48,6 @@ export function SuccessStep({
     // Handle different swap response types
     const isBtcToArkade = swapDirection === "btc-to-arkade";
     const isBtcToEvm = swapDirection === "btc-to-evm";
-    const btcToArkadeData = isBtcToArkade
-      ? (swapData as BtcToArkadeSwapResponse)
-      : null;
     const btcToEvmData = isBtcToEvm ? (swapData as BtcToEvmSwapResponse) : null;
     const evmToBtcData =
       !isBtcToArkade && !isBtcToEvm ? (swapData as EvmToBtcSwapResponse) : null;
@@ -57,9 +59,6 @@ export function SuccessStep({
       target_token: swapData.target_token,
       amount_usd:
         btcToEvmData?.asset_amount ?? evmToBtcData?.asset_amount ?? null,
-      amount_sats: isBtcToArkade
-        ? btcToArkadeData?.sats_receive
-        : swapData.sats_receive,
       fee_sats: swapData.fee_sats,
       duration_seconds: swapDurationSeconds,
     });
@@ -118,19 +117,35 @@ export function SuccessStep({
         swapTxIdIsEvm: false,
         tweetText: `On-ramped ${btcToArkadeData.sats_receive.toLocaleString()} sats from Bitcoin mainchain to @arkade_os in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap!`,
       };
+    } else if (swapDirection === "onchain-to-evm") {
+      const btcToEvmSwap = swapData as OnchainToEvmSwapResponse;
+      return {
+        sentTokenSymbol: "sats",
+        sentTokenNetwork: "Bitcoin",
+        sentAmount: btcToEvmSwap.source_amount.toLocaleString(),
+        receivedTokenSymbol: getTokenSymbol(btcToEvmSwap.target_token),
+        receivedTokenNetwork: getTokenNetworkName(btcToEvmSwap.target_token),
+        receivedAmount: btcToEvmSwap.target_amount.toLocaleString(),
+        receiveAddress: btcToEvmSwap.client_evm_address,
+        receiveAddressIsEvm: false,
+        isLightning: false,
+        swapTxId: btcToEvmSwap.evm_claim_txid,
+        swapTxIdIsEvm: false,
+        tweetText: `Swapped ${btcToEvmSwap.source_amount.toLocaleString()} sats from Bitcoin mainchain on @lendasat\n\nTrustless atomic swap!`,
+      };
     } else {
       // evm-to-btc
       const evmToBtcData = swapData as EvmToBtcSwapResponse;
       return {
         sentTokenSymbol: getTokenSymbol(swapData.source_token),
         sentTokenNetwork: getTokenNetworkName(swapData.source_token),
-        sentAmount: evmToBtcData.asset_amount.toFixed(2),
+        sentAmount: evmToBtcData.source_amount.toFixed(2),
         receivedTokenSymbol: "sats",
         receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
         receivedAmount: evmToBtcData.sats_receive.toLocaleString(),
         // For Lightning swaps, show the invoice/address; for Arkade, show the Arkade address
         receiveAddress: swapData.target_token.isLightning()
-          ? swapData.ln_invoice
+          ? (swapData as EvmToBtcSwapResponse).ln_invoice
           : (swapData as EvmToBtcSwapResponse).user_address_arkade,
         receiveAddressIsEvm: false,
         isLightning: swapData.target_token.isLightning(),

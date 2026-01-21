@@ -10,16 +10,25 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import type { BtcToArkadeSwapResponse } from "../../api";
+import {
+  type BtcToArkadeSwapResponse,
+  getTokenNetworkName,
+  getTokenSymbol,
+  type OnchainToEvmSwapResponse,
+  type TokenInfo,
+} from "../../api";
 
 interface SendOnchainBtcStepProps {
-  swapData: BtcToArkadeSwapResponse;
+  swapData: BtcToArkadeSwapResponse | OnchainToEvmSwapResponse;
   swapId: string;
+  // the token which is being swapped
+  targetTokenInfo: TokenInfo;
 }
 
 export function SendOnchainBtcStep({
   swapData,
   swapId,
+  targetTokenInfo,
 }: SendOnchainBtcStepProps) {
   const navigate = useNavigate();
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
@@ -72,7 +81,7 @@ export function SendOnchainBtcStep({
   }, [now, swapData.btc_refund_locktime]);
 
   // Build bitcoin: URI for QR code
-  const btcAmountInBtc = (Number(swapData.asset_amount) / 100_000_000).toFixed(
+  const btcAmountInBtc = (Number(swapData.source_amount) / 100_000_000).toFixed(
     8,
   );
   const bitcoinUri = `bitcoin:${swapData.btc_htlc_address}?amount=${btcAmountInBtc}`;
@@ -170,15 +179,15 @@ export function SendOnchainBtcStep({
             <span className="text-muted-foreground">Amount to Send</span>
             <div className="flex items-center gap-2">
               <span className="font-bold text-orange-500">
-                {swapData.asset_amount.toLocaleString()} sats
+                {swapData.source_amount.toLocaleString()} sats
               </span>
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => handleCopy(swapData.asset_amount.toString())}
+                onClick={() => handleCopy(swapData.source_amount.toString())}
                 className="h-6 w-6"
               >
-                {copiedValue === swapData.asset_amount.toString() ? (
+                {copiedValue === swapData.source_amount.toString() ? (
                   <CheckCheck className="h-3 w-3" />
                 ) : (
                   <Copy className="h-3 w-3" />
@@ -186,12 +195,31 @@ export function SendOnchainBtcStep({
               </Button>
             </div>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">You Receive on Arkade</span>
-            <span className="font-medium">
-              {swapData.sats_receive.toLocaleString()} sats
-            </span>
-          </div>
+          {swapData.target_token.isArkade() ? (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                You Receive on Arkade
+              </span>
+              <span className="font-medium">
+                {(
+                  swapData as BtcToArkadeSwapResponse
+                ).target_amount.toLocaleString()}{" "}
+                sats
+              </span>
+            </div>
+          ) : null}
+          {swapData.target_token.isEvmToken() ? (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">You Receive</span>
+              <span className="font-medium">
+                {(swapData.target_amount as number).toFixed(
+                  targetTokenInfo.decimals,
+                )}{" "}
+                {getTokenSymbol(swapData.target_token)} on{" "}
+                {getTokenNetworkName(swapData.target_token)}
+              </span>
+            </div>
+          ) : null}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Fee</span>
             <span className="font-medium">

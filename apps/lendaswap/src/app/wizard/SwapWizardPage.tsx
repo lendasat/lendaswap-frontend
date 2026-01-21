@@ -1,5 +1,7 @@
 import {
   type ExtendedSwapStorageData,
+  OnchainToEvmSwapResponse,
+  swapStatusToString,
   TokenId,
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk";
@@ -30,7 +32,11 @@ import {
 } from "./steps";
 import { SendLightningStep } from "./steps/SendLightningStep";
 
-export type SwapDirection = "btc-to-evm" | "evm-to-btc" | "btc-to-arkade";
+export type SwapDirection =
+  | "btc-to-evm"
+  | "evm-to-btc"
+  | "btc-to-arkade"
+  | "onchain-to-evm";
 
 type StepId =
   | "user-deposit"
@@ -66,6 +72,11 @@ const swapDirection = (
     swapData.target_token.isArkade()
   ) {
     return "btc-to-arkade";
+  } else if (
+    swapData.source_token.isBtcOnchain() &&
+    swapData.target_token.isEvmToken()
+  ) {
+    return "onchain-to-evm";
   } else {
     return undefined;
   }
@@ -228,7 +239,7 @@ export function SwapWizardPage() {
   useEffect(() => {
     if (swapData && swapData.response.status !== lastStatusRef.current) {
       console.log(
-        `Status changed: ${lastStatusRef.current} -> ${swapData.response.status}`,
+        `Status changed: ${lastStatusRef.current ? swapStatusToString(lastStatusRef.current) : undefined} -> ${swapStatusToString(swapData.response.status)}`,
       );
       lastStatusRef.current = swapData.response.status;
       setDisplaySwapData(swapData.response);
@@ -424,11 +435,18 @@ export function SwapWizardPage() {
                 swapData={displaySwapData as BtcToEvmSwapResponse}
               />
             )}
-          {currentStep === "user-deposit" &&
-            swapDirectionValue === "btc-to-arkade" && (
+          {targetTokenInfo &&
+            currentStep === "user-deposit" &&
+            (swapDirectionValue === "btc-to-arkade" ||
+              swapDirectionValue === "onchain-to-evm") && (
               <SendOnchainBtcStep
-                swapData={displaySwapData as BtcToArkadeSwapResponse}
+                swapData={
+                  displaySwapData as
+                    | BtcToArkadeSwapResponse
+                    | OnchainToEvmSwapResponse
+                }
                 swapId={displaySwapData.id}
+                targetTokenInfo={targetTokenInfo}
               />
             )}
           {targetTokenInfo &&
@@ -541,9 +559,14 @@ export function SwapWizardPage() {
             )}
 
           {currentStep === "refundable" &&
-            swapDirectionValue === "btc-to-arkade" && (
+            (swapDirectionValue === "btc-to-arkade" ||
+              swapDirectionValue === "onchain-to-evm") && (
               <OnchainBtcRefundStep
-                swapData={displaySwapData as BtcToArkadeSwapResponse}
+                swapData={
+                  displaySwapData as
+                    | BtcToArkadeSwapResponse
+                    | OnchainToEvmSwapResponse
+                }
                 swapId={displaySwapData.id}
               />
             )}
