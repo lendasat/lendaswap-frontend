@@ -178,13 +178,14 @@ export function SwapProcessingStep({
           await switchChainAsync({ chainId: chain.id });
 
           let htlcAddress: `0x${string}`;
-          if (swapData.source_token.isBtc()) {
+          if (swapData.source_token.isBtcOnchain()) {
             htlcAddress = (swapData as OnchainToEvmSwapResponse)
               .evm_htlc_address as `0x${string}`;
           } else {
             htlcAddress = (swapData as BtcToEvmSwapResponse)
               .htlc_address_evm as `0x${string}`;
           }
+          console.log(`Claiming for htlc contract `, htlcAddress);
 
           // Convert UUID to bytes32 by removing hyphens and padding with zeros
           const swapIdBytes32 = uuidToHtlcSwapId(swapData.id);

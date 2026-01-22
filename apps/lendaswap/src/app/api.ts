@@ -337,6 +337,8 @@ export const api = {
       "usdc_eth",
       "usdt_eth",
       "xaut_eth",
+      "wbtc_pol",
+      "wbtc_eth",
     ];
 
     const results = await getUsdPrices(tokenIds);

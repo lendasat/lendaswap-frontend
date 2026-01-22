@@ -10,6 +10,7 @@ import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
 import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
 import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
 import { ReactComponent as Usdt0Icon } from "../../assets/usdt0.svg";
+import { ReactComponent as WbtcIcon } from "../../assets/wbtc.svg";
 import { ReactComponent as XautIcon } from "../../assets/xaut.svg";
 import type { TokenIdString } from "../api";
 
@@ -45,6 +46,9 @@ export function getTokenSymbol(tokenId: TokenId): string {
       return "USDT";
     case "xaut_eth":
       return "XAUt";
+    case "wbtc_pol":
+    case "wbtc_eth":
+      return "WBTC";
     case "btc_arkade":
     case "btc_lightning":
     case "btc_onchain":
@@ -78,6 +82,10 @@ export function getTokenDisplayName(tokenId: TokenId): string {
       return "USDT (Polygon)";
     case "xaut_eth":
       return "XAUt (Ethereum)";
+    case "wbtc_eth":
+      return "WBTC (Ethereum)";
+    case "wbtc_pol":
+      return "WBTC (Polygon)";
     case "pol_pol":
       return "POL (Polygon)";
     default:
@@ -108,6 +116,9 @@ export function getTokenIcon(
       return <UsdtIcon width={width} height={height} />;
     case "xaut_eth":
       return <XautIcon width={width} height={height} />;
+    case "wbtc_pol":
+    case "wbtc_eth":
+      return <WbtcIcon width={width} height={height} />;
     case "pol_pol":
       return <PolIcon width={width} height={height} />;
     default:
@@ -130,11 +141,13 @@ export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
       return <BitcoinIcon width={8} height={8} />;
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
       return <PolygonIcon />;
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return <EthereumIcon />;
     default:
       // Fallback for unknown tokens
@@ -156,11 +169,13 @@ export function getTokenNetworkName(tokenId: TokenId): string {
       return "Onchain";
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
       return "Polygon";
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return "Ethereum";
     default:
       return "Unknown";
@@ -175,11 +190,13 @@ export function getViemChain(tokenId: TokenId): Chain | undefined {
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
       return polygon;
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return mainnet;
     default:
       return undefined;
@@ -194,10 +211,12 @@ export function isEvmToken(tokenId: TokenId): boolean {
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return true;
     case "btc_arkade":
     case "btc_lightning":
@@ -217,6 +236,7 @@ export function isEthereumToken(tokenId: TokenId): boolean {
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return true;
     default:
       return false;
@@ -231,6 +251,7 @@ export function isPolygonToken(tokenId: TokenId): boolean {
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
       return true;
     default:
@@ -248,11 +269,13 @@ export function networkName(
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
       return "polygon";
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return "ethereum";
     case "btc_arkade":
       return "arkade";
@@ -273,10 +296,12 @@ export function isValidTokenId(token: string | undefined): boolean {
     token === "btc_onchain" ||
     token === "usdc_pol" ||
     token === "usdt0_pol" ||
+    token === "wbtc_pol" ||
     token === "pol_pol" ||
     token === "usdt_eth" ||
     token === "usdc_eth" ||
-    token === "xaut_eth"
+    token === "xaut_eth" ||
+    token === "wbtc_eth"
   );
 }
 
@@ -286,10 +311,12 @@ export function isAssetToken(tokenId: TokenId): boolean {
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return true;
     case "btc_arkade":
     case "btc_lightning":
@@ -306,10 +333,12 @@ export function isBtcToken(tokenId: TokenId): boolean {
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return false;
     case "btc_arkade":
     case "btc_lightning":
@@ -331,11 +360,13 @@ export function getBlockexplorerTxLink(
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
       return `https://polygonscan.com/tx/${txid}`;
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return `https://etherscan.com/tx/${txid}`;
     case "btc_onchain":
       return `https://mempool.space/tx/${txid}`;
@@ -359,11 +390,13 @@ export function getBlockexplorerAddressLink(
   switch (tokenIdString) {
     case "usdc_pol":
     case "usdt0_pol":
+    case "wbtc_pol":
     case "pol_pol":
       return `https://polygonscan.com/address/${address}`;
     case "usdc_eth":
     case "usdt_eth":
     case "xaut_eth":
+    case "wbtc_eth":
       return `https://etherscan.com/address/${address}`;
     case "btc_onchain":
       return `https://mempool.space/address/${address}`;
