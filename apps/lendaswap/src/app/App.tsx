@@ -348,8 +348,10 @@ function HomePage() {
         let amount: number;
         if (sourceAsset.isEvmToken()) {
           amount = targetAssetAmount;
-        } else if (sourceAsset.isBtcOnchain()) {
+        } else if (sourceAsset.isBtcOnchain() && targetAsset.isArkade()) {
           amount = targetAssetAmount;
+        } else if (sourceAsset.isBtcOnchain() && targetAsset.isEvmToken()) {
+          amount = sourceAssetAmount ?? 0;
         } else {
           amount = sourceAssetAmount ?? 0;
         }
