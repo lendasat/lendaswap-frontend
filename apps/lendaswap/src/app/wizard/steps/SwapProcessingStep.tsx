@@ -538,8 +538,12 @@ export function SwapProcessingStep({
 
   const config = getConfig();
 
+  // Check if client funding is still being confirmed (seen but not confirmed)
+  const isClientFundingSeen = swapData.status === SwapStatus.ClientFundingSeen;
+
   // Determine which step is currently active (the first incomplete step)
   const getCurrentStep = () => {
+    if (isClientFundingSeen) return 1; // Client funding seen, awaiting confirmation
     if (!config.step2TxId) return 2; // Server funding
     if (!config.step3TxId) return 3; // Client redeeming
     if (!config.step4TxId) return 4; // Server redeeming
@@ -566,11 +570,23 @@ export function SwapProcessingStep({
         <div className="space-y-4">
           {/* Step 1: User Funded */}
           <div className="flex items-start gap-3">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
-              <Check className="h-4 w-4 text-primary-foreground" />
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                isClientFundingSeen ? "bg-muted" : "bg-primary"
+              }`}
+            >
+              {isClientFundingSeen ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Check className="h-4 w-4 text-primary-foreground" />
+              )}
             </div>
             <div className="flex-1 space-y-1">
-              <p className="font-medium">{config.step1Label}</p>
+              <p className="font-medium">
+                {isClientFundingSeen
+                  ? "User Funding Detected"
+                  : config.step1Label}
+              </p>
               {config.step1TxId && (
                 <div className="flex items-center gap-2">
                   <code className="text-xs text-muted-foreground">
@@ -598,6 +614,11 @@ export function SwapProcessingStep({
                     </a>
                   )}
                 </div>
+              )}
+              {isClientFundingSeen && (
+                <p className="text-xs text-muted-foreground">
+                  Transaction detected, awaiting confirmation...
+                </p>
               )}
             </div>
           </div>
