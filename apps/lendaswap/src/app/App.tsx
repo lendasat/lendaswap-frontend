@@ -20,6 +20,7 @@ import {
   Github,
   Key,
   Loader,
+  Lock,
   Menu,
   Shield,
   Star,
@@ -49,6 +50,7 @@ import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
+import baniSitting from "../assets/bani_sitting.png";
 import {
   isLightningAddress,
   resolveLightningAddress,
@@ -669,6 +671,15 @@ function HomePage() {
                 availableAssets={availableSourceAssets}
                 label="sell"
                 onChange={(asset) => {
+                  // Preserve USD value when changing currency
+                  const currentUsdValue =
+                    (sourceAssetAmount ?? 0) * getUsdPerToken(sourceAsset);
+                  const newUsdPerToken = getUsdPerToken(asset);
+                  const newAmount =
+                    newUsdPerToken > 0
+                      ? currentUsdValue / newUsdPerToken
+                      : sourceAssetAmount;
+
                   // Special case: btc_onchain can be swapped to btc_arkade or EVM tokens
                   if (asset.isBtcOnchain()) {
                     // Keep current target if it's Arkade or EVM, otherwise default to usdc_pol
@@ -678,7 +689,7 @@ function HomePage() {
                         : TokenId.fromString("usdc_pol");
                     setSourceAsset(asset);
                     setTargetAsset(newTarget);
-                    setSourceAssetAmount(0.001);
+                    setSourceAssetAmount(newAmount);
                     navigate(`/${asset}/${newTarget}`, {
                       replace: true,
                     });
@@ -694,6 +705,7 @@ function HomePage() {
                   if (isEvmAsset && isBtcTarget) {
                     setSourceAsset(asset);
                     setTargetAsset(targetAsset);
+                    setSourceAssetAmount(newAmount);
                     navigate(`/${asset}/${targetAsset}`, { replace: true });
                     return;
                   }
@@ -702,6 +714,7 @@ function HomePage() {
                   if (isBtcAsset && isEvmTarget) {
                     setSourceAsset(asset);
                     setTargetAsset(targetAsset);
+                    setSourceAssetAmount(newAmount);
                     navigate(`/${asset}/${targetAsset}`, { replace: true });
                     return;
                   }
@@ -710,6 +723,7 @@ function HomePage() {
                   if (isEvmAsset && isEvmTarget) {
                     setSourceAsset(asset);
                     setTargetAsset(TokenId.btcArkade());
+                    setSourceAssetAmount(newAmount);
                     navigate(`/${asset}/btc_arkade`, { replace: true });
                     return;
                   }
@@ -718,6 +732,7 @@ function HomePage() {
                   if (isBtcAsset && isBtcTarget) {
                     setSourceAsset(asset);
                     setTargetAsset(TokenId.fromString("usdc_pol"));
+                    setSourceAssetAmount(newAmount);
                     navigate(`/${asset}/usdc_pol`, { replace: true });
                     return;
                   }
@@ -742,6 +757,13 @@ function HomePage() {
             const newTarget = sourceAsset;
             setSourceAsset(newSource);
             setTargetAsset(newTarget);
+
+            // Also swap the amounts so the values make sense for the new direction
+            const newSourceAmount = targetAssetAmount;
+            const newTargetAmount = sourceAssetAmount;
+            setSourceAssetAmount(newSourceAmount);
+            setTargetAssetAmount(newTargetAmount);
+
             navigate(`/${newSource}/${newTarget}`, { replace: true });
             // Clear target address since it may not be valid for the new target token type
             setTargetAddress("");
@@ -750,8 +772,8 @@ function HomePage() {
           disabled={sourceAsset.isBtcOnchain()}
           className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group ${sourceAsset.isBtcOnchain() ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          <div className="bg-background rounded-xl p-1">
-            <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover:bg-muted/80 group-active:scale-95">
+          <div className="bg-background rounded-xl p-1 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-125">
+            <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover:bg-muted/80">
               <ArrowDown className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
@@ -782,10 +804,20 @@ function HomePage() {
                 availableAssets={availableTargetAssets}
                 value={targetAsset}
                 onChange={(asset) => {
+                  // Preserve USD value when changing currency
+                  const currentUsdValue =
+                    (targetAssetAmount ?? 0) * getUsdPerToken(targetAsset);
+                  const newUsdPerToken = getUsdPerToken(asset);
+                  const newAmount =
+                    newUsdPerToken > 0
+                      ? currentUsdValue / newUsdPerToken
+                      : targetAssetAmount;
+
                   // Special case: when source is btc_onchain, allow btc_arkade or EVM tokens
                   if (sourceAsset.isBtcOnchain()) {
                     if (asset.isArkade() || asset.isEvmToken()) {
                       setTargetAsset(asset);
+                      setTargetAssetAmount(newAmount);
                       navigate(`/${sourceAsset}/${asset}`, { replace: true });
                       // Clear target address since it may not be valid for the new target token type
                       setTargetAddress("");
@@ -805,6 +837,7 @@ function HomePage() {
                     // Buying BTC but selling BTC - switch source to default EVM stablecoin
                     setSourceAsset(TokenId.fromString("usdc_pol"));
                     setTargetAsset(asset);
+                    setTargetAssetAmount(newAmount);
                     navigate(`/usdc_pol/${asset}`, { replace: true });
                     return;
                   }
@@ -813,12 +846,14 @@ function HomePage() {
                     // Buying EVM but selling EVM - switch source to default BTC
                     setSourceAsset(TokenId.btcArkade());
                     setTargetAsset(asset);
+                    setTargetAssetAmount(newAmount);
                     navigate(`/btc_arkade/${asset}`, { replace: true });
                     return;
                   }
 
                   // Compatible pair, just update target
                   setTargetAsset(asset);
+                  setTargetAssetAmount(newAmount);
                   navigate(`/${sourceAsset}/${asset}`, { replace: true });
                 }}
                 label="buy"
@@ -1418,7 +1453,7 @@ export default function App() {
                   </span>
                   <span className="ml-1">
                     Trusted by{" "}
-                    <span className="text-foreground font-bold">2,812+</span>{" "}
+                    <span className="text-foreground font-bold">4,102+</span>{" "}
                     Bitcoiners
                   </span>
                 </p>
@@ -1426,168 +1461,146 @@ export default function App() {
 
               {/* Top Row - Bento Grid: Square left, Wide right */}
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {/* Mobile App Promo - Square */}
-                <div className="md:col-span-2 group relative aspect-square md:aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
+                {/* Self-Custody - 100% Secured */}
+                <div className="md:col-span-2 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-square">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                  <div className="relative h-full flex flex-col">
-                    {/* Phone Mockup */}
-                    <div className="flex-1 flex items-start justify-center pt-2 overflow-hidden">
-                      <div
-                        className="relative transition-transform duration-500 ease-out group-hover:-translate-y-2"
-                        style={{ perspective: "1000px" }}
+
+                  {/* Background circles - Apple-style behind shield, animate on hover */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[240px] h-[240px] md:w-[320px] md:h-[320px] rounded-full bg-gradient-to-br from-orange-400/[0.08] to-orange-600/[0.03] blur-sm opacity-0 scale-50 transition-all duration-700 ease-out group-hover:opacity-100 group-hover:scale-100" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[180px] h-[180px] md:w-[240px] md:h-[240px] rounded-full border border-orange-500/[0.1] opacity-0 scale-50 transition-all duration-500 delay-100 ease-out group-hover:opacity-100 group-hover:scale-100" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[60%] w-[120px] h-[120px] md:w-[160px] md:h-[160px] rounded-full border border-orange-500/[0.15] opacity-0 scale-50 transition-all duration-500 delay-200 ease-out group-hover:opacity-100 group-hover:scale-100" />
+
+                  <style>{`
+                    .shield-container {
+                      transition: transform 0.5s ease-out, filter 0.5s ease-out;
+                    }
+                    .group:hover .shield-container {
+                      transform: scale(1.05);
+                      filter: drop-shadow(0 0 25px rgba(249, 115, 22, 0.4));
+                    }
+                    .shield-check {
+                      stroke-dasharray: 100;
+                      stroke-dashoffset: 100;
+                      transition: stroke-dashoffset 0.5s ease-out 0.15s;
+                    }
+                    .group:hover .shield-check {
+                      stroke-dashoffset: 0;
+                    }
+                    .shield-fill {
+                      transition: all 0.4s ease-out;
+                    }
+                    .group:hover .shield-fill {
+                      filter: brightness(1.1);
+                    }
+                  `}</style>
+
+                  {/* Animated Shield with Checkmark */}
+                  <div className="flex-1 flex items-center justify-center h-full pb-6 md:pb-8">
+                    <div className="shield-container">
+                      <svg
+                        viewBox="0 0 80 90"
+                        className="w-24 h-[108px] md:w-32 md:h-[144px]"
+                        aria-hidden="true"
                       >
-                        {/* Phone Frame */}
-                        <div className="relative w-[100px] md:w-[130px] h-[200px] md:h-[260px] rounded-[20px] md:rounded-[28px] bg-gradient-to-b from-zinc-700 to-zinc-900 dark:from-zinc-600 dark:to-zinc-800 p-[3px] md:p-[4px] shadow-xl shadow-black/20">
-                          {/* Inner bezel */}
-                          <div className="relative w-full h-full rounded-[17px] md:rounded-[24px] bg-black overflow-hidden">
-                            {/* Dynamic Island */}
-                            <div className="absolute top-2 md:top-3 left-1/2 -translate-x-1/2 w-[40px] md:w-[50px] h-[12px] md:h-[16px] bg-black rounded-full z-10" />
-                            {/* Screen */}
-                            <div className="w-full h-full bg-gradient-to-br from-orange-100 via-orange-50 to-white dark:from-orange-500/20 dark:via-orange-600/10 dark:to-orange-500/5 flex items-center justify-center">
-                              {/* Placeholder - will be replaced with app screenshot */}
-                              <div className="text-orange-600/60 dark:text-orange-500/40 text-[8px] md:text-[10px] font-medium tracking-wider">
-                                COMING SOON
-                              </div>
-                            </div>
-                            {/* Screen reflection */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
-                          </div>
-                          {/* Side buttons */}
-                          <div className="absolute -right-[2px] top-[60px] md:top-[80px] w-[3px] h-[30px] md:h-[40px] bg-zinc-600 dark:bg-zinc-500 rounded-r-sm" />
-                          <div className="absolute -left-[2px] top-[50px] md:top-[65px] w-[3px] h-[20px] md:h-[25px] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
-                          <div className="absolute -left-[2px] top-[75px] md:top-[95px] w-[3px] h-[35px] md:h-[45px] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
-                        </div>
-                      </div>
+                        {/* Shield fill with gradient */}
+                        <path
+                          className="shield-fill"
+                          d="M40 5 L70 20 L70 45 C70 65 55 80 40 85 C25 80 10 65 10 45 L10 20 Z"
+                          fill="url(#shieldGradient2)"
+                        />
+                        {/* Checkmark that draws on hover */}
+                        <path
+                          className="shield-check"
+                          d="M26 45 L36 55 L54 37"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <defs>
+                          <linearGradient id="shieldGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#fb923c" />
+                            <stop offset="100%" stopColor="#c2410c" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
                     </div>
-                    {/* Text */}
-                    <div className="pt-2">
-                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
-                        Get the App
-                      </div>
-                      <a
-                        href="https://freewaitlists.com/w/cmino8qw1016rls018q9glmbi"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
-                      >
-                        Join waitlist
-                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
-                      </a>
+                  </div>
+
+                  <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 right-4 md:right-6">
+                    <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
+                      100% Secured
+                    </div>
+                    <div className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                      Your keys. Your money. Always.
                     </div>
                   </div>
                 </div>
 
-                {/* Powered by Arkade */}
-                <div className="md:col-span-3 group relative aspect-square md:aspect-auto overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-purple-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/5">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-transparent to-purple-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-                  <div className="relative h-full flex flex-col justify-between">
-                    {/* Pixel art space invader with classic animation on hover */}
-                    <div className="flex-1 flex items-center justify-center">
-                      <style>{`
-                        @keyframes invaderMove {
-                          0%, 100% { transform: translateX(-10px); }
-                          50% { transform: translateX(10px); }
-                        }
-                        @keyframes invaderFrame {
-                          0%, 49% { opacity: 1; }
-                          50%, 100% { opacity: 0; }
-                        }
-                        @keyframes invaderFrame2 {
-                          0%, 49% { opacity: 0; }
-                          50%, 100% { opacity: 1; }
-                        }
-                        .invader-container {
-                          animation: none;
-                        }
-                        .group:hover .invader-container {
-                          animation: invaderMove 1.5s ease-in-out infinite;
-                        }
-                        .invader-frame1 {
-                          opacity: 1;
-                        }
-                        .invader-frame2 {
-                          opacity: 0;
-                        }
-                        .group:hover .invader-frame1 {
-                          animation: invaderFrame 0.8s steps(1) infinite;
-                        }
-                        .group:hover .invader-frame2 {
-                          animation: invaderFrame2 0.8s steps(1) infinite;
-                        }
-                      `}</style>
-                      <div className="relative invader-container">
-                        {/* Frame 1 - legs out */}
-                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] absolute inset-0 invader-frame1">
-                          {[
-                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-                            [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-                            [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-                            [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
-                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-                            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-                            [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],
-                          ]
-                            .flat()
-                            .map((filled, i) => (
-                              <div
-                                key={`p1-${i.toString()}`}
-                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
-                                  filled
-                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
-                                    : "bg-transparent"
-                                }`}
-                              />
-                            ))}
+                {/* Mobile App Promo - Wide */}
+                <div className="md:col-span-3 group relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-auto overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100 rounded-3xl" />
+
+                  {/* Coming Soon - Big background text */}
+                  <div className="absolute top-[35%] right-4 sm:right-8 md:right-12 -translate-y-1/2 flex flex-col items-end pointer-events-none">
+                    <span className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter text-orange-500/[0.08] leading-none transition-all duration-500 group-hover:text-orange-500/[0.15]">
+                      COMING
+                    </span>
+                    <span className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter text-orange-500/[0.12] leading-none transition-all duration-500 group-hover:text-orange-500/[0.2]">
+                      SOON
+                    </span>
+                  </div>
+
+                  {/* Phone - floating with gradient fade at bottom */}
+                  <div className="absolute top-[50%] left-8 sm:left-12 md:left-20 -translate-y-1/2">
+                    <div
+                      className="relative transition-transform duration-500 ease-out group-hover:-translate-y-2"
+                      style={{ perspective: "1000px" }}
+                    >
+                      {/* Phone Frame - bigger sizing */}
+                      <div className="relative w-[70px] sm:w-[90px] md:w-[110px] lg:w-[130px] aspect-[1/2] rounded-[14px] sm:rounded-[18px] md:rounded-[24px] bg-gradient-to-b from-zinc-700 to-zinc-900 dark:from-zinc-600 dark:to-zinc-800 p-[2px] sm:p-[3px] md:p-[4px] shadow-xl shadow-black/20">
+                        {/* Inner bezel */}
+                        <div className="relative w-full h-full rounded-[12px] sm:rounded-[15px] md:rounded-[20px] bg-black overflow-hidden">
+                          {/* Dynamic Island */}
+                          <div className="absolute top-2 sm:top-2.5 md:top-3 left-1/2 -translate-x-1/2 w-[22px] sm:w-[28px] md:w-[34px] h-[6px] sm:h-[8px] md:h-[10px] bg-black rounded-full z-10" />
+                          {/* Screen */}
+                          <div className="w-full h-full bg-gradient-to-br from-orange-100 via-orange-50 to-white dark:from-orange-500/20 dark:via-orange-600/10 dark:to-orange-500/5" />
+                          {/* Screen reflection */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
                         </div>
-                        {/* Frame 2 - legs in */}
-                        <div className="grid grid-cols-11 gap-[2px] md:gap-[3px] invader-frame2">
-                          {[
-                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-                            [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
-                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-                            [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
-                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
-                            [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-                          ]
-                            .flat()
-                            .map((filled, i) => (
-                              <div
-                                key={`p2-${i.toString()}`}
-                                className={`w-2.5 h-2.5 md:w-3.5 md:h-3.5 rounded-sm ${
-                                  filled
-                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
-                                    : "bg-transparent"
-                                }`}
-                              />
-                            ))}
-                        </div>
+                        {/* Side buttons */}
+                        <div className="absolute -right-[2px] top-[35%] w-[2px] sm:w-[3px] h-[18%] bg-zinc-600 dark:bg-zinc-500 rounded-r-sm" />
+                        <div className="absolute -left-[2px] top-[28%] w-[2px] sm:w-[3px] h-[12%] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
+                        <div className="absolute -left-[2px] top-[42%] w-[2px] sm:w-[3px] h-[18%] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
+                        {/* Gradient fade at bottom - starts earlier */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-card via-card/70 to-transparent pointer-events-none rounded-b-[14px] sm:rounded-b-[18px] md:rounded-b-[24px]" />
                       </div>
                     </div>
-                    <div>
-                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
-                        Powered by Arkade · Bitcoin L2
-                      </div>
-                      <a
-                        href="https://arkadeos.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-purple-500 hover:text-purple-400 transition-colors"
-                      >
-                        Learn more
-                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
-                      </a>
+                  </div>
+
+                  {/* Text - positioned at bottom */}
+                  <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 right-4 md:right-6">
+                    <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
+                      Get the App
                     </div>
+                    <a
+                      href="https://lendaswap.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
+                    >
+                      Join waitlist
+                      <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
+                    </a>
                   </div>
                 </div>
               </div>
 
-              {/* Developer Docs Row - Full Width */}
-              <div className="grid grid-cols-1 gap-4">
-                {/* Developer Docs - Full Width */}
-                <div className="group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-5 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-[4/3] md:aspect-[3/1]">
+              {/* Middle Row - Bento Grid: Wide left, Square right */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {/* Developer Docs - Wide */}
+                <div className="md:col-span-3 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-[4/3] md:aspect-auto">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                   <style>{`
                     @keyframes typewriter {
@@ -1723,12 +1736,118 @@ export default function App() {
                         Developer Docs
                       </div>
                       <a
-                        href="https://github.com/lendasat/lendaswap-sdk"
+                        href="https://lendasat.com/docs/lendaswap"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
                       >
                         View docs
+                        <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Powered by Arkade - Square */}
+                <div className="md:col-span-2 group relative aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-purple-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/5">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-transparent to-purple-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="relative h-full flex flex-col justify-between">
+                    {/* Pixel art space invader with classic animation on hover */}
+                    <div className="flex-1 flex items-center justify-center">
+                      <style>{`
+                        @keyframes invaderMove {
+                          0%, 100% { transform: translateX(-10px); }
+                          50% { transform: translateX(10px); }
+                        }
+                        @keyframes invaderFrame {
+                          0%, 49% { opacity: 1; }
+                          50%, 100% { opacity: 0; }
+                        }
+                        @keyframes invaderFrame2 {
+                          0%, 49% { opacity: 0; }
+                          50%, 100% { opacity: 1; }
+                        }
+                        .invader-container {
+                          animation: none;
+                        }
+                        .group:hover .invader-container {
+                          animation: invaderMove 1.5s ease-in-out infinite;
+                        }
+                        .invader-frame1 {
+                          opacity: 1;
+                        }
+                        .invader-frame2 {
+                          opacity: 0;
+                        }
+                        .group:hover .invader-frame1 {
+                          animation: invaderFrame 0.8s steps(1) infinite;
+                        }
+                        .group:hover .invader-frame2 {
+                          animation: invaderFrame2 0.8s steps(1) infinite;
+                        }
+                      `}</style>
+                      <div className="relative invader-container">
+                        {/* Frame 1 - legs out */}
+                        <div className="grid grid-cols-11 gap-[1px] sm:gap-[2px] md:gap-[2px] lg:gap-[3px] absolute inset-0 invader-frame1">
+                          {[
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+                            [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],
+                          ]
+                            .flat()
+                            .map((filled, i) => (
+                              <div
+                                key={`p1-${i.toString()}`}
+                                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 rounded-sm ${
+                                  filled
+                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                    : "bg-transparent"
+                                }`}
+                              />
+                            ))}
+                        </div>
+                        {/* Frame 2 - legs in */}
+                        <div className="grid grid-cols-11 gap-[1px] sm:gap-[2px] md:gap-[2px] lg:gap-[3px] invader-frame2">
+                          {[
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+                            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+                            [1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+                            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+                            [0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                            [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                          ]
+                            .flat()
+                            .map((filled, i) => (
+                              <div
+                                key={`p2-${i.toString()}`}
+                                className={`w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 lg:w-3.5 lg:h-3.5 rounded-sm ${
+                                  filled
+                                    ? "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.5)]"
+                                    : "bg-transparent"
+                                }`}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
+                        Powered by Arkade · Bitcoin L2
+                      </div>
+                      <a
+                        href="https://arkadeos.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-purple-500 hover:text-purple-400 transition-colors"
+                      >
+                        Learn more
                         <ArrowDown className="h-3 w-3 rotate-[-90deg]" />
                       </a>
                     </div>
@@ -1839,7 +1958,7 @@ export default function App() {
                 </div>
 
                 {/* Atomic Swaps - Peer to Peer Connection */}
-                <div className="group relative md:col-span-2 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-[4/3] md:aspect-auto">
+                <div className="group relative md:col-span-2 aspect-[4/3] md:aspect-auto overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                   <style>{`
                     .p2p-line {

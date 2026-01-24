@@ -153,7 +153,7 @@ export function getTokenNetworkName(tokenId: TokenId): string {
     case "btc_lightning":
       return "Lightning";
     case "btc_onchain":
-      return "Bitcoin";
+      return "Onchain";
     case "usdc_pol":
     case "usdt0_pol":
     case "pol_pol":
