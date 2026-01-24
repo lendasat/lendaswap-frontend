@@ -770,10 +770,10 @@ function HomePage() {
             setAddressValid(false);
           }}
           disabled={sourceAsset.isBtcOnchain()}
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group ${sourceAsset.isBtcOnchain() ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${sourceAsset.isBtcOnchain() ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          <div className="bg-background rounded-xl p-1 transition-transform duration-200 ease-out group-hover:scale-110 group-active:scale-125">
-            <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover:bg-muted/80">
+          <div className="bg-background rounded-xl p-1 transition-transform duration-200 ease-out group-hover/swap:scale-110 group-active/swap:scale-125">
+            <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover/swap:bg-muted/80">
               <ArrowDown className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
@@ -1093,7 +1093,7 @@ export default function App() {
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Top Left - Orange Gradient */}
         <div
-          className="absolute -top-48 -left-48 w-[600px] h-[600px]"
+          className="absolute -top-48 -left-48 w-[600px] h-[600px] opacity-100 dark:opacity-40"
           style={{
             background:
               "radial-gradient(circle at center, rgba(251, 146, 60, 0.08) 0%, rgba(249, 115, 22, 0.05) 25%, rgba(234, 88, 12, 0.03) 50%, transparent 70%)",
@@ -1104,7 +1104,7 @@ export default function App() {
 
         {/* Bottom Right - Orange to Amber Gradient */}
         <div
-          className="absolute -bottom-40 -right-40 w-[550px] h-[550px]"
+          className="absolute -bottom-40 -right-40 w-[550px] h-[550px] opacity-100 dark:opacity-40"
           style={{
             background:
               "radial-gradient(circle at center, rgba(251, 146, 60, 0.07) 0%, rgba(249, 115, 22, 0.04) 30%, rgba(245, 158, 11, 0.03) 50%, transparent 68%)",
@@ -1544,26 +1544,26 @@ export default function App() {
 
                   {/* Coming Soon - Big background text */}
                   <div className="absolute top-[35%] right-4 sm:right-8 md:right-12 -translate-y-1/2 flex flex-col items-end pointer-events-none">
-                    <span className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter text-orange-500/[0.08] leading-none transition-all duration-500 group-hover:text-orange-500/[0.15]">
+                    <span className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter text-orange-500/[0.08] leading-none transition-all duration-500 group-hover:text-orange-500/[0.15]">
                       COMING
                     </span>
-                    <span className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter text-orange-500/[0.12] leading-none transition-all duration-500 group-hover:text-orange-500/[0.2]">
+                    <span className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter text-orange-500/[0.12] leading-none transition-all duration-500 group-hover:text-orange-500/[0.2]">
                       SOON
                     </span>
                   </div>
 
                   {/* Phone - floating with gradient fade at bottom */}
-                  <div className="absolute top-[50%] left-8 sm:left-12 md:left-20 -translate-y-1/2">
+                  <div className="absolute top-[50%] left-10 sm:left-14 md:left-20 -translate-y-1/2">
                     <div
                       className="relative transition-transform duration-500 ease-out group-hover:-translate-y-2"
                       style={{ perspective: "1000px" }}
                     >
                       {/* Phone Frame - bigger sizing */}
-                      <div className="relative w-[70px] sm:w-[90px] md:w-[110px] lg:w-[130px] aspect-[1/2] rounded-[14px] sm:rounded-[18px] md:rounded-[24px] bg-gradient-to-b from-zinc-700 to-zinc-900 dark:from-zinc-600 dark:to-zinc-800 p-[2px] sm:p-[3px] md:p-[4px] shadow-xl shadow-black/20">
+                      <div className="relative w-[100px] sm:w-[110px] md:w-[110px] lg:w-[130px] aspect-[1/2] rounded-[20px] sm:rounded-[22px] md:rounded-[24px] bg-gradient-to-b from-zinc-700 to-zinc-900 dark:from-zinc-600 dark:to-zinc-800 p-[3px] sm:p-[3px] md:p-[4px] shadow-xl shadow-black/20">
                         {/* Inner bezel */}
-                        <div className="relative w-full h-full rounded-[12px] sm:rounded-[15px] md:rounded-[20px] bg-black overflow-hidden">
+                        <div className="relative w-full h-full rounded-[17px] sm:rounded-[19px] md:rounded-[20px] bg-black overflow-hidden">
                           {/* Dynamic Island */}
-                          <div className="absolute top-2 sm:top-2.5 md:top-3 left-1/2 -translate-x-1/2 w-[22px] sm:w-[28px] md:w-[34px] h-[6px] sm:h-[8px] md:h-[10px] bg-black rounded-full z-10" />
+                          <div className="absolute top-2.5 sm:top-3 md:top-3 left-1/2 -translate-x-1/2 w-[30px] sm:w-[32px] md:w-[34px] h-[8px] sm:h-[9px] md:h-[10px] bg-black rounded-full z-10" />
                           {/* Screen */}
                           <div className="w-full h-full bg-gradient-to-br from-orange-100 via-orange-50 to-white dark:from-orange-500/20 dark:via-orange-600/10 dark:to-orange-500/5" />
                           {/* Screen reflection */}
@@ -1574,7 +1574,7 @@ export default function App() {
                         <div className="absolute -left-[2px] top-[28%] w-[2px] sm:w-[3px] h-[12%] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
                         <div className="absolute -left-[2px] top-[42%] w-[2px] sm:w-[3px] h-[18%] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
                         {/* Gradient fade at bottom - starts earlier */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-card via-card/70 to-transparent pointer-events-none rounded-b-[14px] sm:rounded-b-[18px] md:rounded-b-[24px]" />
+                        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-card via-card/70 to-transparent pointer-events-none rounded-b-[20px] sm:rounded-b-[22px] md:rounded-b-[24px]" />
                       </div>
                     </div>
                   </div>
@@ -1585,7 +1585,7 @@ export default function App() {
                       Get the App
                     </div>
                     <a
-                      href="https://lendaswap.com"
+                      href="https://lendasat.com/app_waitlist"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 mt-1.5 text-xs md:text-sm font-medium text-orange-500 hover:text-orange-400 transition-colors"
