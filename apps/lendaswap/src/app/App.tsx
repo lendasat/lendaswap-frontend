@@ -1344,7 +1344,7 @@ export default function App() {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-6 py-16">
+        <main className="container mx-auto px-4 sm:px-5 md:px-6 py-16">
           <div className="mx-auto max-w-2xl space-y-10">
             {/* Title */}
             <div className="space-y-2 text-center">
