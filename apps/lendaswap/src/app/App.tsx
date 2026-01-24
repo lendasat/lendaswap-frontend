@@ -260,6 +260,7 @@ function HomePage() {
 
   const assetPairs = maybeAssetPairs || [];
   const tokens = maybeTokens || [];
+  const isInitialLoading = !maybeAssetPairs || !maybeTokens;
 
   const targetAssetDecimalPlaces = assetPairs.find(
     (pair) => pair.target.token_id.toString() === targetAsset.toString(),
@@ -640,6 +641,43 @@ function HomePage() {
       .sort((a, b) => a.toString().localeCompare(b.toString()));
   })();
 
+  // Skeleton loader for initial loading state
+  if (isInitialLoading) {
+    return (
+      <div className="flex flex-col p-3 animate-pulse">
+        {/* Sell skeleton */}
+        <div className="rounded-2xl bg-muted p-4 pb-5">
+          <div className="h-4 w-8 bg-muted-foreground/20 rounded mb-3" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="h-10 flex-1 bg-muted-foreground/20 rounded-lg" />
+            <div className="h-10 w-28 bg-muted-foreground/20 rounded-full" />
+          </div>
+        </div>
+        {/* Arrow skeleton */}
+        <div className="flex justify-center -my-3 relative z-10">
+          <div className="w-10 h-10 bg-background rounded-xl p-1">
+            <div className="w-full h-full bg-muted rounded-lg" />
+          </div>
+        </div>
+        {/* Buy skeleton */}
+        <div className="rounded-2xl bg-muted p-4 pt-5">
+          <div className="h-4 w-8 bg-muted-foreground/20 rounded mb-3" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="h-10 flex-1 bg-muted-foreground/20 rounded-lg" />
+            <div className="h-10 w-28 bg-muted-foreground/20 rounded-full" />
+          </div>
+        </div>
+        {/* Address skeleton */}
+        <div className="mt-3 rounded-2xl bg-muted p-4">
+          <div className="h-4 w-32 bg-muted-foreground/20 rounded mb-3" />
+          <div className="h-12 w-full bg-muted-foreground/20 rounded-xl" />
+        </div>
+        {/* Button skeleton */}
+        <div className="mt-3 h-14 w-full bg-muted-foreground/20 rounded-2xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col p-3">
       {/* Sell/Buy container with arrow */}
@@ -913,23 +951,10 @@ function HomePage() {
         ) : null}
 
         <div className="pt-2">
-          {/* Show Connect Wallet button when EVM source and wallet not connected */}
+          {/* Show Connect Wallet button only when EVM source (user needs to pay gas to send EVM tokens) */}
           {sourceAsset.isEvmToken() &&
           !isValidSpeedWalletContext() &&
           !isConnected ? (
-            <ConnectKitButton.Custom>
-              {({ show }) => (
-                <Button onClick={show} className="w-full h-12 gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Connect Wallet
-                </Button>
-              )}
-            </ConnectKitButton.Custom>
-          ) : /* Show Connect Wallet button when BTC source, Ethereum target, and wallet not connected */
-          sourceAsset.isBtc() &&
-            targetAsset.isEvmToken() &&
-            !isValidSpeedWalletContext() &&
-            !isConnected ? (
             <ConnectKitButton.Custom>
               {({ show }) => (
                 <Button onClick={show} className="w-full h-12 gap-2">
@@ -1396,7 +1421,7 @@ export default function App() {
                     <div className="group relative">
                       {/* Orange glow effect on hover */}
                       <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/0 opacity-0 blur-xl transition-all duration-500 group-hover:from-orange-500/10 group-hover:via-orange-400/8 group-hover:to-orange-500/10 group-hover:opacity-100" />
-                      <Card className="relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm">
+                      <Card className="relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm min-h-[420px]">
                         <Routes>
                           <Route
                             path="/"
