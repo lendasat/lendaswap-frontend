@@ -20,7 +20,6 @@ import {
   Github,
   Key,
   Loader,
-  Lock,
   Menu,
   Shield,
   Star,
@@ -50,7 +49,6 @@ import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
 import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
-import baniSitting from "../assets/bani_sitting.png";
 import {
   isLightningAddress,
   resolveLightningAddress,
@@ -1544,7 +1542,13 @@ export default function App() {
                           strokeLinejoin="round"
                         />
                         <defs>
-                          <linearGradient id="shieldGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <linearGradient
+                            id="shieldGradient2"
+                            x1="0%"
+                            y1="0%"
+                            x2="0%"
+                            y2="100%"
+                          >
                             <stop offset="0%" stopColor="#fb923c" />
                             <stop offset="100%" stopColor="#c2410c" />
                           </linearGradient>
