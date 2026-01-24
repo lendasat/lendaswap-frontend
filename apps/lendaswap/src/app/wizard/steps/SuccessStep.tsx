@@ -158,11 +158,6 @@ export function SuccessStep({
 
   const config = getConfig();
 
-  const handleShareOnTwitter = () => {
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(config.tweetText)}`;
-    window.open(twitterUrl, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
       {/* Swap ID Header */}
@@ -198,26 +193,6 @@ export function SuccessStep({
               Your {config.receivedTokenSymbol} has been successfully sent to
               your address
             </p>
-          </div>
-
-          {/* LIFETIME OFFER Banner */}
-          <div className="w-full max-w-md">
-            <div className="relative overflow-hidden rounded-xl border-2 border-green-500/50 bg-gradient-to-r from-green-500/20 via-green-400/20 to-green-500/20 p-6 shadow-lg">
-              {/* Animated background effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/10 to-transparent animate-shimmer" />
-
-              <div className="relative text-center space-y-3">
-                <p className="text-sm font-semibold text-green-700 dark:text-green-300">
-                  GET A NO-FEE CODE BY SHARING YOUR SWAP ON 𝕏
-                </p>
-                <Button
-                  onClick={handleShareOnTwitter}
-                  className="w-full bg-black hover:bg-black/90 text-white dark:bg-white dark:hover:bg-white/90 dark:text-black"
-                >
-                  Share on 𝕏
-                </Button>
-              </div>
-            </div>
           </div>
 
           {/* Transaction Details */}
