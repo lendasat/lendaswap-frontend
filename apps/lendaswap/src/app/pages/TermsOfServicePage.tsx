@@ -18,7 +18,7 @@ export function TermsOfServicePage() {
       </Button>
 
       <h1 className="text-3xl font-bold mb-2">Terms of Service</h1>
-      <p className="text-muted-foreground mb-8">Last updated: January 2025</p>
+      <p className="text-muted-foreground mb-8">Last updated: January 2026</p>
 
       <div className="prose prose-neutral dark:prose-invert max-w-none space-y-6">
         <section>
@@ -169,7 +169,37 @@ export function TermsOfServicePage() {
 
         <section>
           <h2 className="text-xl font-semibold mb-3">
-            8. Third-Party Services
+            8. Geographic Restrictions
+          </h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Our service is not available to residents or citizens of, or persons
+            located in, the following jurisdictions:
+          </p>
+          <ul className="list-disc list-inside text-muted-foreground mt-2 space-y-1">
+            <li>The United States of America and its territories</li>
+            <li>
+              Countries subject to comprehensive sanctions by the United States,
+              European Union, or United Nations, including but not limited to:
+              North Korea, Iran, Syria, Cuba, and the Crimea, Donetsk, and
+              Luhansk regions
+            </li>
+            <li>
+              Any other jurisdiction where the use of cryptocurrency swap
+              services is prohibited or requires licensing that we do not hold
+            </li>
+          </ul>
+          <p className="text-muted-foreground leading-relaxed mt-3">
+            By using our service, you represent and warrant that you are not
+            located in, incorporated or organized in, or a resident of any
+            restricted jurisdiction, and that you are not subject to sanctions
+            administered by OFAC, the UN Security Council, the EU, or any other
+            governmental authority.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-3">
+            9. Third-Party Services
           </h2>
           <p className="text-muted-foreground leading-relaxed">
             Our service integrates with third-party protocols and services,
@@ -181,7 +211,7 @@ export function TermsOfServicePage() {
 
         <section>
           <h2 className="text-xl font-semibold mb-3">
-            9. Modifications to Terms
+            10. Modifications to Terms
           </h2>
           <p className="text-muted-foreground leading-relaxed">
             We reserve the right to modify these Terms at any time. Changes will
@@ -192,7 +222,7 @@ export function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-3">10. Governing Law</h2>
+          <h2 className="text-xl font-semibold mb-3">11. Governing Law</h2>
           <p className="text-muted-foreground leading-relaxed">
             These Terms shall be governed by and construed in accordance with
             the laws of the British Virgin Islands, without regard to its
@@ -201,7 +231,7 @@ export function TermsOfServicePage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-3">11. Contact</h2>
+          <h2 className="text-xl font-semibold mb-3">12. Contact</h2>
           <p className="text-muted-foreground leading-relaxed">
             For questions about these Terms, please contact us through our
             official channels.
