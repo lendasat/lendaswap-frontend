@@ -35,6 +35,15 @@ function formatBtc(val: number | undefined): string {
   return val.toFixed(8);
 }
 
+/** Format a number without scientific notation, preserving precision */
+function formatNumber(val: number, maxDecimals = 8): string {
+  // Use toFixed to avoid scientific notation for very small numbers
+  // Then remove trailing zeros for cleaner display
+  const fixed = val.toFixed(maxDecimals);
+  // Remove trailing zeros after decimal point, but keep at least one decimal if there's a decimal point
+  return fixed.replace(/\.?0+$/, "") || "0";
+}
+
 /**
  * A reusable amount input component with decimal validation and mode toggle.
  * Used for both source (sell) and target (buy) amount inputs.
@@ -86,7 +95,8 @@ export function AmountInput({
         Number.isNaN(currentNum) ||
         Math.abs(currentNum - displayValue) > 0.0000001
       ) {
-        setInputValue(String(displayValue));
+        // Use formatNumber to avoid scientific notation for very small numbers
+        setInputValue(formatNumber(displayValue));
       }
     }
   }, [value, inputMode, usdPerToken, inputValue]);
@@ -136,11 +146,11 @@ export function AmountInput({
       // Convert the current input value to the new mode's format
       if (value !== undefined) {
         if (newMode === "usd") {
-          // Switching to USD mode: show USD value
-          setInputValue(String(value * usdPerToken));
+          // Switching to USD mode: show USD value (2 decimal places for USD)
+          setInputValue(formatNumber(value * usdPerToken, 2));
         } else {
           // Switching to native mode: show native value
-          setInputValue(String(value));
+          setInputValue(formatNumber(value));
         }
       }
 
