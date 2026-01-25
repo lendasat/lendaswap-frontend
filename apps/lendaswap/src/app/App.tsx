@@ -81,6 +81,7 @@ import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import {
   getViemChain,
+  isEthereumToken,
   isEvmToken,
   isValidTokenId,
   networkName,
@@ -949,10 +950,14 @@ function HomePage() {
         ) : null}
 
         <div className="pt-2">
-          {/* Show Connect Wallet button only when EVM source (user needs to pay gas to send EVM tokens) */}
-          {sourceAsset.isEvmToken() &&
-          !isValidSpeedWalletContext() &&
-          !isConnected ? (
+          {/* Show Connect Wallet button when:
+              1. EVM source (user needs to pay gas to send EVM tokens)
+              2. BTC source + Ethereum target (user needs to pay gas to claim on Ethereum)
+              Note: BTC → Polygon uses Gelato Relay so no wallet needed */}
+          {!isValidSpeedWalletContext() &&
+          !isConnected &&
+          (sourceAsset.isEvmToken() ||
+            (sourceAsset.isBtc() && isEthereumToken(targetAsset))) ? (
             <ConnectKitButton.Custom>
               {({ show }) => (
                 <Button onClick={show} className="w-full h-12 gap-2">
