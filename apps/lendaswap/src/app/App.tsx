@@ -171,6 +171,8 @@ function HomePage() {
     connectedChain &&
     connectedChain.id !== expectedChain.id;
 
+  console.log(`Expected chain `, expectedChain?.name);
+
   // Auto-switch to correct chain when wrong chain detected
   useEffect(() => {
     if (isWrongChain && expectedChain && switchChainAsync) {

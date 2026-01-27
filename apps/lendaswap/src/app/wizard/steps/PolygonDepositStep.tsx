@@ -53,6 +53,7 @@ export function PolygonDepositStep({
   tokenInfo,
 }: PolygonDepositStepProps) {
   const chain = getViemChain(swapData.source_token);
+  console.log(`EVM chain `, chain?.name);
 
   const { address } = useAccount();
   // Get wallet client without chain restriction - we'll switch chains in handleSign
@@ -99,7 +100,7 @@ export function PolygonDepositStep({
     try {
       if (!chain) {
         throw new Error(
-          `Unsupported token for chain switching: ${swapData.source_token}`,
+          `Could not switch to chain for token: ${swapData.source_token}`,
         );
       }
 

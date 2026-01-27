@@ -20,6 +20,7 @@ import {
 import {
   getBlockexplorerTxLink,
   getViemChain,
+  isArbitrumToken,
   isEthereumToken,
   isPolygonToken,
 } from "../../utils/tokenUtils";
@@ -145,7 +146,10 @@ export function SwapProcessingStep({
         // Mark that we've attempted to claim
         localStorage.setItem(claimKey, Date.now().toString());
 
-        if (isPolygonToken(swapData.target_token)) {
+        if (
+          isPolygonToken(swapData.target_token) ||
+          isArbitrumToken(swapData.target_token)
+        ) {
           // we rely on the wasm part knowing about the secret
           await api.claimGelato(swapData.id);
         } else if (isEthereumToken(swapData.target_token)) {
