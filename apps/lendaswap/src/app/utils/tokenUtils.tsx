@@ -1,13 +1,13 @@
 import type { TokenId } from "@lendasat/lendaswap-sdk";
 import type { ReactElement } from "react";
 import { arbitrum, type Chain, mainnet, polygon } from "viem/chains";
+import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
 import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
 import { ReactComponent as PolIcon } from "../../assets/pol.svg";
 import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
-import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
 import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
 import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
 import { ReactComponent as Usdt0Icon } from "../../assets/usdt0.svg";
