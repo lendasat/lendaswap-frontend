@@ -294,8 +294,14 @@ export const api = {
     swapId: string,
     refundAddress: string,
   ): Promise<string> {
-    const { legacy: client } = await getClients();
-    return await client.refundOnchainHtlc(swapId, refundAddress);
+    const { pure: client } = await getClients();
+    const result = await client.refundSwap(swapId, {
+      destinationAddress: refundAddress,
+    });
+    if (result.success && result.txId) {
+      return result.txId;
+    }
+    throw new Error(`Unable to refund: ${swapId}. ${result.message}`);
   },
 
   async getVersion(): Promise<Version> {
