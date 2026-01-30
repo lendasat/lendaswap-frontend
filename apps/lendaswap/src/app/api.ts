@@ -315,8 +315,8 @@ export const api = {
   },
 
   async getMnemonic(): Promise<string> {
-    const { legacy: client } = await getClients();
-    return await client.getMnemonic();
+    const { pure: client } = await getClients();
+    return client.getMnemonic();
   },
 
   async getUserIdXpub() {
