@@ -277,7 +277,7 @@ function HomePage() {
       return;
     }
 
-    const networkFeeInBtc = Number(quote?.networkFee ?? 0) / 100_000_000;
+    const networkFeeInBtc = Number(quote?.network_fee ?? 0) / 100_000_000;
     const isSourceBtc = isBtc(sourceAsset);
     const isTargetBtc = isBtc(targetAsset);
 
@@ -940,12 +940,12 @@ function HomePage() {
             <div className="flex flex-wrap justify-between gap-y-0.5">
               <div>
                 Network Fee:{" "}
-                {(Number(quote.networkFee) / 100_000_000.0).toFixed(8)} BTC
+                {(Number(quote.network_fee) / 100_000_000.0).toFixed(8)} BTC
               </div>
               <div>
                 Protocol Fee:{" "}
-                {(Number(quote.protocolFee) / 100_000_000.0).toFixed(8)} BTC (
-                {(quote.protocolFeeRate * 100).toFixed(2)}%)
+                {(Number(quote.protocol_fee) / 100_000_000.0).toFixed(8)} BTC (
+                {(quote.protocol_fee_rate * 100).toFixed(2)}%)
               </div>
             </div>
             {isEvmToken(sourceAsset) && isConnected && (

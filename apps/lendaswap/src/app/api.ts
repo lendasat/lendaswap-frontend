@@ -26,9 +26,9 @@ import {
   IdbWalletStorage,
   type AssetPair as PureAssetPair,
   Client as PureClient,
+  type TokenInfo as PureTokenInfo,
   type QuoteResponse,
   type StoredSwap,
-  type TokenInfo as PureTokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 
@@ -211,13 +211,19 @@ export const api = {
   },
 
   async claimVhtlc(id: string): Promise<void> {
-    const { legacy: client } = await getClients();
-    await client.claimVhtlc(id);
+    const { pure: client } = await getClients();
+    await client.claim(id);
   },
 
   async refundVhtlc(id: string, refundAddress: string): Promise<string> {
-    const { legacy: client } = await getClients();
-    return await client.refundVhtlc(id, refundAddress);
+    const { pure: client } = await getClients();
+    const result = await client.refundSwap(id, {
+      destinationAddress: refundAddress,
+    });
+    if (result.success && result.txId) {
+      return result.txId;
+    }
+    throw Error(`Unable to refund: ${id}. Due to ${result.message}`);
   },
 
   async createEvmToArkadeSwap(
@@ -339,14 +345,6 @@ export const api = {
       repaired: 0,
       failed: [],
     };
-  },
-
-  async getStats(): Promise<VolumeStats> {
-    const response = await fetch(`${API_BASE_URL}/stats`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch stats: ${response.statusText}`);
-    }
-    return response.json();
   },
 
   /**
