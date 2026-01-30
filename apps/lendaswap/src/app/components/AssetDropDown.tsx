@@ -1,4 +1,4 @@
-import type { TokenId } from "@lendasat/lendaswap-sdk";
+import type { TokenId } from "@lendasat/lendaswap-sdk-pure";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import {

@@ -188,7 +188,7 @@ function HomePage() {
 
   // Auto-populate target address with arkAddress if embedded and target is btc_arkade
   useEffect(() => {
-    if (isEmbedded && arkAddress && targetAsset.isArkade() && !targetAddress) {
+    if (isEmbedded && arkAddress && isArkade(targetAsset) && !targetAddress) {
       setTargetAddress(arkAddress);
     }
   }, [isEmbedded, arkAddress, targetAsset, targetAddress]);
@@ -201,7 +201,7 @@ function HomePage() {
     if (
       isSpeedWallet &&
       speedLnAddress &&
-      targetAsset.isLightning() &&
+      isLightning(targetAsset) &&
       !targetAddress
     ) {
       setTargetAddress(speedLnAddress);
@@ -211,6 +211,8 @@ function HomePage() {
   // Get price feed from context
   const { getExchangeRate, isLoadingPrice } = usePriceFeed();
 
+  // TODO: remove cast once PriceFeedContext uses pure SDK TokenId
+  // biome-ignore lint/suspicious/noExplicitAny: boundary between old and new SDK TokenId types
   const exchangeRate = getExchangeRate(
     sourceAsset,
     targetAsset,
@@ -234,14 +236,10 @@ function HomePage() {
 
   // Helper to get USD price for a token (defaults to 1 for stablecoins if not found)
   const getUsdPerToken = (tokenId: TokenId): number => {
-    const price = usdPrices.get(tokenId.toString());
+    const price = usdPrices.get(tokenId);
     if (price !== undefined) return price;
     // Fallback: assume stablecoins are $1
-    if (
-      tokenId.toString().includes("usdc") ||
-      tokenId.toString().includes("usdt")
-    )
-      return 1;
+    if (tokenId.includes("usdc") || tokenId.includes("usdt")) return 1;
     return 0;
   };
 
@@ -268,10 +266,10 @@ function HomePage() {
   const isInitialLoading = !maybeAssetPairs || !maybeTokens;
 
   const targetAssetDecimalPlaces = assetPairs.find(
-    (pair) => pair.target.token_id.toString() === targetAsset.toString(),
+    (pair) => pair.target.token_id === targetAsset,
   )?.target.decimals;
   const sourceAssetDecimalPlaces = assetPairs.find(
-    (pair) => pair.source.token_id.toString() === sourceAsset.toString(),
+    (pair) => pair.source.token_id === sourceAsset,
   )?.source.decimals;
 
   useEffect(() => {
@@ -280,8 +278,8 @@ function HomePage() {
     }
 
     const networkFeeInBtc = Number(quote?.networkFee ?? 0) / 100_000_000;
-    const isSourceBtc = sourceAsset.isBtc();
-    const isTargetBtc = targetAsset.isBtc();
+    const isSourceBtc = isBtc(sourceAsset);
+    const isTargetBtc = isBtc(targetAsset);
 
     if (lastFieldEdited === "sourceAsset") {
       if (sourceAssetAmount === undefined) {
@@ -356,9 +354,9 @@ function HomePage() {
         let amount: number;
         if (isEvmToken(sourceAsset)) {
           amount = targetAssetAmount;
-        } else if (sourceAsset.isBtcOnchain() && targetAsset.isArkade()) {
+        } else if (isBtcOnchain(sourceAsset) && isArkade(targetAsset)) {
           amount = targetAssetAmount;
-        } else if (sourceAsset.isBtcOnchain() && targetAsset.isEvmToken()) {
+        } else if (isBtcOnchain(sourceAsset) && isEvmToken(targetAsset)) {
           amount = sourceAssetAmount ?? 0;
         } else {
           amount = sourceAssetAmount ?? 0;
@@ -367,8 +365,8 @@ function HomePage() {
         const sats = Math.round(amount * 100_000_000);
         if (sats > 0) {
           const quoteResponse = await api.getQuote({
-            from: sourceAsset.toString(),
-            to: targetAsset.toString(),
+            from: sourceAsset,
+            to: targetAsset,
             base_amount: sats,
           });
           setQuote(quoteResponse);
@@ -394,7 +392,9 @@ function HomePage() {
 
   // Helper to track swap initiation
   const trackSwapInitiation = (swap: GetSwapResponse) => {
-    const swapDirection = swap.source_token.isBtc()
+    // TODO: remove cast once GetSwapResponse uses pure SDK TokenId
+    // biome-ignore lint/suspicious/noExplicitAny: boundary between old and new SDK TokenId types
+    const swapDirection = isBtc(swap.source_token as any)
       ? "btc-to-evm"
       : "evm-to-btc";
     // Use sats_receive if available, otherwise use btc_expected_sats for onchain-to-evm swaps
@@ -421,12 +421,12 @@ function HomePage() {
       setSwapError("");
 
       // Detect swap direction
-      const isBtcSource = sourceAsset.isBtc();
+      const isBtcSource = isBtc(sourceAsset);
       const isEvmSource = isEvmToken(sourceAsset);
-      const isOnchainBtcSource = sourceAsset.isBtcOnchain();
+      const isOnchainBtcSource = isBtcOnchain(sourceAsset);
 
       // On-chain BTC → Arkade
-      if (isOnchainBtcSource && targetAsset.isArkade()) {
+      if (isOnchainBtcSource && isArkade(targetAsset)) {
         // FIXME: these amounts are odd
         const satsToReceive = Math.floor(
           (targetAssetAmount ?? 0) * 100_000_000,
@@ -443,7 +443,7 @@ function HomePage() {
       }
 
       // On-chain BTC → EVM
-      if (isOnchainBtcSource && targetAsset.isEvmToken()) {
+      if (isOnchainBtcSource && isEvmToken(targetAsset)) {
         const sourceAmount = sourceAssetAmount
           ? BigInt(Math.round(sourceAssetAmount * 100_000_000))
           : BigInt(0);
@@ -456,7 +456,7 @@ function HomePage() {
           {
             target_address: targetAddress,
             source_amount: sourceAmount,
-            target_token: targetAsset.toString(),
+            target_token: targetAsset,
           },
           parsedNetworkName,
         );
@@ -474,7 +474,7 @@ function HomePage() {
         if (lastFieldEdited === "targetAsset") {
           targetAmount = targetAssetAmount;
           console.log(
-            `Creating a swap to receive ${targetAmount} ${targetAsset.toString()}`,
+            `Creating a swap to receive ${targetAmount} ${targetAsset}`,
           );
         } else {
           sourceAmount = sourceAssetAmount
@@ -486,14 +486,14 @@ function HomePage() {
         const parsedNetworkName = networkName(targetAsset) as
           | "ethereum"
           | "polygon";
-        switch (sourceAsset.toString()) {
-          case TokenId.btcLightning().toString(): {
+        switch (sourceAsset) {
+          case BTC_LIGHTNING: {
             const swap = await api.createLightningToEvmSwap(
               {
                 target_address: targetAddress,
                 source_amount: sourceAmount,
                 target_amount: targetAmount,
-                target_token: targetAsset.toString(),
+                target_token: targetAsset,
               },
               parsedNetworkName,
             );
@@ -502,13 +502,13 @@ function HomePage() {
             navigate(`/swap/${swap.id}/wizard`);
             break;
           }
-          case TokenId.btcArkade().toString(): {
+          case BTC_ARKADE: {
             const swap = await api.createArkadeToEvmSwap(
               {
                 target_address: targetAddress,
                 source_amount: sourceAmount,
                 target_amount: targetAmount,
-                target_token: targetAsset.toString(),
+                target_token: targetAsset,
               },
               parsedNetworkName,
             );
@@ -530,7 +530,7 @@ function HomePage() {
           return;
         }
 
-        if (targetAsset.isArkade()) {
+        if (isArkade(targetAsset)) {
           // EVM → Arkade
 
           // Call EVM → Arkade API
@@ -538,7 +538,7 @@ function HomePage() {
             {
               target_address: targetAddress, // Arkade address
               source_amount: sourceAssetAmount ?? 0,
-              source_token: sourceAsset.toString(),
+              source_token: sourceAsset,
               user_address: userEvmAddress,
             },
             networkName(sourceAsset) as "ethereum" | "polygon",
@@ -550,7 +550,7 @@ function HomePage() {
           navigate(`/swap/${swap.id}/wizard`);
         }
 
-        if (targetAsset.isLightning()) {
+        if (isLightning(targetAsset)) {
           // EVM → Lightning
 
           // Resolve Lightning address to BOLT11 invoice if needed
@@ -574,7 +574,7 @@ function HomePage() {
           const swap = await api.createEvmToLightningSwap(
             {
               bolt11_invoice: bolt11Invoice,
-              source_token: sourceAsset.toString(),
+              source_token: sourceAsset,
               user_address: userEvmAddress,
             },
             networkName(sourceAsset) as "ethereum" | "polygon",
@@ -596,54 +596,53 @@ function HomePage() {
     }
   };
 
+  console.log(`Asset Pairs ${JSON.stringify(assetPairs)}`);
+
   const availableSourceAssets: TokenId[] = [
     ...new Map(
       assetPairs.map((a) => [a.source.token_id, a.source.token_id]),
     ).values(),
-  ].sort((a, b) => a.toString().localeCompare(b.toString()));
+  ].sort((a, b) => a.localeCompare(b));
 
   // Always show all available tokens that can be bought (both BTC and EVM)
   const availableTargetAssets: TokenId[] = (() => {
-    if (sourceAsset.isBtcOnchain()) {
+    if (isBtcOnchain(sourceAsset)) {
       // On-chain BTC can be swapped to Arkade or EVM tokens
       return [
-        TokenId.btcArkade(),
+        BTC_ARKADE,
         ...availableSourceAssets.filter(
-          (a) => a.isEvmToken() && !a.isBtcOnchain() && !a.isLightning(),
+          (a) => isEvmToken(a) && !isBtcOnchain(a) && !isLightning(a),
         ),
-      ].sort((a, b) => a.toString().localeCompare(b.toString()));
+      ].sort((a, b) => a.localeCompare(b));
     }
 
     if (isEvmToken(sourceAsset)) {
       // EVM BTC can be swapped to Arkade or Lightning tokens
       return [
         ...availableSourceAssets.filter(
-          (a) =>
-            !a.isEvmToken() &&
-            a.toString() !== sourceAsset.toString() &&
-            !a.isBtcOnchain(),
+          (a) => !isEvmToken(a) && a !== sourceAsset && !isBtcOnchain(a),
         ),
-      ].sort((a, b) => a.toString().localeCompare(b.toString()));
+      ].sort((a, b) => a.localeCompare(b));
     }
 
-    if (sourceAsset.isBtc()) {
+    if (isBtc(sourceAsset)) {
       // Any BTC can be swapped to Arkade or EVM tokens
-      return [...availableSourceAssets.filter((a) => a.isEvmToken())].sort(
-        (a, b) => a.toString().localeCompare(b.toString()),
+      return [...availableSourceAssets.filter((a) => isEvmToken(a))].sort(
+        (a, b) => a.localeCompare(b),
       );
     }
 
     return [
       ...new Map(
         [
-          ...availableSourceAssets.filter((a) => !a.isBtc()),
-          TokenId.btcLightning(),
-          TokenId.btcArkade(),
-        ].map((t) => [t.toString(), t]),
+          ...availableSourceAssets.filter((a) => !isBtc(a)),
+          BTC_LIGHTNING,
+          BTC_ARKADE,
+        ].map((t) => [t, t]),
       ).values(),
     ]
-      .filter((asset) => !asset.isBtcOnchain()) // btc_onchain can never be bought
-      .sort((a, b) => a.toString().localeCompare(b.toString()));
+      .filter((asset) => !isBtcOnchain(asset)) // btc_onchain can never be bought
+      .sort((a, b) => a.localeCompare(b));
   })();
 
   // Skeleton loader for initial loading state
@@ -724,32 +723,32 @@ function HomePage() {
                       : sourceAssetAmount;
 
                   // Special case: btc_onchain can be swapped to btc_arkade or EVM tokens
-                  if (asset.isBtcOnchain()) {
+                  if (isBtcOnchain(asset)) {
                     // Keep current target if it's Arkade or EVM, otherwise default to usdc_pol
                     const newTarget =
-                      targetAsset.isArkade() || targetAsset.isEvmToken()
+                      isArkade(targetAsset) || isEvmToken(targetAsset)
                         ? targetAsset
-                        : TokenId.fromString("usdc_pol");
+                        : "usdc_pol";
                     setSourceAsset(asset);
                     setTargetAsset(newTarget);
                     setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/${newTarget}`, {
+                    navigate(` / ${asset}/${newTarget}`, {
                       replace: true,
                     });
                     return;
                   }
 
-                  const isEvmAsset = asset.isEvmToken();
-                  const isBtcAsset = asset.isBtc();
-                  const isEvmTarget = targetAsset.isEvmToken();
-                  const isBtcTarget = targetAsset.isBtc();
+                  const isEvmAsset = isEvmToken(asset);
+                  const isBtcAsset = isBtc(asset);
+                  const isEvmTarget = isEvmToken(targetAsset);
+                  const isBtcTarget = isBtc(targetAsset);
 
                   // EVM source + BTC target = valid pair
                   if (isEvmAsset && isBtcTarget) {
                     setSourceAsset(asset);
                     setTargetAsset(targetAsset);
                     setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/${targetAsset}`, { replace: true });
+                    navigate(` / $){asset}/${targetAsset}`, { replace: true });
                     return;
                   }
 
@@ -765,7 +764,7 @@ function HomePage() {
                   // EVM source + EVM target = invalid, switch target to BTC
                   if (isEvmAsset && isEvmTarget) {
                     setSourceAsset(asset);
-                    setTargetAsset(TokenId.btcArkade());
+                    setTargetAsset(BTC_ARKADE);
                     setSourceAssetAmount(newAmount);
                     navigate(`/${asset}/btc_arkade`, { replace: true });
                     return;
@@ -774,7 +773,7 @@ function HomePage() {
                   // BTC source + BTC target = invalid, switch target to default stablecoin
                   if (isBtcAsset && isBtcTarget) {
                     setSourceAsset(asset);
-                    setTargetAsset(TokenId.fromString("usdc_pol"));
+                    setTargetAsset("usdc_pol");
                     setSourceAssetAmount(newAmount);
                     navigate(`/${asset}/usdc_pol`, { replace: true });
                     return;
@@ -791,7 +790,7 @@ function HomePage() {
           onClick={() => {
             // btc_onchain can only be in sell position, not buy position
             // Don't allow swapping if it would put btc_onchain in target
-            if (sourceAsset.isBtcOnchain()) {
+            if (isBtcOnchain(sourceAsset)) {
               return;
             }
 
@@ -812,8 +811,8 @@ function HomePage() {
             setTargetAddress("");
             setAddressValid(false);
           }}
-          disabled={sourceAsset.isBtcOnchain()}
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${sourceAsset.isBtcOnchain() ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={isBtcOnchain(sourceAsset)}
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${isBtcOnchain(sourceAsset) ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="bg-background rounded-xl p-1 transition-transform duration-200 ease-out group-hover/swap:scale-110 group-active/swap:scale-125">
             <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover/swap:bg-muted/80">
@@ -833,7 +832,7 @@ function HomePage() {
                 setTargetAssetAmount(value);
               }}
               decimals={
-                targetAsset.isEvmToken()
+                isEvmToken(targetAsset)
                   ? tokens.find((t) => t.token_id === sourceAsset)?.decimals
                   : 8
               }
@@ -857,8 +856,8 @@ function HomePage() {
                       : targetAssetAmount;
 
                   // Special case: when source is btc_onchain, allow btc_arkade or EVM tokens
-                  if (sourceAsset.isBtcOnchain()) {
-                    if (asset.isArkade() || asset.isEvmToken()) {
+                  if (isBtcOnchain(sourceAsset)) {
+                    if (isArkade(asset) || isEvmToken(asset)) {
                       setTargetAsset(asset);
                       setTargetAssetAmount(newAmount);
                       navigate(`/${sourceAsset}/${asset}`, { replace: true });
@@ -870,15 +869,15 @@ function HomePage() {
                   }
 
                   // Check if new target is compatible with current source
-                  const isBtcTarget = asset.isBtc();
-                  const isBtcSource = sourceAsset.isBtc();
-                  const isEvmTarget = asset.isEvmToken();
+                  const isBtcTarget = isBtc(asset);
+                  const isBtcSource = isBtc(sourceAsset);
+                  const isEvmTarget = isEvmToken(asset);
                   const isEvmSource = isEvmToken(sourceAsset);
 
                   // If both are BTC or both are EVM, auto-switch source to make them compatible
                   if (isBtcTarget && isBtcSource) {
                     // Buying BTC but selling BTC - switch source to default EVM stablecoin
-                    setSourceAsset(TokenId.fromString("usdc_pol"));
+                    setSourceAsset("usdc_pol");
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
                     navigate(`/usdc_pol/${asset}`, { replace: true });
@@ -887,7 +886,7 @@ function HomePage() {
 
                   if (isEvmTarget && isEvmSource) {
                     // Buying EVM but selling EVM - switch source to default BTC
-                    setSourceAsset(TokenId.btcArkade());
+                    setSourceAsset(BTC_ARKADE);
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
                     navigate(`/btc_arkade/${asset}`, { replace: true });
@@ -918,7 +917,7 @@ function HomePage() {
             setLastFieldEdited("targetAsset");
             setTargetAssetAmount(amount);
           }}
-          disabled={isEmbedded && !!arkAddress && targetAsset.isArkade()}
+          disabled={isEmbedded && !!arkAddress && isArkade(targetAsset)}
         />
 
         {/* Fees - below inputs, above Continue button */}
@@ -963,7 +962,7 @@ function HomePage() {
           {!isValidSpeedWalletContext() &&
           !isConnected &&
           (isEvmToken(sourceAsset) ||
-            (sourceAsset.isBtc() && isEthereumToken(targetAsset))) ? (
+            (isBtc(sourceAsset) && isEthereumToken(targetAsset))) ? (
             <ConnectKitButton.Custom>
               {({ show }) => (
                 <Button onClick={show} className="w-full h-12 gap-2">

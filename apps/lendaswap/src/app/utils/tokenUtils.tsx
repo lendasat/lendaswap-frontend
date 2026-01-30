@@ -1,4 +1,10 @@
-import type { TokenId } from "@lendasat/lendaswap-sdk";
+import {
+  type TokenId,
+  isArkade,
+  isBtc,
+  isBtcOnchain,
+  isEvmToken,
+} from "@lendasat/lendaswap-sdk-pure";
 import type { ReactElement } from "react";
 import { arbitrum, type Chain, mainnet, polygon } from "viem/chains";
 import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
@@ -13,19 +19,13 @@ import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
 import { ReactComponent as Usdt0Icon } from "../../assets/usdt0.svg";
 import { ReactComponent as WbtcIcon } from "../../assets/wbtc.svg";
 import { ReactComponent as XautIcon } from "../../assets/xaut.svg";
-import type { TokenIdString } from "../api";
 
 export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
-  const isSourceEvm = sourceToken.isEvmToken();
-  const isTargetEvm = targetToken.isEvmToken();
-  const isSourceBtc = sourceToken.isBtc();
-  const isTargetBtc = targetToken.isBtc();
-
-  if (isSourceEvm && isTargetBtc) {
+  if (isEvmToken(sourceToken) && isBtc(targetToken)) {
     return `${sourceToken}-${targetToken}`;
-  } else if (isSourceBtc && isTargetEvm) {
+  } else if (isBtc(sourceToken) && isEvmToken(targetToken)) {
     return `${sourceToken}-${targetToken}`;
-  } else if (sourceToken.isBtcOnchain() && targetToken.isArkade()) {
+  } else if (isBtcOnchain(sourceToken) && isArkade(targetToken)) {
     return `${sourceToken}-${targetToken}`;
   } else {
     throw Error("Unsupported token pair");
@@ -36,8 +36,7 @@ export function toPairName(sourceToken: TokenId, targetToken: TokenId) {
  * Get the display symbol for a token
  */
 export function getTokenSymbol(tokenId: TokenId): string {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "usdc_pol":
     case "usdc_eth":
     case "usdc_arb":
@@ -68,8 +67,7 @@ export function getTokenSymbol(tokenId: TokenId): string {
  * Get the full display name for a token (including network)
  */
 export function getTokenDisplayName(tokenId: TokenId): string {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "btc_arkade":
       return "BTC (Arkade)";
     case "btc_lightning":
@@ -111,8 +109,7 @@ export function getTokenIcon(
   width?: number,
   height?: number,
 ): ReactElement {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "btc_lightning":
     case "btc_arkade":
     case "btc_onchain":
@@ -144,8 +141,7 @@ export function getTokenIcon(
  * Get the icon component for a token's network
  */
 export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "btc_lightning":
       return <BitcoinLightningIcon width={8} height={8} />;
     case "btc_arkade":
@@ -176,8 +172,7 @@ export function getTokenNetworkIcon(tokenId: TokenId): ReactElement {
  * Get the network name for a token
  */
 export function getTokenNetworkName(tokenId: TokenId): string {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "btc_arkade":
       return "Arkade";
     case "btc_lightning":
@@ -207,8 +202,7 @@ export function getTokenNetworkName(tokenId: TokenId): string {
  * Get viem chain
  */
 export function getViemChain(tokenId: TokenId): Chain | undefined {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "usdc_pol":
     case "usdt0_pol":
     case "wbtc_pol":
@@ -228,99 +222,14 @@ export function getViemChain(tokenId: TokenId): Chain | undefined {
   }
 }
 
-/**
- * Check if a token is from an EVM chain
- */
-export function isEvmToken(tokenId: TokenId): boolean {
-  return tokenId.isEvmToken();
-}
-
-/**
- * Check if a token is from Ethereum
- */
-export function isEthereumToken(tokenId: TokenId): boolean {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
-    case "usdc_eth":
-    case "usdt_eth":
-    case "xaut_eth":
-    case "wbtc_eth":
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * Check if a token is from Polygon
- */
-export function isPolygonToken(tokenId: TokenId): boolean {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
-    case "usdc_pol":
-    case "usdt0_pol":
-    case "wbtc_pol":
-    case "pol_pol":
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * Check if a token is from Arbitrum
- */
-export function isArbitrumToken(tokenId: TokenId): boolean {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
-    case "usdc_arb":
-    case "usdt_arb":
-    case "wbtc_arb":
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * Get the network name for a token, to be used as part of a URL
- */
-export function networkName(
-  tokenId: TokenId,
-):
-  | "ethereum"
-  | "lightning"
-  | "polygon"
-  | "arkade"
-  | "bitcoin"
-  | "unknown"
-  | "arbitrum" {
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
-    case "usdt_arb":
-    case "usdc_arb":
-    case "wbtc_arb":
-      return "arbitrum";
-    case "usdc_pol":
-    case "usdt0_pol":
-    case "wbtc_pol":
-    case "pol_pol":
-      return "polygon";
-    case "usdc_eth":
-    case "usdt_eth":
-    case "xaut_eth":
-    case "wbtc_eth":
-      return "ethereum";
-    case "btc_arkade":
-      return "arkade";
-    case "btc_lightning":
-      return "lightning";
-    case "btc_onchain":
-      return "bitcoin";
-    default:
-      return "unknown";
-  }
-}
+// Re-export token helpers from SDK
+export {
+  isEvmToken,
+  isEthereumToken,
+  isPolygonToken,
+  isArbitrumToken,
+  networkName,
+} from "@lendasat/lendaswap-sdk-pure";
 
 // Validate that the URL tokens are valid
 export function isValidTokenId(token: string | undefined): boolean {
@@ -349,8 +258,7 @@ export function getBlockexplorerTxLink(
   if (!txid) {
     return "";
   }
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "usdc_pol":
     case "usdt0_pol":
     case "wbtc_pol":
@@ -383,8 +291,7 @@ export function getBlockexplorerAddressLink(
   if (!address) {
     return "";
   }
-  const tokenIdString = tokenId.toString() as TokenIdString;
-  switch (tokenIdString) {
+  switch (tokenId) {
     case "usdc_pol":
     case "usdt0_pol":
     case "wbtc_pol":

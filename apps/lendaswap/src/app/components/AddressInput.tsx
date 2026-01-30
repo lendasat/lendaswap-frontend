@@ -1,5 +1,10 @@
 import { decode } from "@gandlaf21/bolt11-decode";
-import type { TokenId } from "@lendasat/lendaswap-sdk";
+import {
+  type TokenId,
+  isArkade,
+  isEvmToken,
+  isLightning,
+} from "@lendasat/lendaswap-sdk-pure";
 import { ConnectKitButton } from "connectkit";
 import { isAddress } from "ethers";
 import { Wallet } from "lucide-react";
@@ -12,7 +17,6 @@ import {
   isLightningAddress,
 } from "../../utils/lightningAddress";
 import { isValidSpeedWalletContext } from "../../utils/speedWallet";
-import { isEvmToken } from "../utils/tokenUtils";
 
 interface AddressInputProps {
   value: string;
@@ -53,7 +57,7 @@ export function AddressInput({
       } else {
         setValidationError("");
       }
-    } else if (targetToken.isLightning()) {
+    } else if (isLightning(targetToken)) {
       // Accept both Lightning addresses and BOLT11 invoices
       if (isLightningAddress(value)) {
         // Valid Lightning address (will be resolved to invoice later)
@@ -88,7 +92,7 @@ export function AddressInput({
         setValidationError("Invalid BOLT11 invoice. Expected format: lnbc...");
         setAddressIsValid(false);
       }
-    } else if (targetToken.isArkade()) {
+    } else if (isArkade(targetToken)) {
       // Basic Arkade address validation (starts with ark1)
       if (
         !value.toLowerCase().startsWith("ark1") &&
@@ -103,7 +107,7 @@ export function AddressInput({
   }, [value, targetToken, isEvmTarget, setAddressIsValid, setBitcoinAmount]);
 
   const getPlaceholder = () => {
-    switch (targetToken.toString()) {
+    switch (targetToken) {
       case "btc_lightning":
         return "BOLT11 invoice or Lightning address (LNURL)";
       case "btc_arkade":

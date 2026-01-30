@@ -1,8 +1,8 @@
 import {
   PriceFeedService,
   type PriceUpdateMessage,
-  type TokenId,
 } from "@lendasat/lendaswap-sdk";
+import { type TokenId, isBtc, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
 import {
   createContext,
   type ReactNode,
@@ -90,9 +90,7 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
     const pairName = toPairName(sourceToken, targetToken);
 
     const pair = priceUpdate.pairs.find(
-      (p) =>
-        p.source.toString() === sourceToken.toString() &&
-        p.target.toString() === targetToken.toString(),
+      (p) => p.source === sourceToken && p.target === targetToken,
     );
     if (!pair) {
       console.warn(`Price pair not found: ${pairName}`);
@@ -102,8 +100,8 @@ export function PriceFeedProvider({ children }: PriceFeedProviderProps) {
     const rate = selectTierRate(pair.tiers, assetAmount);
     return computeExchangeRate(
       rate,
-      sourceToken.isBtc(),
-      targetToken.isEvmToken(),
+      isBtc(sourceToken),
+      isEvmToken(targetToken),
     );
   };
 
