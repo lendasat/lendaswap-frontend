@@ -320,8 +320,8 @@ export const api = {
   },
 
   async getUserIdXpub() {
-    const { legacy: client } = await getClients();
-    return await client.getUserIdXpub();
+    const { pure: client } = await getClients();
+    return client.getUserIdXpub();
   },
 
   async clearSwapStorage(): Promise<void> {
