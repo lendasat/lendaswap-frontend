@@ -113,12 +113,19 @@ async function getClients(): Promise<SdkClients> {
   }
 
   if (!pureClient) {
+    const walletStorage = new IdbWalletStorage();
     pureClient = await PureClient.builder()
       .withBaseUrl(API_BASE_URL)
       .withEsploraUrl(ESPLORA_URL)
-      .withSignerStorage(new IdbWalletStorage())
+      .withSignerStorage(walletStorage)
       .withSwapStorage(new IdbSwapStorage())
       .build();
+
+    // If wallet was migrated from v2 (legacy WASM SDK), recover swaps from server
+    if (walletStorage.migratedFromLegacy) {
+      console.log("Migrated wallet from v2 — recovering swaps from server");
+      await pureClient.recoverSwaps();
+    }
   }
 
   return { legacy: legacyClient, pure: pureClient };
