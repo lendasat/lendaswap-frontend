@@ -4,7 +4,6 @@ import {
   type BtcToArkadeSwapResponse,
   type Chain,
   type EvmToArkadeSwapRequest,
-  type EvmToBtcSwapResponse,
   type EvmToLightningSwapRequest,
   type ExtendedSwapStorageData,
   type GetSwapResponse,
@@ -22,6 +21,7 @@ import {
 } from "@lendasat/lendaswap-sdk";
 import {
   type BtcToEvmSwapResponse,
+  type EvmToBtcSwapResponse,
   IdbSwapStorage,
   IdbWalletStorage,
   type AssetPair as PureAssetPair,
@@ -231,14 +231,16 @@ export const api = {
     sourceNetwork: "ethereum" | "polygon",
   ): Promise<EvmToBtcSwapResponse> {
     const referralCode = getReferralCode();
-    const { legacy: client } = await getClients();
-    return await client.createEvmToArkadeSwap(
-      {
-        ...request,
-        referral_code: referralCode || undefined,
-      },
-      sourceNetwork,
-    );
+    const { pure: client } = await getClients();
+    const result = await client.createEvmToArkadeSwap({
+      targetAddress: request.target_address,
+      sourceAmount: request.source_amount,
+      sourceToken: request.source_token,
+      userAddress: request.user_address,
+      sourceChain: sourceNetwork,
+      referralCode: referralCode || undefined,
+    });
+    return result.response;
   },
 
   async createEvmToLightningSwap(
@@ -246,14 +248,15 @@ export const api = {
     sourceNetwork: "ethereum" | "polygon",
   ): Promise<EvmToBtcSwapResponse> {
     const referralCode = getReferralCode();
-    const { legacy: client } = await getClients();
-    return await client.createEvmToLightningSwap(
-      {
-        ...request,
-        referral_code: referralCode || undefined,
-      },
-      sourceNetwork,
-    );
+    const { pure: client } = await getClients();
+    const result = await client.createEvmToLightningSwap({
+      bolt11Invoice: request.bolt11_invoice,
+      sourceToken: request.source_token,
+      userAddress: request.user_address,
+      sourceChain: sourceNetwork,
+      referralCode: referralCode || undefined,
+    });
+    return result.response;
   },
 
   async createBitcoinToArkadeSwap(
