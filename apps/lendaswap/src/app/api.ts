@@ -15,7 +15,6 @@ import {
   type SwapRequest,
   SwapStatus,
   type TokenIdString,
-  type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk";
 import {
   type BtcToEvmSwapResponse,
@@ -28,6 +27,7 @@ import {
   type TokenInfo as PureTokenInfo,
   type QuoteResponse,
   type StoredSwap,
+  type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 
@@ -51,6 +51,7 @@ export type {
   RecoverSwapsResponse,
   QuoteResponse,
   StoredSwap,
+  VhtlcAmounts,
 };
 
 export type Version = { tag: string; commit_hash: string };
@@ -206,7 +207,7 @@ export const api = {
   },
 
   async amountsForSwap(id: string): Promise<VhtlcAmounts> {
-    const { legacy: client } = await getClients();
+    const { pure: client } = await getClients();
     return await client.amountsForSwap(id);
   },
 
@@ -334,28 +335,6 @@ export const api = {
     await client.deleteSwap(id);
   },
 
-  // TODO: remove concept of corrupted swaps
-  getCorruptedSwapIds(): string[] {
-    if (!legacyClient) {
-      return [];
-    }
-    return [];
-  },
-
-  async deleteCorruptedSwaps(): Promise<number> {
-    return 0;
-  },
-
-  async repairCorruptedSwaps(): Promise<{
-    repaired: number;
-    failed: string[];
-  }> {
-    return {
-      repaired: 0,
-      failed: [],
-    };
-  },
-
   /**
    * Fetch USD prices for all supported tokens from CoinGecko.
    * Returns a Map of tokenId -> USD price.
@@ -384,13 +363,6 @@ export const api = {
     return priceMap;
   },
 };
-
-export interface VolumeStats {
-  total_volume_usd: number;
-  volume_24h_usd: number;
-  total_swaps: number;
-  swaps_24h: number;
-}
 
 // PriceFeedService
 export { PriceFeedService } from "@lendasat/lendaswap-sdk";
