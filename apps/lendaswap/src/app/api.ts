@@ -21,12 +21,13 @@ import {
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk";
 import {
+  type BtcToEvmSwapResponse,
   IdbSwapStorage,
   IdbWalletStorage,
   type AssetPair as PureAssetPair,
-  type BtcToEvmSwapResponse,
   Client as PureClient,
   type QuoteResponse,
+  type StoredSwap,
   type TokenInfo as PureTokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
@@ -50,6 +51,7 @@ export type {
   RecoveredSwap,
   RecoverSwapsResponse,
   QuoteResponse,
+  StoredSwap,
   Version,
 };
 export { SwapStatus };
@@ -181,13 +183,16 @@ export const api = {
     return result.response;
   },
 
-  async getSwap(id: string): Promise<ExtendedSwapStorageData> {
-    const { legacy: client } = await getClients();
-    const swapStorageData = await client.getSwap(id);
-    if (!swapStorageData) {
+  async getSwap(id: string): Promise<StoredSwap> {
+    const { pure: client } = await getClients();
+    // Fetch latest from API and update local storage
+    await client.getSwap(id, { updateStorage: true });
+    // Return the stored swap (includes preimage and keys)
+    const stored = await client.getStoredSwap(id);
+    if (!stored) {
       throw new Error("Swap not found");
     }
-    return swapStorageData;
+    return stored;
   },
 
   async listAllSwaps(): Promise<ExtendedSwapStorageData[]> {
