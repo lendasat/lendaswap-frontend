@@ -2,7 +2,6 @@
 import {
   type BtcToArkadeSwapRequest,
   type BtcToArkadeSwapResponse,
-  type BtcToEvmSwapResponse,
   type Chain,
   type EvmToArkadeSwapRequest,
   type EvmToBtcSwapResponse,
@@ -25,9 +24,10 @@ import {
   IdbSwapStorage,
   IdbWalletStorage,
   type AssetPair as PureAssetPair,
+  type BtcToEvmSwapResponse,
   Client as PureClient,
-  type TokenInfo as PureTokenInfo,
   type QuoteResponse,
+  type TokenInfo as PureTokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 
@@ -148,14 +148,18 @@ export const api = {
     targetNetwork: "ethereum" | "polygon",
   ): Promise<BtcToEvmSwapResponse> {
     const referralCode = getReferralCode();
-    const { legacy: client } = await getClients();
-    return await client.createLightningToEvmSwap(
-      {
-        ...request,
-        referral_code: referralCode || undefined,
-      },
-      targetNetwork,
-    );
+    const { pure: client } = await getClients();
+    const result = await client.createLightningToEvmSwap({
+      targetAddress: request.target_address,
+      targetToken: request.target_token,
+      targetChain: targetNetwork,
+      sourceAmount: request.source_amount
+        ? Number(request.source_amount)
+        : undefined,
+      targetAmount: request.target_amount,
+      referralCode: referralCode || undefined,
+    });
+    return result.response;
   },
 
   async createArkadeToEvmSwap(
@@ -163,14 +167,18 @@ export const api = {
     targetNetwork: "ethereum" | "polygon",
   ): Promise<BtcToEvmSwapResponse> {
     const referralCode = getReferralCode();
-    const { legacy: client } = await getClients();
-    return await client.createArkadeToEvmSwap(
-      {
-        ...request,
-        referral_code: referralCode || undefined,
-      },
-      targetNetwork,
-    );
+    const { pure: client } = await getClients();
+    const result = await client.createArkadeToEvmSwap({
+      targetAddress: request.target_address,
+      targetToken: request.target_token,
+      targetChain: targetNetwork,
+      sourceAmount: request.source_amount
+        ? Number(request.source_amount)
+        : undefined,
+      targetAmount: request.target_amount,
+      referralCode: referralCode || undefined,
+    });
+    return result.response;
   },
 
   async getSwap(id: string): Promise<ExtendedSwapStorageData> {
