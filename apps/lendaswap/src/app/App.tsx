@@ -737,7 +737,7 @@ function HomePage() {
                     setSourceAsset(asset);
                     setTargetAsset(targetAsset);
                     setSourceAssetAmount(newAmount);
-                    navigate(` / $){asset}/${targetAsset}`, { replace: true });
+                    navigate(`/${asset}/${targetAsset}`, { replace: true });
                     return;
                   }
 
