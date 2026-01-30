@@ -124,8 +124,8 @@ async function getClients(): Promise<SdkClients> {
 
 export const api = {
   async loadMnemonic(mnemonic: string): Promise<void> {
-    const { legacy: client } = await getClients();
-    await client.init(mnemonic);
+    const { pure: client } = await getClients();
+    await client.loadMnemonic(mnemonic);
   },
 
   async getAssetPairs(): Promise<PureAssetPair[]> {
