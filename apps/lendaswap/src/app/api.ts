@@ -195,8 +195,8 @@ export const api = {
     return stored;
   },
 
-  async listAllSwaps(): Promise<ExtendedSwapStorageData[]> {
-    const { legacy: client } = await getClients();
+  async listAllSwaps(): Promise<StoredSwap[]> {
+    const { pure: client } = await getClients();
     return await client.listAllSwaps();
   },
 

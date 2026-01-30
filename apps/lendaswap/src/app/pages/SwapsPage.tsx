@@ -1,4 +1,8 @@
-import type { ExtendedSwapStorageData } from "@lendasat/lendaswap-sdk";
+import {
+  isBtc,
+  type StoredSwap,
+  type SwapStatus,
+} from "@lendasat/lendaswap-sdk-pure";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   AlertTriangle,
@@ -30,7 +34,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
-import { api, getTokenIcon, getTokenSymbol, SwapStatus } from "../api";
+import { api, getTokenIcon, getTokenSymbol } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
 
 // Get status display info
@@ -42,7 +46,7 @@ function getStatusInfo(status: SwapStatus): {
 } {
   switch (status) {
     // Success state - swap fully completed
-    case SwapStatus.ServerRedeemed:
+    case "serverredeemed":
       return {
         label: "Completed",
         textColor: "text-green-600 dark:text-green-400",
@@ -50,12 +54,12 @@ function getStatusInfo(status: SwapStatus): {
         showIcon: true,
       };
     // In progress states
-    case SwapStatus.Pending:
-    case SwapStatus.ClientFundingSeen:
-    case SwapStatus.ClientFunded:
-    case SwapStatus.ServerFunded:
-    case SwapStatus.ClientRedeeming:
-    case SwapStatus.ClientRedeemed:
+    case "pending":
+    case "clientfundingseen":
+    case "clientfunded":
+    case "serverfunded":
+    case "clientredeeming":
+    case "clientredeemed":
       return {
         label: "In Progress",
         textColor: "text-orange-600 dark:text-orange-400",
@@ -63,20 +67,20 @@ function getStatusInfo(status: SwapStatus): {
         showIcon: true,
       };
     // Refunded/expired states
-    case SwapStatus.Expired:
-    case SwapStatus.ClientRefunded:
-    case SwapStatus.ClientRefundedServerRefunded:
+    case "expired":
+    case "clientrefunded":
+    case "clientrefundedserverrefunded":
       return {
-        label: status === SwapStatus.Expired ? "Expired" : "Refunded",
+        label: status === "expired" ? "Expired" : "Refunded",
         textColor: "text-muted-foreground",
         icon: null,
         showIcon: false,
       };
     // Error states requiring user action
-    case SwapStatus.ClientFundedServerRefunded:
-    case SwapStatus.ClientInvalidFunded:
-    case SwapStatus.ClientFundedTooLate:
-    case SwapStatus.ClientRefundedServerFunded:
+    case "clientfundedserverrefunded":
+    case "clientinvalidfunded":
+    case "clientfundedtoolate":
+    case "clientrefundedserverfunded":
       return {
         label: "Action Required",
         textColor: "text-red-600 dark:text-red-400",
@@ -94,7 +98,7 @@ function getStatusInfo(status: SwapStatus): {
 }
 
 export function SwapsPage() {
-  const [swaps, setSwaps] = useState<ExtendedSwapStorageData[]>([]);
+  const [swaps, setSwaps] = useState<StoredSwap[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -263,8 +267,8 @@ export function SwapsPage() {
   }, [swaps, searchQuery]);
 
   // Format amounts for display - returns primary display string
-  const formatSwapAmount = (swap: ExtendedSwapStorageData) => {
-    const isBtcSource = swap.response.source_token.isBtc();
+  const formatSwapAmount = (swap: StoredSwap) => {
+    const isBtcSource = isBtc(swap.response.source_token);
 
     if (isBtcSource) {
       return {
