@@ -68,12 +68,7 @@ import {
   getSpeedLightningAddress,
   isValidSpeedWalletContext,
 } from "../utils/speedWallet";
-import {
-  api,
-  type GetSwapResponse,
-  getTokenSymbol,
-  type QuoteResponse,
-} from "./api";
+import { api, getTokenSymbol, type QuoteResponse } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";

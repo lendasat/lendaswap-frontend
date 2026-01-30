@@ -1,20 +1,5 @@
 // Re-export types from SDK - single source of truth
 import {
-  type BtcToArkadeSwapRequest,
-  type BtcToArkadeSwapResponse,
-  type Chain,
-  type EvmToArkadeSwapRequest,
-  type EvmToLightningSwapRequest,
-  type GetSwapResponse,
-  getUsdPrices,
-  type OnchainToEvmSwapRequest,
-  type RecoveredSwap,
-  type RecoverSwapsResponse,
-  type SwapRequest,
-  SwapStatus,
-  type TokenIdString,
-} from "@lendasat/lendaswap-sdk";
-import {
   type BtcToEvmSwapResponse,
   type EvmToBtcSwapResponse,
   IdbSwapStorage,
@@ -26,34 +11,33 @@ import {
   type QuoteResponse,
   type StoredSwap,
   type VhtlcAmounts,
+  TokenId,
+  getUsdPrices,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 
 // Re-export SDK types for use throughout the frontend
 export type {
-  TokenIdString,
-  Chain,
   PureTokenInfo,
   PureAssetPair,
-  BtcToArkadeSwapRequest,
-  BtcToArkadeSwapResponse,
   BtcToEvmSwapResponse,
   EvmToBtcSwapResponse,
-  GetSwapResponse,
-  SwapRequest,
-  EvmToArkadeSwapRequest,
-  EvmToLightningSwapRequest,
-  OnchainToEvmSwapRequest,
   OnchainToEvmSwapResponse,
-  RecoveredSwap,
-  RecoverSwapsResponse,
   QuoteResponse,
   StoredSwap,
   VhtlcAmounts,
 };
-
 export type Version = { tag: string; commit_hash: string };
-export { SwapStatus };
+
+export interface SwapRequest {
+  // Source amount in sats
+  source_amount?: bigint;
+  target_address: string;
+  // Target amount in the asset of choice, e.g. $1 = 1
+  target_amount?: number;
+  target_token: TokenId;
+  referral_code?: string;
+}
 
 // Price feed types
 export type {
@@ -64,9 +48,56 @@ export type {
 
 // Quote request type
 export interface QuoteRequest {
-  from: TokenIdString;
-  to: TokenIdString;
+  from: TokenId;
+  to: TokenId;
   base_amount: number;
+}
+
+/**
+ * Request to create an EVM to Arkade swap (Token → BTC).
+ */
+export interface EvmToArkadeSwapRequest {
+  target_address: string;
+  source_amount: number;
+  source_token: TokenId;
+  user_address: string;
+  referral_code?: string;
+}
+
+/**
+ * Request to create an EVM to Lightning swap.
+ */
+export interface EvmToLightningSwapRequest {
+  bolt11_invoice: string;
+  source_token: TokenId;
+  user_address: string;
+  referral_code?: string;
+}
+
+/**
+ * Request to create an on-chain Bitcoin to Arkade swap.
+ */
+export interface BtcToArkadeSwapRequest {
+  /** User's target Arkade address to receive VTXOs */
+  target_arkade_address: string;
+  /** Amount user wants to receive on Arkade in satoshis */
+  sats_receive: number;
+  /** Optional referral code */
+  referral_code?: string;
+}
+
+/**
+ * Request to create an on-chain Bitcoin to EVM swap.
+ */
+export interface OnchainToEvmSwapRequest {
+  /** User's EVM address to receive tokens */
+  target_address: string;
+  /** Amount of BTC to send in satoshis */
+  source_amount: bigint;
+  /** Target token (e.g., "usdc_pol", "usdt_pol") */
+  target_token: TokenId;
+  /** Optional referral code */
+  referral_code?: string;
 }
 
 // Token utility functions
@@ -326,7 +357,7 @@ export const api = {
    * Returns a Map of tokenId -> USD price.
    */
   async getTokenUsdPrices(): Promise<Map<string, number>> {
-    const tokenIds: TokenIdString[] = [
+    const tokenIds: TokenId[] = [
       "btc_lightning",
       "btc_arkade",
       "btc_onchain",
