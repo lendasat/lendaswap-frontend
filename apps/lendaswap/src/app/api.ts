@@ -4,7 +4,6 @@ import {
   type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type Chain,
-  Client as SdkClient,
   type EvmToArkadeSwapRequest,
   type EvmToBtcSwapResponse,
   type EvmToLightningSwapRequest,
@@ -13,9 +12,9 @@ import {
   getUsdPrices,
   type OnchainToEvmSwapRequest,
   type OnchainToEvmSwapResponse,
-  type QuoteResponse,
   type RecoveredSwap,
   type RecoverSwapsResponse,
+  Client as SdkClient,
   type SwapRequest,
   SwapStatus,
   type TokenIdString,
@@ -23,11 +22,12 @@ import {
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk";
 import {
-  Client as PureClient,
   IdbSwapStorage,
   IdbWalletStorage,
-  type TokenInfo as PureTokenInfo,
   type AssetPair as PureAssetPair,
+  Client as PureClient,
+  type TokenInfo as PureTokenInfo,
+  type QuoteResponse,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 
@@ -139,12 +139,8 @@ export const api = {
   },
 
   async getQuote(request: QuoteRequest): Promise<QuoteResponse> {
-    const { legacy: client } = await getClients();
-    return await client.getQuote(
-      request.from,
-      request.to,
-      BigInt(request.base_amount),
-    );
+    const { pure: client } = await getClients();
+    return await client.getQuote(request.from, request.to, request.base_amount);
   },
 
   async createLightningToEvmSwap(
