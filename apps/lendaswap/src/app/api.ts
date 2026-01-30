@@ -286,11 +286,16 @@ export const api = {
   },
 
   async createBitcoinToArkadeSwap(
-    _request: BtcToArkadeSwapRequest,
-  ): Promise<void> {
-    throw new Error(
-      "createBitcoinToArkadeSwap is not yet supported in the pure SDK",
-    );
+    request: BtcToArkadeSwapRequest,
+  ): Promise<BtcToArkadeSwapResponse> {
+    const referralCode = getReferralCode();
+    const client = await getClients();
+    const result = await client.createBitcoinToArkadeSwap({
+      satsReceive: request.sats_receive,
+      targetAddress: request.target_arkade_address,
+      referralCode: referralCode || undefined,
+    });
+    return result.response;
   },
 
   async createOnchainToEvmSwap(
@@ -309,11 +314,20 @@ export const api = {
     return result.response as OnchainToEvmSwapResponse;
   },
 
-  async claimBtcToArkadeVhtlc(_swapId: string): Promise<string> {
-    // FIXME: needs to be implement in client first
-    throw new Error(
-      "claimBtcToArkadeVhtlc is not yet supported in the pure SDK",
-    );
+  async claimBtcToArkadeVhtlc(swapId: string): Promise<string> {
+    const client = await getClients();
+    const swap = await client.getStoredSwap(swapId);
+    if (!swap) {
+      throw new Error("Swap not found");
+    }
+    const arkadeSwap = swap.response as BtcToArkadeSwapResponse;
+    const result = await client.claimArkade(swapId, {
+      destinationAddress: arkadeSwap.target_arkade_address,
+    });
+    if (!result.success) {
+      throw new Error(result.message);
+    }
+    return result.txId ?? "";
   },
 
   async refundOnchainHtlc(

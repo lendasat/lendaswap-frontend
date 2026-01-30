@@ -69,7 +69,12 @@ import {
   getSpeedLightningAddress,
   isValidSpeedWalletContext,
 } from "../utils/speedWallet";
-import { api, getTokenSymbol, type QuoteResponse } from "./api";
+import {
+  api,
+  type BtcToArkadeSwapResponse,
+  getTokenSymbol,
+  type QuoteResponse,
+} from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
@@ -383,7 +388,9 @@ function HomePage() {
   };
 
   // Helper to track swap initiation
-  const trackSwapInitiation = (swap: BitcoinToEvmSwapResponse) => {
+  const trackSwapInitiation = (
+    swap: BitcoinToEvmSwapResponse | BtcToArkadeSwapResponse,
+  ) => {
     const swapDirection = isBtc(swap.source_token)
       ? "btc-to-evm"
       : "evm-to-btc";
@@ -417,19 +424,17 @@ function HomePage() {
 
       // On-chain BTC → Arkade
       if (isOnchainBtcSource && isArkade(targetAsset)) {
-        // FIXME: these amounts are odd
-        // FIXME: implement me
-        // const satsToReceive = Math.floor(
-        //   (targetAssetAmount ?? 0) * 100_000_000,
-        // );
+        const satsToReceive = Math.floor(
+          (sourceAssetAmount ?? 0) * 100_000_000,
+        );
 
-        // const swap = await api.createBitcoinToArkadeSwap({
-        //   target_arkade_address: targetAddress,
-        //   sats_receive: satsToReceive,
-        // });
-        //
-        // trackSwapInitiation(swap);
-        // navigate(`/swap/${swap.id}/wizard`);
+        const swap = await api.createBitcoinToArkadeSwap({
+          target_arkade_address: targetAddress,
+          sats_receive: satsToReceive,
+        });
+
+        trackSwapInitiation(swap);
+        navigate(`/swap/${swap.id}/wizard`);
         return;
       }
 
