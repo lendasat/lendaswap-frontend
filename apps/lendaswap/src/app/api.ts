@@ -15,7 +15,6 @@ import {
   type SwapRequest,
   SwapStatus,
   type TokenIdString,
-  type Version,
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk";
 import {
@@ -52,8 +51,9 @@ export type {
   RecoverSwapsResponse,
   QuoteResponse,
   StoredSwap,
-  Version,
 };
+
+export type Version = { tag: string; commit_hash: string };
 export { SwapStatus };
 
 // Price feed types
@@ -304,8 +304,8 @@ export const api = {
     throw new Error(`Unable to refund: ${swapId}. ${result.message}`);
   },
 
-  async getVersion(): Promise<Version> {
-    const { legacy: client } = await getClients();
+  async getVersion(): Promise<{ tag: string; commit_hash: string }> {
+    const { pure: client } = await getClients();
     return await client.getVersion();
   },
 
