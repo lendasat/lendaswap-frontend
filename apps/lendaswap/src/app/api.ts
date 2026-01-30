@@ -5,7 +5,6 @@ import {
   type Chain,
   type EvmToArkadeSwapRequest,
   type EvmToLightningSwapRequest,
-  type ExtendedSwapStorageData,
   type GetSwapResponse,
   getUsdPrices,
   type OnchainToEvmSwapRequest,
@@ -310,8 +309,8 @@ export const api = {
     return await client.getVersion();
   },
 
-  async recoverSwaps(): Promise<ExtendedSwapStorageData[]> {
-    const { legacy: client } = await getClients();
+  async recoverSwaps(): Promise<StoredSwap[]> {
+    const { pure: client } = await getClients();
     return await client.recoverSwaps();
   },
 
