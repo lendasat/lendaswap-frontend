@@ -200,9 +200,9 @@ export const api = {
     return await client.listAllSwaps();
   },
 
-  async claimGelato(id: string, secret?: string): Promise<void> {
-    const { legacy: client } = await getClients();
-    await client.claimGelato(id, secret);
+  async claimGelato(id: string): Promise<void> {
+    const { pure: client } = await getClients();
+    await client.claim(id);
   },
 
   async amountsForSwap(id: string): Promise<VhtlcAmounts> {
