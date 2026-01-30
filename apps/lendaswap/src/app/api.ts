@@ -283,9 +283,11 @@ export const api = {
     return result.response as OnchainToEvmSwapResponse;
   },
 
-  async claimBtcToArkadeVhtlc(swapId: string): Promise<string> {
-    const { legacy: client } = await getClients();
-    return await client.claimBtcToArkadeVhtlc(swapId);
+  async claimBtcToArkadeVhtlc(_swapId: string): Promise<string> {
+    // FIXME: needs to be implement in client first
+    throw new Error(
+      "claimBtcToArkadeVhtlc is not yet supported in the pure SDK",
+    );
   },
 
   async refundOnchainHtlc(
