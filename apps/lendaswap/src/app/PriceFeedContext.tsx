@@ -1,8 +1,10 @@
 import {
+  isBtc,
+  isEvmToken,
   PriceFeedService,
   type PriceUpdateMessage,
-} from "@lendasat/lendaswap-sdk";
-import { type TokenId, isBtc, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
+  type TokenId,
+} from "@lendasat/lendaswap-sdk-pure";
 import {
   createContext,
   type ReactNode,

@@ -1,7 +1,7 @@
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "#/components/ui/button";
-import { api, type BtcToArkadeSwapResponse, SwapStatus } from "../../api";
+import { api, type BtcToArkadeSwapResponse } from "../../api";
 
 interface BtcToArkadeProcessingStepProps {
   swapData: BtcToArkadeSwapResponse;
@@ -37,7 +37,7 @@ export function BtcToArkadeProcessingStep({
   useEffect(() => {
     const autoClaimArkadeVhtlc = async () => {
       // Only claim when server has funded the VHTLC
-      if (swapData.status !== SwapStatus.ServerFunded) return;
+      if (swapData.status !== "serverfunded") return;
 
       const claimKey = `swap_${swapData.id}_claim_attempted`;
       const attemptTimestamp = localStorage.getItem(claimKey);
@@ -128,14 +128,14 @@ export function BtcToArkadeProcessingStep({
   const getCurrentStep = () => {
     if (!swapData.btc_fund_txid) return 1; // Waiting for on-chain funding
     // ClientFundingSeen means tx is seen but not confirmed - still step 1
-    if (swapData.status === SwapStatus.ClientFundingSeen) return 1;
+    if (swapData.status === "clientfundingseen") return 1;
     if (!swapData.arkade_fund_txid) return 2; // Server funding VHTLC
     if (!swapData.arkade_claim_txid) return 3; // User claiming VHTLC
     if (!swapData.btc_claim_txid) return 4; // Server claiming on-chain
     return 5; // All complete
   };
 
-  const isFundingSeen = swapData.status === SwapStatus.ClientFundingSeen;
+  const isFundingSeen = swapData.status === "clientfundingseen";
 
   const currentStep = getCurrentStep();
 
@@ -300,7 +300,7 @@ export function BtcToArkadeProcessingStep({
                 </div>
               )}
               {/* Show claiming status when server has funded */}
-              {swapData.status === SwapStatus.ServerFunded && (
+              {swapData.status === "serverfunded" && (
                 <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
                   <p className="text-sm font-medium">
                     {isClaiming

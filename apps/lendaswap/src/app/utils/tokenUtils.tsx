@@ -1,9 +1,9 @@
 import {
-  type TokenId,
   isArkade,
   isBtc,
   isBtcOnchain,
   isEvmToken,
+  type TokenId,
 } from "@lendasat/lendaswap-sdk-pure";
 import type { ReactElement } from "react";
 import { arbitrum, type Chain, mainnet, polygon } from "viem/chains";
@@ -224,10 +224,10 @@ export function getViemChain(tokenId: TokenId): Chain | undefined {
 
 // Re-export token helpers from SDK
 export {
-  isEvmToken,
-  isEthereumToken,
-  isPolygonToken,
   isArbitrumToken,
+  isEthereumToken,
+  isEvmToken,
+  isPolygonToken,
   networkName,
 } from "@lendasat/lendaswap-sdk-pure";
 

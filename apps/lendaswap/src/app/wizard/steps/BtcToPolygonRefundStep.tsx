@@ -1,4 +1,3 @@
-import { swapStatusToString, type VhtlcAmounts } from "@lendasat/lendaswap-sdk";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useMemo, useState } from "react";
@@ -11,6 +10,7 @@ import {
   type BtcToEvmSwapResponse,
   getTokenDisplayName,
   getTokenIcon,
+  type VhtlcAmounts,
 } from "../../api";
 
 interface BtcToPolygonRefundStepProps {
@@ -68,12 +68,12 @@ export function BtcToPolygonRefundStep({
     const now = Math.floor(Date.now() / 1000);
 
     const hasSpendableAmount = amounts.spendable > 0;
-    const isLocktimePassed = now >= swapData.refund_locktime;
+    const isLocktimePassed = now >= swapData.vhtlc_refund_locktime;
 
     return hasSpendableAmount && isLocktimePassed;
   })();
 
-  const refundLocktimeDate = new Date(swapData.refund_locktime * 1000);
+  const refundLocktimeDate = new Date(swapData.vhtlc_refund_locktime * 1000);
 
   // Countdown timer state
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
@@ -86,13 +86,13 @@ export function BtcToPolygonRefundStep({
     return () => clearInterval(interval);
   }, []);
 
-  const isLocktimePassed = now >= swapData.refund_locktime;
+  const isLocktimePassed = now >= swapData.vhtlc_refund_locktime;
 
   // Calculate time remaining
   const timeRemaining = useMemo(() => {
     if (isLocktimePassed) return null;
 
-    const secondsLeft = swapData.refund_locktime - now;
+    const secondsLeft = swapData.vhtlc_refund_locktime - now;
     const hours = Math.floor(secondsLeft / 3600);
     const minutes = Math.floor((secondsLeft % 3600) / 60);
     const seconds = secondsLeft % 60;
@@ -104,7 +104,7 @@ export function BtcToPolygonRefundStep({
     } else {
       return `${seconds}s`;
     }
-  }, [now, swapData.refund_locktime, isLocktimePassed]);
+  }, [now, swapData.vhtlc_refund_locktime, isLocktimePassed]);
 
   const handleRefund = async () => {
     if (!swapId || !refundAddress.trim()) {
@@ -241,7 +241,7 @@ export function BtcToPolygonRefundStep({
           <div className="space-y-1">
             <p className="text-sm font-medium">Swap Status</p>
             <p className="text-xs text-muted-foreground font-mono break-all">
-              {swapStatusToString(swapData.status)}
+              {swapData.status}
             </p>
           </div>
 
@@ -276,9 +276,9 @@ export function BtcToPolygonRefundStep({
                     Recoverable: {amounts.recoverable.toLocaleString()} sats
                   </p>
                 )}
-                {amounts.spendable === 0n &&
-                  amounts.spent === 0n &&
-                  amounts.recoverable === 0n && (
+                {amounts.spendable === 0 &&
+                  amounts.spent === 0 &&
+                  amounts.recoverable === 0 && (
                     <p className="text-xs text-muted-foreground">
                       Not yet funded
                     </p>
@@ -306,9 +306,9 @@ export function BtcToPolygonRefundStep({
         {!canRefund && amounts !== null && isLocktimePassed && (
           <Alert>
             <AlertDescription>
-              {amounts.spent > 0 && amounts.spendable === 0n
+              {amounts.spent > 0 && amounts.spendable === 0
                 ? "This VHTLC has already been refunded."
-                : amounts.spendable === 0n
+                : amounts.spendable === 0
                   ? "No spendable funds available for this swap."
                   : "This swap cannot be refunded at this time."}
             </AlertDescription>

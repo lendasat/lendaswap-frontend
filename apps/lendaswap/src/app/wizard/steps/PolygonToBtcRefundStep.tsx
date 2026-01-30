@@ -9,8 +9,11 @@ import {
 } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import { getTokenDisplayName, getTokenSymbol } from "../../api";
-import type { StoredSwap } from "../../db";
+import {
+  type EvmToBtcSwapResponse,
+  getTokenDisplayName,
+  getTokenSymbol,
+} from "../../api";
 import { getTokenIcon, getViemChain } from "../../utils/tokenUtils";
 
 // Helper function to convert UUID to bytes32
@@ -89,7 +92,7 @@ interface ContractSwap {
 }
 
 interface PolygonToBtcRefundStepProps {
-  swapData: StoredSwap;
+  swapData: EvmToBtcSwapResponse;
   swapId: string;
 }
 
@@ -113,7 +116,7 @@ export function PolygonToBtcRefundStep({
   const [isLoadingSwap, setIsLoadingSwap] = useState(false);
 
   const tokenSymbol = getTokenSymbol(swapData.source_token);
-  const refundLocktimeDate = new Date(swapData.refund_locktime * 1000);
+  const refundLocktimeDate = new Date(swapData.evm_refund_locktime * 1000);
 
   // Countdown timer state
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
@@ -126,13 +129,13 @@ export function PolygonToBtcRefundStep({
     return () => clearInterval(interval);
   }, []);
 
-  const isLocktimePassed = now >= swapData.refund_locktime;
+  const isLocktimePassed = now >= swapData.evm_refund_locktime;
 
   // Calculate time remaining
   const timeRemaining = useMemo(() => {
     if (isLocktimePassed) return null;
 
-    const secondsLeft = swapData.refund_locktime - now;
+    const secondsLeft = swapData.evm_refund_locktime - now;
     const hours = Math.floor(secondsLeft / 3600);
     const minutes = Math.floor((secondsLeft % 3600) / 60);
     const seconds = secondsLeft % 60;
@@ -144,7 +147,7 @@ export function PolygonToBtcRefundStep({
     } else {
       return `${seconds}s`;
     }
-  }, [now, swapData.refund_locktime, isLocktimePassed]);
+  }, [now, swapData.evm_refund_locktime, isLocktimePassed]);
 
   // Format token amount
   const refundAmount = `$${swapData.asset_amount.toString()} ${tokenSymbol}`;

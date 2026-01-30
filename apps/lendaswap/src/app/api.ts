@@ -1,23 +1,35 @@
 // Re-export types from SDK - single source of truth
 import {
+  type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type EvmToBtcSwapResponse,
+  type GetSwapResponse,
+  getUsdPrices,
   IdbSwapStorage,
-  type OnchainToEvmSwapResponse,
   IdbWalletStorage,
+  type OnchainToEvmSwapResponse,
   type AssetPair as PureAssetPair,
-  Client as SdkClient,
   type TokenInfo as PureTokenInfo,
   type QuoteResponse,
+  Client as SdkClient,
   type StoredSwap,
+  type SwapStatus,
+  type TokenId,
+  type TokenInfo,
   type VhtlcAmounts,
-  TokenId,
-  getUsdPrices,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 
+export type {
+  PriceTiers,
+  PriceUpdateMessage,
+  TradingPairPrices,
+} from "@lendasat/lendaswap-sdk-pure";
+
 // Re-export SDK types for use throughout the frontend
 export type {
+  BtcToArkadeSwapResponse,
+  GetSwapResponse,
   PureTokenInfo,
   PureAssetPair,
   BtcToEvmSwapResponse,
@@ -25,6 +37,9 @@ export type {
   OnchainToEvmSwapResponse,
   QuoteResponse,
   StoredSwap,
+  SwapStatus,
+  TokenId,
+  TokenInfo,
   VhtlcAmounts,
 };
 export type Version = { tag: string; commit_hash: string };
@@ -38,13 +53,6 @@ export interface SwapRequest {
   target_token: TokenId;
   referral_code?: string;
 }
-
-// Price feed types
-export type {
-  PriceTiers,
-  PriceUpdateMessage,
-  TradingPairPrices,
-} from "@lendasat/lendaswap-sdk";
 
 // Quote request type
 export interface QuoteRequest {
@@ -382,4 +390,4 @@ export const api = {
 };
 
 // PriceFeedService
-export { PriceFeedService } from "@lendasat/lendaswap-sdk";
+export { PriceFeedService } from "@lendasat/lendaswap-sdk-pure";

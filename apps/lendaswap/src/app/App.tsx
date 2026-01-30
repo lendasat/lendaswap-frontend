@@ -10,6 +10,7 @@ import {
 } from "react-router";
 import "../assets/styles.css";
 import {
+  type BitcoinToEvmSwapResponse,
   BTC_ARKADE,
   BTC_LIGHTNING,
   isArkade,
@@ -204,8 +205,6 @@ function HomePage() {
   // Get price feed from context
   const { getExchangeRate, isLoadingPrice } = usePriceFeed();
 
-  // TODO: remove cast once PriceFeedContext uses pure SDK TokenId
-  // biome-ignore lint/suspicious/noExplicitAny: boundary between old and new SDK TokenId types
   const exchangeRate = getExchangeRate(
     sourceAsset,
     targetAsset,
@@ -384,10 +383,8 @@ function HomePage() {
   };
 
   // Helper to track swap initiation
-  const trackSwapInitiation = (swap: GetSwapResponse) => {
-    // TODO: remove cast once GetSwapResponse uses pure SDK TokenId
-    // biome-ignore lint/suspicious/noExplicitAny: boundary between old and new SDK TokenId types
-    const swapDirection = isBtc(swap.source_token as any)
+  const trackSwapInitiation = (swap: BitcoinToEvmSwapResponse) => {
+    const swapDirection = isBtc(swap.source_token)
       ? "btc-to-evm"
       : "evm-to-btc";
     // Use sats_receive if available, otherwise use btc_expected_sats for onchain-to-evm swaps

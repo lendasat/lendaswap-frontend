@@ -1,7 +1,3 @@
-import {
-  type OnchainToEvmSwapResponse,
-  swapStatusToString,
-} from "@lendasat/lendaswap-sdk";
 import { ArrowRight, Clock, ExternalLink, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useMemo, useState } from "react";
@@ -14,6 +10,7 @@ import {
   type BtcToArkadeSwapResponse,
   getTokenNetworkName,
   getTokenSymbol,
+  type OnchainToEvmSwapResponse,
 } from "../../api";
 
 interface OnchainBtcRefundStepProps {
@@ -176,7 +173,7 @@ export function OnchainBtcRefundStep({
           <div className="space-y-1">
             <p className="text-sm font-medium">Swap Status</p>
             <p className="text-xs text-muted-foreground font-mono break-all">
-              {swapStatusToString(swapData.status)}
+              {swapData.status}
             </p>
           </div>
 

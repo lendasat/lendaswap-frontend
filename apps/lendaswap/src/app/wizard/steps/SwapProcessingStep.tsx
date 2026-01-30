@@ -1,3 +1,4 @@
+import { isBtcOnchain, isLightning } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,7 +16,6 @@ import {
   type EvmToBtcSwapResponse,
   type GetSwapResponse,
   type OnchainToEvmSwapResponse,
-  SwapStatus,
 } from "../../api";
 import {
   getBlockexplorerTxLink,
@@ -108,7 +108,7 @@ export function SwapProcessingStep({
     const autoClaimBtcToPolygonSwaps = async () => {
       if (swapDirection !== "btc-to-evm" && swapDirection !== "onchain-to-evm")
         return;
-      if (swapData.status !== SwapStatus.ServerFunded) return;
+      if (swapData.status !== "serverfunded") return;
 
       // For Ethereum tokens, don't auto-claim if wallet not connected
       if (isEthereumToken(swapData.target_token) && !address) {
@@ -182,7 +182,7 @@ export function SwapProcessingStep({
           await switchChainAsync({ chainId: chain.id });
 
           let htlcAddress: `0x${string}`;
-          if (swapData.source_token.isBtcOnchain()) {
+          if (isBtcOnchain(swapData.source_token)) {
             htlcAddress = (swapData as OnchainToEvmSwapResponse)
               .evm_htlc_address as `0x${string}`;
           } else {
@@ -284,11 +284,11 @@ export function SwapProcessingStep({
     const autoClaimPolygonToArkadeSwaps = async () => {
       const polygonToBtcSwapData = swapData as EvmToBtcSwapResponse;
       if (swapDirection !== "evm-to-btc") return;
-      if (polygonToBtcSwapData.target_token.isLightning()) {
+      if (isLightning(polygonToBtcSwapData.target_token)) {
         // this will be claimed by the lightning client
         return;
       }
-      if (polygonToBtcSwapData.status !== SwapStatus.ServerFunded) return;
+      if (polygonToBtcSwapData.status !== "serverfunded") return;
       if (!polygonToBtcSwapData.user_address_arkade) {
         console.error("No user address for arkade provided");
         setClaimError("Missing Arkade address for claim");
@@ -370,7 +370,7 @@ export function SwapProcessingStep({
     const autoClaimBtcToArkadeSwaps = async () => {
       if (swapDirection !== "evm-to-btc") return;
       const bitcoinToArkadeSwapData = swapData as BtcToArkadeSwapResponse;
-      if (bitcoinToArkadeSwapData.status !== SwapStatus.ServerFunded) return;
+      if (bitcoinToArkadeSwapData.status !== "serverfunded") return;
       if (!bitcoinToArkadeSwapData.target_arkade_address) {
         console.error("No user address for arkade provided");
         setClaimError("Missing Arkade address for claim");
@@ -544,7 +544,7 @@ export function SwapProcessingStep({
   const config = getConfig();
 
   // Check if client funding is still being confirmed (seen but not confirmed)
-  const isClientFundingSeen = swapData.status === SwapStatus.ClientFundingSeen;
+  const isClientFundingSeen = swapData.status === "clientfundingseen";
 
   // Determine which step is currently active (the first incomplete step)
   const getCurrentStep = () => {
@@ -726,7 +726,7 @@ export function SwapProcessingStep({
                 </div>
               )}
               {/* Show claiming status inline when server is funded */}
-              {swapData.status === SwapStatus.ServerFunded && (
+              {swapData.status === "serverfunded" && (
                 <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
                   <p className="text-sm font-medium">
                     {isClaiming
@@ -740,7 +740,7 @@ export function SwapProcessingStep({
                   <p className="text-muted-foreground text-xs">
                     {isClaiming
                       ? swapDirection === "evm-to-btc"
-                        ? swapData.target_token.isLightning()
+                        ? isLightning(swapData.target_token)
                           ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
                           : "Lightning invoice is pending..."
                         : isEthereumToken(swapData.target_token)

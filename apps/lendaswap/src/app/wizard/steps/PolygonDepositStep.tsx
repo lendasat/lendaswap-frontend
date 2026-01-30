@@ -1,3 +1,4 @@
+import { isArkade, isLightning } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Loader } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -241,10 +242,10 @@ export function PolygonDepositStep({
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            {swapData?.target_token.isLightning() && (
+            {swapData && isLightning(swapData.target_token) && (
               <span className="text-muted-foreground">We will send</span>
             )}
-            {swapData?.target_token.isArkade() && (
+            {swapData && isArkade(swapData.target_token) && (
               <span className="text-muted-foreground">You receive</span>
             )}
             <span className="font-medium">

@@ -1,3 +1,4 @@
+import { isArkade, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
 import {
   Bitcoin,
   CheckCheck,
@@ -195,7 +196,7 @@ export function SendOnchainBtcStep({
               </Button>
             </div>
           </div>
-          {swapData.target_token.isArkade() ? (
+          {isArkade(swapData.target_token) ? (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
                 You Receive on Arkade
@@ -208,7 +209,7 @@ export function SendOnchainBtcStep({
               </span>
             </div>
           ) : null}
-          {swapData.target_token.isEvmToken() ? (
+          {isEvmToken(swapData.target_token) ? (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">

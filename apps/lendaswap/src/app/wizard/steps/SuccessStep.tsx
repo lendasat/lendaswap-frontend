@@ -1,3 +1,4 @@
+import { isLightning } from "@lendasat/lendaswap-sdk-pure";
 import { Check, CheckCheck, Copy, ExternalLink, Heart } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
@@ -144,11 +145,11 @@ export function SuccessStep({
         receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
         receivedAmount: evmToBtcData.sats_receive.toLocaleString(),
         // For Lightning swaps, show the invoice/address; for Arkade, show the Arkade address
-        receiveAddress: swapData.target_token.isLightning()
+        receiveAddress: isLightning(swapData.target_token)
           ? (swapData as EvmToBtcSwapResponse).ln_invoice
           : (swapData as EvmToBtcSwapResponse).user_address_arkade,
         receiveAddressIsEvm: false,
-        isLightning: swapData.target_token.isLightning(),
+        isLightning: isLightning(swapData.target_token),
         swapTxId: evmToBtcData.bitcoin_htlc_claim_txid,
         swapTxIdIsEvm: false,
         tweetText: `Swapped $${evmToBtcData.asset_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${evmToBtcData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,

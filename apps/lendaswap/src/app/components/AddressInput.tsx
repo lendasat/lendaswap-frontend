@@ -1,9 +1,9 @@
 import { decode } from "@gandlaf21/bolt11-decode";
 import {
-  type TokenId,
   isArkade,
   isEvmToken,
   isLightning,
+  type TokenId,
 } from "@lendasat/lendaswap-sdk-pure";
 import { ConnectKitButton } from "connectkit";
 import { isAddress } from "ethers";

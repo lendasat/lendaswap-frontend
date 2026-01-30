@@ -1,8 +1,9 @@
-import type { BtcToEvmSwapResponse } from "@lendasat/lendaswap-sdk";
+import { isBtc, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Alert, AlertDescription } from "#/components/ui/alert";
+import type { BtcToEvmSwapResponse, EvmToBtcSwapResponse } from "../api";
 import { getSwapById, type StoredSwap } from "../db";
 import { useWalletBridge } from "../WalletBridgeContext";
 import {
@@ -53,8 +54,8 @@ export function RefundPage() {
   }, [swapId]);
 
   // Determine swap direction
-  const isBtcToEvmSwap = swapData?.source_token.isBtc();
-  const isEvmToBtcSwap = swapData?.source_token.isEvmToken();
+  const isBtcToEvmSwap = swapData ? isBtc(swapData.source_token) : false;
+  const isEvmToBtcSwap = swapData ? isEvmToken(swapData.source_token) : false;
 
   if (isLoading) {
     return (
@@ -112,14 +113,17 @@ export function RefundPage() {
     <div className="container max-w-2xl mx-auto py-8 px-4">
       {isBtcToEvmSwap && (
         <BtcToPolygonRefundStep
-          swapData={swapData as BtcToEvmSwapResponse}
+          swapData={swapData as unknown as BtcToEvmSwapResponse}
           swapId={swapId}
           arkAddress={arkAddress}
         />
       )}
 
       {isEvmToBtcSwap && (
-        <PolygonToBtcRefundStep swapData={swapData} swapId={swapId} />
+        <PolygonToBtcRefundStep
+          swapData={swapData as unknown as EvmToBtcSwapResponse}
+          swapId={swapId}
+        />
       )}
 
       {!isEvmToBtcSwap && !isBtcToEvmSwap && (
