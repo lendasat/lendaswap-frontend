@@ -260,14 +260,11 @@ export const api = {
   },
 
   async createBitcoinToArkadeSwap(
-    request: BtcToArkadeSwapRequest,
-  ): Promise<BtcToArkadeSwapResponse> {
-    const referralCode = getReferralCode();
-    const { legacy: client } = await getClients();
-    return await client.createBitcoinToArkadeSwap({
-      ...request,
-      referral_code: referralCode || undefined,
-    });
+    _request: BtcToArkadeSwapRequest,
+  ): Promise<void> {
+    throw new Error(
+      "createBitcoinToArkadeSwap is not yet supported in the pure SDK",
+    );
   },
 
   async createOnchainToEvmSwap(
