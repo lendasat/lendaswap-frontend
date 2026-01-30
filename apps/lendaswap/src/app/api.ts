@@ -9,7 +9,6 @@ import {
   type GetSwapResponse,
   getUsdPrices,
   type OnchainToEvmSwapRequest,
-  type OnchainToEvmSwapResponse,
   type RecoveredSwap,
   type RecoverSwapsResponse,
   Client as SdkClient,
@@ -23,6 +22,7 @@ import {
   type BtcToEvmSwapResponse,
   type EvmToBtcSwapResponse,
   IdbSwapStorage,
+  type OnchainToEvmSwapResponse,
   IdbWalletStorage,
   type AssetPair as PureAssetPair,
   Client as PureClient,
@@ -272,14 +272,15 @@ export const api = {
     targetNetwork: "ethereum" | "polygon",
   ): Promise<OnchainToEvmSwapResponse> {
     const referralCode = getReferralCode();
-    const { legacy: client } = await getClients();
-    return await client.createOnchainToEvmSwap(
-      {
-        ...request,
-        referral_code: referralCode || undefined,
-      },
-      targetNetwork,
-    );
+    const { pure: client } = await getClients();
+    const result = await client.createBitcoinToEvmSwap({
+      targetAddress: request.target_address,
+      targetToken: request.target_token,
+      targetChain: targetNetwork,
+      sourceAmount: Number(request.source_amount),
+      referralCode: referralCode || undefined,
+    });
+    return result.response as OnchainToEvmSwapResponse;
   },
 
   async claimBtcToArkadeVhtlc(swapId: string): Promise<string> {

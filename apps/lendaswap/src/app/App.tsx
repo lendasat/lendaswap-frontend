@@ -175,8 +175,6 @@ function HomePage() {
     connectedChain &&
     connectedChain.id !== expectedChain.id;
 
-  console.log(`Expected chain `, expectedChain?.name);
-
   // Auto-switch to correct chain when wrong chain detected
   useEffect(() => {
     if (isWrongChain && expectedChain && switchChainAsync) {
@@ -428,17 +426,18 @@ function HomePage() {
       // On-chain BTC → Arkade
       if (isOnchainBtcSource && isArkade(targetAsset)) {
         // FIXME: these amounts are odd
-        const satsToReceive = Math.floor(
-          (targetAssetAmount ?? 0) * 100_000_000,
-        );
+        // FIXME: implement me
+        // const satsToReceive = Math.floor(
+        //   (targetAssetAmount ?? 0) * 100_000_000,
+        // );
 
-        const swap = await api.createBitcoinToArkadeSwap({
-          target_arkade_address: targetAddress,
-          sats_receive: satsToReceive,
-        });
-
-        trackSwapInitiation(swap);
-        navigate(`/swap/${swap.id}/wizard`);
+        // const swap = await api.createBitcoinToArkadeSwap({
+        //   target_arkade_address: targetAddress,
+        //   sats_receive: satsToReceive,
+        // });
+        //
+        // trackSwapInitiation(swap);
+        // navigate(`/swap/${swap.id}/wizard`);
         return;
       }
 
@@ -596,8 +595,6 @@ function HomePage() {
     }
   };
 
-  console.log(`Asset Pairs ${JSON.stringify(assetPairs)}`);
-
   const availableSourceAssets: TokenId[] = [
     ...new Map(
       assetPairs.map((a) => [a.source.token_id, a.source.token_id]),
@@ -732,7 +729,7 @@ function HomePage() {
                     setSourceAsset(asset);
                     setTargetAsset(newTarget);
                     setSourceAssetAmount(newAmount);
-                    navigate(` / ${asset}/${newTarget}`, {
+                    navigate(`/${asset}/${newTarget}`, {
                       replace: true,
                     });
                     return;
