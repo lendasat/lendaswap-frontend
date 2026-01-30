@@ -325,13 +325,13 @@ export const api = {
   },
 
   async clearSwapStorage(): Promise<void> {
-    const { legacy: client } = await getClients();
-    return await client.clearSwapStorage();
+    const { pure: client } = await getClients();
+    await client.clearSwapStorage();
   },
 
   async deleteSwap(id: string): Promise<void> {
-    const { legacy: client } = await getClients();
-    return await client.deleteSwap(id);
+    const { pure: client } = await getClients();
+    await client.deleteSwap(id);
   },
 
   // TODO: remove concept of corrupted swaps
