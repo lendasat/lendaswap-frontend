@@ -5,4 +5,5 @@ packages:
   - "packages/*"
   # client-sdk TypeScript SDK
   - "../client-sdk/ts-sdk"
+  - "../client-sdk/ts-pure-sdk"
   - "!**/dist/**"

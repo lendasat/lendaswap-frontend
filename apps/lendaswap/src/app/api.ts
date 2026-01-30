@@ -1,10 +1,10 @@
 // Re-export types from SDK - single source of truth
 import {
-  type AssetPair,
   type BtcToArkadeSwapRequest,
   type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type Chain,
+  Client as SdkClient,
   type EvmToArkadeSwapRequest,
   type EvmToBtcSwapResponse,
   type EvmToLightningSwapRequest,
@@ -16,22 +16,27 @@ import {
   type QuoteResponse,
   type RecoveredSwap,
   type RecoverSwapsResponse,
-  Client as SdkClient,
   type SwapRequest,
   SwapStatus,
   type TokenIdString,
-  type TokenInfo,
   type Version,
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk";
+import {
+  Client as PureClient,
+  IdbSwapStorage,
+  IdbWalletStorage,
+  type TokenInfo as PureTokenInfo,
+  type AssetPair as PureAssetPair,
+} from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 
 // Re-export SDK types for use throughout the frontend
 export type {
   TokenIdString,
   Chain,
-  TokenInfo,
-  AssetPair,
+  PureTokenInfo,
+  PureAssetPair,
   BtcToArkadeSwapRequest,
   BtcToArkadeSwapResponse,
   BtcToEvmSwapResponse,
@@ -83,12 +88,18 @@ const BITCOIN_NETWORK = import.meta.env.VITE_BITCOIN_NETWORK || "bitcoin";
 const ESPLORA_URL =
   import.meta.env.VITE_ESPLORA_URL || "https://mempool.space/api";
 
-// Lazy-initialized SDK API client
-let sdkClient: SdkClient | null = null;
+// Lazy-initialized SDK clients
+let legacyClient: SdkClient | null = null;
+let pureClient: PureClient | null = null;
 
-async function getSdkClient(): Promise<SdkClient> {
-  if (!sdkClient) {
-    sdkClient = await SdkClient.builder()
+interface SdkClients {
+  legacy: SdkClient;
+  pure: PureClient;
+}
+
+async function getClients(): Promise<SdkClients> {
+  if (!legacyClient) {
+    legacyClient = await SdkClient.builder()
       .url(API_BASE_URL)
       .withIdbStorage()
       .network(BITCOIN_NETWORK)
@@ -96,33 +107,39 @@ async function getSdkClient(): Promise<SdkClient> {
       .esploraUrl(ESPLORA_URL)
       .build();
 
-    await sdkClient.init();
-
-    if (!sdkClient) {
-      throw Error("Failed setting up sdk client");
-    }
+    await legacyClient.init();
   }
-  return sdkClient;
+
+  if (!pureClient) {
+    pureClient = await PureClient.builder()
+      .withBaseUrl(API_BASE_URL)
+      .withEsploraUrl(ESPLORA_URL)
+      .withSignerStorage(new IdbWalletStorage())
+      .withSwapStorage(new IdbSwapStorage())
+      .build();
+  }
+
+  return { legacy: legacyClient, pure: pureClient };
 }
 
 export const api = {
   async loadMnemonic(mnemonic: string): Promise<void> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     await client.init(mnemonic);
   },
 
-  async getAssetPairs(): Promise<AssetPair[]> {
-    const client = await getSdkClient();
+  async getAssetPairs(): Promise<PureAssetPair[]> {
+    const { pure: client } = await getClients();
     return await client.getAssetPairs();
   },
 
-  async getTokens(): Promise<TokenInfo[]> {
-    const client = await getSdkClient();
-    return await client.getTokens();
+  async getTokens(): Promise<PureTokenInfo[]> {
+    const { pure: newClient } = await getClients();
+    return await newClient.getTokens();
   },
 
   async getQuote(request: QuoteRequest): Promise<QuoteResponse> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.getQuote(
       request.from,
       request.to,
@@ -135,7 +152,7 @@ export const api = {
     targetNetwork: "ethereum" | "polygon",
   ): Promise<BtcToEvmSwapResponse> {
     const referralCode = getReferralCode();
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.createLightningToEvmSwap(
       {
         ...request,
@@ -150,7 +167,7 @@ export const api = {
     targetNetwork: "ethereum" | "polygon",
   ): Promise<BtcToEvmSwapResponse> {
     const referralCode = getReferralCode();
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.createArkadeToEvmSwap(
       {
         ...request,
@@ -161,7 +178,7 @@ export const api = {
   },
 
   async getSwap(id: string): Promise<ExtendedSwapStorageData> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     const swapStorageData = await client.getSwap(id);
     if (!swapStorageData) {
       throw new Error("Swap not found");
@@ -170,27 +187,27 @@ export const api = {
   },
 
   async listAllSwaps(): Promise<ExtendedSwapStorageData[]> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.listAllSwaps();
   },
 
   async claimGelato(id: string, secret?: string): Promise<void> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     await client.claimGelato(id, secret);
   },
 
   async amountsForSwap(id: string): Promise<VhtlcAmounts> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.amountsForSwap(id);
   },
 
   async claimVhtlc(id: string): Promise<void> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     await client.claimVhtlc(id);
   },
 
   async refundVhtlc(id: string, refundAddress: string): Promise<string> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.refundVhtlc(id, refundAddress);
   },
 
@@ -199,7 +216,7 @@ export const api = {
     sourceNetwork: "ethereum" | "polygon",
   ): Promise<EvmToBtcSwapResponse> {
     const referralCode = getReferralCode();
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.createEvmToArkadeSwap(
       {
         ...request,
@@ -214,7 +231,7 @@ export const api = {
     sourceNetwork: "ethereum" | "polygon",
   ): Promise<EvmToBtcSwapResponse> {
     const referralCode = getReferralCode();
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.createEvmToLightningSwap(
       {
         ...request,
@@ -228,7 +245,7 @@ export const api = {
     request: BtcToArkadeSwapRequest,
   ): Promise<BtcToArkadeSwapResponse> {
     const referralCode = getReferralCode();
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.createBitcoinToArkadeSwap({
       ...request,
       referral_code: referralCode || undefined,
@@ -240,7 +257,7 @@ export const api = {
     targetNetwork: "ethereum" | "polygon",
   ): Promise<OnchainToEvmSwapResponse> {
     const referralCode = getReferralCode();
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.createOnchainToEvmSwap(
       {
         ...request,
@@ -251,7 +268,7 @@ export const api = {
   },
 
   async claimBtcToArkadeVhtlc(swapId: string): Promise<string> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.claimBtcToArkadeVhtlc(swapId);
   },
 
@@ -259,43 +276,43 @@ export const api = {
     swapId: string,
     refundAddress: string,
   ): Promise<string> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.refundOnchainHtlc(swapId, refundAddress);
   },
 
   async getVersion(): Promise<Version> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.getVersion();
   },
 
   async recoverSwaps(): Promise<ExtendedSwapStorageData[]> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.recoverSwaps();
   },
 
   async getMnemonic(): Promise<string> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.getMnemonic();
   },
 
   async getUserIdXpub() {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.getUserIdXpub();
   },
 
   async clearSwapStorage(): Promise<void> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.clearSwapStorage();
   },
 
   async deleteSwap(id: string): Promise<void> {
-    const client = await getSdkClient();
+    const { legacy: client } = await getClients();
     return await client.deleteSwap(id);
   },
 
   // TODO: remove concept of corrupted swaps
   getCorruptedSwapIds(): string[] {
-    if (!sdkClient) {
+    if (!legacyClient) {
       return [];
     }
     return [];

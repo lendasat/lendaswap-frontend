@@ -9,7 +9,18 @@ import {
   useParams,
 } from "react-router";
 import "../assets/styles.css";
-import { TokenId } from "@lendasat/lendaswap-sdk";
+import {
+  BTC_ARKADE,
+  BTC_LIGHTNING,
+  isArkade,
+  isBtc,
+  isBtcOnchain,
+  isEthereumToken,
+  isEvmToken,
+  isLightning,
+  networkName,
+  type TokenId,
+} from "@lendasat/lendaswap-sdk-pure";
 import { ConnectKitButton } from "connectkit";
 import {
   ArrowDown,
@@ -79,13 +90,7 @@ import {
 import { hasReferralCode } from "./utils/referralCode";
 import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
-import {
-  getViemChain,
-  isEthereumToken,
-  isEvmToken,
-  isValidTokenId,
-  networkName,
-} from "./utils/tokenUtils";
+import { getViemChain, isValidTokenId } from "./utils/tokenUtils";
 import { useWalletBridge } from "./WalletBridgeContext";
 import { SwapWizardPage } from "./wizard";
 
@@ -125,17 +130,16 @@ function HomePage() {
     number | undefined
   >(undefined);
   const [sourceAsset, setSourceAsset] = useState<TokenId>(
-    (urlSourceToken && TokenId.fromString(urlSourceToken)) ||
-      TokenId.btcArkade(),
+    (urlSourceToken && (urlSourceToken as TokenId)) || "btc_arkade",
   );
   const [targetAsset, setTargetAsset] = useState<TokenId>(
-    (urlTargetToken && TokenId.fromString(urlTargetToken)) ||
-      (isSpeedWalletUser ? TokenId.btcLightning() : TokenId.btcArkade),
+    (urlTargetToken && (urlTargetToken as TokenId)) ||
+      (isSpeedWalletUser ? BTC_LIGHTNING : BTC_ARKADE),
   );
   // State for home page
   const [targetAssetAmount, setTargetAssetAmount] = useState<
     number | undefined
-  >(sourceAsset.toString() === TokenId.btcOnchain().toString() ? 0.0001 : 50);
+  >(isBtcOnchain(sourceAsset) ? 0.0001 : 50);
   const [lastFieldEdited, setLastFieldEdited] = useState<
     "sourceAsset" | "targetAsset"
   >("targetAsset");
@@ -350,7 +354,7 @@ function HomePage() {
       try {
         // Convert BTC to satoshis
         let amount: number;
-        if (sourceAsset.isEvmToken()) {
+        if (isEvmToken(sourceAsset)) {
           amount = targetAssetAmount;
         } else if (sourceAsset.isBtcOnchain() && targetAsset.isArkade()) {
           amount = targetAssetAmount;
@@ -418,7 +422,7 @@ function HomePage() {
 
       // Detect swap direction
       const isBtcSource = sourceAsset.isBtc();
-      const isEvmSource = sourceAsset.isEvmToken();
+      const isEvmSource = isEvmToken(sourceAsset);
       const isOnchainBtcSource = sourceAsset.isBtcOnchain();
 
       // On-chain BTC → Arkade
@@ -594,7 +598,7 @@ function HomePage() {
 
   const availableSourceAssets: TokenId[] = [
     ...new Map(
-      assetPairs.map((a) => [a.source.token_id.toString(), a.source.token_id]),
+      assetPairs.map((a) => [a.source.token_id, a.source.token_id]),
     ).values(),
   ].sort((a, b) => a.toString().localeCompare(b.toString()));
 
@@ -610,7 +614,7 @@ function HomePage() {
       ].sort((a, b) => a.toString().localeCompare(b.toString()));
     }
 
-    if (sourceAsset.isEvmToken()) {
+    if (isEvmToken(sourceAsset)) {
       // EVM BTC can be swapped to Arkade or Lightning tokens
       return [
         ...availableSourceAssets.filter(
@@ -694,14 +698,14 @@ function HomePage() {
                 setSourceAssetAmount(value);
               }}
               decimals={
-                sourceAsset.isEvmToken()
+                isEvmToken(sourceAsset)
                   ? tokens.find((t) => t.token_id === sourceAsset)?.decimals
                   : 8
               }
               showCurrencyPrefix={true}
               usdPerToken={getUsdPerToken(sourceAsset)}
               tokenSymbol={
-                sourceAsset.isEvmToken() ? getTokenSymbol(sourceAsset) : "BTC"
+                isEvmToken(sourceAsset) ? getTokenSymbol(sourceAsset) : "BTC"
               }
             />
             <div className="shrink-0">
@@ -869,7 +873,7 @@ function HomePage() {
                   const isBtcTarget = asset.isBtc();
                   const isBtcSource = sourceAsset.isBtc();
                   const isEvmTarget = asset.isEvmToken();
-                  const isEvmSource = sourceAsset.isEvmToken();
+                  const isEvmSource = isEvmToken(sourceAsset);
 
                   // If both are BTC or both are EVM, auto-switch source to make them compatible
                   if (isBtcTarget && isBtcSource) {
@@ -958,7 +962,7 @@ function HomePage() {
               Note: BTC → Polygon uses Gelato Relay so no wallet needed */}
           {!isValidSpeedWalletContext() &&
           !isConnected &&
-          (sourceAsset.isEvmToken() ||
+          (isEvmToken(sourceAsset) ||
             (sourceAsset.isBtc() && isEthereumToken(targetAsset))) ? (
             <ConnectKitButton.Custom>
               {({ show }) => (
