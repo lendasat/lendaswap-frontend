@@ -285,9 +285,7 @@ export function SwapWizardPage() {
   const debugStep = isDebugMode()
     ? (searchParams.get("step") as SwapStatus | null)
     : null;
-  const debugDirection = isDebugMode()
-    ? searchParams.get("direction")
-    : null;
+  const debugDirection = isDebugMode() ? searchParams.get("direction") : null;
 
   const {
     loading: isLoading,
@@ -316,8 +314,7 @@ export function SwapWizardPage() {
   useEffect(() => {
     if (!swapData) return;
 
-    const statusChanged =
-      swapData.response.status !== lastStatusRef.current;
+    const statusChanged = swapData.response.status !== lastStatusRef.current;
     // Debug mode: also detect direction changes (same status, different tokens)
     const directionChanged =
       isDebugMode() &&

@@ -1,5 +1,12 @@
 import { isLightning } from "@lendasat/lendaswap-sdk-pure";
-import { ArrowRight, Check, CheckCheck, Copy, ExternalLink, Heart } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  CheckCheck,
+  Copy,
+  ExternalLink,
+  Heart,
+} from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -194,7 +201,8 @@ export function SuccessStep({
             </div>
           </div>
           <h3 className="text-sm font-semibold">
-            {getTokenSymbol(swapData.source_token)} → {getTokenSymbol(swapData.target_token)}
+            {getTokenSymbol(swapData.source_token)} →{" "}
+            {getTokenSymbol(swapData.target_token)}
           </h3>
         </div>
         <div className="flex items-center gap-2">

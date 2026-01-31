@@ -92,12 +92,16 @@
 
   /* Press animation — scale down on tap/click, release on let go */
   /* Exclude buttons that use translate-based centering (data-no-press) */
-  button:not([disabled]):not([data-no-press]):not([data-slot="accordion-trigger"]),
+  button:not([disabled]):not([data-no-press]):not(
+      [data-slot="accordion-trigger"]
+    ),
   [data-slot="button"]:not([disabled]):not([data-no-press]),
   [role="button"]:not([disabled]):not([data-no-press]) {
     transition: transform 100ms ease-in-out;
   }
-  button:not([disabled]):not([data-no-press]):not([data-slot="accordion-trigger"]):active,
+  button:not([disabled]):not([data-no-press]):not(
+      [data-slot="accordion-trigger"]
+    ):active,
   [data-slot="button"]:not([disabled]):not([data-no-press]):active,
   [role="button"]:not([disabled]):not([data-no-press]):active {
     transform: scale(0.95);

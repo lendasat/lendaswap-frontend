@@ -51,7 +51,8 @@ export function DebugNavigation() {
       {/* Step tabs */}
       <div className="flex flex-wrap justify-center gap-1.5">
         {STEP_TABS.map((tab) => {
-          const isActive = tab.step === null ? !isWizardPage : currentStep === tab.step;
+          const isActive =
+            tab.step === null ? !isWizardPage : currentStep === tab.step;
           return (
             <Button
               key={tab.label}
@@ -76,9 +77,7 @@ export function DebugNavigation() {
                 key={tab.direction}
                 size="sm"
                 variant={isActive ? "default" : "ghost"}
-                onClick={() =>
-                  navigate(buildUrl(currentStep, tab.direction))
-                }
+                onClick={() => navigate(buildUrl(currentStep, tab.direction))}
                 className={`h-6 text-[10px] px-2 ${isActive ? "" : "text-muted-foreground"}`}
               >
                 {tab.label}

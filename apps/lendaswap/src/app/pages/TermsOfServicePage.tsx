@@ -36,11 +36,12 @@ export function TermsOfServicePage() {
               1. Introduction
             </h2>
             <p>
-              These Terms of Service (&quot;Terms&quot;) govern your use of LendaSwap, an
-              atomic swap service operated by Sofbear Consulting Ltd., a company
-              registered in the British Virgin Islands (&quot;Company&quot;, &quot;we&quot;, &quot;us&quot;, or
-              &quot;our&quot;). By accessing or using our service, you agree to be bound by
-              these Terms.
+              These Terms of Service (&quot;Terms&quot;) govern your use of
+              LendaSwap, an atomic swap service operated by Sofbear Consulting
+              Ltd., a company registered in the British Virgin Islands
+              (&quot;Company&quot;, &quot;we&quot;, &quot;us&quot;, or
+              &quot;our&quot;). By accessing or using our service, you agree to
+              be bound by these Terms.
             </p>
           </section>
 
@@ -50,16 +51,16 @@ export function TermsOfServicePage() {
             </h2>
             <p>
               LendaSwap provides an atomic swap service that enables users to
-              exchange Bitcoin (BTC) with Wrapped Bitcoin (wBTC) and other tokens
-              across multiple blockchain networks, including but not limited to
-              Ethereum, Polygon, and Arbitrum.
+              exchange Bitcoin (BTC) with Wrapped Bitcoin (wBTC) and other
+              tokens across multiple blockchain networks, including but not
+              limited to Ethereum, Polygon, and Arbitrum.
             </p>
             <p className="mt-4">
-              When a user wishes to acquire BTC using tokens on Ethereum, Polygon,
-              or other supported networks, the deposited funds are first converted
-              to wBTC through decentralized exchanges (such as Uniswap), and then
-              atomically swapped to BTC, which is sent to the user&apos;s specified
-              target address.
+              When a user wishes to acquire BTC using tokens on Ethereum,
+              Polygon, or other supported networks, the deposited funds are
+              first converted to wBTC through decentralized exchanges (such as
+              Uniswap), and then atomically swapped to BTC, which is sent to the
+              user&apos;s specified target address.
             </p>
           </section>
 
@@ -95,8 +96,8 @@ export function TermsOfServicePage() {
               wBTC as part of the swap process.
             </p>
             <p className="mt-4">
-              We do not provide any guarantees regarding exchange rates. Rates may
-              fluctuate between the time you initiate a swap and when it is
+              We do not provide any guarantees regarding exchange rates. Rates
+              may fluctuate between the time you initiate a swap and when it is
               executed. You acknowledge and accept this risk when using our
               service.
             </p>
@@ -107,18 +108,19 @@ export function TermsOfServicePage() {
               5. No Warranties
             </h2>
             <p>
-              THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT ANY
-              WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. TO THE FULLEST EXTENT
-              PERMITTED BY APPLICABLE LAW, WE DISCLAIM ALL WARRANTIES, INCLUDING
-              BUT NOT LIMITED TO:
+              THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS
+              AVAILABLE&quot; WITHOUT ANY WARRANTIES OF ANY KIND, EXPRESS OR
+              IMPLIED. TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, WE
+              DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO:
             </p>
             <ul className="list-disc pl-6 mt-3 space-y-1.5">
               <li>
-                Warranties of merchantability or fitness for a particular purpose
+                Warranties of merchantability or fitness for a particular
+                purpose
               </li>
               <li>
-                Warranties regarding the accuracy, reliability, or completeness of
-                the service
+                Warranties regarding the accuracy, reliability, or completeness
+                of the service
               </li>
               <li>
                 Warranties that the service will be uninterrupted, secure, or
@@ -136,12 +138,12 @@ export function TermsOfServicePage() {
               6. Limitation of Liability
             </h2>
             <p>
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, SOFBEAR CONSULTING LTD. AND
-              ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE
-              FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE
-              DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, OR
-              OTHER INTANGIBLE LOSSES, ARISING OUT OF OR RELATED TO YOUR USE OF
-              THE SERVICE.
+              TO THE MAXIMUM EXTENT PERMITTED BY LAW, SOFBEAR CONSULTING LTD.
+              AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE
+              LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
+              PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS,
+              DATA, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR RELATED TO
+              YOUR USE OF THE SERVICE.
             </p>
             <p className="mt-4">
               This includes, without limitation, any losses resulting from:
@@ -161,9 +163,7 @@ export function TermsOfServicePage() {
             <h2 className="text-lg md:text-xl font-semibold text-foreground mb-3">
               7. User Responsibilities
             </h2>
-            <p>
-              By using our service, you acknowledge and agree that:
-            </p>
+            <p>By using our service, you acknowledge and agree that:</p>
             <ul className="list-disc pl-6 mt-3 space-y-1.5">
               <li>
                 You are solely responsible for securing your private keys and
@@ -174,7 +174,8 @@ export function TermsOfServicePage() {
                 transactions
               </li>
               <li>
-                You will verify all transaction details before confirming any swap
+                You will verify all transaction details before confirming any
+                swap
               </li>
               <li>
                 You comply with all applicable laws and regulations in your
@@ -192,16 +193,16 @@ export function TermsOfServicePage() {
               8. Geographic Restrictions
             </h2>
             <p>
-              Our service is not available to residents or citizens of, or persons
-              located in, the following jurisdictions:
+              Our service is not available to residents or citizens of, or
+              persons located in, the following jurisdictions:
             </p>
             <ul className="list-disc pl-6 mt-3 space-y-1.5">
               <li>The United States of America and its territories</li>
               <li>
-                Countries subject to comprehensive sanctions by the United States,
-                European Union, or United Nations, including but not limited to:
-                North Korea, Iran, Syria, Cuba, and the Crimea, Donetsk, and
-                Luhansk regions
+                Countries subject to comprehensive sanctions by the United
+                States, European Union, or United Nations, including but not
+                limited to: North Korea, Iran, Syria, Cuba, and the Crimea,
+                Donetsk, and Luhansk regions
               </li>
               <li>
                 Any other jurisdiction where the use of cryptocurrency swap
@@ -212,8 +213,8 @@ export function TermsOfServicePage() {
               By using our service, you represent and warrant that you are not
               located in, incorporated or organized in, or a resident of any
               restricted jurisdiction, and that you are not subject to sanctions
-              administered by OFAC, the UN Security Council, the EU, or any other
-              governmental authority.
+              administered by OFAC, the UN Security Council, the EU, or any
+              other governmental authority.
             </p>
           </section>
 
@@ -234,10 +235,10 @@ export function TermsOfServicePage() {
               10. Modifications to Terms
             </h2>
             <p>
-              We reserve the right to modify these Terms at any time. Changes will
-              be effective immediately upon posting to our website. Your continued
-              use of the service after any changes constitutes acceptance of the
-              modified Terms.
+              We reserve the right to modify these Terms at any time. Changes
+              will be effective immediately upon posting to our website. Your
+              continued use of the service after any changes constitutes
+              acceptance of the modified Terms.
             </p>
           </section>
 
@@ -261,7 +262,9 @@ export function TermsOfServicePage() {
               official channels.
             </p>
             <p className="mt-3">
-              <strong className="text-foreground">Sofbear Consulting Ltd.</strong>
+              <strong className="text-foreground">
+                Sofbear Consulting Ltd.
+              </strong>
               <br />
               British Virgin Islands
             </p>

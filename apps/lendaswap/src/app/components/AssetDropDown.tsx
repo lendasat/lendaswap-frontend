@@ -1,6 +1,12 @@
-import type { TokenId } from "@lendasat/lendaswap-sdk-pure";
+import {
+  isBtc,
+  isArbitrumToken,
+  isEthereumToken,
+  isPolygonToken,
+  type TokenId,
+} from "@lendasat/lendaswap-sdk-pure";
 import { Check, ChevronDown, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +22,10 @@ import {
 import { Input } from "#/components/ui/input";
 import { getTokenIcon, getTokenNetworkName, getTokenSymbol } from "../api";
 import { getTokenNetworkIcon } from "../utils/tokenUtils";
+import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
+import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
+import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
+import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
 
 // Hook to detect mobile viewport
 function useIsMobile() {
@@ -30,6 +40,41 @@ function useIsMobile() {
 
   return isMobile;
 }
+
+type NetworkTabId = "all" | "bitcoin" | "ethereum" | "arbitrum" | "polygon";
+
+const networkTabs: {
+  id: NetworkTabId;
+  label: string;
+  icon: React.ReactElement | null;
+  filter?: (asset: TokenId) => boolean;
+}[] = [
+  { id: "all", label: "All", icon: null },
+  {
+    id: "bitcoin",
+    label: "Bitcoin",
+    icon: <BitcoinIcon width={14} height={14} />,
+    filter: (a) => isBtc(a),
+  },
+  {
+    id: "ethereum",
+    label: "Ethereum",
+    icon: <EthereumIcon width={14} height={14} />,
+    filter: (a) => isEthereumToken(a),
+  },
+  {
+    id: "arbitrum",
+    label: "Arbitrum",
+    icon: <ArbitrumIcon width={14} height={14} />,
+    filter: (a) => isArbitrumToken(a),
+  },
+  {
+    id: "polygon",
+    label: "Polygon",
+    icon: <PolygonIcon width={14} height={14} />,
+    filter: (a) => isPolygonToken(a),
+  },
+];
 
 interface AssetDropDownProps {
   value: TokenId;
@@ -46,77 +91,129 @@ export function AssetDropDown({
 }: AssetDropDownProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTab, setSelectedTab] = useState<NetworkTabId>("all");
   const isMobile = useIsMobile();
 
   const selectedAsset = value;
 
+  // Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      setSearchQuery("");
+      setSelectedTab("all");
+    }
+  }, [open]);
+
   const handleSelect = (asset: TokenId) => {
     onChange(asset);
     setOpen(false);
-    setSearchQuery("");
   };
 
-  // Filter assets by search query
-  const filteredAssets = availableAssets.filter((asset) => {
-    const query = searchQuery.toLowerCase();
-    const symbol = getTokenSymbol(asset).toLowerCase();
-    const network = getTokenNetworkName(asset).toLowerCase();
-    return (
-      asset.toString().toLowerCase().includes(query) ||
-      symbol.includes(query) ||
-      network.includes(query)
-    );
-  });
+  // Only show tabs that have at least 1 token in availableAssets
+  const visibleTabs = useMemo(
+    () =>
+      networkTabs.filter(
+        (tab) =>
+          tab.id === "all" || availableAssets.some((a) => tab.filter?.(a)),
+      ),
+    [availableAssets],
+  );
+
+  // Combined filter: tab + search
+  const filteredAssets = useMemo(() => {
+    return availableAssets.filter((asset) => {
+      // Tab filter
+      const tab = networkTabs.find((t) => t.id === selectedTab);
+      if (tab?.filter && !tab.filter(asset)) return false;
+
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const symbol = getTokenSymbol(asset).toLowerCase();
+        const network = getTokenNetworkName(asset).toLowerCase();
+        return (
+          asset.toString().toLowerCase().includes(query) ||
+          symbol.includes(query) ||
+          network.includes(query)
+        );
+      }
+      return true;
+    });
+  }, [availableAssets, selectedTab, searchQuery]);
 
   // Shared content for both Dialog and Drawer
   const tokenListContent = (
-    <>
+    <div className="overflow-hidden">
+      {/* Network Tabs */}
+      {visibleTabs.length > 2 && (
+        <div className="px-5 pt-4 pb-2">
+          <div className="flex gap-2 flex-wrap">
+            {visibleTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSelectedTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedTab === tab.id
+                    ? "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {tab.icon && (
+                  <span className="flex items-center">{tab.icon}</span>
+                )}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Search Input */}
-      <div className="p-4">
+      <div className="px-5 pt-3 pb-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search by name or network"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-12 rounded-xl bg-muted border-0 focus-visible:ring-1"
+            className="pl-10 h-11 rounded-2xl bg-muted border-0 focus-visible:ring-1 focus-visible:ring-border"
             autoFocus={!isMobile}
           />
         </div>
       </div>
 
       {/* Token List */}
-      <div className="overflow-y-auto max-h-[50vh] px-2 pb-4 scrollbar-thin">
+      <div className="overflow-y-auto max-h-[50vh] px-3 pb-6 pt-1 scrollbar-thin">
         {filteredAssets.length > 0 ? (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {filteredAssets.map((asset) => (
               <button
                 key={asset.toString()}
                 type="button"
                 onClick={() => handleSelect(asset)}
-                className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-muted transition-colors text-left"
+                className="flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-muted/70 transition-colors text-left"
               >
-                {/* Token Icon */}
-                <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    {getTokenIcon(asset)}
+                {/* Token Icon with Network Badge */}
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      {getTokenIcon(asset)}
+                    </div>
+                  </div>
+                  {/* Network badge */}
+                  <div className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-background p-[1px] flex items-center justify-center">
+                    <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+                      {getTokenNetworkIcon(asset)}
+                    </div>
                   </div>
                 </div>
 
                 {/* Token Info */}
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold">{getTokenSymbol(asset)}</div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    {typeof getTokenNetworkIcon(asset) === "string" ? (
-                      <span className="text-xs">
-                        {getTokenNetworkIcon(asset)}
-                      </span>
-                    ) : (
-                      <div className="w-3 h-3">
-                        {getTokenNetworkIcon(asset)}
-                      </div>
-                    )}
-                    <span>{getTokenNetworkName(asset)}</span>
+                  <div className="text-sm text-muted-foreground">
+                    {getTokenNetworkName(asset)}
                   </div>
                 </div>
 
@@ -135,36 +232,39 @@ export function AssetDropDown({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
-      {/* Trigger Button - Uniswap style */}
+      {/* Trigger Button */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-full bg-background shadow-sm hover:shadow-md transition-all"
+        className="flex items-center gap-1.5 md:gap-2 pl-1.5 pr-2 py-1 md:pl-2 md:pr-3 md:py-1.5 rounded-full bg-background hover:bg-background/70 transition-colors"
       >
-        <div className="w-5 h-5 md:w-6 md:h-6 rounded-full overflow-hidden flex items-center justify-center">
-          {getTokenIcon(selectedAsset)}
+        {/* Token icon with network badge */}
+        <div className="relative">
+          <div className="w-6 h-6 md:w-7 md:h-7 rounded-full overflow-hidden flex items-center justify-center">
+            {getTokenIcon(selectedAsset)}
+          </div>
+          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-background p-[1px] flex items-center justify-center">
+            <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+              {getTokenNetworkIcon(selectedAsset)}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col items-start">
-          <span className="font-semibold text-xs md:text-sm leading-tight">
-            {getTokenSymbol(selectedAsset)}
-          </span>
-          <span className="text-[10px] md:text-xs text-muted-foreground leading-tight">
-            {getTokenNetworkName(selectedAsset)}
-          </span>
-        </div>
-        <ChevronDown className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground" />
+        <span className="font-semibold text-sm md:text-base leading-tight">
+          {getTokenSymbol(selectedAsset)}
+        </span>
+        <ChevronDown className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground" />
       </button>
 
       {/* Mobile: Bottom Sheet Drawer */}
       {isMobile ? (
         <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent>
-            <DrawerHeader className="pb-0">
+          <DrawerContent className="rounded-t-2xl">
+            <DrawerHeader className="px-5 pb-0">
               <DrawerTitle>
                 {label === "buy"
                   ? "Select a currency to buy"
@@ -177,8 +277,8 @@ export function AssetDropDown({
       ) : (
         /* Desktop: Dialog Modal */
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
-            <DialogHeader className="p-4 pb-0">
+          <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-2xl [&>button:last-child]:hidden">
+            <DialogHeader className="px-5 pt-4 pb-0">
               <DialogTitle>
                 {label === "buy"
                   ? "Select a currency to buy"

@@ -1,11 +1,5 @@
 import { isArkade, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
-import {
-  CheckCheck,
-  Clock,
-  Copy,
-  ExternalLink,
-  QrCode,
-} from "lucide-react";
+import { CheckCheck, Clock, Copy, ExternalLink, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -217,9 +211,7 @@ export function SendOnchainBtcStep({
                 <Clock className="h-3.5 w-3.5" />
                 Expires in
               </span>
-              <span className="font-medium font-mono">
-                {timeRemaining}
-              </span>
+              <span className="font-medium font-mono">{timeRemaining}</span>
             </div>
           )}
         </div>
@@ -232,7 +224,10 @@ export function SendOnchainBtcStep({
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3">
-          <Button className="h-12 w-full text-base font-semibold" disabled={true}>
+          <Button
+            className="h-12 w-full text-base font-semibold"
+            disabled={true}
+          >
             Waiting for payment
           </Button>
 

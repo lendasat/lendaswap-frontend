@@ -7,6 +7,18 @@ export default {
     "./index.html",
   ],
   theme: {
+    fontFamily: {
+      sans: ["Poppins", "system-ui", "sans-serif"],
+      mono: [
+        "SF Mono",
+        "Menlo",
+        "Monaco",
+        "Consolas",
+        "Liberation Mono",
+        "Courier New",
+        "monospace",
+      ],
+    },
     extend: {
       borderRadius: {
         lg: "var(--radius)",

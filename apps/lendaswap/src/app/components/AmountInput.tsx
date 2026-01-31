@@ -184,11 +184,11 @@ export function AmountInput({
   }
 
   return (
-    <div className="flex-1 min-w-0">
-      <div className="flex items-baseline gap-1">
+    <div className="flex-1 min-w-0 overflow-hidden">
+      <div className="flex items-baseline gap-1 overflow-hidden">
         {/* Currency prefix - show $ only when in usd mode (USD denomination) */}
         {showCurrencyPrefix && inputMode === "usd" && (
-          <span className="text-2xl md:text-4xl font-medium text-muted-foreground">
+          <span className="text-2xl md:text-4xl font-medium text-muted-foreground leading-none">
             $
           </span>
         )}
@@ -198,7 +198,12 @@ export function AmountInput({
           value={inputValue}
           onChange={handleChange}
           placeholder="0"
-          className="w-full bg-transparent text-2xl md:text-4xl font-medium outline-none placeholder:text-muted-foreground/50"
+          style={{
+            touchAction: "manipulation",
+            overflowY: "hidden",
+            overscrollBehavior: "none",
+          }}
+          className="w-full p-0 m-0 border-0 bg-transparent text-2xl md:text-4xl !leading-[1] !h-[1em] font-sans font-medium outline-none appearance-none placeholder:text-muted-foreground/50"
           data-1p-ignore
           data-lpignore="true"
           autoComplete="off"
@@ -208,7 +213,7 @@ export function AmountInput({
       <button
         type="button"
         onClick={handleToggle}
-        className="text-sm text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
+        className="text-sm font-sans text-muted-foreground mt-1 hover:text-foreground hover:opacity-100 opacity-70 transition-all cursor-pointer"
       >
         {toggleText}
       </button>
