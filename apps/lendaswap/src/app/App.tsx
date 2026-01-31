@@ -1473,10 +1473,10 @@ export default function App() {
                     ))}
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-orange-500 text-lg md:text-xl">
+                    <span className="text-orange-500 text-xl md:text-2xl">
                       ★★★★★
                     </span>
-                    <p className="text-xs text-muted-foreground font-medium">
+                    <p className="text-sm text-muted-foreground font-medium">
                       Trusted by{" "}
                       <span className="text-foreground font-bold">4,102+</span>{" "}
                       Bitcoiners
