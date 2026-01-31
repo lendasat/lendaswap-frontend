@@ -1,6 +1,7 @@
 import { isBtcOnchain, isLightning } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useAccount,
@@ -75,6 +76,7 @@ export function SwapProcessingStep({
   swapId,
   preimage,
 }: ConfirmingDepositStepProps) {
+  const posthog = usePostHog();
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -243,11 +245,19 @@ export function SwapProcessingStep({
         setRetryCount(newRetryCount);
 
         if (newRetryCount >= maxRetries) {
-          setClaimError(
+          const errorMessage =
             error instanceof Error
               ? `${error.message} (Max retries reached)`
-              : `Failed to claim tokens after ${maxRetries} attempts. Please try manually.`,
-          );
+              : `Failed to claim tokens after ${maxRetries} attempts. Please try manually.`;
+          setClaimError(errorMessage);
+
+          posthog?.capture("swap_failed", {
+            failure_type: "claim",
+            swap_id: swapData.id,
+            swap_direction: swapDirection,
+            error_message: errorMessage,
+            retry_count: newRetryCount,
+          });
         } else {
           setClaimError(
             error instanceof Error
@@ -280,6 +290,7 @@ export function SwapProcessingStep({
     switchChainAsync,
     chain,
     setOpen,
+    posthog?.capture,
   ]);
 
   // Auto-claim for evm-to-btc when server is funded
@@ -342,11 +353,19 @@ export function SwapProcessingStep({
         setRetryCount(newRetryCount);
 
         if (newRetryCount >= maxRetries) {
-          setClaimError(
+          const errorMessage =
             error instanceof Error
               ? `${error.message} (Max retries reached)`
-              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`,
-          );
+              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
+          setClaimError(errorMessage);
+
+          posthog?.capture("swap_failed", {
+            failure_type: "claim",
+            swap_id: polygonToBtcSwapData.id,
+            swap_direction: "evm-to-btc",
+            error_message: errorMessage,
+            retry_count: newRetryCount,
+          });
         } else {
           setClaimError(
             error instanceof Error
@@ -366,7 +385,14 @@ export function SwapProcessingStep({
     };
 
     autoClaimPolygonToArkadeSwaps();
-  }, [swapData, swapDirection, isClaiming, retryCount, sleep]);
+  }, [
+    swapData,
+    swapDirection,
+    isClaiming,
+    retryCount,
+    sleep,
+    posthog?.capture,
+  ]);
 
   // Auto-claim for bitcoin-to-arkade when server is funded
   useEffect(() => {
@@ -426,11 +452,19 @@ export function SwapProcessingStep({
         setRetryCount(newRetryCount);
 
         if (newRetryCount >= maxRetries) {
-          setClaimError(
+          const errorMessage =
             error instanceof Error
               ? `${error.message} (Max retries reached)`
-              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`,
-          );
+              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
+          setClaimError(errorMessage);
+
+          posthog?.capture("swap_failed", {
+            failure_type: "claim",
+            swap_id: bitcoinToArkadeSwapData.id,
+            swap_direction: "btc-to-arkade",
+            error_message: errorMessage,
+            retry_count: newRetryCount,
+          });
         } else {
           setClaimError(
             error instanceof Error
@@ -450,7 +484,14 @@ export function SwapProcessingStep({
     };
 
     autoClaimBtcToArkadeSwaps();
-  }, [swapData, swapDirection, isClaiming, retryCount, sleep]);
+  }, [
+    swapData,
+    swapDirection,
+    isClaiming,
+    retryCount,
+    sleep,
+    posthog?.capture,
+  ]);
 
   const handleCopyTxId = async (txId: string) => {
     try {

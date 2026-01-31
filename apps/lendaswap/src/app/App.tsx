@@ -1,5 +1,5 @@
 import { usePostHog } from "posthog-js/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Navigate,
   Route,
@@ -166,6 +166,17 @@ function HomePage() {
       setIsEvmAddressValid(false);
     }
   }, [isConnected, connectedAddress]);
+
+  // Track wallet connection/disconnection
+  const prevConnectedRef = useRef(false);
+  useEffect(() => {
+    if (isConnected && !prevConnectedRef.current) {
+      posthog?.capture("wallet_connected", { address: connectedAddress });
+    } else if (!isConnected && prevConnectedRef.current) {
+      posthog?.capture("wallet_disconnected");
+    }
+    prevConnectedRef.current = isConnected;
+  }, [isConnected, connectedAddress, posthog?.capture]);
 
   // Check if wallet is on the correct chain for the EVM asset (source or target)
   const expectedChain = isEvmToken(sourceAsset)
@@ -594,11 +605,18 @@ function HomePage() {
       }
     } catch (error) {
       console.error("Failed to create swap:", error);
-      setSwapError(
+      const errorMessage =
         error instanceof Error
           ? error.message
-          : `Failed to create swap: ${error}`,
-      );
+          : `Failed to create swap: ${error}`;
+      setSwapError(errorMessage);
+
+      posthog?.capture("swap_failed", {
+        failure_type: "creation",
+        error_message: errorMessage,
+        source_token: sourceAsset,
+        target_token: targetAsset,
+      });
     } finally {
       setIsCreatingSwap(false);
     }

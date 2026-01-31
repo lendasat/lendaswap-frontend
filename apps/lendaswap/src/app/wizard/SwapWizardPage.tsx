@@ -15,6 +15,7 @@ import {
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { AlertCircle } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAsync, useAsyncRetry } from "react-use";
@@ -267,6 +268,7 @@ function determineStepFromStatus(
 }
 
 export function SwapWizardPage() {
+  const posthog = usePostHog();
   const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -334,6 +336,16 @@ export function SwapWizardPage() {
   }, [swapData, displaySwapData]);
 
   const swapDirectionValue = swapDirection(displaySwapData);
+
+  // Track wizard step views for conversion funnel
+  useEffect(() => {
+    if (!currentStep || !displaySwapData) return;
+    posthog?.capture("swap_step_viewed", {
+      swap_id: displaySwapData.id,
+      step: currentStep,
+      swap_direction: swapDirectionValue,
+    });
+  }, [currentStep, displaySwapData, posthog?.capture, swapDirectionValue]);
 
   // Poll swap status every 2 seconds in the background
   useEffect(() => {

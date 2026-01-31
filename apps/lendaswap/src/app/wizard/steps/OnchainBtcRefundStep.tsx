@@ -100,11 +100,20 @@ export function OnchainBtcRefundStep({
       });
     } catch (error) {
       console.error("Refund failed:", error);
-      setRefundError(
+      const errorMessage =
         error instanceof Error
           ? error.message
-          : "Failed to refund swap. Check the logs or try again later.",
-      );
+          : "Failed to refund swap. Check the logs or try again later.";
+      setRefundError(errorMessage);
+
+      posthog?.capture("swap_failed", {
+        failure_type: "refund",
+        swap_id: swapId,
+        swap_direction: isEvmToken(swapData.target_token)
+          ? "onchain-to-evm"
+          : "btc-to-arkade",
+        error_message: errorMessage,
+      });
     } finally {
       setIsRefunding(false);
     }
