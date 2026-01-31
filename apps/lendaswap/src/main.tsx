@@ -23,6 +23,7 @@ getSpeedWalletParams();
 const config = createConfig(
   getDefaultConfig({
     appName: "LendaSwap",
+    appUrl: window.location.origin,
     walletConnectProjectId: "a15c535db177c184c98bdbdc5ff12590",
     chains: [mainnet, polygon, arbitrum],
   }),

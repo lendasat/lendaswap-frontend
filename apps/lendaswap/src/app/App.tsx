@@ -32,6 +32,7 @@ import {
   Download,
   Eye,
   Github,
+  Globe,
   Key,
   Loader,
   Menu,
@@ -39,6 +40,7 @@ import {
   Tag,
   Upload,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { useAsync } from "react-use";
 import { useAccount, useSwitchChain } from "wagmi";
@@ -106,6 +108,10 @@ function HomePage() {
     chain: connectedChain,
   } = useAccount();
   const { switchChainAsync } = useSwitchChain();
+
+  useEffect(() => {
+    document.title = "LendaSwap - Lightning-Fast Bitcoin Atomic Swaps";
+  }, []);
 
   // Read tokens from URL params, validate them
   const urlSourceToken = isValidTokenId(params.sourceToken)
@@ -681,9 +687,9 @@ function HomePage() {
       {/* Sell/Buy container with arrow */}
       <div className="relative">
         {/* Sell */}
-        <div className="rounded-2xl bg-muted p-4 pb-5">
+        <div className="rounded-2xl bg-muted p-4 pb-5 overflow-hidden">
           <div className="text-sm text-muted-foreground mb-2">Sell</div>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <AmountInput
               value={sourceAssetAmount}
               onChange={(value) => {
@@ -701,7 +707,7 @@ function HomePage() {
                 isEvmToken(sourceAsset) ? getTokenSymbol(sourceAsset) : "BTC"
               }
             />
-            <div className="shrink-0">
+            <div className="shrink-0 pt-1">
               <AssetDropDown
                 value={sourceAsset}
                 availableAssets={availableSourceAssets}
@@ -781,6 +787,7 @@ function HomePage() {
         {/* Swap button - absolutely positioned (like Uniswap) */}
         <button
           type="button"
+          data-no-press
           onClick={() => {
             // btc_onchain can only be in sell position, not buy position
             // Don't allow swapping if it would put btc_onchain in target
@@ -816,9 +823,9 @@ function HomePage() {
         </button>
 
         {/* Buy */}
-        <div className="rounded-2xl bg-muted p-4 pt-5 mt-1">
+        <div className="rounded-2xl bg-muted p-4 pt-5 mt-1 overflow-hidden">
           <div className="text-sm text-muted-foreground mb-2">Buy</div>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <AmountInput
               value={targetAssetAmount}
               onChange={(value) => {
@@ -835,7 +842,7 @@ function HomePage() {
               usdPerToken={getUsdPerToken(targetAsset)}
               tokenSymbol={getTokenSymbol(targetAsset)}
             />
-            <div className="shrink-0">
+            <div className="shrink-0 pt-1">
               <AssetDropDown
                 availableAssets={availableTargetAssets}
                 value={targetAsset}
@@ -1154,8 +1161,8 @@ export default function App() {
                   onClick={() => navigate("/")}
                   className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 >
-                  <img src={baniLogo} alt="Bani" className="size-8 shrink-0 rounded-xl object-contain" />
-                  <h1 className="text-xl font-semibold">LendaSwap</h1>
+                  <img src={baniLogo} alt="Bani" className="size-8 shrink-0 rounded-lg object-contain" />
+                  <span className="text-xl font-semibold">LendaSwap</span>
                 </button>
 
                 {/* GitHub Link */}
@@ -1177,7 +1184,18 @@ export default function App() {
                   className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
                   aria-label="Follow us on X"
                 >
-                  <XLogo className="w-5 h-5 fill-current" />
+                  <XLogo className="w-4 h-4 fill-current" />
+                </a>
+
+                {/* Lendasat Website Link */}
+                <a
+                  href="https://lendasat.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+                  aria-label="Visit lendasat.com"
+                >
+                  <Globe className="w-[18px] h-[18px]" />
                 </a>
               </div>
 
@@ -1347,42 +1365,37 @@ export default function App() {
           </div>
         </header>
 
+        {/* Terms of Service - rendered outside constrained layout */}
+        {location.pathname === "/terms" && <TermsOfServicePage />}
+
         {/* Main Content */}
+        {location.pathname !== "/terms" && (
         <main className="container mx-auto px-4 sm:px-5 md:px-6 py-16">
           <div className="mx-auto max-w-2xl space-y-10">
             {/* Title */}
-            <div className="space-y-2 text-center">
-              <h2
-                className="text-xl md:text-3xl font-semibold"
-                style={
-                  stepInfo.isHomePage
-                    ? {
-                        maskImage:
-                          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,0.6) 100%)",
-                        WebkitMaskImage:
-                          "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,0.6) 100%)",
-                      }
-                    : undefined
-                }
-              >
-                {stepInfo.isHomePage ? (
-                  <>
-                    <span>
-                      {stepInfo.title.includes("⚡") ? "⚡ " : ""}Lightning-fast{" "}
+            <div className="text-center">
+              {stepInfo.isHomePage ? (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-center gap-1.5 text-muted-foreground/60">
+                    <Zap className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                    <span className="font-sans text-xs md:text-sm font-semibold tracking-widest uppercase">
+                      Lightning-fast
                     </span>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-400 drop-shadow-[0_0_6px_rgba(249,115,22,0.15)]">
-                      Bitcoin
-                    </span>
-                    <span> to </span>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500 drop-shadow-[0_0_6px_rgba(249,115,22,0.15)]">
-                      Stablecoins
-                    </span>
-                  </>
-                ) : (
-                  stepInfo.title
-                )}
-              </h2>
-              <p className="text-muted-foreground">{stepInfo.description}</p>
+                  </div>
+                  <h1 className="font-sans text-xl md:text-3xl font-bold tracking-tight flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-b from-foreground to-foreground/40 bg-clip-text text-transparent">
+                    <span>Bitcoin</span>
+                    <ArrowLeftRight className="w-4 h-4 md:w-6 md:h-6 text-muted-foreground/30" />
+                    <span>Stablecoins</span>
+                  </h1>
+                </div>
+              ) : (
+                <h2 className="font-sans text-2xl md:text-4xl font-bold tracking-tight leading-snug">
+                  {stepInfo.title}
+                </h2>
+              )}
+              {stepInfo.description && (
+                <p className="text-muted-foreground mt-2">{stepInfo.description}</p>
+              )}
             </div>
 
             {/* Step Card */}
@@ -1393,14 +1406,13 @@ export default function App() {
                   element={<SwapWizardPage />}
                 />
                 <Route path="/swap/:swapId/refund" element={<RefundPage />} />
-                <Route path="/terms" element={<TermsOfServicePage />} />
                 <Route
                   path="*"
                   element={
                     <div className="group relative">
                       {/* Orange glow effect on hover */}
                       <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/0 opacity-0 blur-xl transition-all duration-500 group-hover:from-orange-500/10 group-hover:via-orange-400/8 group-hover:to-orange-500/10 group-hover:opacity-100" />
-                      <Card className="relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm min-h-[420px]">
+                      <Card className="relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm !py-0 !gap-0">
                         <Routes>
                           <Route
                             path="/"
@@ -1424,7 +1436,7 @@ export default function App() {
 
           {/* Stats & Features - Only show on home page */}
           {isHomePage && (
-            <div className="mx-auto max-w-5xl mt-[240px] space-y-4 px-4">
+            <div className="mx-auto max-w-6xl mt-[240px] space-y-5 px-4">
               {/* Social Proof */}
               <div className="flex items-center justify-center gap-4 mb-8">
                 <div className="flex items-center -space-x-4">
@@ -1459,7 +1471,7 @@ export default function App() {
               </div>
 
               {/* Top Row - Bento Grid: Square left, Wide right */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
                 {/* Self-Custody - 100% Secured */}
                 <div className="md:col-span-2 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-square md:aspect-square">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -1537,7 +1549,7 @@ export default function App() {
                     <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
                       100% Secured
                     </div>
-                    <div className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                    <div className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-0.5">
                       Your keys. Your money. Always.
                     </div>
                   </div>
@@ -1557,14 +1569,18 @@ export default function App() {
                     </span>
                   </div>
 
-                  {/* Phone - floating with gradient fade at bottom */}
+                  {/* Phone - floating, fades out at bottom */}
                   <div className="absolute top-[50%] left-10 sm:left-14 md:left-20 -translate-y-1/2">
                     <div
                       className="relative transition-transform duration-500 ease-out group-hover:-translate-y-2"
-                      style={{ perspective: "1000px" }}
+                      style={{
+                        perspective: "1000px",
+                        maskImage: "linear-gradient(to bottom, black 40%, transparent 90%)",
+                        WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 90%)",
+                      }}
                     >
-                      {/* Phone Frame - bigger sizing */}
-                      <div className="relative w-[100px] sm:w-[110px] md:w-[110px] lg:w-[130px] aspect-[1/2] rounded-[20px] sm:rounded-[22px] md:rounded-[24px] bg-gradient-to-b from-zinc-700 to-zinc-900 dark:from-zinc-600 dark:to-zinc-800 p-[3px] sm:p-[3px] md:p-[4px] shadow-xl shadow-black/20">
+                      {/* Phone Frame */}
+                      <div className="relative w-[100px] sm:w-[110px] md:w-[110px] lg:w-[130px] aspect-[1/2] rounded-[20px] sm:rounded-[22px] md:rounded-[24px] bg-gradient-to-b from-zinc-700 to-zinc-900 dark:from-zinc-600 dark:to-zinc-800 p-[3px] sm:p-[3px] md:p-[4px]">
                         {/* Inner bezel */}
                         <div className="relative w-full h-full rounded-[17px] sm:rounded-[19px] md:rounded-[20px] bg-black overflow-hidden">
                           {/* Dynamic Island */}
@@ -1578,8 +1594,6 @@ export default function App() {
                         <div className="absolute -right-[2px] top-[35%] w-[2px] sm:w-[3px] h-[18%] bg-zinc-600 dark:bg-zinc-500 rounded-r-sm" />
                         <div className="absolute -left-[2px] top-[28%] w-[2px] sm:w-[3px] h-[12%] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
                         <div className="absolute -left-[2px] top-[42%] w-[2px] sm:w-[3px] h-[18%] bg-zinc-600 dark:bg-zinc-500 rounded-l-sm" />
-                        {/* Gradient fade at bottom - starts earlier */}
-                        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-card via-card/70 to-transparent pointer-events-none rounded-b-[20px] sm:rounded-b-[22px] md:rounded-b-[24px]" />
                       </div>
                     </div>
                   </div>
@@ -1603,7 +1617,7 @@ export default function App() {
               </div>
 
               {/* Middle Row - Bento Grid: Wide left, Square right */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
                 {/* Developer Docs - Wide */}
                 <div className="md:col-span-3 group relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5 aspect-[4/3] md:aspect-auto">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -1905,7 +1919,7 @@ export default function App() {
               </div>
 
               {/* Bottom Row - 3 Feature Boxes */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Instant */}
                 <div className="group relative aspect-[4/3] md:aspect-square overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 p-4 md:p-6 shadow-sm transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl hover:shadow-orange-500/5">
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 via-transparent to-orange-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -1996,10 +2010,10 @@ export default function App() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-base md:text-lg font-semibold text-foreground">
+                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
                         Instant
                       </div>
-                      <div className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                      <div className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-0.5">
                         Near-instant settlement
                       </div>
                     </div>
@@ -2119,10 +2133,10 @@ export default function App() {
 
                     {/* Text content */}
                     <div>
-                      <div className="text-base md:text-lg font-semibold text-foreground">
+                      <div className="text-base md:text-xl font-bold tracking-tight text-foreground">
                         Atomic Swaps
                       </div>
-                      <div className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                      <div className="text-xs md:text-sm text-muted-foreground leading-relaxed mt-0.5">
                         Trustless · Self-custodial
                       </div>
                     </div>
@@ -2213,6 +2227,7 @@ export default function App() {
             </div>
           )}
         </main>
+        )}
 
         {/* Footer */}
         <footer className="mt-16 border-t">

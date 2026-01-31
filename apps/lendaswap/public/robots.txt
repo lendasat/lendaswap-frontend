@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /swap/*/wizard
+Disallow: /swap/*/refund
+
+Sitemap: https://swap.lendasat.com/sitemap.xml
