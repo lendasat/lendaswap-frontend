@@ -30,7 +30,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
 
   const arkadeAddress = swapData.htlc_address_arkade;
   const lightningAddress = swapData.ln_invoice;
-  const unifiedAddress = `bitcoin:?arkade=${swapData.htlc_address_arkade}&lightning=${swapData.ln_invoice}&amount=${(Number(swapData.sats_receive) / 100_000_000).toFixed(8)}`;
+  const lightningQrValue = `lightning:${lightningAddress}`;
   const swapId = swapData.id;
   const tokenAmount = swapData.asset_amount.toString();
   const tokenSymbol = getTokenSymbol(swapData.target_token);
@@ -140,7 +140,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
         )}
 
         {/* Standard Mode: QR Code - Hidden on mobile by default, always visible on desktop */}
-        {!isSpeedWallet && arkadeAddress && (
+        {!isSpeedWallet && lightningAddress && (
           <>
             {/* Toggle button - only visible on mobile */}
             <div className="md:hidden">
@@ -159,7 +159,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
               className={`flex flex-col items-center space-y-4 ${showQrCode ? "block" : "hidden"} md:flex`}
             >
               <div className="rounded-lg bg-white p-1">
-                <QRCodeSVG value={unifiedAddress} size={200} level="M" />
+                <QRCodeSVG value={lightningQrValue} size={200} level="M" />
               </div>
             </div>
           </>
