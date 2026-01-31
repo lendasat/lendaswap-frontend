@@ -27,6 +27,8 @@ import {
   ArrowDown,
   ArrowLeftRight,
   Check,
+  Clipboard,
+  ClipboardCheck,
   Download,
   Eye,
   Github,
@@ -34,7 +36,6 @@ import {
   Loader,
   Menu,
   Shield,
-  Star,
   Tag,
   Upload,
   Wallet,
@@ -58,8 +59,7 @@ import {
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
 import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
-import { ReactComponent as LendasatBlack } from "../assets/lendasat_black.svg";
-import { ReactComponent as LendasatGrey } from "../assets/lendasat_grey.svg";
+import baniLogo from "../assets/bani_logo.png";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
   isLightningAddress,
@@ -1069,6 +1069,7 @@ export default function App() {
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
+  const [copiedTerminal, setCopiedTerminal] = useState(false);
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
   const isHomePage =
@@ -1153,13 +1154,7 @@ export default function App() {
                   onClick={() => navigate("/")}
                   className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 >
-                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black dark:bg-white">
-                    {theme === "dark" ? (
-                      <LendasatBlack className="h-5 w-5 shrink-0" />
-                    ) : (
-                      <LendasatGrey className="h-5 w-5 shrink-0" />
-                    )}
-                  </div>
+                  <img src={baniLogo} alt="Bani" className="size-8 shrink-0 rounded-xl object-contain" />
                   <h1 className="text-xl font-semibold">LendaSwap</h1>
                 </button>
 
@@ -1196,20 +1191,12 @@ export default function App() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      {hasCode ? (
+                      {hasCode && (
                         <DropdownMenuItem disabled className="gap-2">
                           <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                           <span className="text-green-600 dark:text-green-400 font-bold">
                             NO-FEE
                           </span>
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          onClick={() => setDialogOpen(true)}
-                          className="gap-2"
-                        >
-                          <Tag className="h-4 w-4" />
-                          Add your code
                         </DropdownMenuItem>
                       )}
 
@@ -1281,23 +1268,13 @@ export default function App() {
 
                 {/* Desktop Buttons */}
                 <div className="hidden md:flex items-center gap-3">
-                  {hasCode ? (
+                  {hasCode && (
                     <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
                       <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <span className="text-sm font-bold text-green-600 dark:text-green-400">
                         NO-FEE
                       </span>
                     </div>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDialogOpen(true)}
-                      className="gap-2"
-                    >
-                      <Tag className="h-4 w-4" />
-                      <span>Add your code</span>
-                    </Button>
                   )}
                   <Button
                     variant="ghost"
@@ -1449,14 +1426,13 @@ export default function App() {
           {isHomePage && (
             <div className="mx-auto max-w-5xl mt-[240px] space-y-4 px-4">
               {/* Social Proof */}
-              <div className="flex flex-col items-center justify-center mb-8">
-                <div className="flex items-center -space-x-3 mb-3">
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <div className="flex items-center -space-x-4">
                   {[
-                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f97316",
-                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Mia&backgroundColor=fb923c",
-                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Oscar&backgroundColor=fdba74",
-                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=f97316",
-                    "https://api.dicebear.com/7.x/avataaars/svg?seed=Max&backgroundColor=ea580c",
+                    "https://api.dicebear.com/7.x/lorelei/svg?seed=Felix&backgroundColor=f97316",
+                    "https://api.dicebear.com/7.x/lorelei/svg?seed=Mia&backgroundColor=f97316",
+                    "https://api.dicebear.com/7.x/lorelei/svg?seed=Oscar&backgroundColor=f97316",
+                    "https://api.dicebear.com/7.x/lorelei/svg?seed=Luna&backgroundColor=f97316",
                   ].map((src) => (
                     <div
                       key={src}
@@ -1465,25 +1441,21 @@ export default function App() {
                       <img
                         src={src}
                         alt="User avatar"
-                        className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-background shadow-lg bg-orange-500/20"
+                        className="w-10 h-10 md:w-11 md:h-11 rounded-full border-2 border-background shadow-lg bg-orange-500/20"
                       />
                     </div>
                   ))}
                 </div>
-                <p className="text-sm md:text-base text-muted-foreground font-medium flex items-center gap-1.5">
-                  <span className="flex items-center text-orange-500">
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
-                    <Star className="w-4 h-4 fill-current" />
+                <div className="flex flex-col items-start">
+                  <span className="text-orange-500 text-lg md:text-xl">
+                    ★★★★★
                   </span>
-                  <span className="ml-1">
+                  <p className="text-xs text-muted-foreground font-medium">
                     Trusted by{" "}
                     <span className="text-foreground font-bold">4,102+</span>{" "}
                     Bitcoiners
-                  </span>
-                </p>
+                  </p>
+                </div>
               </div>
 
               {/* Top Row - Bento Grid: Square left, Wide right */}
@@ -1654,6 +1626,7 @@ export default function App() {
                     .group:hover .docs-terminal-line-3 { animation: typewriter 0.25s steps(30) 0.5s forwards; max-width: 0; }
                     .group:hover .docs-terminal-line-4 { animation: typewriter 0.35s steps(40) 0.75s forwards; max-width: 0; }
                     .group:hover .docs-terminal-line-5 { animation: typewriter 0.3s steps(35) 1.1s forwards; max-width: 0; }
+                    .group:hover .docs-terminal-line-6 { animation: typewriter 0.35s steps(40) 1.4s forwards; max-width: 0; }
                     .group:hover .docs-terminal-cursor {
                       animation: blink 0.8s steps(1) infinite;
                     }
@@ -1663,12 +1636,39 @@ export default function App() {
                     <div className="flex-1 flex items-center justify-center">
                       <div className="w-[95%] rounded-2xl bg-zinc-100 dark:bg-zinc-950/95 border border-zinc-300 dark:border-zinc-800/80 overflow-hidden shadow-2xl shadow-black/10 dark:shadow-black/20">
                         {/* Terminal Header - Minimal */}
-                        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800/60">
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-200 dark:border-zinc-800/60">
                           <div className="flex gap-1.5">
                             <div className="w-[10px] h-[10px] rounded-full bg-zinc-400 dark:bg-zinc-700 group-hover:bg-red-500/90 transition-colors" />
                             <div className="w-[10px] h-[10px] rounded-full bg-zinc-400 dark:bg-zinc-700 group-hover:bg-yellow-500/90 transition-colors" />
                             <div className="w-[10px] h-[10px] rounded-full bg-zinc-400 dark:bg-zinc-700 group-hover:bg-green-500/90 transition-colors" />
                           </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const code = [
+                                "import { Client, IdbSwapStorage } from '@lendasat/lendaswap-sdk-pure'",
+                                "",
+                                "const client = await Client.builder()",
+                                "  .withSwapStorage(new IdbSwapStorage()).build()",
+                                "",
+                                "const swap = await client.createArkadeToEvmSwap({",
+                                "  targetToken: 'usdc_arb', sourceAmount: 100000",
+                                "})",
+                              ].join("\n");
+                              navigator.clipboard.writeText(code);
+                              setCopiedTerminal(true);
+                              setTimeout(() => setCopiedTerminal(false), 2000);
+                            }}
+                            className="p-1 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                            title="Copy code"
+                          >
+                            {copiedTerminal ? (
+                              <ClipboardCheck className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <Clipboard className="h-3 w-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300" />
+                            )}
+                          </button>
                         </div>
                         {/* Terminal Content */}
                         <div className="px-3 py-2.5 md:px-4 md:py-3 font-mono text-[8px] md:text-[10px] leading-[1.7]">
@@ -1677,7 +1677,7 @@ export default function App() {
                               $
                             </span>{" "}
                             <span className="text-zinc-500">npm i</span>{" "}
-                            @lendasat/lendaswap-sdk
+                            @lendasat/lendaswap-sdk-pure
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-2 mt-1.5 text-zinc-600 dark:text-zinc-400">
                             <span className="text-orange-600 dark:text-orange-400/70">
@@ -1689,9 +1689,15 @@ export default function App() {
                             </span>
                             ,{" "}
                             <span className="text-orange-600 dark:text-orange-300">
-                              createDexieSwapStorage
+                              IdbSwapStorage
                             </span>{" "}
-                            {"}"}
+                            {"}"}{" "}
+                            <span className="text-orange-600 dark:text-orange-400/70">
+                              from
+                            </span>{" "}
+                            <span className="text-amber-700 dark:text-amber-200/90">
+                              '@lendasat/lendaswap-sdk-pure'
+                            </span>
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-3 mt-1 text-zinc-600 dark:text-zinc-400">
                             <span className="text-orange-600 dark:text-orange-400/70">
@@ -1709,19 +1715,29 @@ export default function App() {
                             </span>
                             .
                             <span className="text-amber-700 dark:text-amber-200/90">
-                              create
+                              builder
                             </span>
-                            (
-                            <span className="text-amber-700 dark:text-amber-200/90">
-                              url
-                            </span>
-                            ,{" "}
-                            <span className="text-amber-700 dark:text-amber-200/90">
-                              storage
-                            </span>
-                            )
+                            ()
                           </div>
                           <div className="docs-terminal-line docs-terminal-line-4 mt-1 text-zinc-600 dark:text-zinc-400">
+                            {"  "}.
+                            <span className="text-amber-700 dark:text-amber-200/90">
+                              withSwapStorage
+                            </span>
+                            (
+                            <span className="text-orange-600 dark:text-orange-400/70">
+                              new
+                            </span>{" "}
+                            <span className="text-orange-600 dark:text-orange-300">
+                              IdbSwapStorage
+                            </span>
+                            ()).
+                            <span className="text-amber-700 dark:text-amber-200/90">
+                              build
+                            </span>
+                            ()
+                          </div>
+                          <div className="docs-terminal-line docs-terminal-line-5 mt-1 text-zinc-600 dark:text-zinc-400">
                             <span className="text-orange-600 dark:text-orange-400/70">
                               const
                             </span>{" "}
@@ -1734,28 +1750,28 @@ export default function App() {
                             </span>{" "}
                             client.
                             <span className="text-amber-700 dark:text-amber-200/90">
-                              createEvmToArkadeSwap
+                              createArkadeToEvmSwap
                             </span>
                             ({"{"}
                           </div>
-                          <div className="docs-terminal-line docs-terminal-line-5 mt-1 text-zinc-600 dark:text-zinc-400">
+                          <div className="docs-terminal-line docs-terminal-line-6 mt-1 text-zinc-600 dark:text-zinc-400">
                             {"  "}
                             <span className="text-blue-600 dark:text-blue-300">
-                              source_token
+                              targetToken
                             </span>
                             :{" "}
                             <span className="text-amber-700 dark:text-amber-200/90">
-                              'usdc_pol'
+                              'usdc_arb'
                             </span>
                             ,{" "}
                             <span className="text-blue-600 dark:text-blue-300">
-                              target_address
+                              sourceAmount
                             </span>
                             :{" "}
                             <span className="text-amber-700 dark:text-amber-200/90">
-                              addr
-                            </span>{" "}
-                            {"}"})
+                              100000
+                            </span>
+                            {" }"})
                             <span className="docs-terminal-cursor text-orange-500 dark:text-orange-400 ml-0.5">
                               |
                             </span>
