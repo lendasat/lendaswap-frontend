@@ -10,7 +10,6 @@ import {
 } from "react-router";
 import "../assets/styles.css";
 import {
-  type BitcoinToEvmSwapResponse,
   BTC_ARKADE,
   BTC_LIGHTNING,
   isArkade,
@@ -72,7 +71,7 @@ import {
 } from "../utils/speedWallet";
 import {
   api,
-  type BtcToArkadeSwapResponse,
+  type GetSwapResponse,
   getTokenSymbol,
   type QuoteResponse,
 } from "./api";
@@ -392,18 +391,27 @@ function HomePage() {
   };
 
   // Helper to track swap initiation
-  const trackSwapInitiation = (
-    swap: BitcoinToEvmSwapResponse | BtcToArkadeSwapResponse,
-  ) => {
-    const swapDirection = isBtc(swap.source_token)
-      ? "btc-to-evm"
-      : "evm-to-btc";
-    // Use sats_receive if available, otherwise use btc_expected_sats for onchain-to-evm swaps
+  const trackSwapInitiation = (swap: GetSwapResponse) => {
+    let swapDirection: string;
+    if (isBtcOnchain(swap.source_token) && isArkade(swap.target_token)) {
+      swapDirection = "btc-to-arkade";
+    } else if (
+      isBtcOnchain(swap.source_token) &&
+      isEvmToken(swap.target_token)
+    ) {
+      swapDirection = "onchain-to-evm";
+    } else if (isBtc(swap.source_token) && isEvmToken(swap.target_token)) {
+      swapDirection = "btc-to-evm";
+    } else if (isEvmToken(swap.source_token) && isBtc(swap.target_token)) {
+      swapDirection = "evm-to-btc";
+    } else {
+      swapDirection = "unknown";
+    }
     const amountSats =
       "sats_receive" in swap
-        ? swap.sats_receive
+        ? (swap as { sats_receive: number }).sats_receive
         : "btc_expected_sats" in swap
-          ? swap.btc_expected_sats
+          ? (swap as { btc_expected_sats: number }).btc_expected_sats
           : 0;
     posthog?.capture("swap_initiated", {
       swap_id: swap.id,

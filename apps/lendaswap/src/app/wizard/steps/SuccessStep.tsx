@@ -55,20 +55,34 @@ export function SuccessStep({
         )
       : null;
 
-    // Handle different swap response types
-    const isBtcToArkade = swapDirection === "btc-to-arkade";
-    const isBtcToEvm = swapDirection === "btc-to-evm";
-    const btcToEvmData = isBtcToEvm ? (swapData as BtcToEvmSwapResponse) : null;
-    const evmToBtcData =
-      !isBtcToArkade && !isBtcToEvm ? (swapData as EvmToBtcSwapResponse) : null;
+    // Resolve USD amount based on swap direction
+    let amountUsd: number | null = null;
+    let amountSats: number | null = null;
+
+    if (swapDirection === "btc-to-evm") {
+      const d = swapData as BtcToEvmSwapResponse;
+      amountUsd = d.asset_amount;
+      amountSats = d.sats_receive;
+    } else if (swapDirection === "evm-to-btc") {
+      const d = swapData as EvmToBtcSwapResponse;
+      amountUsd = d.asset_amount;
+      amountSats = d.sats_receive;
+    } else if (swapDirection === "onchain-to-evm") {
+      const d = swapData as OnchainToEvmSwapResponse;
+      amountUsd = d.target_amount;
+      amountSats = d.source_amount;
+    } else if (swapDirection === "btc-to-arkade") {
+      const d = swapData as BtcToArkadeSwapResponse;
+      amountSats = d.sats_receive;
+    }
 
     posthog?.capture("swap_completed", {
       swap_id: swapId,
       swap_direction: swapDirection,
       source_token: swapData.source_token,
       target_token: swapData.target_token,
-      amount_usd:
-        btcToEvmData?.asset_amount ?? evmToBtcData?.asset_amount ?? null,
+      amount_usd: amountUsd,
+      amount_sats: amountSats,
       fee_sats: swapData.fee_sats,
       duration_seconds: swapDurationSeconds,
     });
