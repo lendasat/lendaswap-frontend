@@ -37,7 +37,6 @@ import {
   Loader,
   Menu,
   Shield,
-  Tag,
   Upload,
   Wallet,
   Zap,
@@ -60,8 +59,8 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
-import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import baniLogo from "../assets/bani_logo.png";
+import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
   isLightningAddress,
@@ -91,7 +90,6 @@ import {
   calculateTargetAmount,
 } from "./utils/priceUtils";
 import { hasReferralCode } from "./utils/referralCode";
-import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import { getViemChain, isValidTokenId } from "./utils/tokenUtils";
 import { useWalletBridge } from "./WalletBridgeContext";
@@ -1068,7 +1066,6 @@ function useStepInfo() {
 }
 
 export default function App() {
-  const { theme } = useTheme();
   const stepInfo = useStepInfo();
   const location = useLocation();
   const navigate = useNavigate();

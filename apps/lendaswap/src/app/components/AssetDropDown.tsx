@@ -1,6 +1,6 @@
 import {
-  isBtc,
   isArbitrumToken,
+  isBtc,
   isEthereumToken,
   isPolygonToken,
   type TokenId,
@@ -20,12 +20,12 @@ import {
   DrawerTitle,
 } from "#/components/ui/drawer";
 import { Input } from "#/components/ui/input";
-import { getTokenIcon, getTokenNetworkName, getTokenSymbol } from "../api";
-import { getTokenNetworkIcon } from "../utils/tokenUtils";
+import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
-import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
 import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
+import { getTokenIcon, getTokenNetworkName, getTokenSymbol } from "../api";
+import { getTokenNetworkIcon } from "../utils/tokenUtils";
 
 // Hook to detect mobile viewport
 function useIsMobile() {
