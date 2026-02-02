@@ -59,7 +59,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
-import baniLogo from "../assets/bani_logo.png";
+import lendasatLogo from "../assets/lendasat_black.svg";
 import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
@@ -1159,8 +1159,8 @@ export default function App() {
                   className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 >
                   <img
-                    src={baniLogo}
-                    alt="Bani"
+                    src={lendasatLogo}
+                    alt="LendaSat"
                     className="size-8 shrink-0 rounded-lg object-contain"
                   />
                   <span className="text-xl font-semibold">LendaSwap</span>
