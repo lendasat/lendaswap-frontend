@@ -59,7 +59,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
-import lendasatLogo from "../assets/lendasat_black.svg";
+import lendasatLogo from "../assets/lendasat_black.svg?url";
 import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
