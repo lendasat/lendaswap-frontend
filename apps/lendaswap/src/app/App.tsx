@@ -58,7 +58,8 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
-import lendasatLogo from "../assets/lendasat_black.svg?url";
+import lendasatLogoBlack from "../assets/lendasat_black.svg?url";
+import lendasatLogoWhite from "../assets/lendasat_grey.svg?url";
 import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
@@ -89,6 +90,7 @@ import {
   calculateTargetAmount,
 } from "./utils/priceUtils";
 import { hasReferralCode } from "./utils/referralCode";
+import { useTheme } from "./utils/theme-provider";
 import { ThemeToggle } from "./utils/theme-toggle";
 import { getViemChain, isValidTokenId } from "./utils/tokenUtils";
 import { useWalletBridge } from "./WalletBridgeContext";
@@ -1092,6 +1094,7 @@ function useStepInfo() {
 }
 
 export default function App() {
+  const { theme } = useTheme();
   const stepInfo = useStepInfo();
   const location = useLocation();
   const navigate = useNavigate();
@@ -1185,7 +1188,7 @@ export default function App() {
                   className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 >
                   <img
-                    src={lendasatLogo}
+                    src={theme === "dark" ? lendasatLogoWhite : lendasatLogoBlack}
                     alt="LendaSat"
                     className="size-8 shrink-0 rounded-lg object-contain"
                   />
