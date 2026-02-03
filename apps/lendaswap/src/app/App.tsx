@@ -626,15 +626,9 @@ function HomePage() {
 
   const availableSourceAssets: TokenId[] = [
     ...new Map(
-      [
-        ...assetPairs.map((a) => a.source.token_id),
-        BTC_LIGHTNING,
-        BTC_ARKADE,
-      ].map((t) => [t, t]),
+      assetPairs.map((a) => [a.source.token_id, a.source.token_id]),
     ).values(),
-  ]
-    .filter((a) => isValidTokenId(a))
-    .sort((a, b) => a.localeCompare(b));
+  ].sort((a, b) => a.localeCompare(b));
 
   // Always show all available tokens that can be bought (both BTC and EVM)
   const availableTargetAssets: TokenId[] = (() => {
@@ -649,21 +643,19 @@ function HomePage() {
     }
 
     if (isEvmToken(sourceAsset)) {
-      // Show all tokens (BTC + EVM) so user can auto-swap if needed
-      return [...availableSourceAssets.filter((a) => !isBtcOnchain(a))].sort(
-        (a, b) => a.localeCompare(b),
-      );
+      // EVM BTC can be swapped to Arkade or Lightning tokens
+      return [
+        ...availableSourceAssets.filter(
+          (a) => !isEvmToken(a) && a !== sourceAsset && !isBtcOnchain(a),
+        ),
+      ].sort((a, b) => a.localeCompare(b));
     }
 
     if (isBtc(sourceAsset)) {
-      // Show EVM tokens + BTC variants (excluding current source) so user can auto-swap
-      return [
-        ...availableSourceAssets.filter((a) => isEvmToken(a)),
-        BTC_LIGHTNING,
-        BTC_ARKADE,
-      ]
-        .filter((a) => !isBtcOnchain(a))
-        .sort((a, b) => a.localeCompare(b));
+      // Any BTC can be swapped to Arkade or EVM tokens
+      return [...availableSourceAssets.filter((a) => isEvmToken(a))].sort(
+        (a, b) => a.localeCompare(b),
+      );
     }
 
     return [
@@ -795,27 +787,21 @@ function HomePage() {
                     return;
                   }
 
-                  // EVM source + EVM target = invalid, swap positions: old source (BTC) becomes target
+                  // EVM source + EVM target = invalid, switch target to BTC
                   if (isEvmAsset && isEvmTarget) {
-                    const newTarget = isBtc(sourceAsset)
-                      ? sourceAsset
-                      : BTC_ARKADE;
                     setSourceAsset(asset);
-                    setTargetAsset(newTarget);
+                    setTargetAsset(BTC_ARKADE);
                     setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/${newTarget}`, { replace: true });
+                    navigate(`/${asset}/btc_arkade`, { replace: true });
                     return;
                   }
 
-                  // BTC source + BTC target = invalid, swap positions: old source (EVM) becomes target
+                  // BTC source + BTC target = invalid, switch target to default stablecoin
                   if (isBtcAsset && isBtcTarget) {
-                    const newTarget = isEvmToken(sourceAsset)
-                      ? sourceAsset
-                      : "usdc_pol";
                     setSourceAsset(asset);
-                    setTargetAsset(newTarget);
+                    setTargetAsset("usdc_pol");
                     setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/${newTarget}`, { replace: true });
+                    navigate(`/${asset}/usdc_pol`, { replace: true });
                     return;
                   }
                 }}
@@ -917,26 +903,20 @@ function HomePage() {
 
                   // If both are BTC or both are EVM, auto-switch source to make them compatible
                   if (isBtcTarget && isBtcSource) {
-                    // Buying BTC but selling BTC - swap positions: old target (EVM) becomes source
-                    const newSource = isEvmToken(targetAsset)
-                      ? targetAsset
-                      : "usdc_pol";
-                    setSourceAsset(newSource);
+                    // Buying BTC but selling BTC - switch source to default EVM stablecoin
+                    setSourceAsset("usdc_pol");
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
-                    navigate(`/${newSource}/${asset}`, { replace: true });
+                    navigate(`/usdc_pol/${asset}`, { replace: true });
                     return;
                   }
 
                   if (isEvmTarget && isEvmSource) {
-                    // Buying EVM but selling EVM - swap positions: old target (BTC) becomes source
-                    const newSource = isBtc(targetAsset)
-                      ? targetAsset
-                      : BTC_ARKADE;
-                    setSourceAsset(newSource);
+                    // Buying EVM but selling EVM - switch source to default BTC
+                    setSourceAsset(BTC_ARKADE);
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
-                    navigate(`/${newSource}/${asset}`, { replace: true });
+                    navigate(`/btc_arkade/${asset}`, { replace: true });
                     return;
                   }
 
