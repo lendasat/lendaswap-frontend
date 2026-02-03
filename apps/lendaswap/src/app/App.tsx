@@ -58,9 +58,9 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Skeleton } from "#/components/ui/skeleton";
+import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import lendasatLogoBlack from "../assets/lendasat_black.svg?url";
 import lendasatLogoWhite from "../assets/lendasat_grey.svg?url";
-import { ReactComponent as BitcoinIcon } from "../assets/bitcoin.svg";
 import { ReactComponent as XLogo } from "../assets/x-com-logo.svg";
 import {
   isLightningAddress,
@@ -650,9 +650,9 @@ function HomePage() {
 
     if (isEvmToken(sourceAsset)) {
       // Show all tokens (BTC + EVM) so user can auto-swap if needed
-      return [
-        ...availableSourceAssets.filter((a) => !isBtcOnchain(a)),
-      ].sort((a, b) => a.localeCompare(b));
+      return [...availableSourceAssets.filter((a) => !isBtcOnchain(a))].sort(
+        (a, b) => a.localeCompare(b),
+      );
     }
 
     if (isBtc(sourceAsset)) {
@@ -797,7 +797,9 @@ function HomePage() {
 
                   // EVM source + EVM target = invalid, swap positions: old source (BTC) becomes target
                   if (isEvmAsset && isEvmTarget) {
-                    const newTarget = isBtc(sourceAsset) ? sourceAsset : BTC_ARKADE;
+                    const newTarget = isBtc(sourceAsset)
+                      ? sourceAsset
+                      : BTC_ARKADE;
                     setSourceAsset(asset);
                     setTargetAsset(newTarget);
                     setSourceAssetAmount(newAmount);
@@ -807,7 +809,9 @@ function HomePage() {
 
                   // BTC source + BTC target = invalid, swap positions: old source (EVM) becomes target
                   if (isBtcAsset && isBtcTarget) {
-                    const newTarget = isEvmToken(sourceAsset) ? sourceAsset : "usdc_pol";
+                    const newTarget = isEvmToken(sourceAsset)
+                      ? sourceAsset
+                      : "usdc_pol";
                     setSourceAsset(asset);
                     setTargetAsset(newTarget);
                     setSourceAssetAmount(newAmount);
@@ -914,7 +918,9 @@ function HomePage() {
                   // If both are BTC or both are EVM, auto-switch source to make them compatible
                   if (isBtcTarget && isBtcSource) {
                     // Buying BTC but selling BTC - swap positions: old target (EVM) becomes source
-                    const newSource = isEvmToken(targetAsset) ? targetAsset : "usdc_pol";
+                    const newSource = isEvmToken(targetAsset)
+                      ? targetAsset
+                      : "usdc_pol";
                     setSourceAsset(newSource);
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
@@ -924,7 +930,9 @@ function HomePage() {
 
                   if (isEvmTarget && isEvmSource) {
                     // Buying EVM but selling EVM - swap positions: old target (BTC) becomes source
-                    const newSource = isBtc(targetAsset) ? targetAsset : BTC_ARKADE;
+                    const newSource = isBtc(targetAsset)
+                      ? targetAsset
+                      : BTC_ARKADE;
                     setSourceAsset(newSource);
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
@@ -1200,7 +1208,9 @@ export default function App() {
                   className="flex items-center gap-2 transition-opacity hover:opacity-80"
                 >
                   <img
-                    src={theme === "dark" ? lendasatLogoWhite : lendasatLogoBlack}
+                    src={
+                      theme === "dark" ? lendasatLogoWhite : lendasatLogoBlack
+                    }
                     alt="LendaSat"
                     className="size-8 shrink-0 rounded-lg object-contain"
                   />
