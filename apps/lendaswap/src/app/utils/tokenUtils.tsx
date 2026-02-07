@@ -222,6 +222,87 @@ export function getViemChain(tokenId: TokenId): Chain | undefined {
   }
 }
 
+/**
+ * Get viem chain by numeric chain ID
+ */
+export function getViemChainById(chainId: number): Chain | undefined {
+  switch (chainId) {
+    case 137:
+      return polygon;
+    case 42161:
+      return arbitrum;
+    case 1:
+      return mainnet;
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Map TokenId → ERC-20 contract address + EVM chain ID.
+ * Used to call the generic swap creation endpoints which require
+ * tokenAddress and evmChainId instead of TokenId strings.
+ */
+export const EVM_TOKEN_MAP: Record<
+  string,
+  { tokenAddress: string; evmChainId: number }
+> = {
+  usdc_pol: {
+    tokenAddress: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+    evmChainId: 137,
+  },
+  usdc_arb: {
+    tokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    evmChainId: 42161,
+  },
+  usdc_eth: {
+    tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    evmChainId: 1,
+  },
+  usdt_pol: {
+    tokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+    evmChainId: 137,
+  },
+  usdt_arb: {
+    tokenAddress: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+    evmChainId: 42161,
+  },
+  usdt_eth: {
+    tokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    evmChainId: 1,
+  },
+  usdt0_pol: {
+    tokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+    evmChainId: 137,
+  },
+  wbtc_pol: {
+    tokenAddress: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+    evmChainId: 137,
+  },
+  wbtc_eth: {
+    tokenAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    evmChainId: 1,
+  },
+  wbtc_arb: {
+    tokenAddress: "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+    evmChainId: 42161,
+  },
+  xaut_eth: {
+    tokenAddress: "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+    evmChainId: 1,
+  },
+};
+
+/**
+ * Look up ERC-20 contract address and chain ID for a given TokenId.
+ * Returns undefined for non-EVM tokens (btc_*, pol_pol native).
+ */
+export function getEvmTokenInfo(
+  tokenId: string,
+): { tokenAddress: string; evmChainId: number } | undefined {
+  return EVM_TOKEN_MAP[tokenId];
+}
+
 // Re-export token helpers from SDK
 export {
   isArbitrumToken,

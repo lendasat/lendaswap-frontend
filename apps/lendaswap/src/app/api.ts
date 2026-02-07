@@ -2,6 +2,7 @@
 import {
   type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
+  type CoordinatorFundingCallData,
   type EvmToBtcSwapResponse,
   type GetSwapResponse,
   getUsdPrices,
@@ -11,14 +12,17 @@ import {
   type AssetPair as PureAssetPair,
   type TokenInfo as PureTokenInfo,
   type QuoteResponse,
+  type RefundResult,
   Client as SdkClient,
   type StoredSwap,
   type SwapStatus,
   type TokenId,
   type TokenInfo,
   type VhtlcAmounts,
+  type components,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
+import { getEvmTokenInfo } from "./utils/tokenUtils";
 
 export type {
   PriceTiers,
@@ -26,9 +30,19 @@ export type {
   TradingPairPrices,
 } from "@lendasat/lendaswap-sdk-pure";
 
+// Derive new generic response types from SDK components
+export type ArkadeToEvmSwapResponse =
+  components["schemas"]["ArkadeToEvmSwapResponse"];
+export type EvmToArkadeSwapResponse =
+  components["schemas"]["EvmToArkadeSwapResponse"];
+export type TokenSummary = components["schemas"]["TokenSummary"];
+export type EvmToArkadeGenericSwapResponse =
+  components["schemas"]["EvmToArkadeGenericSwapResponse"];
+
 // Re-export SDK types for use throughout the frontend
 export type {
   BtcToArkadeSwapResponse,
+  CoordinatorFundingCallData,
   GetSwapResponse,
   PureTokenInfo,
   PureAssetPair,
@@ -36,6 +50,7 @@ export type {
   EvmToBtcSwapResponse,
   OnchainToEvmSwapResponse,
   QuoteResponse,
+  RefundResult,
   StoredSwap,
   SwapStatus,
   TokenId,
@@ -209,6 +224,54 @@ export const api = {
     return result.response;
   },
 
+  async createArkadeToEvmSwapGeneric(request: {
+    target_address: string;
+    source_amount?: bigint;
+    target_amount?: number;
+    target_token: TokenId;
+  }): Promise<ArkadeToEvmSwapResponse> {
+    const referralCode = getReferralCode();
+    const evmToken = getEvmTokenInfo(request.target_token);
+    if (!evmToken) {
+      throw new Error(`Unsupported EVM token: ${request.target_token}`);
+    }
+    const client = await getClients();
+    const result = await client.createArkadeToEvmSwapGeneric({
+      targetAddress: request.target_address,
+      tokenAddress: evmToken.tokenAddress,
+      evmChainId: evmToken.evmChainId,
+      sourceAmount: request.source_amount
+        ? Number(request.source_amount)
+        : undefined,
+      targetAmount: request.target_amount,
+      referralCode: referralCode || undefined,
+    });
+    return result.response;
+  },
+
+  async createEvmToArkadeSwapGeneric(request: {
+    target_address: string;
+    source_amount: number;
+    source_token: TokenId;
+    user_address: string;
+  }): Promise<EvmToArkadeGenericSwapResponse> {
+    const referralCode = getReferralCode();
+    const evmToken = getEvmTokenInfo(request.source_token);
+    if (!evmToken) {
+      throw new Error(`Unsupported EVM token: ${request.source_token}`);
+    }
+    const client = await getClients();
+    const result = await client.createEvmToArkadeSwapGeneric({
+      targetAddress: request.target_address,
+      tokenAddress: evmToken.tokenAddress,
+      evmChainId: evmToken.evmChainId,
+      userAddress: request.user_address,
+      sourceAmount: request.source_amount,
+      referralCode: referralCode || undefined,
+    });
+    return result.response;
+  },
+
   async getSwap(id: string): Promise<StoredSwap> {
     const client = await getClients();
     // Fetch latest from API and update local storage
@@ -342,6 +405,27 @@ export const api = {
       return result.txId;
     }
     throw new Error(`Unable to refund: ${swapId}. ${result.message}`);
+  },
+
+  async getCoordinatorFundingCallData(
+    swapId: string,
+    tokenDecimals: number,
+  ): Promise<CoordinatorFundingCallData> {
+    const client = await getClients();
+    return await client.getCoordinatorFundingCallData(swapId, tokenDecimals);
+  },
+
+  async refundEvmSwap(
+    swapId: string,
+  ): Promise<NonNullable<RefundResult["evmRefundData"]>> {
+    const client = await getClients();
+    const result = await client.refundSwap(swapId);
+    if (result.evmRefundData) {
+      return result.evmRefundData;
+    }
+    throw new Error(
+      `Unable to get EVM refund data for: ${swapId}. ${result.message}`,
+    );
   },
 
   async getVersion(): Promise<{ tag: string; commit_hash: string }> {

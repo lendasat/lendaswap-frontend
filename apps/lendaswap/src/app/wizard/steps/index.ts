@@ -1,8 +1,14 @@
 export { BtcToArkadeProcessingStep } from "./BtcToArkadeProcessingStep";
 export { BtcToPolygonRefundStep } from "./BtcToPolygonRefundStep";
+export { ClaimArkadeStep } from "./ClaimArkadeStep";
+export { ClaimEvmStep } from "./ClaimEvmStep";
+export { DepositArkadeStep } from "./DepositArkadeStep";
+export { DepositEvmStep } from "./DepositEvmStep";
 export { OnchainBtcRefundStep } from "./OnchainBtcRefundStep";
 export { PolygonDepositStep } from "./PolygonDepositStep";
 export { PolygonToBtcRefundStep } from "./PolygonToBtcRefundStep";
+export { RefundArkadeStep } from "./RefundArkadeStep";
+export { RefundEvmStep } from "./RefundEvmStep";
 export { SendArkadeStep } from "./SendArkadeStep";
 export { SendOnchainBtcStep } from "./SendOnchainBtcStep";
 export { SuccessStep } from "./SuccessStep";

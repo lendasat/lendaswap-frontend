@@ -21,12 +21,22 @@ import { useAsync, useAsyncRetry } from "react-use";
 import { api } from "../api";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 import { useWalletBridge } from "../WalletBridgeContext";
+import type {
+  ArkadeToEvmSwapResponse,
+  EvmToArkadeSwapResponse,
+} from "../api";
 import {
   BtcToArkadeProcessingStep,
   BtcToPolygonRefundStep,
+  ClaimArkadeStep,
+  ClaimEvmStep,
+  DepositArkadeStep,
+  DepositEvmStep,
   OnchainBtcRefundStep,
   PolygonDepositStep,
   PolygonToBtcRefundStep,
+  RefundArkadeStep,
+  RefundEvmStep,
   SendArkadeStep,
   SendOnchainBtcStep,
   SuccessStep,
@@ -38,7 +48,9 @@ export type SwapDirection =
   | "btc-to-evm"
   | "evm-to-btc"
   | "btc-to-arkade"
-  | "onchain-to-evm";
+  | "onchain-to-evm"
+  | "arkade-to-evm"
+  | "evm-to-arkade";
 
 type StepId =
   | "user-deposit"
@@ -57,6 +69,17 @@ const swapDirection = (
 ): SwapDirection | undefined => {
   if (!swapData) {
     return undefined;
+  }
+
+  // Check direction field first (new generic endpoints)
+  if ("direction" in swapData) {
+    switch (swapData.direction) {
+      case "arkade_to_evm":
+        return "arkade-to-evm";
+      case "evm_to_arkade":
+        return "evm-to-arkade";
+      // Fall through for other directions to existing token-based checks
+    }
   }
 
   if (
@@ -152,13 +175,17 @@ function determineStepFromStatus(
   }
 
   // Get refund locktime based on swap type
-  // BtcToArkadeSwapResponse has btc_refund_locktime, others have refund_locktime
+  // Different swap types use different locktime field names
   const refundLocktime =
-    "btc_refund_locktime" in swapData
-      ? swapData.btc_refund_locktime
-      : "refund_locktime" in swapData
-        ? swapData.refund_locktime
-        : undefined;
+    "vhtlc_refund_locktime" in swapData
+      ? swapData.vhtlc_refund_locktime
+      : "evm_refund_locktime" in swapData
+        ? swapData.evm_refund_locktime
+        : "btc_refund_locktime" in swapData
+          ? swapData.btc_refund_locktime
+          : "refund_locktime" in swapData
+            ? swapData.refund_locktime
+            : undefined;
 
   const refundLocktimeDate = refundLocktime
     ? new Date(Number(refundLocktime) * 1000)
@@ -466,6 +493,20 @@ export function SwapWizardPage() {
               />
             )}
 
+          {currentStep === "user-deposit" &&
+            swapDirectionValue === "arkade-to-evm" && (
+              <DepositArkadeStep
+                swapData={displaySwapData as ArkadeToEvmSwapResponse}
+              />
+            )}
+          {currentStep === "user-deposit" &&
+            swapDirectionValue === "evm-to-arkade" && (
+              <DepositEvmStep
+                swapData={displaySwapData as EvmToArkadeSwapResponse}
+                swapId={displaySwapData.id}
+              />
+            )}
+
           {currentStep === "server-deposit" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
               {/* Swap ID Header */}
@@ -496,7 +537,9 @@ export function SwapWizardPage() {
           {swapDirectionValue &&
             (currentStep === "user-deposit-seen" ||
               currentStep === "server-depositing") &&
-            swapDirectionValue !== "btc-to-arkade" && (
+            swapDirectionValue !== "btc-to-arkade" &&
+            swapDirectionValue !== "arkade-to-evm" &&
+            swapDirectionValue !== "evm-to-arkade" && (
               <SwapProcessingStep
                 swapData={displaySwapData}
                 swapDirection={swapDirectionValue}
@@ -511,6 +554,22 @@ export function SwapWizardPage() {
                 swapData={displaySwapData as BtcToArkadeSwapResponse}
                 swapId={displaySwapData.id}
                 preimage={preimage}
+              />
+            )}
+          {(currentStep === "user-deposit-seen" ||
+            currentStep === "server-depositing") &&
+            swapDirectionValue === "arkade-to-evm" && (
+              <ClaimEvmStep
+                swapData={displaySwapData}
+                swapId={displaySwapData.id}
+              />
+            )}
+          {(currentStep === "user-deposit-seen" ||
+            currentStep === "server-depositing") &&
+            swapDirectionValue === "evm-to-arkade" && (
+              <ClaimArkadeStep
+                swapData={displaySwapData}
+                swapId={displaySwapData.id}
               />
             )}
 
@@ -574,6 +633,23 @@ export function SwapWizardPage() {
                     | BtcToArkadeSwapResponse
                     | OnchainToEvmSwapResponse
                 }
+                swapId={displaySwapData.id}
+              />
+            )}
+
+          {currentStep === "refundable" &&
+            swapDirectionValue === "arkade-to-evm" && (
+              <RefundArkadeStep
+                swapData={displaySwapData as ArkadeToEvmSwapResponse}
+                swapId={displaySwapData.id}
+                arkAddress={arkAddress}
+              />
+            )}
+
+          {currentStep === "refundable" &&
+            swapDirectionValue === "evm-to-arkade" && (
+              <RefundEvmStep
+                swapData={displaySwapData as EvmToArkadeSwapResponse}
                 swapId={displaySwapData.id}
               />
             )}

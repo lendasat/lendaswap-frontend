@@ -499,17 +499,21 @@ function HomePage() {
             break;
           }
           case BTC_ARKADE: {
-            const swap = await api.createArkadeToEvmSwap(
-              {
-                target_address: targetAddress,
-                source_amount: sourceAmount,
-                target_amount: targetAmount,
-                target_token: targetAsset,
-              },
-              parsedNetworkName,
-            );
+            const swap = await api.createArkadeToEvmSwapGeneric({
+              target_address: targetAddress,
+              source_amount: sourceAmount,
+              target_amount: targetAmount,
+              target_token: targetAsset,
+            });
 
-            trackSwapInitiation(swap);
+            posthog?.capture("swap_initiated", {
+              swap_id: swap.id,
+              swap_direction: "arkade-to-evm",
+              source_token: swap.source_token.symbol,
+              target_token: swap.target_token.symbol,
+              amount_sats: swap.btc_expected_sats,
+              has_referral_code: hasReferralCode(),
+            });
             navigate(`/swap/${swap.id}/wizard`);
             break;
           }
@@ -529,20 +533,24 @@ function HomePage() {
         if (isArkade(targetAsset)) {
           // EVM → Arkade
 
-          // Call EVM → Arkade API
-          const swap = await api.createEvmToArkadeSwap(
-            {
-              target_address: targetAddress, // Arkade address
-              source_amount: sourceAssetAmount ?? 0,
-              source_token: sourceAsset,
-              user_address: userEvmAddress,
-            },
-            networkName(sourceAsset) as "ethereum" | "polygon",
-          );
+          // Call EVM → Arkade generic API
+          const swap = await api.createEvmToArkadeSwapGeneric({
+            target_address: targetAddress, // Arkade address
+            source_amount: sourceAssetAmount ?? 0,
+            source_token: sourceAsset,
+            user_address: userEvmAddress,
+          });
 
           console.log(`Created swap ${swap.id}`);
 
-          trackSwapInitiation(swap);
+          posthog?.capture("swap_initiated", {
+            swap_id: swap.id,
+            swap_direction: "evm-to-arkade",
+            source_token: swap.source_token.symbol,
+            target_token: swap.target_token.symbol,
+            amount_sats: swap.btc_expected_sats,
+            has_referral_code: hasReferralCode(),
+          });
           navigate(`/swap/${swap.id}/wizard`);
         }
 
