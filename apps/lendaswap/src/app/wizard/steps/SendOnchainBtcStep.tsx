@@ -1,12 +1,5 @@
 import { isArkade, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
-import {
-  Bitcoin,
-  CheckCheck,
-  Clock,
-  Copy,
-  ExternalLink,
-  QrCode,
-} from "lucide-react";
+import { CheckCheck, Clock, Copy, ExternalLink, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
@@ -18,6 +11,7 @@ import {
   type OnchainToEvmSwapResponse,
   type TokenInfo,
 } from "../../api";
+import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 
 interface SendOnchainBtcStepProps {
   swapData: BtcToArkadeSwapResponse | OnchainToEvmSwapResponse;
@@ -89,33 +83,33 @@ export function SendOnchainBtcStep({
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-      {/* Swap ID Header */}
-      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Swap ID:
-        </p>
-        <code className="text-xs font-mono text-foreground flex-1">
-          {swapId}
-        </code>
-        <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+      {/* Header */}
+      <div className="px-6 py-4 flex items-center justify-between border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
+              <div className="w-5 h-5 flex items-center justify-center">
+                {getTokenIcon("btc_onchain")}
+              </div>
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
+              <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+                {getTokenNetworkIcon("btc_onchain")}
+              </div>
+            </div>
+          </div>
+          <h3 className="text-sm font-semibold">Send BTC</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <code className="text-[10px] font-mono text-muted-foreground">
+            {swapId.slice(0, 8)}…
+          </code>
+          <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+        </div>
       </div>
 
       {/* Content */}
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col items-center space-y-4 py-2">
-          <div className="rounded-full bg-orange-500/10 p-4">
-            <Bitcoin className="h-12 w-12 text-orange-500" />
-          </div>
-          <div className="text-center space-y-2">
-            <h3 className="text-lg font-semibold">Send On-Chain Bitcoin</h3>
-            <p className="text-sm text-muted-foreground">
-              Send the exact amount to the address below from your Bitcoin
-              wallet
-            </p>
-          </div>
-        </div>
-
+      <div className="space-y-5 p-5">
         {/* QR Code Toggle - Mobile */}
         <div className="md:hidden">
           <Button
@@ -132,7 +126,7 @@ export function SendOnchainBtcStep({
         <div
           className={`flex flex-col items-center space-y-4 ${showQrCode ? "block" : "hidden"} md:flex`}
         >
-          <div className="rounded-lg bg-white p-2">
+          <div className="rounded-lg bg-white p-1">
             <QRCodeSVG value={bitcoinUri} size={200} level="M" />
           </div>
         </div>
@@ -175,41 +169,25 @@ export function SendOnchainBtcStep({
         </div>
 
         {/* Amount Details */}
-        <div className="bg-muted/50 space-y-3 rounded-lg p-4">
+        <div className="bg-muted/50 space-y-2 rounded-lg p-4">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Amount to Send</span>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-orange-500">
-                {swapData.source_amount.toLocaleString()} sats
-              </span>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => handleCopy(swapData.source_amount.toString())}
-                className="h-6 w-6"
-              >
-                {copiedValue === swapData.source_amount.toString() ? (
-                  <CheckCheck className="h-3 w-3" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </Button>
-            </div>
+            <span className="text-muted-foreground">You Send</span>
+            <span className="font-medium">
+              {swapData.source_amount.toLocaleString()} sats
+            </span>
           </div>
-          {isArkade(swapData.target_token) ? (
+          {isArkade(swapData.target_token) && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                You Receive on Arkade
-              </span>
+              <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">
                 {(
                   swapData as BtcToArkadeSwapResponse
                 ).target_amount.toLocaleString()}{" "}
-                sats
+                sats on Arkade
               </span>
             </div>
-          ) : null}
-          {isEvmToken(swapData.target_token) ? (
+          )}
+          {isEvmToken(swapData.target_token) && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">
@@ -220,66 +198,47 @@ export function SendOnchainBtcStep({
                 {getTokenNetworkName(swapData.target_token)}
               </span>
             </div>
-          ) : null}
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Fee</span>
             <span className="font-medium">
               {swapData.fee_sats.toLocaleString()} sats
             </span>
           </div>
-        </div>
-
-        {/* Time Remaining */}
-        {timeRemaining && (
-          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              <div>
-                <p className="text-sm font-medium text-orange-900 dark:text-orange-100">
-                  Time Remaining
-                </p>
-                <p className="text-xl font-bold text-orange-900 dark:text-orange-100 font-mono">
-                  {timeRemaining}
-                </p>
-              </div>
+          {timeRemaining && (
+            <div className="flex justify-between text-sm pt-1 border-t border-border/50">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                Expires in
+              </span>
+              <span className="font-medium font-mono">{timeRemaining}</span>
             </div>
-            <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
-              Send your Bitcoin before this time expires. After expiry, you can
-              request a refund.
-            </p>
-          </div>
-        )}
-
-        {/* Instructions */}
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-            Important Instructions
-          </p>
-          <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside">
-            <li>
-              Send the <strong>exact amount</strong> shown above
-            </li>
-            <li>Use any Bitcoin wallet that supports on-chain transactions</li>
-            <li>Wait for at least 1 confirmation after sending</li>
-            <li>
-              This page will automatically update when payment is detected
-            </li>
-          </ul>
+          )}
         </div>
 
-        {/* Waiting indicator */}
-        <Button className="h-12 w-full text-base font-semibold" disabled={true}>
-          Waiting for on-chain payment...
-        </Button>
+        {/* Hint */}
+        <p className="text-xs text-muted-foreground text-center">
+          Send the exact amount above. This page updates automatically once
+          payment is detected.
+        </p>
 
-        {/* Cancel button */}
-        <Button
-          variant="outline"
-          className="h-12 w-full"
-          onClick={() => navigate("/")}
-        >
-          Cancel Swap
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3">
+          <Button
+            className="h-12 w-full text-base font-semibold"
+            disabled={true}
+          >
+            Waiting for payment
+          </Button>
+
+          <Button
+            variant="outline"
+            className="h-12 w-full"
+            onClick={() => navigate("/")}
+          >
+            Cancel Swap
+          </Button>
+        </div>
       </div>
     </div>
   );

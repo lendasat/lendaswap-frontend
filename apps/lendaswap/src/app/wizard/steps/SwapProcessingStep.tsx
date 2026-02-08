@@ -1,6 +1,7 @@
 import { isBtcOnchain, isLightning } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useAccount,
@@ -19,6 +20,9 @@ import {
 } from "../../api";
 import {
   getBlockexplorerTxLink,
+  getTokenIcon,
+  getTokenNetworkIcon,
+  getTokenSymbol,
   getViemChain,
   isArbitrumToken,
   isEthereumToken,
@@ -72,6 +76,7 @@ export function SwapProcessingStep({
   swapId,
   preimage,
 }: ConfirmingDepositStepProps) {
+  const posthog = usePostHog();
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -240,11 +245,19 @@ export function SwapProcessingStep({
         setRetryCount(newRetryCount);
 
         if (newRetryCount >= maxRetries) {
-          setClaimError(
+          const errorMessage =
             error instanceof Error
               ? `${error.message} (Max retries reached)`
-              : `Failed to claim tokens after ${maxRetries} attempts. Please try manually.`,
-          );
+              : `Failed to claim tokens after ${maxRetries} attempts. Please try manually.`;
+          setClaimError(errorMessage);
+
+          posthog?.capture("swap_failed", {
+            failure_type: "claim",
+            swap_id: swapData.id,
+            swap_direction: swapDirection,
+            error_message: errorMessage,
+            retry_count: newRetryCount,
+          });
         } else {
           setClaimError(
             error instanceof Error
@@ -277,6 +290,7 @@ export function SwapProcessingStep({
     switchChainAsync,
     chain,
     setOpen,
+    posthog?.capture,
   ]);
 
   // Auto-claim for evm-to-btc when server is funded
@@ -339,11 +353,19 @@ export function SwapProcessingStep({
         setRetryCount(newRetryCount);
 
         if (newRetryCount >= maxRetries) {
-          setClaimError(
+          const errorMessage =
             error instanceof Error
               ? `${error.message} (Max retries reached)`
-              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`,
-          );
+              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
+          setClaimError(errorMessage);
+
+          posthog?.capture("swap_failed", {
+            failure_type: "claim",
+            swap_id: polygonToBtcSwapData.id,
+            swap_direction: "evm-to-btc",
+            error_message: errorMessage,
+            retry_count: newRetryCount,
+          });
         } else {
           setClaimError(
             error instanceof Error
@@ -363,7 +385,14 @@ export function SwapProcessingStep({
     };
 
     autoClaimPolygonToArkadeSwaps();
-  }, [swapData, swapDirection, isClaiming, retryCount, sleep]);
+  }, [
+    swapData,
+    swapDirection,
+    isClaiming,
+    retryCount,
+    sleep,
+    posthog?.capture,
+  ]);
 
   // Auto-claim for bitcoin-to-arkade when server is funded
   useEffect(() => {
@@ -423,11 +452,19 @@ export function SwapProcessingStep({
         setRetryCount(newRetryCount);
 
         if (newRetryCount >= maxRetries) {
-          setClaimError(
+          const errorMessage =
             error instanceof Error
               ? `${error.message} (Max retries reached)`
-              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`,
-          );
+              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
+          setClaimError(errorMessage);
+
+          posthog?.capture("swap_failed", {
+            failure_type: "claim",
+            swap_id: bitcoinToArkadeSwapData.id,
+            swap_direction: "btc-to-arkade",
+            error_message: errorMessage,
+            retry_count: newRetryCount,
+          });
         } else {
           setClaimError(
             error instanceof Error
@@ -447,7 +484,14 @@ export function SwapProcessingStep({
     };
 
     autoClaimBtcToArkadeSwaps();
-  }, [swapData, swapDirection, isClaiming, retryCount, sleep]);
+  }, [
+    swapData,
+    swapDirection,
+    isClaiming,
+    retryCount,
+    sleep,
+    posthog?.capture,
+  ]);
 
   const handleCopyTxId = async (txId: string) => {
     try {
@@ -559,15 +603,31 @@ export function SwapProcessingStep({
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-      {/* Swap ID Header */}
-      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Swap ID:
-        </p>
-        <code className="text-xs font-mono text-foreground flex-1">
-          {swapId}
-        </code>
-        <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+      {/* Header */}
+      <div className="px-6 py-4 flex items-center justify-between border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
+              <div className="w-5 h-5 flex items-center justify-center">
+                {getTokenIcon(swapData.target_token)}
+              </div>
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
+              <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+                {getTokenNetworkIcon(swapData.target_token)}
+              </div>
+            </div>
+          </div>
+          <h3 className="text-sm font-semibold">
+            Receiving {getTokenSymbol(swapData.target_token)}
+          </h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <code className="text-[10px] font-mono text-muted-foreground">
+            {swapId.slice(0, 8)}…
+          </code>
+          <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+        </div>
       </div>
 
       {/* Content */}

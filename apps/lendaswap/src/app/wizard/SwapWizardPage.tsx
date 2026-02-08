@@ -15,6 +15,7 @@ import {
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { AlertCircle } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAsync, useAsyncRetry } from "react-use";
@@ -104,14 +105,67 @@ const swapDirection = (
   }
 };
 
-// Create mock swap data for debug mode
-function createMockSwapData(status: SwapStatus): StoredSwap {
-  const mockData = {
-    direction: "btc_to_evm",
-    id: DEBUG_SWAP_ID,
-    status,
+// Debug direction presets: source_token → target_token mappings
+type DebugDirection =
+  | "lightning-to-evm"
+  | "arkade-to-evm"
+  | "onchain-to-evm"
+  | "onchain-to-arkade"
+  | "evm-to-lightning"
+  | "evm-to-arkade";
+
+const DEBUG_DIRECTION_CONFIGS: Record<
+  DebugDirection,
+  { source_token: string; target_token: string; direction: string }
+> = {
+  "lightning-to-evm": {
     source_token: "btc_lightning",
     target_token: "usdc_pol",
+    direction: "btc_to_evm",
+  },
+  "arkade-to-evm": {
+    source_token: "btc_arkade",
+    target_token: "usdc_pol",
+    direction: "btc_to_evm",
+  },
+  "onchain-to-evm": {
+    source_token: "btc_onchain",
+    target_token: "usdc_pol",
+    direction: "onchain_to_evm",
+  },
+  "onchain-to-arkade": {
+    source_token: "btc_onchain",
+    target_token: "btc_arkade",
+    direction: "btc_to_arkade",
+  },
+  "evm-to-lightning": {
+    source_token: "usdc_pol",
+    target_token: "btc_lightning",
+    direction: "evm_to_btc",
+  },
+  "evm-to-arkade": {
+    source_token: "usdc_pol",
+    target_token: "btc_arkade",
+    direction: "evm_to_btc",
+  },
+};
+
+// Create mock swap data for debug mode
+function createMockSwapData(
+  status: SwapStatus,
+  debugDirection?: string | null,
+): StoredSwap {
+  const dirConfig =
+    DEBUG_DIRECTION_CONFIGS[
+      (debugDirection as DebugDirection) || "lightning-to-evm"
+    ] ?? DEBUG_DIRECTION_CONFIGS["lightning-to-evm"];
+
+  const mockData = {
+    direction: dirConfig.direction,
+    id: DEBUG_SWAP_ID,
+    status,
+    source_token: dirConfig.source_token,
+    target_token: dirConfig.target_token,
     hash_lock:
       "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
     fee_sats: 100,
@@ -124,7 +178,9 @@ function createMockSwapData(status: SwapStatus): StoredSwap {
     ln_invoice:
       "lnbc1000u1pjqqqqqpp5qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqdqqcqzpgxqrrsssp5qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9qyyssqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     sats_receive: 10000,
-    sats_required: 10100, // sats_receive + fee_sats
+    sats_required: 10100,
+    source_amount: 10100,
+    target_amount: 100,
     asset_amount: 100,
     created_at: new Date().toISOString(),
     sender_pk:
@@ -133,7 +189,9 @@ function createMockSwapData(status: SwapStatus): StoredSwap {
       "02bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     server_pk:
       "02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    btc_refund_locktime: Math.floor(Date.now() / 1000) + 3600,
     refund_locktime: Math.floor(Date.now() / 1000) + 3600,
+    btc_htlc_address: "bc1qmock0000000000000000000000000000000000mock",
     unilateral_claim_delay: 100,
     unilateral_refund_delay: 200,
     unilateral_refund_without_receiver_delay: 300,
@@ -147,7 +205,7 @@ function createMockSwapData(status: SwapStatus): StoredSwap {
     gelato_forwarder_address: null,
     gelato_user_nonce: null,
     gelato_user_deadline: null,
-    source_token_address: null,
+    source_token_address: "0x2222222222222222222222222222222222222222",
   };
 
   return {
@@ -234,6 +292,7 @@ function determineStepFromStatus(
 }
 
 export function SwapWizardPage() {
+  const posthog = usePostHog();
   const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -244,8 +303,15 @@ export function SwapWizardPage() {
   const [preimage, setPreimage] = useState<string | null>(null);
   const { arkAddress } = useWalletBridge();
 
-  // Get debug step from URL query params
-  const debugStep = searchParams.get("step") as SwapStatus | null;
+  useEffect(() => {
+    document.title = "Swap in Progress | LendaSwap";
+  }, []);
+
+  // Debug-only: read step/direction from URL query params for UI preview
+  const debugStep = isDebugMode()
+    ? (searchParams.get("step") as SwapStatus | null)
+    : null;
+  const debugDirection = isDebugMode() ? searchParams.get("direction") : null;
 
   const {
     loading: isLoading,
@@ -258,13 +324,13 @@ export function SwapWizardPage() {
       return;
     }
 
-    // In debug mode, return mock data instead of calling API
+    // Debug mode only: return mock data instead of calling API
     if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
       const mockStatus: SwapStatus = (debugStep as SwapStatus) || "pending";
-      return createMockSwapData(mockStatus);
+      return createMockSwapData(mockStatus, debugDirection);
     }
     return await api.getSwap(swapId);
-  }, [swapId, debugStep]);
+  }, [swapId, debugStep, debugDirection]);
 
   if (error) {
     console.error(`Failed fetching swap ${error}`);
@@ -272,16 +338,20 @@ export function SwapWizardPage() {
 
   // Update display data when swap data changes and status is different
   useEffect(() => {
-    if (swapData && swapData.response.status !== lastStatusRef.current) {
+    if (!swapData) return;
+
+    const statusChanged = swapData.response.status !== lastStatusRef.current;
+    // Debug mode: also detect direction changes (same status, different tokens)
+    const directionChanged =
+      isDebugMode() &&
+      displaySwapData &&
+      (swapData.response.source_token !== displaySwapData.source_token ||
+        swapData.response.target_token !== displaySwapData.target_token);
+
+    if (statusChanged || directionChanged || !displaySwapData) {
       console.log(
-        `Status changed: ${lastStatusRef.current ? lastStatusRef.current : undefined} -> ${swapData.response.status}`,
+        `Swap data updated: status=${swapData.response.status}, source=${swapData.response.source_token}, target=${swapData.response.target_token}`,
       );
-      lastStatusRef.current = swapData.response.status;
-      setDisplaySwapData(swapData.response);
-      setPreimage(swapData.preimage);
-      setCurrentStep(determineStepFromStatus(swapData.response));
-    } else if (swapData && !displaySwapData) {
-      // Initial load
       lastStatusRef.current = swapData.response.status;
       setDisplaySwapData(swapData.response);
       setPreimage(swapData.preimage);
@@ -290,6 +360,16 @@ export function SwapWizardPage() {
   }, [swapData, displaySwapData]);
 
   const swapDirectionValue = swapDirection(displaySwapData);
+
+  // Track wizard step views for conversion funnel
+  useEffect(() => {
+    if (!currentStep || !displaySwapData) return;
+    posthog?.capture("swap_step_viewed", {
+      swap_id: displaySwapData.id,
+      step: currentStep,
+      swap_direction: swapDirectionValue,
+    });
+  }, [currentStep, displaySwapData, posthog?.capture, swapDirectionValue]);
 
   // Poll swap status every 2 seconds in the background
   useEffect(() => {
@@ -370,6 +450,20 @@ export function SwapWizardPage() {
     targetTokenInfo = tokens.find(
       (t) => t.token_id === swapData?.response.source_token,
     );
+  }
+
+  // In debug mode, provide mock token info if API didn't return tokens
+  if (isDebugMode() && !targetTokenInfo && swapData) {
+    const tokenId = isEvmToken(swapData.response.target_token)
+      ? swapData.response.target_token
+      : swapData.response.source_token;
+    targetTokenInfo = {
+      token_id: tokenId,
+      symbol: tokenId.split("_")[0]?.toUpperCase() ?? "MOCK",
+      name: tokenId,
+      decimals: tokenId.startsWith("btc") ? 8 : 6,
+      chain: "polygon",
+    } as TokenInfo;
   }
 
   return (
