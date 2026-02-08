@@ -227,7 +227,7 @@ export function RefundEvmStep({ swapData, swapId }: RefundEvmStepProps) {
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs font-medium">{targetSymbol}</span>
               <span className="text-xs text-muted-foreground ml-2">
-                ({swapData.source_token_amount} {sourceSymbol})
+                ({swapData.source_amount} {sourceSymbol})
               </span>
             </div>
           </div>
@@ -242,7 +242,7 @@ export function RefundEvmStep({ swapData, swapId }: RefundEvmStepProps) {
           <div className="space-y-1">
             <p className="text-sm font-medium">Refund Amount</p>
             <p className="text-xs text-muted-foreground">
-              {swapData.source_token_amount} {tokenSymbol}
+              {swapData.source_amount} {tokenSymbol}
             </p>
           </div>
 

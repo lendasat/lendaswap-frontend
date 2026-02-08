@@ -149,7 +149,7 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
-              {swapData.source_token_amount} {tokenSymbol}
+              {swapData.source_amount} {tokenSymbol}
             </span>
           </div>
           <div className="flex justify-between text-sm">
