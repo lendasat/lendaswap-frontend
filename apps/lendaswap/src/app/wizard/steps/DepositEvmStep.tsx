@@ -62,9 +62,7 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
 
     try {
       if (!chain) {
-        throw new Error(
-          `Unsupported chain ID: ${swapData.evm_chain_id}`,
-        );
+        throw new Error(`Unsupported chain ID: ${swapData.evm_chain_id}`);
       }
 
       // Switch to the correct chain if needed
@@ -156,9 +154,7 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Receive</span>
-            <span className="font-medium">
-              ~{receiveAmount} BTC on Arkade
-            </span>
+            <span className="font-medium">~{receiveAmount} BTC on Arkade</span>
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground" />

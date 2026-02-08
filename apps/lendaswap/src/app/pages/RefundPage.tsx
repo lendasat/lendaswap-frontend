@@ -68,15 +68,11 @@ export function RefundPage() {
   const isArkadeToEvmSwap = swapDirection === "arkade_to_evm";
   const isEvmToArkadeSwap = swapDirection === "evm_to_arkade";
   const isBtcToEvmSwap =
-    !isArkadeToEvmSwap &&
-    !isEvmToArkadeSwap &&
-    swapData
+    !isArkadeToEvmSwap && !isEvmToArkadeSwap && swapData
       ? isBtc(swapData.source_token)
       : false;
   const isEvmToBtcSwap =
-    !isArkadeToEvmSwap &&
-    !isEvmToArkadeSwap &&
-    swapData
+    !isArkadeToEvmSwap && !isEvmToArkadeSwap && swapData
       ? isEvmToken(swapData.source_token)
       : false;
 
@@ -164,13 +160,16 @@ export function RefundPage() {
         />
       )}
 
-      {!isEvmToBtcSwap && !isBtcToEvmSwap && !isArkadeToEvmSwap && !isEvmToArkadeSwap && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            Unknown swap direction. Cannot display refund interface.
-          </AlertDescription>
-        </Alert>
-      )}
+      {!isEvmToBtcSwap &&
+        !isBtcToEvmSwap &&
+        !isArkadeToEvmSwap &&
+        !isEvmToArkadeSwap && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              Unknown swap direction. Cannot display refund interface.
+            </AlertDescription>
+          </Alert>
+        )}
     </div>
   );
 }

@@ -21,10 +21,7 @@ import { useAsync, useAsyncRetry } from "react-use";
 import { api } from "../api";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 import { useWalletBridge } from "../WalletBridgeContext";
-import type {
-  ArkadeToEvmSwapResponse,
-  EvmToArkadeSwapResponse,
-} from "../api";
+import type { ArkadeToEvmSwapResponse, EvmToArkadeSwapResponse } from "../api";
 import {
   BtcToArkadeProcessingStep,
   BtcToPolygonRefundStep,

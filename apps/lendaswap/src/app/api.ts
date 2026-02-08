@@ -3,6 +3,7 @@ import {
   type BtcToArkadeSwapResponse,
   type BtcToEvmSwapResponse,
   type CoordinatorFundingCallData,
+  type components,
   type EvmToBtcSwapResponse,
   type GetSwapResponse,
   getUsdPrices,
@@ -19,7 +20,6 @@ import {
   type TokenId,
   type TokenInfo,
   type VhtlcAmounts,
-  type components,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 import { getEvmTokenInfo } from "./utils/tokenUtils";
@@ -58,6 +58,18 @@ export type {
   VhtlcAmounts,
 };
 export type Version = { tag: string; commit_hash: string };
+
+export interface EvmTokenInfo {
+  address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  logo_uri?: string;
+}
+
+export interface EvmTokensResponse {
+  chains: Record<string, EvmTokenInfo[]>;
+}
 
 export interface SwapRequest {
   // Source amount in sats
@@ -181,6 +193,13 @@ export const api = {
     return await client.getTokens();
   },
 
+  async getEvmTokens(): Promise<EvmTokensResponse> {
+    const response = await fetch(`${API_BASE_URL}/evm-tokens`);
+    if (!response.ok)
+      throw new Error(`Failed to fetch EVM tokens: ${response.status}`);
+    return response.json();
+  },
+
   async getQuote(request: QuoteRequest): Promise<QuoteResponse> {
     const client = await getClients();
     return await client.getQuote(request.from, request.to, request.base_amount);
@@ -205,29 +224,10 @@ export const api = {
     return result.response;
   },
 
-  async createArkadeToEvmSwap(
-    request: SwapRequest,
-    targetNetwork: "ethereum" | "polygon",
-  ): Promise<BtcToEvmSwapResponse> {
-    const referralCode = getReferralCode();
-    const client = await getClients();
-    const result = await client.createArkadeToEvmSwap({
-      targetAddress: request.target_address,
-      targetToken: request.target_token,
-      targetChain: targetNetwork,
-      sourceAmount: request.source_amount
-        ? Number(request.source_amount)
-        : undefined,
-      targetAmount: request.target_amount,
-      referralCode: referralCode || undefined,
-    });
-    return result.response;
-  },
-
-  async createArkadeToEvmSwapGeneric(request: {
+  async createArkadeToEvmSwap(request: {
     target_address: string;
     source_amount?: bigint;
-    target_amount?: number;
+    target_amount?: bigint;
     target_token: TokenId;
   }): Promise<ArkadeToEvmSwapResponse> {
     const referralCode = getReferralCode();
@@ -240,9 +240,7 @@ export const api = {
       targetAddress: request.target_address,
       tokenAddress: evmToken.tokenAddress,
       evmChainId: evmToken.evmChainId,
-      sourceAmount: request.source_amount
-        ? Number(request.source_amount)
-        : undefined,
+      sourceAmount: request.source_amount,
       targetAmount: request.target_amount,
       referralCode: referralCode || undefined,
     });
@@ -251,7 +249,7 @@ export const api = {
 
   async createEvmToArkadeSwapGeneric(request: {
     target_address: string;
-    source_amount: number;
+    source_amount: bigint;
     source_token: TokenId;
     user_address: string;
   }): Promise<EvmToArkadeGenericSwapResponse> {

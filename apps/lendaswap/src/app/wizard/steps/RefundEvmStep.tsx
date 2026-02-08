@@ -52,9 +52,7 @@ export function RefundEvmStep({ swapData, swapId }: RefundEvmStepProps) {
 
   // Use evm_refund_locktime from the swap data, or fallback to calldata timelockExpiry
   const refundLocktime =
-    swapData.evm_refund_locktime ||
-    refundCallData?.timelockExpiry ||
-    0;
+    swapData.evm_refund_locktime || refundCallData?.timelockExpiry || 0;
   const isLocktimePassed = now >= refundLocktime;
   const refundLocktimeDate = new Date(refundLocktime * 1000);
 
@@ -126,9 +124,7 @@ export function RefundEvmStep({ swapData, swapId }: RefundEvmStepProps) {
 
     try {
       if (!chain) {
-        throw new Error(
-          `Unsupported chain ID: ${swapData.evm_chain_id}`,
-        );
+        throw new Error(`Unsupported chain ID: ${swapData.evm_chain_id}`);
       }
 
       // Switch to the correct chain if needed

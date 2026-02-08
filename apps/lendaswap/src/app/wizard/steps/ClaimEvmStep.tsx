@@ -155,18 +155,13 @@ export function ClaimEvmStep({ swapData, swapId }: ClaimEvmStepProps) {
   ) => {
     const isComplete = !!txId;
     const isActive = currentStep === stepNum;
-    const displayLabel =
-      activeLabel && !isComplete ? activeLabel : label;
+    const displayLabel = activeLabel && !isComplete ? activeLabel : label;
 
     return (
       <div className="flex items-start gap-3">
         <div
           className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-            isComplete
-              ? "bg-primary"
-              : isActive
-                ? "bg-muted"
-                : "bg-muted"
+            isComplete ? "bg-primary" : isActive ? "bg-muted" : "bg-muted"
           }`}
         >
           {isComplete ? (
@@ -240,7 +235,11 @@ export function ClaimEvmStep({ swapData, swapId }: ClaimEvmStepProps) {
           <div className="flex items-start gap-3">
             <div
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
-                config.step3TxId ? "bg-primary" : currentStep === 3 ? "bg-muted" : "bg-muted"
+                config.step3TxId
+                  ? "bg-primary"
+                  : currentStep === 3
+                    ? "bg-muted"
+                    : "bg-muted"
               }`}
             >
               {config.step3TxId ? (

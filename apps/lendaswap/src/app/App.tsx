@@ -258,7 +258,17 @@ function HomePage() {
     console.error("Failed loading tokens", loadingTokensError);
   }
 
-  const assetPairs = maybeAssetPairs || [];
+  const { value: evmTokens, error: loadingEvmTokensError } = useAsync(
+    async () => api.getEvmTokens(),
+  );
+  if (loadingEvmTokensError) {
+    console.error("Failed loading EVM tokens", loadingEvmTokensError);
+  }
+
+  console.log(evmTokens);
+  const tokenDetails = evmTokens?.chains.const;
+
+  assetPairs = maybeAssetPairs || [];
   const tokens = maybeTokens || [];
   const isInitialLoading = !maybeAssetPairs || !maybeTokens;
 
@@ -499,7 +509,7 @@ function HomePage() {
             break;
           }
           case BTC_ARKADE: {
-            const swap = await api.createArkadeToEvmSwapGeneric({
+            const swap = await api.createArkadeToEvmSwap({
               target_address: targetAddress,
               source_amount: sourceAmount,
               target_amount: targetAmount,
