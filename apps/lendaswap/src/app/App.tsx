@@ -282,9 +282,8 @@ function HomePage() {
   }
 
   console.log(evmTokens);
-  const tokenDetails = evmTokens?.chains.const;
 
-  assetPairs = maybeAssetPairs || [];
+  const assetPairs = maybeAssetPairs || [];
   const tokens = maybeTokens || [];
   const isInitialLoading = !maybeAssetPairs || !maybeTokens;
 
