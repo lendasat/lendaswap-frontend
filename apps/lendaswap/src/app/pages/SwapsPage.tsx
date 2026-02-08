@@ -105,6 +105,10 @@ export function SwapsPage() {
   const [swapToDelete, setSwapToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = "My Swaps | LendaSwap";
+  }, []);
+
   const handleCopyId = async (e: React.MouseEvent, swapId: string) => {
     e.stopPropagation();
     e.preventDefault();

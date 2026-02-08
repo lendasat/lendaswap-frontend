@@ -26,6 +26,10 @@ export function RefundPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = "Refund Swap | LendaSwap";
+  }, []);
+
   // Load swap data from Dexie
   useEffect(() => {
     if (!swapId) {

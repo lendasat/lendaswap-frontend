@@ -270,7 +270,7 @@ export function PolygonToBtcRefundStep({
       // Track refund success
       posthog?.capture("swap_refunded", {
         swap_id: swapId,
-        swap_direction: "polygon-to-btc",
+        swap_direction: "evm-to-btc",
         refund_reason: "user_initiated",
         refund_txid: refundTxHash,
       });
@@ -287,9 +287,16 @@ export function PolygonToBtcRefundStep({
       // The wizard will automatically update via polling
     } catch (err) {
       console.error("Refund error:", err);
-      setRefundError(
-        err instanceof Error ? err.message : "Failed to execute refund",
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to execute refund";
+      setRefundError(errorMessage);
+
+      posthog?.capture("swap_failed", {
+        failure_type: "refund",
+        swap_id: swapId,
+        swap_direction: "evm-to-btc",
+        error_message: errorMessage,
+      });
     } finally {
       setIsRefunding(false);
     }
