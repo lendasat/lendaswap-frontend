@@ -168,11 +168,11 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
               </Button>
             </div>
           </div>
-          {swapData.target_token_amount != null && (
+          {swapData.target_amount != null && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">
-                {swapData.target_token_amount} {tokenSymbol}
+                {swapData.target_amount} {tokenSymbol}
               </span>
             </div>
           )}
