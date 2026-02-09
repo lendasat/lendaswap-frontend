@@ -6,5 +6,4 @@ export {
   calculateSourceAmount,
   calculateTargetAmount,
   computeExchangeRate,
-  selectTierRate,
 } from "@lendasat/lendaswap-sdk-pure";

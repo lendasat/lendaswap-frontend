@@ -24,12 +24,6 @@ import {
 import { getReferralCode } from "./utils/referralCode";
 import { getEvmTokenInfo } from "./utils/tokenUtils";
 
-export type {
-  PriceTiers,
-  PriceUpdateMessage,
-  TradingPairPrices,
-} from "@lendasat/lendaswap-sdk-pure";
-
 // Derive new generic response types from SDK components
 export type ArkadeToEvmSwapResponse =
   components["schemas"]["ArkadeToEvmSwapResponse"];
@@ -484,6 +478,3 @@ export const api = {
     return priceMap;
   },
 };
-
-// PriceFeedService
-export { PriceFeedService } from "@lendasat/lendaswap-sdk-pure";
