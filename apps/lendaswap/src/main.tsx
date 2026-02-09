@@ -9,7 +9,6 @@ import { PostHogProvider } from "posthog-js/react";
 import { arbitrum, mainnet, polygon } from "viem/chains";
 import { createConfig, WagmiProvider } from "wagmi";
 import App from "./app/App";
-import { PriceFeedProvider } from "./app/PriceFeedContext";
 import { ThemeProvider } from "./app/utils/theme-provider";
 import { WalletBridgeProvider } from "./app/WalletBridgeContext";
 import { PostHogSuperProperties } from "./components/PostHogSuperProperties";
@@ -60,11 +59,9 @@ root.render(
             >
               <Theme>
                 <ThemeProvider>
-                  <PriceFeedProvider>
-                    <WalletBridgeProvider>
-                      <App />
-                    </WalletBridgeProvider>
-                  </PriceFeedProvider>
+                  <WalletBridgeProvider>
+                    <App />
+                  </WalletBridgeProvider>
                 </ThemeProvider>
               </Theme>
             </ConnectKitProvider>

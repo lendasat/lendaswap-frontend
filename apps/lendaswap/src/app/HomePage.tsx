@@ -1,58 +1,323 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { usePostHog } from "posthog-js/react";
+import { useAccount, useSwitchChain } from "wagmi";
 import {
   BTC_ARKADE,
+  BTC_LIGHTNING,
   isArkade,
   isBtc,
   isBtcOnchain,
   isEthereumToken,
   isEvmToken,
+  isLightning,
   type TokenId,
 } from "@lendasat/lendaswap-sdk-pure";
 import { ConnectKitButton } from "connectkit";
 import { ArrowDown, Loader, Wallet } from "lucide-react";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
-import { isValidSpeedWalletContext } from "../utils/speedWallet";
-import { getTokenSymbol } from "./api";
+import {
+  getSpeedLightningAddress,
+  isValidSpeedWalletContext,
+} from "../utils/speedWallet";
+import { api, getTokenSymbol, type QuoteResponse } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { useCreateSwap } from "./hooks/useCreateSwap";
-import { useSwapForm } from "./hooks/useSwapForm";
+import { usePairs } from "./hooks/usePairs";
+import {
+  calculateSourceAmount,
+  calculateTargetAmount,
+  computeExchangeRate,
+} from "./utils/priceUtils";
+import { getViemChain, isValidTokenId } from "./utils/tokenUtils";
+import { useWalletBridge } from "./WalletBridgeContext";
 
 export function HomePage() {
+  const navigate = useNavigate();
+  const posthog = usePostHog();
+  const params = useParams<{ sourceToken?: string; targetToken?: string }>();
   const {
-    sourceAsset,
-    setSourceAsset,
-    targetAsset,
-    setTargetAsset,
-    sourceAssetAmount,
-    setSourceAssetAmount,
-    targetAssetAmount,
-    setTargetAssetAmount,
-    lastFieldEdited,
-    setLastFieldEdited,
-    targetAddress,
-    setTargetAddress,
-    addressValid,
-    setAddressValid,
-    userEvmAddress,
-    isEvmAddressValid,
-    quote,
-    isLoadingQuote,
-    isLoadingPrice,
-    expectedChain,
-    isWrongChain,
+    address: connectedAddress,
     isConnected,
-    isInitialLoading,
-    tokens,
-    availableSourceAssets,
-    availableTargetAssets,
-    isEmbedded,
-    arkAddress,
-    getUsdPerToken,
-    navigate,
-  } = useSwapForm();
+    chain: connectedChain,
+  } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
 
+  useEffect(() => {
+    document.title = "LendaSwap - Lightning-Fast Bitcoin Atomic Swaps";
+  }, []);
+
+  // Read tokens from URL params, validate them
+  const urlSourceToken = isValidTokenId(params.sourceToken)
+    ? params.sourceToken
+    : null;
+  const urlTargetToken = isValidTokenId(params.targetToken)
+    ? params.targetToken
+    : null;
+
+  // Redirect to default if invalid tokens in URL (skip for Speed Wallet to preserve params)
+  useEffect(() => {
+    if (!urlSourceToken || !urlTargetToken) {
+      if (!isValidSpeedWalletContext()) {
+        navigate("/btc_lightning/usdc_pol", { replace: true });
+      }
+    }
+  }, [urlSourceToken, urlTargetToken, navigate]);
+
+  // Check Speed Wallet context for defaults
+  const isSpeedWalletUser = isValidSpeedWalletContext();
+
+  const [sourceAssetAmount, setSourceAssetAmount] = useState<
+    number | undefined
+  >(undefined);
+  const [sourceAsset, setSourceAsset] = useState<TokenId>(
+    (urlSourceToken && (urlSourceToken as TokenId)) || "btc_arkade",
+  );
+  const [targetAsset, setTargetAsset] = useState<TokenId>(
+    (urlTargetToken && (urlTargetToken as TokenId)) ||
+      (isSpeedWalletUser ? BTC_LIGHTNING : BTC_ARKADE),
+  );
+  const [targetAssetAmount, setTargetAssetAmount] = useState<
+    number | undefined
+  >(isBtcOnchain(sourceAsset) ? 0.0001 : 50);
+  const [lastFieldEdited, setLastFieldEdited] = useState<
+    "sourceAsset" | "targetAsset"
+  >("targetAsset");
+  const [targetAddress, setTargetAddress] = useState("");
+  const [addressValid, setAddressValid] = useState(false);
+  const [userEvmAddress, setUserEvmAddress] = useState<string>("");
+  const [isEvmAddressValid, setIsEvmAddressValid] = useState(false);
+  const [quote, setQuote] = useState<QuoteResponse | null>(null);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const { arkAddress, isEmbedded } = useWalletBridge();
+
+  // --- Pairs ---
+  const {
+    availableSourceAssets,
+    getAvailableTargetAssets,
+    tokens,
+    isLoading: isPairsLoading,
+    getSourceDecimals,
+    getTargetDecimals,
+  } = usePairs();
+  const availableTargetAssets = getAvailableTargetAssets(sourceAsset);
+  const isInitialLoading = isPairsLoading;
+
+  const sourceAssetDecimalPlaces = getSourceDecimals(sourceAsset);
+  const targetAssetDecimalPlaces = getTargetDecimals(targetAsset);
+
+  // --- Auto-populate EVM address from connected wallet ---
+  useEffect(() => {
+    if (isConnected && connectedAddress) {
+      setUserEvmAddress(connectedAddress);
+      setIsEvmAddressValid(true);
+    } else {
+      setUserEvmAddress("");
+      setIsEvmAddressValid(false);
+    }
+  }, [isConnected, connectedAddress]);
+
+  // Track wallet connection/disconnection
+  const prevConnectedRef = useRef(false);
+  useEffect(() => {
+    if (isConnected && !prevConnectedRef.current) {
+      posthog?.capture("wallet_connected", { address: connectedAddress });
+    } else if (!isConnected && prevConnectedRef.current) {
+      posthog?.capture("wallet_disconnected");
+    }
+    prevConnectedRef.current = isConnected;
+  }, [isConnected, connectedAddress, posthog?.capture]);
+
+  // Check if wallet is on the correct chain for the EVM asset (source or target)
+  const expectedChain = isEvmToken(sourceAsset)
+    ? getViemChain(sourceAsset)
+    : isEvmToken(targetAsset)
+      ? getViemChain(targetAsset)
+      : null;
+  const isWrongChain =
+    isConnected &&
+    expectedChain &&
+    connectedChain &&
+    connectedChain.id !== expectedChain.id;
+
+  // Auto-switch to correct chain when wrong chain detected
+  useEffect(() => {
+    if (isWrongChain && expectedChain && switchChainAsync) {
+      switchChainAsync({ chainId: expectedChain.id }).catch((err) => {
+        console.error("Failed to auto-switch chain:", err);
+      });
+    }
+  }, [isWrongChain, expectedChain, switchChainAsync]);
+
+  // Auto-populate target address with arkAddress if embedded and target is btc_arkade
+  useEffect(() => {
+    if (isEmbedded && arkAddress && isArkade(targetAsset) && !targetAddress) {
+      setTargetAddress(arkAddress);
+    }
+  }, [isEmbedded, arkAddress, targetAsset, targetAddress]);
+
+  // Auto-populate Lightning address from Speed Wallet if available
+  useEffect(() => {
+    const isSpeedWallet = isValidSpeedWalletContext();
+    const speedLnAddress = getSpeedLightningAddress();
+
+    if (
+      isSpeedWallet &&
+      speedLnAddress &&
+      isLightning(targetAsset) &&
+      !targetAddress
+    ) {
+      setTargetAddress(speedLnAddress);
+    }
+  }, [targetAsset, targetAddress]);
+
+  // --- Quote-based exchange rate ---
+  useEffect(() => {
+    const fetchQuote = async () => {
+      // Determine the BTC amount from whichever field has a value
+      let amount: number;
+      if (isEvmToken(sourceAsset)) {
+        amount = targetAssetAmount ?? 0;
+      } else if (isBtcOnchain(sourceAsset) && isArkade(targetAsset)) {
+        amount = targetAssetAmount ?? 0;
+      } else if (isBtcOnchain(sourceAsset) && isEvmToken(targetAsset)) {
+        amount = sourceAssetAmount ?? 0;
+      } else {
+        amount = sourceAssetAmount ?? 0;
+      }
+
+      if (!amount || amount <= 0) {
+        setQuote(null);
+        return;
+      }
+
+      setIsLoadingQuote(true);
+      try {
+        const sats = Math.round(amount * 100_000_000);
+        if (sats > 0) {
+          const q = await api.getQuote({
+            from: sourceAsset,
+            to: targetAsset,
+            base_amount: sats,
+          });
+          setQuote(q);
+        }
+      } catch {
+        setQuote(null);
+      } finally {
+        setIsLoadingQuote(false);
+      }
+    };
+
+    fetchQuote();
+  }, [sourceAssetAmount, targetAssetAmount, sourceAsset, targetAsset]);
+
+  // Derive exchange rate from quote
+  const exchangeRate = useMemo(() => {
+    if (!quote) return null;
+    const fiatPerBtc = parseFloat(quote.exchange_rate);
+    // Quote always returns "fiat per BTC"
+    // For BTC→EVM: use as-is (1 BTC = X fiat)
+    // For EVM→BTC: invert (1 fiat = 1/X BTC)
+    return computeExchangeRate(
+      1 / fiatPerBtc,
+      isBtc(sourceAsset),
+      isEvmToken(targetAsset),
+    );
+  }, [quote, sourceAsset, targetAsset]);
+
+  // Calculation effect — both rate and fees come from quote
+  useEffect(() => {
+    if (isLoadingQuote || !exchangeRate) return;
+
+    const networkFeeInBtc = Number(quote?.network_fee ?? 0) / 100_000_000;
+    const isSourceBtc = isBtc(sourceAsset);
+    const isTargetBtc = isBtc(targetAsset);
+
+    if (lastFieldEdited === "sourceAsset") {
+      if (sourceAssetAmount === undefined) {
+        setTargetAssetAmount(undefined);
+        return;
+      }
+
+      const targetAmount = calculateTargetAmount(
+        sourceAssetAmount,
+        exchangeRate,
+        networkFeeInBtc,
+        isSourceBtc,
+        isTargetBtc,
+      );
+
+      const decimals = targetAssetDecimalPlaces ?? 2;
+      const formattedTargetAssetAmount = Number.parseFloat(
+        targetAmount.toFixed(decimals),
+      );
+      console.log(
+        `Calculated target amount is ${formattedTargetAssetAmount}`,
+        targetAmount,
+        targetAssetDecimalPlaces,
+      );
+      setTargetAssetAmount(formattedTargetAssetAmount);
+    }
+
+    if (lastFieldEdited === "targetAsset") {
+      if (targetAssetAmount === undefined) {
+        setSourceAssetAmount(undefined);
+        return;
+      }
+
+      const sourceAmount = calculateSourceAmount(
+        targetAssetAmount,
+        exchangeRate,
+        networkFeeInBtc,
+        isSourceBtc,
+        isTargetBtc,
+      );
+
+      const decimals = sourceAssetDecimalPlaces ?? 2;
+      const newSourceAssetAmount = Number.parseFloat(
+        sourceAmount.toFixed(decimals),
+      );
+      setSourceAssetAmount(newSourceAssetAmount);
+    }
+  }, [
+    exchangeRate,
+    isLoadingQuote,
+    lastFieldEdited,
+    targetAssetAmount,
+    sourceAssetAmount,
+    targetAssetDecimalPlaces,
+    sourceAssetDecimalPlaces,
+    quote,
+    sourceAsset,
+    targetAsset,
+  ]);
+
+  // --- USD prices (CoinGecko, display-only) ---
+  const [usdPrices, setUsdPrices] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const priceMap = await api.getTokenUsdPrices();
+      setUsdPrices(priceMap);
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getUsdPerToken = (tokenId: TokenId): number => {
+    const price = usdPrices.get(tokenId);
+    if (price !== undefined) return price;
+    if (tokenId.includes("usdc") || tokenId.includes("usdt")) return 1;
+    return 0;
+  };
+
+  // --- Create swap ---
   const { createSwap, isCreatingSwap, swapError } = useCreateSwap({
     sourceAsset,
     targetAsset,
@@ -151,7 +416,6 @@ export function HomePage() {
 
                   // Special case: btc_onchain can be swapped to btc_arkade or EVM tokens
                   if (isBtcOnchain(asset)) {
-                    // Keep current target if it's Arkade or EVM, otherwise default to usdc_pol
                     const newTarget =
                       isArkade(targetAsset) || isEvmToken(targetAsset)
                         ? targetAsset
@@ -217,7 +481,6 @@ export function HomePage() {
           data-no-press
           onClick={() => {
             // btc_onchain can only be in sell position, not buy position
-            // Don't allow swapping if it would put btc_onchain in target
             if (isBtcOnchain(sourceAsset)) {
               return;
             }
@@ -228,14 +491,13 @@ export function HomePage() {
             setSourceAsset(newSource);
             setTargetAsset(newTarget);
 
-            // Also swap the amounts so the values make sense for the new direction
+            // Also swap the amounts
             const newSourceAmount = targetAssetAmount;
             const newTargetAmount = sourceAssetAmount;
             setSourceAssetAmount(newSourceAmount);
             setTargetAssetAmount(newTargetAmount);
 
             navigate(`/${newSource}/${newTarget}`, { replace: true });
-            // Clear target address since it may not be valid for the new target token type
             setTargetAddress("");
             setAddressValid(false);
           }}
@@ -265,7 +527,7 @@ export function HomePage() {
                   : 8
               }
               showCurrencyPrefix={true}
-              isLoading={isLoadingPrice}
+              isLoading={isLoadingQuote}
               usdPerToken={getUsdPerToken(targetAsset)}
               tokenSymbol={getTokenSymbol(targetAsset)}
             />
@@ -289,7 +551,6 @@ export function HomePage() {
                       setTargetAsset(asset);
                       setTargetAssetAmount(newAmount);
                       navigate(`/${sourceAsset}/${asset}`, { replace: true });
-                      // Clear target address since it may not be valid for the new target token type
                       setTargetAddress("");
                       setAddressValid(false);
                     }
@@ -302,9 +563,8 @@ export function HomePage() {
                   const isEvmTarget = isEvmToken(asset);
                   const isEvmSource = isEvmToken(sourceAsset);
 
-                  // If both are BTC or both are EVM, auto-switch source to make them compatible
+                  // If both are BTC or both are EVM, auto-switch source
                   if (isBtcTarget && isBtcSource) {
-                    // Buying BTC but selling BTC - switch source to default EVM stablecoin
                     setSourceAsset("usdc_pol" as TokenId);
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
@@ -313,7 +573,6 @@ export function HomePage() {
                   }
 
                   if (isEvmTarget && isEvmSource) {
-                    // Buying EVM but selling EVM - switch source to default BTC
                     setSourceAsset(BTC_ARKADE);
                     setTargetAsset(asset);
                     setTargetAssetAmount(newAmount);
@@ -341,7 +600,6 @@ export function HomePage() {
           targetToken={targetAsset}
           setAddressIsValid={setAddressValid}
           setBitcoinAmount={(amount) => {
-            // this is only used for lightning invoices, hence, the last edited field must be the target field which needs to be lightning
             setLastFieldEdited("targetAsset");
             setTargetAssetAmount(amount);
           }}
