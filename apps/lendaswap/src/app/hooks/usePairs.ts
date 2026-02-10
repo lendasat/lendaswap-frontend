@@ -1,97 +1,91 @@
+import { useMemo } from "react";
 import { useAsync } from "react-use";
 import {
   BTC_ARKADE,
-  BTC_LIGHTNING,
   isBtc,
   isBtcOnchain,
   isEvmToken,
-  isLightning,
   type TokenId,
+  type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { api } from "../api";
 
 export function usePairs() {
-  const { value: assetPairs, error: pairsError } = useAsync(() =>
-    api.getAssetPairs(),
-  );
-  if (pairsError) {
-    console.error("Failed loading asset pairs", pairsError);
-  }
-
-  const { value: tokens, error: tokensError } = useAsync(() => api.getTokens());
+  const {
+    value: tokens,
+    loading: isLoading,
+    error: tokensError,
+  } = useAsync(() => api.getTokens());
   if (tokensError) {
     console.error("Failed loading tokens", tokensError);
   }
 
-  const { error: evmTokensError } = useAsync(() => api.getEvmTokens());
-  if (evmTokensError) {
-    console.error("Failed loading EVM tokens", evmTokensError);
-  }
+  const { btcTokens, evmTokens, allTokens } = useMemo(() => {
+    const btc: TokenInfo[] = tokens?.btc_tokens ?? [];
+    const evm: TokenInfo[] = tokens?.evm_tokens ?? [];
+    return { btcTokens: btc, evmTokens: evm, allTokens: [...btc, ...evm] };
+  }, [tokens]);
 
-  const pairs = assetPairs || [];
-  const tokenList = tokens || [];
-  const isLoading = !assetPairs || !tokens;
-
-  // All source assets from pairs
-  const availableSourceAssets: TokenId[] = [
-    ...new Map(
-      pairs.map((a) => [a.source.token_id, a.source.token_id]),
-    ).values(),
-  ].sort((a, b) => a.localeCompare(b));
-
-  // Compute available target assets based on selected source
-  function getAvailableTargetAssets(sourceAsset: TokenId): TokenId[] {
-    if (isBtcOnchain(sourceAsset)) {
-      return [
-        BTC_ARKADE,
-        ...availableSourceAssets.filter(
-          (a) => isEvmToken(a) && !isBtcOnchain(a) && !isLightning(a),
-        ),
-      ].sort((a, b) => a.localeCompare(b));
+  // All unique source tokens (deduped by token_id, full TokenInfo)
+  const availableSourceAssets: TokenInfo[] = useMemo(() => {
+    const seen = new Set<TokenId>();
+    const result: TokenInfo[] = [];
+    for (const t of allTokens) {
+      if (!seen.has(t.token_id)) {
+        seen.add(t.token_id);
+        result.push(t);
+      }
     }
+    return result.sort((a, b) => a.token_id.localeCompare(b.token_id));
+  }, [allTokens]);
 
-    if (isEvmToken(sourceAsset)) {
-      return [
-        ...availableSourceAssets.filter(
-          (a) => !isEvmToken(a) && a !== sourceAsset && !isBtcOnchain(a),
-        ),
-      ].sort((a, b) => a.localeCompare(b));
+  // Build a lookup map by token_id
+  const tokensByIdMap = useMemo(() => {
+    const map = new Map<TokenId, TokenInfo>();
+    for (const t of allTokens) {
+      map.set(t.token_id, t);
+    }
+    return map;
+  }, [allTokens]);
+
+  // Valid targets for a given source:
+  //  - BTC onchain → Arkade + all EVM tokens
+  //  - BTC (arkade/lightning) → all EVM tokens
+  //  - EVM token → all BTC tokens (except onchain)
+  function getAvailableTargetAssets(sourceAsset: TokenId): TokenInfo[] {
+    const sort = (list: TokenInfo[]) =>
+      list.sort((a, b) => a.token_id.localeCompare(b.token_id));
+
+    if (isBtcOnchain(sourceAsset)) {
+      const arkade = btcTokens.find((t) => t.token_id === BTC_ARKADE);
+      return sort([...(arkade ? [arkade] : []), ...evmTokens]);
     }
 
     if (isBtc(sourceAsset)) {
-      return [...availableSourceAssets.filter((a) => isEvmToken(a))].sort(
-        (a, b) => a.localeCompare(b),
-      );
+      return sort([...evmTokens]);
     }
 
-    // fallback
-    return [
-      ...new Map(
-        [
-          ...availableSourceAssets.filter((a) => !isBtc(a)),
-          BTC_LIGHTNING,
-          BTC_ARKADE,
-        ].map((t) => [t, t]),
-      ).values(),
-    ]
-      .filter((asset) => !isBtcOnchain(asset))
-      .sort((a, b) => a.localeCompare(b));
+    if (isEvmToken(sourceAsset)) {
+      // EVM → BTC (arkade, lightning); not onchain
+      return sort(btcTokens.filter((t) => !isBtcOnchain(t.token_id)));
+    }
+
+    // fallback: all BTC tokens
+    return sort([...btcTokens]);
   }
 
   function getSourceDecimals(sourceAsset: TokenId): number | undefined {
-    return pairs.find((p) => p.source.token_id === sourceAsset)?.source
-      .decimals;
+    return tokensByIdMap.get(sourceAsset)?.decimals;
   }
 
   function getTargetDecimals(targetAsset: TokenId): number | undefined {
-    return pairs.find((p) => p.target.token_id === targetAsset)?.target
-      .decimals;
+    return tokensByIdMap.get(targetAsset)?.decimals;
   }
 
   return {
     availableSourceAssets,
     getAvailableTargetAssets,
-    tokens: tokenList,
+    tokens: allTokens,
     isLoading,
     getSourceDecimals,
     getTargetDecimals,

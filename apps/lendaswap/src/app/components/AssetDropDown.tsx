@@ -3,7 +3,7 @@ import {
   isBtc,
   isEthereumToken,
   isPolygonToken,
-  type TokenId,
+  TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -47,39 +47,39 @@ const networkTabs: {
   id: NetworkTabId;
   label: string;
   icon: React.ReactElement | null;
-  filter?: (asset: TokenId) => boolean;
+  filter?: (asset: TokenInfo) => boolean;
 }[] = [
   { id: "all", label: "All", icon: null },
   {
     id: "bitcoin",
     label: "Bitcoin",
     icon: <BitcoinIcon width={14} height={14} />,
-    filter: (a) => isBtc(a),
+    filter: (a) => isBtc(a.token_id),
   },
   {
     id: "ethereum",
     label: "Ethereum",
     icon: <EthereumIcon width={14} height={14} />,
-    filter: (a) => isEthereumToken(a),
+    filter: (a) => isEthereumToken(a.token_id),
   },
   {
     id: "arbitrum",
     label: "Arbitrum",
     icon: <ArbitrumIcon width={14} height={14} />,
-    filter: (a) => isArbitrumToken(a),
+    filter: (a) => isArbitrumToken(a.token_id),
   },
   {
     id: "polygon",
     label: "Polygon",
     icon: <PolygonIcon width={14} height={14} />,
-    filter: (a) => isPolygonToken(a),
+    filter: (a) => isPolygonToken(a.token_id),
   },
 ];
 
 interface AssetDropDownProps {
-  value: TokenId;
-  onChange: (selectedAsset: TokenId) => void;
-  availableAssets: TokenId[];
+  value: TokenInfo;
+  onChange: (selectedAsset: TokenInfo) => void;
+  availableAssets: TokenInfo[];
   label?: "sell" | "buy";
 }
 
@@ -104,7 +104,7 @@ export function AssetDropDown({
     }
   }, [open]);
 
-  const handleSelect = (asset: TokenId) => {
+  const handleSelect = (asset: TokenInfo) => {
     onChange(asset);
     setOpen(false);
   };
@@ -129,8 +129,8 @@ export function AssetDropDown({
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const symbol = getTokenSymbol(asset).toLowerCase();
-        const network = getTokenNetworkName(asset).toLowerCase();
+        const symbol = asset.symbol.toLowerCase();
+        const network = asset.chain.toLowerCase();
         return (
           asset.toString().toLowerCase().includes(query) ||
           symbol.includes(query) ||

@@ -152,17 +152,20 @@ export function BtcToArkadeProcessingStep({
           <div className="relative">
             <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
               <div className="w-5 h-5 flex items-center justify-center">
-                {getTokenIcon(swapData.target_token)}
+                {/*fixme*/}
+                {/*{getTokenIcon(swapData.target_token)}*/}
               </div>
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
               <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
-                {getTokenNetworkIcon(swapData.target_token)}
+                {/*fixme*/}
+                {/*{getTokenNetworkIcon(swapData.target_token)}*/}
               </div>
             </div>
           </div>
           <h3 className="text-sm font-semibold">
-            Receiving {getTokenSymbol(swapData.target_token)}
+            {/*fixme*/}
+            {/*Receiving {getTokenSymbol(swapData.target_token)}*/}
           </h3>
         </div>
         <div className="flex items-center gap-2">

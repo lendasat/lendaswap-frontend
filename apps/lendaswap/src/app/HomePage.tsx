@@ -32,7 +32,7 @@ import {
   calculateTargetAmount,
   computeExchangeRate,
 } from "./utils/priceUtils";
-import { getViemChain, isValidTokenId } from "./utils/tokenUtils";
+import { getViemChain } from "./utils/tokenUtils";
 import { useWalletBridge } from "./WalletBridgeContext";
 
 export function HomePage() {
@@ -51,18 +51,17 @@ export function HomePage() {
   }, []);
 
   // Read tokens from URL params, validate them
-  const urlSourceToken = isValidTokenId(params.sourceToken)
-    ? params.sourceToken
-    : null;
-  const urlTargetToken = isValidTokenId(params.targetToken)
-    ? params.targetToken
-    : null;
+  const urlSourceToken = params.sourceToken;
+  const urlTargetToken = params.targetToken;
 
   // Redirect to default if invalid tokens in URL (skip for Speed Wallet to preserve params)
   useEffect(() => {
     if (!urlSourceToken || !urlTargetToken) {
       if (!isValidSpeedWalletContext()) {
-        navigate("/btc_lightning/usdc_pol", { replace: true });
+        navigate(
+          "/lightning:btc/polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+          { replace: true },
+        );
       }
     }
   }, [urlSourceToken, urlTargetToken, navigate]);
@@ -82,7 +81,7 @@ export function HomePage() {
   );
   const [targetAssetAmount, setTargetAssetAmount] = useState<
     number | undefined
-  >(isBtcOnchain(sourceAsset) ? 0.0001 : 50);
+  >();
   const [lastFieldEdited, setLastFieldEdited] = useState<
     "sourceAsset" | "targetAsset"
   >("targetAsset");

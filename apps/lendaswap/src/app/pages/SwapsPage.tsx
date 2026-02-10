@@ -345,13 +345,15 @@ export function SwapsPage() {
                       {/* Source token (front) */}
                       <div className="absolute left-0 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden z-10 shadow-sm">
                         <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {getTokenIcon(swap.response.source_token)}
+                          {/*fixme: get token for source token*/}
+                          {/*{getTokenIcon(swap.response.source_token)}*/}
                         </div>
                       </div>
                       {/* Target token (behind) */}
                       <div className="absolute left-3.5 sm:left-4 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
                         <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {getTokenIcon(swap.response.target_token)}
+                          {/*fixme: get token for target token*/}
+                          {/*{getTokenIcon(swap.response.target_token)}*/}
                         </div>
                       </div>
                     </div>
