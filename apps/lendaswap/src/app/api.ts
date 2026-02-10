@@ -10,7 +10,6 @@ import {
   IdbSwapStorage,
   IdbWalletStorage,
   type OnchainToEvmSwapResponse,
-  type AssetPair as PureAssetPair,
   type TokenInfo as PureTokenInfo,
   type QuoteResponse,
   type RefundResult,
@@ -19,6 +18,7 @@ import {
   type SwapStatus,
   type TokenId,
   type TokenInfo,
+  type TokenInfos,
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
@@ -39,7 +39,6 @@ export type {
   CoordinatorFundingCallData,
   GetSwapResponse,
   PureTokenInfo,
-  PureAssetPair,
   BtcToEvmSwapResponse,
   EvmToBtcSwapResponse,
   OnchainToEvmSwapResponse,
@@ -49,6 +48,7 @@ export type {
   SwapStatus,
   TokenId,
   TokenInfo,
+  TokenInfos,
   VhtlcAmounts,
 };
 export type Version = { tag: string; commit_hash: string };
@@ -177,12 +177,7 @@ export const api = {
     await client.loadMnemonic(mnemonic);
   },
 
-  async getAssetPairs(): Promise<PureAssetPair[]> {
-    const client = await getClients();
-    return await client.getAssetPairs();
-  },
-
-  async getTokens(): Promise<PureTokenInfo[]> {
+  async getTokens(): Promise<TokenInfos> {
     const client = await getClients();
     return await client.getTokens();
   },
