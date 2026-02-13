@@ -71,10 +71,7 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
 
       // Get coordinator funding calldata from SDK
       console.log("Getting coordinator funding calldata...");
-      const funding = await api.getCoordinatorFundingCallData(
-        swapId,
-        tokenDecimals,
-      );
+      const funding = await api.getCoordinatorFundingCallData(swapId);
 
       // Step 1: Approve source token to coordinator
       console.log("Step 1: Approving source token to coordinator...");

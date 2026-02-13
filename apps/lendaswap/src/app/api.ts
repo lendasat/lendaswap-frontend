@@ -1,15 +1,12 @@
 // Re-export types from SDK - single source of truth
 import {
   type BtcToArkadeSwapResponse,
-  type BtcToEvmSwapResponse,
   type CoordinatorFundingCallData,
   type components,
-  type EvmToBtcSwapResponse,
   type GetSwapResponse,
   getUsdPrices,
   IdbSwapStorage,
   IdbWalletStorage,
-  type OnchainToEvmSwapResponse,
   type TokenInfo as PureTokenInfo,
   type QuoteResponse,
   type RefundResult,
@@ -29,7 +26,6 @@ export type ArkadeToEvmSwapResponse =
   components["schemas"]["ArkadeToEvmSwapResponse"];
 export type EvmToArkadeSwapResponse =
   components["schemas"]["EvmToArkadeSwapResponse"];
-export type TokenSummary = components["schemas"]["TokenSummary"];
 export type EvmToArkadeGenericSwapResponse =
   components["schemas"]["EvmToArkadeGenericSwapResponse"];
 
@@ -39,9 +35,6 @@ export type {
   CoordinatorFundingCallData,
   GetSwapResponse,
   PureTokenInfo,
-  BtcToEvmSwapResponse,
-  EvmToBtcSwapResponse,
-  OnchainToEvmSwapResponse,
   QuoteResponse,
   RefundResult,
   StoredSwap,
@@ -189,28 +182,15 @@ export const api = {
     return response.json();
   },
 
-  async getQuote(request: QuoteRequest): Promise<QuoteResponse> {
+  async getQuote(_request: QuoteRequest): Promise<QuoteResponse> {
     const client = await getClients();
-    return await client.getQuote(request.from, request.to, request.base_amount);
-  },
-
-  async createLightningToEvmSwap(
-    request: SwapRequest,
-    targetNetwork: "ethereum" | "polygon",
-  ): Promise<BtcToEvmSwapResponse> {
-    const referralCode = getReferralCode();
-    const client = await getClients();
-    const result = await client.createLightningToEvmSwap({
-      targetAddress: request.target_address,
-      targetToken: request.target_token,
-      targetChain: targetNetwork,
-      sourceAmount: request.source_amount
-        ? Number(request.source_amount)
-        : undefined,
-      targetAmount: request.target_amount,
-      referralCode: referralCode || undefined,
+    return await client.getQuote({
+      // FIXME: implement correctly
+      sourceChain: "Arbitrum",
+      sourceToken: "",
+      targetChain: "Arbitrum",
+      targetToken: "",
     });
-    return result.response;
   },
 
   async createArkadeToEvmSwap(request: {
@@ -302,39 +282,6 @@ export const api = {
     throw Error(`Unable to refund: ${id}. Due to ${result.message}`);
   },
 
-  async createEvmToArkadeSwap(
-    request: EvmToArkadeSwapRequest,
-    sourceNetwork: "ethereum" | "polygon",
-  ): Promise<EvmToBtcSwapResponse> {
-    const referralCode = getReferralCode();
-    const client = await getClients();
-    const result = await client.createEvmToArkadeSwap({
-      targetAddress: request.target_address,
-      sourceAmount: request.source_amount,
-      sourceToken: request.source_token,
-      userAddress: request.user_address,
-      sourceChain: sourceNetwork,
-      referralCode: referralCode || undefined,
-    });
-    return result.response;
-  },
-
-  async createEvmToLightningSwap(
-    request: EvmToLightningSwapRequest,
-    sourceNetwork: "ethereum" | "polygon",
-  ): Promise<EvmToBtcSwapResponse> {
-    const referralCode = getReferralCode();
-    const client = await getClients();
-    const result = await client.createEvmToLightningSwap({
-      bolt11Invoice: request.bolt11_invoice,
-      sourceToken: request.source_token,
-      userAddress: request.user_address,
-      sourceChain: sourceNetwork,
-      referralCode: referralCode || undefined,
-    });
-    return result.response;
-  },
-
   async createBitcoinToArkadeSwap(
     request: BtcToArkadeSwapRequest,
   ): Promise<BtcToArkadeSwapResponse> {
@@ -346,22 +293,6 @@ export const api = {
       referralCode: referralCode || undefined,
     });
     return result.response;
-  },
-
-  async createOnchainToEvmSwap(
-    request: OnchainToEvmSwapRequest,
-    targetNetwork: "ethereum" | "polygon",
-  ): Promise<OnchainToEvmSwapResponse> {
-    const referralCode = getReferralCode();
-    const client = await getClients();
-    const result = await client.createBitcoinToEvmSwap({
-      targetAddress: request.target_address,
-      targetToken: request.target_token,
-      targetChain: targetNetwork,
-      sourceAmount: Number(request.source_amount),
-      referralCode: referralCode || undefined,
-    });
-    return result.response as OnchainToEvmSwapResponse;
   },
 
   async claimBtcToArkadeVhtlc(swapId: string): Promise<string> {
@@ -396,10 +327,9 @@ export const api = {
 
   async getCoordinatorFundingCallData(
     swapId: string,
-    tokenDecimals: number,
   ): Promise<CoordinatorFundingCallData> {
     const client = await getClients();
-    return await client.getCoordinatorFundingCallData(swapId, tokenDecimals);
+    return await client.getCoordinatorFundingCallData(swapId);
   },
 
   async refundEvmSwap(
