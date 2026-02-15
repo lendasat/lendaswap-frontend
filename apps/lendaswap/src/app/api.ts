@@ -1,8 +1,9 @@
 // Re-export types from SDK - single source of truth
 import {
+  type ArkadeToEvmSwapResponse,
   type BtcToArkadeSwapResponse,
   type CoordinatorFundingCallData,
-  type components,
+  type EvmToArkadeSwapResponse,
   type GetSwapResponse,
   getUsdPrices,
   IdbSwapStorage,
@@ -20,14 +21,6 @@ import {
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
 import { getEvmTokenInfo } from "./utils/tokenUtils";
-
-// Derive new generic response types from SDK components
-export type ArkadeToEvmSwapResponse =
-  components["schemas"]["ArkadeToEvmSwapResponse"];
-export type EvmToArkadeSwapResponse =
-  components["schemas"]["EvmToArkadeSwapResponse"];
-export type EvmToArkadeGenericSwapResponse =
-  components["schemas"]["EvmToArkadeGenericSwapResponse"];
 
 // Re-export SDK types for use throughout the frontend
 export type {
@@ -221,7 +214,7 @@ export const api = {
     source_amount: bigint;
     source_token: TokenId;
     user_address: string;
-  }): Promise<EvmToArkadeGenericSwapResponse> {
+  }): Promise<EvmToArkadeSwapResponse> {
     const referralCode = getReferralCode();
     const evmToken = getEvmTokenInfo(request.source_token);
     if (!evmToken) {
