@@ -3,7 +3,7 @@ import {
   isArkade,
   isEvmToken,
   isLightning,
-  type TokenId,
+  type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { ConnectKitButton } from "connectkit";
 import { isAddress } from "ethers";
@@ -21,7 +21,7 @@ import { isValidSpeedWalletContext } from "../../utils/speedWallet";
 interface AddressInputProps {
   value: string;
   onChange: (value: string) => void;
-  targetToken: TokenId;
+  targetToken?: TokenInfo;
   className?: string;
   setAddressIsValid: (valid: boolean) => void;
   setBitcoinAmount: (amount: number) => void;
@@ -37,13 +37,13 @@ export function AddressInput({
   setBitcoinAmount,
   disabled = false,
 }: AddressInputProps) {
-  const isEvmTarget = isEvmToken(targetToken);
+  const isEvmTarget = targetToken ? isEvmToken(targetToken.chain) : false;
   const { address, isConnected } = useAccount();
   const [validationError, setValidationError] = useState<string>("");
   const isSpeedWallet = isValidSpeedWalletContext();
 
   useEffect(() => {
-    if (!value) {
+    if (!value || !targetToken) {
       setValidationError("");
       return;
     }
@@ -107,17 +107,19 @@ export function AddressInput({
   }, [value, targetToken, isEvmTarget, setAddressIsValid, setBitcoinAmount]);
 
   const getPlaceholder = () => {
-    switch (targetToken) {
-      case "btc_lightning":
+    switch (targetToken?.chain) {
+      case "Lightning":
         return "BOLT11 invoice or Lightning address (LNURL)";
-      case "btc_arkade":
+      case "Arkade":
         return "Provide an Arkade address";
-      case "usdc_pol":
-      case "usdt0_pol":
+      case "Polygon":
         return "Provide a Polygon address";
-      case "usdc_eth":
-      case "usdt_eth":
-        return "Provide an Ethereum address";
+      case "Ethereum":
+        return "Provide a Ethereum address";
+      case "Arbitrum":
+        return "Provide a Arbitrum address";
+      case "Bitcoin":
+        return "Provide a Bitcoin address";
     }
   };
 
