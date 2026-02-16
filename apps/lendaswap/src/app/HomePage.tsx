@@ -31,10 +31,25 @@ function buildQueryParams(
   return qs ? `?${qs}` : "";
 }
 
+const DEFAULT_USDC_POLYGON =
+  "polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
+const DEFAULT_BTC_LIGHTNING = "lightning:btc";
+
+/** Check if a source→target pair is a valid swap direction */
+function isValidPair(source: TokenInfo, target: TokenInfo): boolean {
+  // EVM → EVM: not allowed
+  if (isEvmToken(source.chain) && isEvmToken(target.chain)) return false;
+  // BTC → BTC: only onchain → arkade is allowed
+  if (isBtc(source) && isBtc(target)) {
+    return isBtcOnchain(source) && isArkade(target);
+  }
+  return true;
+}
+
 // Valid targets for a given source:
 //  - BTC onchain → Arkade + all EVM tokens
 //  - BTC (arkade/lightning) → all EVM tokens
-//  - EVM token → all BTC tokens (except onchain)
+//  - EVM token → all BTC tokens
 function getAvailableTargetAssets(
   btcTokens: TokenInfo[],
   evmTokens: TokenInfo[],
@@ -48,16 +63,21 @@ function getAvailableTargetAssets(
     return sort([...allTokens]);
   }
 
+  if (isBtcOnchain(sourceAsset)) {
+    // Onchain BTC → EVM tokens + Arkade
+    const arkadeTokens = btcTokens.filter((t) => isArkade(t));
+    return sort([...evmTokens, ...arkadeTokens]);
+  }
+
   if (isBtc(sourceAsset)) {
+    // Other BTC (lightning, arkade) → EVM tokens only
     return sort([...evmTokens]);
   }
 
   if (isEvmToken(sourceAsset.chain)) {
-    // EVM → BTC (arkade, lightning); not onchain
     return sort([...btcTokens]);
   }
 
-  // fallback: all BTC tokens
   return sort([...allTokens]);
 }
 
@@ -354,14 +374,15 @@ export function HomePage() {
                 availableAssets={allAvailableTokens}
                 label="sell"
                 onChange={(asset) => {
-                  if (targetAsset) {
+                  const src = formatTokenUrl(asset);
+                  if (targetAsset && isValidPair(asset, targetAsset)) {
                     navigateToTokens(asset, targetAsset);
                   } else {
-                    const src = formatTokenUrl(asset);
-                    navigate(
-                      `/${src}/polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359`,
-                      { replace: true },
-                    );
+                    // Invalid pair or no target — pick a sensible default
+                    const defaultTarget = isBtc(asset)
+                      ? DEFAULT_USDC_POLYGON
+                      : DEFAULT_BTC_LIGHTNING;
+                    navigate(`/${src}/${defaultTarget}`, { replace: true });
                   }
                 }}
               />
@@ -419,11 +440,15 @@ export function HomePage() {
                 availableAssets={availableTargetTokens}
                 value={targetAsset}
                 onChange={(asset) => {
-                  if (sourceAsset) {
+                  const tgt = formatTokenUrl(asset);
+                  if (sourceAsset && isValidPair(sourceAsset, asset)) {
                     navigateToTokens(sourceAsset, asset);
                   } else {
-                    const target = formatTokenUrl(asset);
-                    navigate(`/lightning:btc/${target}`, { replace: true });
+                    // Invalid pair or no source — pick a sensible default
+                    const defaultSource = isBtc(asset)
+                      ? DEFAULT_USDC_POLYGON
+                      : DEFAULT_BTC_LIGHTNING;
+                    navigate(`/${defaultSource}/${tgt}`, { replace: true });
                   }
                 }}
                 label="buy"
