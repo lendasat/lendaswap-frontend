@@ -8,7 +8,7 @@ import {
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { ArrowDown } from "lucide-react";
-import { api } from "./api";
+import { api, type QuoteResponse } from "./api";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { useAsync } from "react-use";
@@ -145,6 +145,64 @@ export function HomePage() {
     sourceAsset,
   );
 
+  // Fetch a baseline quote whenever the asset pair changes (1000 source units)
+  const [quote, setQuote] = useState<QuoteResponse | undefined>();
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+
+  const sourceTokenId = sourceAsset?.token_id;
+  const sourceChain = sourceAsset?.chain;
+  const sourceDecimals = sourceAsset?.decimals;
+  const isSourceBtc = sourceAsset ? isBtc(sourceAsset) : false;
+  const targetTokenId = targetAsset?.token_id;
+  const targetChain = targetAsset?.chain;
+
+  useEffect(() => {
+    if (!sourceTokenId || !sourceChain || !targetTokenId || !targetChain) {
+      setQuote(undefined);
+      return;
+    }
+
+    // BTC: 0.1 BTC = 10_000_000 sats; everything else: 1 display unit (e.g. 1_000_000 for USDC)
+    const quoteAmount = isSourceBtc ? 10_000_000 : 10 ** (sourceDecimals ?? 0);
+
+    setIsLoadingQuote(true);
+    const aborted = { current: false };
+
+    api
+      .getQuote({
+        sourceChain,
+        sourceToken: sourceTokenId,
+        targetChain,
+        targetToken: targetTokenId,
+        sourceAmount: quoteAmount,
+      })
+      .then((q) => {
+        if (!aborted.current) setQuote(q);
+      })
+      .catch((err) => {
+        if (!aborted.current) {
+          console.error("Quote fetch failed:", err);
+          setQuote(undefined);
+        }
+      })
+      .finally(() => {
+        if (!aborted.current) setIsLoadingQuote(false);
+      });
+
+    return () => {
+      aborted.current = true;
+    };
+  }, [
+    sourceTokenId,
+    sourceChain,
+    targetTokenId,
+    targetChain,
+    isSourceBtc,
+    sourceDecimals,
+  ]);
+
+  console.log(`New quote ${JSON.stringify(quote)}`);
+
   // Debounced sync of amounts to URL (avoids navigating on every keystroke)
   const { sourceToken: urlSource, targetToken: urlTarget } = params;
   useEffect(() => {
@@ -175,7 +233,7 @@ export function HomePage() {
     );
   }
 
-  const isInitialLoading = tokensLoading;
+  const isInitialLoading = tokensLoading || isLoadingQuote;
 
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
