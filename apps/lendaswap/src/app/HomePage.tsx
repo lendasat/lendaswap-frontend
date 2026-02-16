@@ -15,6 +15,7 @@ import { useAsync } from "react-use";
 import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
 import { AddressInput } from "./components/AddressInput";
 import { useWalletBridge } from "./WalletBridgeContext";
+import { Skeleton } from "#/components/ui/skeleton";
 
 // Build query string from amounts and target address
 function buildQueryParams(
@@ -448,40 +449,32 @@ export function HomePage() {
           }
         />
         {/*Fees - below inputs, above Continue button*/}
-        {/*{isLoadingQuote ? (*/}
-        {/*  <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">*/}
-        {/*    <div className="flex flex-wrap justify-between gap-y-0.5">*/}
-        {/*      <div className="flex items-center gap-1">*/}
-        {/*        Network Fee: <Skeleton className="h-3 w-24" />*/}
-        {/*      </div>*/}
-        {/*      <div className="flex items-center gap-1">*/}
-        {/*        Protocol Fee: <Skeleton className="h-3 w-32" />*/}
-        {/*      </div>*/}
-        {/*    </div>*/}
-        {/*    {sourceAsset && isEvmToken(sourceAsset.chain) && isConnected && (*/}
-        {/*      <div>Gas Fee: check in wallet when signing</div>*/}
-        {/*    )}*/}
-        {/*  </div>*/}
-        {/*) : quote ? (*/}
-        {/*  <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">*/}
-        {/*    <div className="flex flex-wrap justify-between gap-y-0.5">*/}
-        {/*      <div>*/}
-        {/*        Network Fee:{" "}*/}
-        {/*        {(Number(quote.network_fee) / 100_000_000.0).toFixed(8)} BTC*/}
-        {/*      </div>*/}
-        {/*      <div>*/}
-        {/*        Protocol Fee:{" "}*/}
-        {/*        {(Number(quote.protocol_fee) / 100_000_000.0).toFixed(8)} BTC (*/}
-        {/*        {(quote.protocol_fee_rate * 100).toFixed(2)}%)*/}
-        {/*      </div>*/}
-        {/*    </div>*/}
-        {/*    {sourceAsset &&*/}
-        {/*      isEvmToken(sourceAsset.chain) &&*/}
-        {/*      isWeb3WalletConnected && (*/}
-        {/*        <div>Gas Fee: check in wallet when signing</div>*/}
-        {/*      )}*/}
-        {/*  </div>*/}
-        {/*) : null}*/}
+        {isLoadingQuote ? (
+          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
+            <div className="flex flex-wrap justify-between gap-y-0.5">
+              <div className="flex items-center gap-1">
+                Network Fee: <Skeleton className="h-3 w-24" />
+              </div>
+              <div className="flex items-center gap-1">
+                Protocol Fee: <Skeleton className="h-3 w-32" />
+              </div>
+            </div>
+          </div>
+        ) : quote ? (
+          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
+            <div className="flex flex-wrap justify-between gap-y-0.5">
+              <div>
+                Network Fee:{" "}
+                {(Number(quote.network_fee) / 100_000_000.0).toFixed(8)} BTC
+              </div>
+              <div>
+                Protocol Fee:{" "}
+                {(Number(quote.protocol_fee) / 100_000_000.0).toFixed(8)} BTC (
+                {(quote.protocol_fee_rate * 100).toFixed(2)}%)
+              </div>
+            </div>
+          </div>
+        ) : null}
         {/*<div className="pt-2">*/}
         {/*  Show Connect Wallet button when: 1. EVM source (user needs to pay gas*/}
         {/*  to send EVM tokens) 2. BTC source + Ethereum target (user needs to pay*/}
