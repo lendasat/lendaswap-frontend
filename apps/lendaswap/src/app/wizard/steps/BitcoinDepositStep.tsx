@@ -1,4 +1,8 @@
-import { isArkade, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
+import {
+  type BitcoinToEvmSwapResponse,
+  isArkade,
+  isEvmToken,
+} from "@lendasat/lendaswap-sdk-pure";
 import { CheckCheck, Clock, Copy, ExternalLink, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useState } from "react";
@@ -7,20 +11,18 @@ import { Button } from "#/components/ui/button";
 import {
   type BtcToArkadeSwapResponse,
   getTokenNetworkName,
-  getTokenSymbol,
-  type OnchainToEvmSwapResponse,
   type TokenInfo,
 } from "../../api";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 
 interface SendOnchainBtcStepProps {
-  swapData: BtcToArkadeSwapResponse | OnchainToEvmSwapResponse;
+  swapData: BitcoinToEvmSwapResponse | BtcToArkadeSwapResponse;
   swapId: string;
   // the token which is being swapped
   targetTokenInfo: TokenInfo;
 }
 
-export function SendOnchainBtcStep({
+export function BitcoinDepositStep({
   swapData,
   swapId,
   targetTokenInfo,
@@ -89,12 +91,12 @@ export function SendOnchainBtcStep({
           <div className="relative">
             <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
               <div className="w-5 h-5 flex items-center justify-center">
-                {getTokenIcon("btc_onchain")}
+                {getTokenIcon(swapData.source_token)}
               </div>
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
               <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
-                {getTokenNetworkIcon("btc_onchain")}
+                {getTokenNetworkIcon(swapData.source_token)}
               </div>
             </div>
           </div>
@@ -187,14 +189,14 @@ export function SendOnchainBtcStep({
               </span>
             </div>
           )}
-          {isEvmToken(swapData.target_token) && (
+          {isEvmToken(swapData.target_token.chain) && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">
                 {(swapData.target_amount as number).toFixed(
                   targetTokenInfo.decimals,
                 )}{" "}
-                {getTokenSymbol(swapData.target_token)} on{" "}
+                {swapData.target_token.symbol} on{" "}
                 {getTokenNetworkName(swapData.target_token)}
               </span>
             </div>
