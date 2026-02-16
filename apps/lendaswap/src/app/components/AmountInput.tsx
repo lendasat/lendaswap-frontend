@@ -4,17 +4,17 @@ import { Skeleton } from "#/components/ui/skeleton";
 type InputMode = "native" | "usd";
 
 interface AmountInputProps {
-  /** Current amount value in native tokens (number) */
+  /** Current amount in the token's smallest unit (e.g. sats for BTC, 10^-6 for USDC) */
   value: number | undefined;
-  /** Called when user changes the input with the parsed native token value */
+  /** Called with the amount in smallest unit when the user edits the input */
   onChange: (value: number | undefined) => void;
-  /** Maximum decimal places allowed for native token input */
+  /** Number of decimal places for this token (8 for BTC, 6 for USDC, etc.) */
   decimals: number | undefined;
   /** Whether to show "$" prefix (for usd mode) */
   showCurrencyPrefix?: boolean;
   /** Whether the input is loading */
   isLoading?: boolean;
-  /** Price of one token in USD (e.g., 1 for USDC, ~100000 for BTC) */
+  /** Price of one whole token in USD (e.g., 1 for USDC, ~100000 for BTC) */
   usdPerToken: number;
   /** The token symbol (e.g., "USDC", "BTC") */
   tokenSymbol: string | undefined;
@@ -71,35 +71,37 @@ export function AmountInput({
   // Internal state for input mode (native token vs USD)
   const [inputMode, setInputMode] = useState<InputMode>("native");
 
-  // Calculate USD value from native value
-  const usdValue = value !== undefined ? value * usdPerToken : undefined;
+  // Conversion factor: smallest-unit → display (e.g. 10^8 for BTC, 10^6 for USDC)
+  const divisor = 10 ** (decimals ?? 0);
+
+  // Display value = smallest-unit value / divisor
+  const displayValue = value !== undefined ? value / divisor : undefined;
+
+  // Calculate USD value from display value (1 whole token = usdPerToken USD)
+  const usdValue =
+    displayValue !== undefined ? displayValue * usdPerToken : undefined;
 
   // Sync internal state when external value changes (e.g., from calculations)
   // or when mode changes
   useEffect(() => {
-    if (value === undefined) {
-      // Only clear if the current input is a valid number that differs
-      // Don't clear if user is actively typing something like "50."
+    if (displayValue === undefined) {
       const currentNum = Number.parseFloat(inputValue);
       if (!Number.isNaN(currentNum)) {
         setInputValue("");
       }
     } else {
-      // Calculate the display value based on mode
-      const displayValue = inputMode === "native" ? value : value * usdPerToken;
+      // Calculate what the input should show based on mode
+      const shown =
+        inputMode === "native" ? displayValue : displayValue * usdPerToken;
 
       // Only update if the numeric value actually differs
       // This prevents overwriting "50.0" with "50" while user types
       const currentNum = Number.parseFloat(inputValue);
-      if (
-        Number.isNaN(currentNum) ||
-        Math.abs(currentNum - displayValue) > 0.0000001
-      ) {
-        // Use formatNumber to avoid scientific notation for very small numbers
-        setInputValue(formatNumber(displayValue));
+      if (Number.isNaN(currentNum) || Math.abs(currentNum - shown) > 1e-10) {
+        setInputValue(formatNumber(shown, decimals ?? 8));
       }
     }
-  }, [value, inputMode, usdPerToken, inputValue]);
+  }, [displayValue, inputMode, usdPerToken, inputValue, decimals]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value.replace(/[^0-9.]/g, "");
@@ -126,16 +128,14 @@ export function AmountInput({
       const parsed = Number.parseFloat(input);
       if (!Number.isNaN(parsed)) {
         if (inputMode === "usd") {
-          // Convert USD to native tokens: nativeAmount = usdAmount / usdPerToken
-          const nativeAmount = usdPerToken > 0 ? parsed / usdPerToken : 0;
-          onChange(nativeAmount);
+          // Convert USD → display → smallest unit
+          const native = usdPerToken > 0 ? parsed / usdPerToken : 0;
+          onChange(Math.round(native * divisor));
         } else {
-          // Native mode: pass the value directly
-          onChange(parsed);
+          // Native mode: convert display value → smallest unit
+          onChange(Math.round(parsed * divisor));
         }
       }
-      // If input ends with "." or is otherwise not a complete number,
-      // we keep the string state but don't notify parent yet
     }
   };
 
@@ -144,13 +144,11 @@ export function AmountInput({
       const newMode = prev === "native" ? "usd" : "native";
 
       // Convert the current input value to the new mode's format
-      if (value !== undefined) {
+      if (displayValue !== undefined) {
         if (newMode === "usd") {
-          // Switching to USD mode: show USD value (2 decimal places for USD)
-          setInputValue(formatNumber(value * usdPerToken, 2));
+          setInputValue(formatNumber(displayValue * usdPerToken, 2));
         } else {
-          // Switching to native mode: show native value
-          setInputValue(formatNumber(value));
+          setInputValue(formatNumber(displayValue, decimals ?? 8));
         }
       }
 
@@ -162,8 +160,8 @@ export function AmountInput({
   const isBtc = tokenSymbol === "BTC";
   const usdDisplay = `≈ $${formatUsd(usdValue)}`;
   const tokenDisplay = isBtc
-    ? `≈ ${formatBtc(value)} BTC`
-    : `≈ ${formatUsd(value)} ${tokenSymbol}`;
+    ? `≈ ${formatBtc(displayValue)} BTC`
+    : `≈ ${formatUsd(displayValue)} ${tokenSymbol}`;
 
   // Toggle shows the "alternate" representation:
   // - In native mode: show USD equivalent
