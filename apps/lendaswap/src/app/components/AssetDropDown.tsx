@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "#/components/ui/dialog";
@@ -189,7 +190,7 @@ export function AssetDropDown({
           <div className="space-y-0.5">
             {filteredAssets.map((asset) => (
               <button
-                key={asset.toString()}
+                key={`${asset.chain}:${asset.token_id}`}
                 type="button"
                 onClick={() => handleSelect(asset)}
                 className="flex items-center gap-3 w-full px-2 py-3 rounded-xl hover:bg-muted/70 transition-colors text-left"
@@ -198,8 +199,7 @@ export function AssetDropDown({
                 <div className="relative">
                   <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
                     <div className="w-8 h-8 flex items-center justify-center">
-                      {/*FIXME*/}
-                      {/*{getTokenIcon(asset)}*/}
+                      {getTokenIcon(asset)}
                     </div>
                   </div>
                   {/* Network badge */}
@@ -288,6 +288,7 @@ export function AssetDropDown({
             </DialogHeader>
             {tokenListContent}
           </DialogContent>
+          <DialogDescription>{/*  empty */}</DialogDescription>
         </Dialog>
       )}
     </>
