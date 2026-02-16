@@ -49,9 +49,6 @@ export function AddressInput({
     }
 
     setAddressIsValid(true);
-    console.log(
-      `isArkade(targetToken) ${isArkade(targetToken)} ${JSON.stringify(targetToken)}`,
-    );
 
     if (isEvmTarget) {
       if (!isAddress(value)) {
