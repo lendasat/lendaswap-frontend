@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAccount } from "wagmi";
 import {
@@ -77,9 +77,11 @@ export function HomePage() {
     console.error(tokensLoadingError);
   }
 
-  const availableBtcTokens = maybeAvailableTokens?.btc_tokens || [];
-  const availableEvmTokens = maybeAvailableTokens?.evm_tokens || [];
-  const allAvailableTokens = [...availableBtcTokens, ...availableEvmTokens];
+  const allAvailableTokens = useMemo(() => {
+    const btc = maybeAvailableTokens?.btc_tokens || [];
+    const evm = maybeAvailableTokens?.evm_tokens || [];
+    return [...btc, ...evm];
+  }, [maybeAvailableTokens]);
 
   const sourceAsset = allAvailableTokens.find(
     (t) =>
