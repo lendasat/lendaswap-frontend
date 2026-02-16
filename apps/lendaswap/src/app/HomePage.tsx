@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAccount } from "wagmi";
-import {
-  BTC_ARKADE_INFO,
-  isArkade,
-  isBtc,
-  isBtcOnchain,
-  isEvmToken,
-  type TokenInfo,
-} from "@lendasat/lendaswap-sdk-pure";
+import { isBtcOnchain, type TokenInfo } from "@lendasat/lendaswap-sdk-pure";
 import { ArrowDown } from "lucide-react";
 import { api } from "./api";
 import { AmountInput } from "./components/AmountInput";
@@ -23,6 +16,44 @@ function buildAmountParams(srcAmt?: number, tgtAmt?: number): string {
   if (tgtAmt != null) params.set("targetAmount", String(tgtAmt));
   const qs = params.toString();
   return qs ? `?${qs}` : "";
+}
+
+// Valid targets for a given source:
+//  - BTC onchain → Arkade + all EVM tokens
+//  - BTC (arkade/lightning) → all EVM tokens
+//  - EVM token → all BTC tokens (except onchain)
+function getAvailableTargetAssets(
+  btcTokens: TokenInfo[],
+  evmTokens: TokenInfo[],
+  allTokens: TokenInfo[],
+  sourceAsset?: TokenInfo,
+): TokenInfo[] {
+  const sort = (list: TokenInfo[]) =>
+    list.sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+  if (!sourceAsset) {
+    return sort([...allTokens]);
+  }
+
+  if (
+    sourceAsset.chain === "Arkade" ||
+    sourceAsset.chain === "Bitcoin" ||
+    sourceAsset.chain === "Lightning"
+  ) {
+    return sort([...evmTokens]);
+  }
+
+  if (
+    sourceAsset.chain === "Ethereum" ||
+    sourceAsset.chain === "Polygon" ||
+    sourceAsset.chain === "Arbitrum"
+  ) {
+    // EVM → BTC (arkade, lightning); not onchain
+    return sort([...btcTokens]);
+  }
+
+  // fallback: all BTC tokens
+  return sort([...allTokens]);
 }
 
 export function HomePage() {
@@ -85,13 +116,20 @@ export function HomePage() {
 
   const sourceAsset = allAvailableTokens.find(
     (t) =>
-      t.chain === urlSourceToken?.chain &&
-      t.token_id === urlSourceToken?.tokenId,
+      t.chain.toLowerCase() === urlSourceToken?.chain.toLowerCase() &&
+      t.token_id.toLowerCase() === urlSourceToken?.tokenId.toLowerCase(),
   );
   const targetAsset = allAvailableTokens.find(
     (t) =>
-      t.chain === urlTargetToken?.chain &&
-      t.token_id === urlTargetToken?.tokenId,
+      t.chain.toLowerCase() === urlTargetToken?.chain.toLowerCase() &&
+      t.token_id.toLowerCase() === urlTargetToken?.tokenId.toLowerCase(),
+  );
+
+  const availableTargetTokens = getAvailableTargetAssets(
+    maybeAvailableTokens?.btc_tokens || [],
+    maybeAvailableTokens?.evm_tokens || [],
+    allAvailableTokens,
+    sourceAsset,
   );
 
   // Debounced sync of amounts to URL (avoids navigating on every keystroke)
@@ -107,14 +145,6 @@ export function HomePage() {
     return () => clearTimeout(timeout);
   }, [sourceAmount, targetAmount, urlSource, urlTarget, navigate]);
 
-  // Default fallback tokens for auto-correction
-  const defaultEvmToken = allAvailableTokens.find(
-    (t) => t.token_id === "usdc_pol",
-  );
-  const defaultBtcToken = allAvailableTokens.find(
-    (t) => t.token_id === BTC_ARKADE_INFO.token_id,
-  );
-
   // Navigate to a new source/target token pair (URL is the source of truth)
   function navigateToTokens(
     source: TokenInfo,
@@ -123,6 +153,7 @@ export function HomePage() {
     tgtAmt?: number,
   ) {
     const path = `/${formatTokenUrl(source)}/${formatTokenUrl(target)}`;
+    console.log(`Navigate to: ${path}`);
     navigate(
       `${path}${buildAmountParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount)}`,
       {
@@ -130,8 +161,6 @@ export function HomePage() {
       },
     );
   }
-
-  console.log(`I'm re-rendered`);
 
   const isInitialLoading = tokensLoading;
 
@@ -198,48 +227,14 @@ export function HomePage() {
                 availableAssets={allAvailableTokens}
                 label="sell"
                 onChange={(asset) => {
-                  // Special case: btc_onchain can be swapped to btc_arkade or EVM tokens
-                  if (isBtcOnchain(asset)) {
-                    const validTarget =
-                      targetAsset &&
-                      (isArkade(targetAsset) || isEvmToken(targetAsset.chain));
-                    const newTarget = validTarget
-                      ? targetAsset
-                      : (defaultEvmToken ?? asset);
-                    navigateToTokens(asset, newTarget);
-                    return;
-                  }
-
-                  const isEvmAsset = isEvmToken(asset.chain);
-                  const isBtcAsset = isBtc(asset);
-                  const isEvmTarget = targetAsset
-                    ? isEvmToken(targetAsset.chain)
-                    : false;
-                  const isBtcTarget = targetAsset ? isBtc(targetAsset) : false;
-
-                  if (
-                    targetAsset &&
-                    ((isEvmAsset && isBtcTarget) || (isBtcAsset && isEvmTarget))
-                  ) {
-                    navigateToTokens(asset, targetAsset);
-                    return;
-                  }
-
-                  // EVM source + EVM target = invalid, switch target to BTC
-                  if (isEvmAsset && isEvmTarget) {
-                    navigateToTokens(asset, defaultBtcToken ?? BTC_ARKADE_INFO);
-                    return;
-                  }
-
-                  // BTC source + BTC target = invalid, switch target to default stablecoin
-                  if (isBtcAsset && isBtcTarget && defaultEvmToken) {
-                    navigateToTokens(asset, defaultEvmToken);
-                    return;
-                  }
-
-                  // Fallback: just update source, keep target if available
                   if (targetAsset) {
                     navigateToTokens(asset, targetAsset);
+                  } else {
+                    const src = formatTokenUrl(asset);
+                    navigate(
+                      `/${src}/polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359`,
+                      { replace: true },
+                    );
                   }
                 }}
               />
@@ -294,39 +289,15 @@ export function HomePage() {
             />
             <div className="shrink-0 pt-1">
               <AssetDropDown
-                availableAssets={allAvailableTokens}
+                availableAssets={availableTargetTokens}
                 value={targetAsset}
                 onChange={(asset) => {
-                  if (!sourceAsset) return;
-
-                  // Special case: when source is btc_onchain, allow btc_arkade or EVM tokens
-                  if (isBtcOnchain(sourceAsset)) {
-                    if (isArkade(asset) || isEvmToken(asset.chain)) {
-                      navigateToTokens(sourceAsset, asset);
-                    }
-                    return;
+                  if (sourceAsset) {
+                    navigateToTokens(sourceAsset, asset);
+                  } else {
+                    const target = formatTokenUrl(asset);
+                    navigate(`/lightning:btc/${target}`, { replace: true });
                   }
-
-                  // Check if new target is compatible with current source
-                  const isBtcTarget = isBtc(asset);
-                  const isBtcSource = isBtc(sourceAsset);
-                  const isEvmTarget = isEvmToken(asset.chain);
-                  const isEvmSource = isEvmToken(sourceAsset.chain);
-
-                  // If both are BTC, auto-switch source to EVM
-                  if (isBtcTarget && isBtcSource && defaultEvmToken) {
-                    navigateToTokens(defaultEvmToken, asset);
-                    return;
-                  }
-
-                  // If both are EVM, auto-switch source to BTC
-                  if (isEvmTarget && isEvmSource) {
-                    navigateToTokens(defaultBtcToken ?? BTC_ARKADE_INFO, asset);
-                    return;
-                  }
-
-                  // Compatible pair, just update target
-                  navigateToTokens(sourceAsset, asset);
                 }}
                 label="buy"
               />

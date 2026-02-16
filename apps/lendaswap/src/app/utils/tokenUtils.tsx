@@ -1,13 +1,9 @@
 import {
-  BTC_ARKADE,
-  BTC_LIGHTNING,
-  BTC_ONCHAIN,
   type Chain,
   isBtc,
   type TokenId,
   type TokenInfo,
   toChain,
-  tokenChain,
 } from "@lendasat/lendaswap-sdk-pure";
 import { TokenBTC } from "@web3icons/react";
 import { NetworkIcon, TokenIcon } from "@web3icons/react/dynamic";
@@ -134,71 +130,6 @@ export function getViemChainById(chainId: number): ViemChain | undefined {
   }
 }
 
-/**
- * Map TokenId → ERC-20 contract address + EVM chain ID.
- * Used to call the generic swap creation endpoints which require
- * tokenAddress and evmChainId instead of TokenId strings.
- */
-export const EVM_TOKEN_MAP: Record<
-  string,
-  { tokenAddress: string; evmChainId: number }
-> = {
-  usdc_pol: {
-    tokenAddress: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
-    evmChainId: 137,
-  },
-  usdc_arb: {
-    tokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-    evmChainId: 42161,
-  },
-  usdc_eth: {
-    tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    evmChainId: 1,
-  },
-  usdt_pol: {
-    tokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-    evmChainId: 137,
-  },
-  usdt_arb: {
-    tokenAddress: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
-    evmChainId: 42161,
-  },
-  usdt_eth: {
-    tokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    evmChainId: 1,
-  },
-  usdt0_pol: {
-    tokenAddress: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-    evmChainId: 137,
-  },
-  wbtc_pol: {
-    tokenAddress: "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
-    evmChainId: 137,
-  },
-  wbtc_eth: {
-    tokenAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-    evmChainId: 1,
-  },
-  wbtc_arb: {
-    tokenAddress: "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
-    evmChainId: 42161,
-  },
-  xaut_eth: {
-    tokenAddress: "0x68749665FF8D2d112Fa859AA293F07A622782F38",
-    evmChainId: 1,
-  },
-};
-
-/**
- * Look up ERC-20 contract address and chain ID for a given TokenId.
- * Returns undefined for non-EVM tokens (btc_*, pol_pol native).
- */
-export function getEvmTokenInfo(
-  tokenId: string,
-): { tokenAddress: string; evmChainId: number } | undefined {
-  return EVM_TOKEN_MAP[tokenId];
-}
-
 // Re-export token helpers from SDK
 export {
   isArbitrumToken,
@@ -259,36 +190,19 @@ export function getBlockexplorerAddressLink(
 }
 
 // ---------------------------------------------------------------------------
-// URL token format: "chain:address" (e.g., "lightning:btc", "polygon:0x3c49...")
+// URL token format: "chain:token_id" (e.g., "lightning:btc", "polygon:usdc_pol")
 // ---------------------------------------------------------------------------
 
-/** Parsed representation of a URL token string like "lightning:btc" or "polygon:0x3c49...". */
+/** Parsed representation of a URL token string like "lightning:btc" or "polygon:usdc_pol". */
 export interface UrlToken {
   /** Chain in canonical PascalCase (e.g., "Lightning", "Polygon"). */
   chain: Chain;
-  /** Resolved SDK TokenId (e.g., "btc_lightning", "0x3c49..._pol"). */
+  /** SDK TokenId (e.g., "btc", "usdc_pol"). */
   tokenId: TokenId;
 }
 
 /**
- * Resolve an EVM contract address to a TokenId using the EVM_TOKEN_MAP.
- * Returns undefined if the address is not found.
- */
-function resolveEvmTokenId(address: string): TokenId | undefined {
-  const lower = address.toLowerCase();
-  for (const [tokenId, info] of Object.entries(EVM_TOKEN_MAP)) {
-    if (info.tokenAddress.toLowerCase() === lower) {
-      return tokenId;
-    }
-  }
-  return undefined;
-}
-
-/**
- * Parse a URL token string like "lightning:btc" or "polygon:0x3c49..." into a {@link UrlToken}.
- *
- * - BTC tokens use "btc" as address: "lightning:btc" → tokenId "btc_lightning"
- * - EVM tokens use contract addresses: "polygon:0x3c49..." → tokenId "usdc_pol"
+ * Parse a URL token string like "lightning:btc" or "polygon:usdc_pol" into a {@link UrlToken}.
  *
  * Returns `undefined` if the string is not a valid URL token.
  */
@@ -297,31 +211,18 @@ export function parseUrlToken(raw: string): UrlToken | undefined {
   if (idx === -1) return undefined;
 
   const chainStr = raw.substring(0, idx).toLowerCase();
-  const address = raw.substring(idx + 1);
+  const tokenId = raw.substring(idx + 1);
   const chain = toChain(chainStr);
 
-  if (!address) return undefined;
+  if (!tokenId) return undefined;
 
-  // BTC tokens: "btc" resolves to the chain-specific token_id
-  if (address === "btc") {
-    switch (chain) {
-      case "Lightning":
-        return { chain, tokenId: "btc" };
-      case "Arkade":
-        return { chain, tokenId: "btc" };
-      case "Bitcoin":
-        return { chain, tokenId: "btc" };
-    }
-  }
-
-  return { chain, tokenId: address };
+  return { chain, tokenId };
 }
 
 /**
- * Format a TokenInfo into URL token string format "chain:address".
+ * Format a TokenInfo into URL token string format "chain:token_id".
  *
- * - BTC tokens: "lightning:btc", "arkade:btc", "bitcoin:btc"
- * - EVM tokens: "polygon:0x3c49...", "ethereum:0xA0b8..."
+ * Examples: "lightning:btc", "polygon:usdc_pol", "ethereum:xaut_eth"
  *
  * Round-trips correctly with {@link parseUrlToken}.
  */
@@ -329,27 +230,5 @@ export function formatTokenUrl(token: TokenInfo): string {
   if (isBtc(token)) {
     return `${token.chain.toLowerCase()}:btc`;
   }
-  const evmInfo = EVM_TOKEN_MAP[token.token_id];
-  if (evmInfo) {
-    return `${token.chain.toLowerCase()}:${evmInfo.tokenAddress}`;
-  }
   return `${token.chain.toLowerCase()}:${token.token_id}`;
-}
-
-/**
- * Format a TokenId into URL token string format "chain:address".
- *
- * Round-trips correctly with {@link parseUrlToken}.
- */
-export function formatUrlToken(tokenId: TokenId): string {
-  if (tokenId === BTC_LIGHTNING) return "lightning:btc";
-  if (tokenId === BTC_ARKADE) return "arkade:btc";
-  if (tokenId === BTC_ONCHAIN) return "bitcoin:btc";
-
-  const evmInfo = EVM_TOKEN_MAP[tokenId];
-  const chain = tokenChain(tokenId).toLowerCase();
-  if (evmInfo) {
-    return `${chain}:${evmInfo.tokenAddress}`;
-  }
-  return `${chain}:${tokenId}`;
 }
