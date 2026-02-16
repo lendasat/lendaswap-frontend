@@ -95,16 +95,17 @@ export function HomePage() {
   );
 
   // Debounced sync of amounts to URL (avoids navigating on every keystroke)
+  const { sourceToken: urlSource, targetToken: urlTarget } = params;
   useEffect(() => {
+    if (!urlSource || !urlTarget) return;
     const timeout = setTimeout(() => {
-      if (!params.sourceToken || !params.targetToken) return;
-      const path = `/${params.sourceToken}/${params.targetToken}`;
+      const path = `/${urlSource}/${urlTarget}`;
       navigate(`${path}${buildAmountParams(sourceAmount, targetAmount)}`, {
         replace: true,
       });
     }, 500);
     return () => clearTimeout(timeout);
-  }, [sourceAmount, targetAmount, params, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sourceAmount, targetAmount, urlSource, urlTarget, navigate]);
 
   // Default fallback tokens for auto-correction
   const defaultEvmToken = allAvailableTokens.find(
@@ -129,6 +130,8 @@ export function HomePage() {
       },
     );
   }
+
+  console.log(`I'm re-rendered`);
 
   const isInitialLoading = tokensLoading;
 
