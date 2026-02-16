@@ -30,7 +30,11 @@ const config = createConfig(
 
 const queryClient = new QueryClient();
 
-// PostHog configuration
+// PostHog configuration – disable via VITE_POSTHOG_DISABLED=true or
+// localStorage.setItem("posthog_disabled", "true") in the browser console.
+const posthogDisabled =
+  import.meta.env.VITE_POSTHOG_DISABLED === "true" ||
+  localStorage.getItem("posthog_disabled") === "true";
 const posthogKey =
   import.meta.env.VITE_POSTHOG_API_KEY ||
   "phc_3MrZhmMPhgvjtBN54e9aDhV2iVAom8t3ocDizQxofyw";
@@ -42,10 +46,18 @@ const posthogOptions = createPostHogConfig(posthogHost);
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 // Initialize browser wallet WASM before rendering
+const Analytics = posthogDisabled
+  ? ({ children }: { children: React.ReactNode }) => <>{children}</>
+  : ({ children }: { children: React.ReactNode }) => (
+      <PostHogProvider apiKey={posthogKey} options={posthogOptions}>
+        <PostHogSuperProperties />
+        {children}
+      </PostHogProvider>
+    );
+
 root.render(
   <StrictMode>
-    <PostHogProvider apiKey={posthogKey} options={posthogOptions}>
-      <PostHogSuperProperties />
+    <Analytics>
       <BrowserRouter>
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
@@ -68,6 +80,6 @@ root.render(
           </QueryClientProvider>
         </WagmiProvider>
       </BrowserRouter>
-    </PostHogProvider>
+    </Analytics>
   </StrictMode>,
 );
