@@ -42,7 +42,7 @@ function getAvailableTargetAssets(
     return sort([...allTokens]);
   }
 
-  if (isBtc(sourceAsset.chain)) {
+  if (isBtc(sourceAsset)) {
     return sort([...evmTokens]);
   }
 
@@ -175,7 +175,7 @@ export function HomePage() {
     );
   }
 
-  const isInitialLoading = tokensLoading || !isAddressValid;
+  const isInitialLoading = tokensLoading;
 
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
