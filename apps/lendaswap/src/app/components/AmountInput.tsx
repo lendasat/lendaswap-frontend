@@ -17,7 +17,7 @@ interface AmountInputProps {
   /** Price of one token in USD (e.g., 1 for USDC, ~100000 for BTC) */
   usdPerToken: number;
   /** The token symbol (e.g., "USDC", "BTC") */
-  tokenSymbol: string;
+  tokenSymbol: string | undefined;
 }
 
 /** Format a number as USD with 2 decimal places and thousands separators */

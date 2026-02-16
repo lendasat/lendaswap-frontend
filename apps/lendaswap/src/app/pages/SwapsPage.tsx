@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
-import { api, getTokenIcon, getTokenSymbol } from "../api";
+import { api } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
 
 // Get status display info
@@ -178,12 +178,8 @@ export function SwapsPage() {
 
     return swaps.filter((swap) => {
       // Search by token symbols
-      const sourceSymbol = getTokenSymbol(
-        swap.response.source_token,
-      ).toLowerCase();
-      const targetSymbol = getTokenSymbol(
-        swap.response.target_token,
-      ).toLowerCase();
+      const sourceSymbol = swap.response.source_token.symbol;
+      const targetSymbol = swap.response.target_token.symbol;
       if (sourceSymbol.includes(query) || targetSymbol.includes(query)) {
         return true;
       }

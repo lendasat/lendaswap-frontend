@@ -1,4 +1,7 @@
-import { isEvmToken } from "@lendasat/lendaswap-sdk-pure";
+import {
+  type BitcoinToEvmSwapResponse,
+  isEvmToken,
+} from "@lendasat/lendaswap-sdk-pure";
 import { ArrowRight, Clock, ExternalLink, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useMemo, useState } from "react";
@@ -10,12 +13,10 @@ import {
   api,
   type BtcToArkadeSwapResponse,
   getTokenNetworkName,
-  getTokenSymbol,
-  type OnchainToEvmSwapResponse,
 } from "../../api";
 
 interface OnchainBtcRefundStepProps {
-  swapData: BtcToArkadeSwapResponse | OnchainToEvmSwapResponse;
+  swapData: BtcToArkadeSwapResponse | BitcoinToEvmSwapResponse;
   swapId: string;
 }
 
@@ -92,7 +93,7 @@ export function OnchainBtcRefundStep({
       // Track refund success
       posthog?.capture("swap_refunded", {
         swap_id: swapId,
-        swap_direction: isEvmToken(swapData.target_token)
+        swap_direction: isEvmToken(swapData.target_token.chain)
           ? "onchain-to-evm"
           : "btc-to-arkade",
         refund_reason: "user_initiated",

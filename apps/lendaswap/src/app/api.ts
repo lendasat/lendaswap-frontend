@@ -2,6 +2,7 @@
 import {
   type ArkadeToEvmSwapResponse,
   type BtcToArkadeSwapResponse,
+  type Chain,
   type CoordinatorFundingCallData,
   type EvmToArkadeSwapResponse,
   type GetSwapResponse,
@@ -120,7 +121,6 @@ export {
   getTokenDisplayName,
   getTokenIcon,
   getTokenNetworkName,
-  getTokenSymbol,
 } from "./utils/tokenUtils";
 
 // API client for Lendaswap backend
@@ -175,15 +175,16 @@ export const api = {
     return response.json();
   },
 
-  async getQuote(_request: QuoteRequest): Promise<QuoteResponse> {
+  async getQuote(request: {
+    sourceChain: Chain;
+    sourceToken: string;
+    targetChain: Chain;
+    targetToken: string;
+    sourceAmount?: number;
+    targetAmount?: number;
+  }): Promise<QuoteResponse> {
     const client = await getClients();
-    return await client.getQuote({
-      // FIXME: implement correctly
-      sourceChain: "Arbitrum",
-      sourceToken: "",
-      targetChain: "Arbitrum",
-      targetToken: "",
-    });
+    return await client.getQuote(request);
   },
 
   async createArkadeToEvmSwap(request: {

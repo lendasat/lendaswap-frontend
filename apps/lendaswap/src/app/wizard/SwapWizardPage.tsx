@@ -2,14 +2,11 @@ import {
   BTC_ARKADE,
   BTC_LIGHTNING,
   type BtcToArkadeSwapResponse,
-  type BtcToEvmSwapResponse,
-  type EvmToBtcSwapResponse,
   type GetSwapResponse,
   isArkade,
   isBtcOnchain,
   isEvmToken,
   isLightning,
-  type OnchainToEvmSwapResponse,
   type StoredSwap,
   type SwapStatus,
   type TokenInfo,
@@ -22,7 +19,6 @@ import { useAsync, useAsyncRetry } from "react-use";
 import { api } from "../api";
 import { DEBUG_SWAP_ID, isDebugMode } from "../utils/debugMode";
 import { useWalletBridge } from "../WalletBridgeContext";
-import type { ArkadeToEvmSwapResponse, EvmToArkadeSwapResponse } from "../api";
 import {
   BtcToArkadeProcessingStep,
   BtcToPolygonRefundStep,
@@ -31,12 +27,12 @@ import {
   DepositArkadeStep,
   DepositEvmStep,
   OnchainBtcRefundStep,
-  PolygonDepositStep,
-  PolygonToBtcRefundStep,
+  EvmDepositStep,
+  EvmRefundStep,
   RefundArkadeStep,
   RefundEvmStep,
-  SendArkadeStep,
-  SendOnchainBtcStep,
+  ArkadeDepositStep,
+  BitcoinDepositStep,
   SuccessStep,
   SwapProcessingStep,
 } from "./steps";
@@ -82,12 +78,12 @@ const swapDirection = (
 
   if (
     (isArkade(swapData.source_token) || isLightning(swapData.source_token)) &&
-    isEvmToken(swapData.target_token)
+    isEvmToken(swapData.target_token.chain)
   ) {
     return "btc-to-evm";
   } else if (
     (isArkade(swapData.target_token) || isLightning(swapData.target_token)) &&
-    isEvmToken(swapData.source_token)
+    isEvmToken(swapData.source_token.chain)
   ) {
     return "evm-to-btc";
   } else if (
@@ -97,7 +93,7 @@ const swapDirection = (
     return "btc-to-arkade";
   } else if (
     isBtcOnchain(swapData.source_token) &&
-    isEvmToken(swapData.target_token)
+    isEvmToken(swapData.target_token.chain)
   ) {
     return "onchain-to-evm";
   } else {
@@ -229,18 +225,26 @@ function determineStepFromStatus(
     return undefined;
   }
 
-  // Get refund locktime based on swap type
-  // Different swap types use different locktime field names
-  const refundLocktime =
-    "vhtlc_refund_locktime" in swapData
-      ? swapData.vhtlc_refund_locktime
-      : "evm_refund_locktime" in swapData
-        ? swapData.evm_refund_locktime
-        : "btc_refund_locktime" in swapData
-          ? swapData.btc_refund_locktime
-          : "refund_locktime" in swapData
-            ? swapData.refund_locktime
-            : undefined;
+  // Get the user-side refund locktime based on swap direction
+  const getRefundLocktime = (): number | undefined => {
+    switch (swapData.direction) {
+      case "btc_to_arkade":
+        return swapData.vhtlc_refund_locktime;
+      case "bitcoin_to_evm":
+        return swapData.evm_refund_locktime;
+      case "arkade_to_evm":
+        return swapData.vhtlc_refund_locktime;
+      case "evm_to_arkade":
+        return swapData.evm_refund_locktime;
+      case "evm_to_bitcoin":
+        return swapData.evm_refund_locktime;
+      case "lightning_to_evm":
+        return swapData.vhtlc_refund_locktime;
+      case "evm_to_lightning":
+        return swapData.evm_refund_locktime;
+    }
+  };
+  const refundLocktime = getRefundLocktime();
 
   const refundLocktimeDate = refundLocktime
     ? new Date(Number(refundLocktime) * 1000)
@@ -292,183 +296,185 @@ function determineStepFromStatus(
 }
 
 export function SwapWizardPage() {
-  const posthog = usePostHog();
-  const { swapId } = useParams<{ swapId: string }>();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const lastStatusRef = useRef<SwapStatus | null>(null);
-  const [displaySwapData, setDisplaySwapData] =
-    useState<GetSwapResponse | null>(null);
-  const [currentStep, setCurrentStep] = useState<StepId | undefined>();
-  const [preimage, setPreimage] = useState<string | null>(null);
-  const { arkAddress } = useWalletBridge();
-
-  useEffect(() => {
-    document.title = "Swap in Progress | LendaSwap";
-  }, []);
-
-  // Debug-only: read step/direction from URL query params for UI preview
-  const debugStep = isDebugMode()
-    ? (searchParams.get("step") as SwapStatus | null)
-    : null;
-  const debugDirection = isDebugMode() ? searchParams.get("direction") : null;
-
-  const {
-    loading: isLoading,
-    value: swapData,
-    retry,
-    error,
-  } = useAsyncRetry(async () => {
-    if (!swapId) {
-      navigate("/", { replace: true });
-      return;
-    }
-
-    // Debug mode only: return mock data instead of calling API
-    if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
-      const mockStatus: SwapStatus = (debugStep as SwapStatus) || "pending";
-      return createMockSwapData(mockStatus, debugDirection);
-    }
-    return await api.getSwap(swapId);
-  }, [swapId, debugStep, debugDirection]);
-
-  if (error) {
-    console.error(`Failed fetching swap ${error}`);
-  }
-
-  // Update display data when swap data changes and status is different
-  useEffect(() => {
-    if (!swapData) return;
-
-    const statusChanged = swapData.response.status !== lastStatusRef.current;
-    // Debug mode: also detect direction changes (same status, different tokens)
-    const directionChanged =
-      isDebugMode() &&
-      displaySwapData &&
-      (swapData.response.source_token !== displaySwapData.source_token ||
-        swapData.response.target_token !== displaySwapData.target_token);
-
-    if (statusChanged || directionChanged || !displaySwapData) {
-      console.log(
-        `Swap data updated: status=${swapData.response.status}, source=${swapData.response.source_token}, target=${swapData.response.target_token}`,
-      );
-      lastStatusRef.current = swapData.response.status;
-      setDisplaySwapData(swapData.response);
-      setPreimage(swapData.preimage);
-      setCurrentStep(determineStepFromStatus(swapData.response));
-    }
-  }, [swapData, displaySwapData]);
-
-  const swapDirectionValue = swapDirection(displaySwapData);
-
-  // Track wizard step views for conversion funnel
-  useEffect(() => {
-    if (!currentStep || !displaySwapData) return;
-    posthog?.capture("swap_step_viewed", {
-      swap_id: displaySwapData.id,
-      step: currentStep,
-      swap_direction: swapDirectionValue,
-    });
-  }, [currentStep, displaySwapData, posthog?.capture, swapDirectionValue]);
-
-  // Poll swap status every 2 seconds in the background
-  useEffect(() => {
-    if (!swapId) {
-      return;
-    }
-    if (!swapData) {
-      // swap was not found, so no need to poll
-      return;
-    }
-
-    // Don't poll in debug mode
-    if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
-      console.log("Debug mode: polling disabled");
-      return;
-    }
-
-    // Stop polling if we've reached a terminal state
-    const terminalStates: SwapStatus[] = [
-      "serverredeemed",
-      "expired",
-      "clientrefundedserverfunded",
-      "clientrefundedserverrefunded",
-      "clientrefunded",
-    ];
-
-    if (displaySwapData && terminalStates.includes(displaySwapData.status)) {
-      console.log(
-        `Polling stopped: swap reached terminal state '${displaySwapData.status}'`,
-      );
-      return;
-    }
-
-    const pollInterval = setInterval(async () => {
-      console.log("Background polling swap status from API...");
-      try {
-        // Fetch latest swap data from API
-        const updatedSwap = await api.getSwap(swapId);
-
-        // check if we can refund already
-        const possibleNextStep = determineStepFromStatus(updatedSwap.response);
-
-        // Check if anything has changed
-        if (
-          displaySwapData &&
-          updatedSwap.response.status !== displaySwapData.status
-        ) {
-          // Trigger a re-fetch to update the UI
-          retry();
-        } else if (possibleNextStep && possibleNextStep === "refundable") {
-          retry();
-        }
-      } catch (error) {
-        console.error("Failed to poll swap status:", error);
-      }
-    }, 2000);
-
-    return () => clearInterval(pollInterval);
-  }, [swapId, retry, displaySwapData, swapData]);
-
-  const { value: maybeTokens, error: loadingTokensError } = useAsync(
-    async () => {
-      return await api.getTokens();
-    },
-  );
-  if (loadingTokensError) {
-    console.error("Failed loading tokens", loadingTokensError);
-  }
-
-  const tokens = maybeTokens || [];
-  let targetTokenInfo: TokenInfo | undefined;
-
-  if (swapData && isEvmToken(swapData.response.target_token)) {
-    targetTokenInfo = tokens.find(
-      (t) => t.token_id === swapData.response.target_token,
-    );
-  } else {
-    targetTokenInfo = tokens.find(
-      (t) => t.token_id === swapData?.response.source_token,
-    );
-  }
-
-  // In debug mode, provide mock token info if API didn't return tokens
-  if (isDebugMode() && !targetTokenInfo && swapData) {
-    const tokenId = isEvmToken(swapData.response.target_token)
-      ? swapData.response.target_token
-      : swapData.response.source_token;
-    targetTokenInfo = {
-      token_id: tokenId,
-      symbol: tokenId.split("_")[0]?.toUpperCase() ?? "MOCK",
-      name: tokenId,
-      decimals: tokenId.startsWith("btc") ? 8 : 6,
-      chain: "polygon",
-    } as TokenInfo;
-  }
+  // const posthog = usePostHog();
+  // const { swapId } = useParams<{ swapId: string }>();
+  // const navigate = useNavigate();
+  // const [searchParams] = useSearchParams();
+  // const lastStatusRef = useRef<SwapStatus | null>(null);
+  // const [displaySwapData, setDisplaySwapData] =
+  //   useState<GetSwapResponse | null>(null);
+  // const [currentStep, setCurrentStep] = useState<StepId | undefined>();
+  // const [preimage, setPreimage] = useState<string | null>(null);
+  // const { arkAddress } = useWalletBridge();
+  //
+  // useEffect(() => {
+  //   document.title = "Swap in Progress | LendaSwap";
+  // }, []);
+  //
+  // // Debug-only: read step/direction from URL query params for UI preview
+  // const debugStep = isDebugMode()
+  //   ? (searchParams.get("step") as SwapStatus | null)
+  //   : null;
+  // const debugDirection = isDebugMode() ? searchParams.get("direction") : null;
+  //
+  // const {
+  //   loading: isLoading,
+  //   value: swapData,
+  //   retry,
+  //   error,
+  // } = useAsyncRetry(async () => {
+  //   if (!swapId) {
+  //     navigate("/", { replace: true });
+  //     return;
+  //   }
+  //
+  //   // Debug mode only: return mock data instead of calling API
+  //   if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
+  //     const mockStatus: SwapStatus = (debugStep as SwapStatus) || "pending";
+  //     return createMockSwapData(mockStatus, debugDirection);
+  //   }
+  //   return await api.getSwap(swapId);
+  // }, [swapId, debugStep, debugDirection]);
+  //
+  // if (error) {
+  //   console.error(`Failed fetching swap ${error}`);
+  // }
+  //
+  // // Update display data when swap data changes and status is different
+  // useEffect(() => {
+  //   if (!swapData) return;
+  //
+  //   const statusChanged = swapData.response.status !== lastStatusRef.current;
+  //   // Debug mode: also detect direction changes (same status, different tokens)
+  //   const directionChanged =
+  //     isDebugMode() &&
+  //     displaySwapData &&
+  //     (swapData.response.source_token !== displaySwapData.source_token ||
+  //       swapData.response.target_token !== displaySwapData.target_token);
+  //
+  //   if (statusChanged || directionChanged || !displaySwapData) {
+  //     console.log(
+  //       `Swap data updated: status=${swapData.response.status}, source=${swapData.response.source_token}, target=${swapData.response.target_token}`,
+  //     );
+  //     lastStatusRef.current = swapData.response.status;
+  //     setDisplaySwapData(swapData.response);
+  //     setPreimage(swapData.preimage);
+  //     setCurrentStep(determineStepFromStatus(swapData.response));
+  //   }
+  // }, [swapData, displaySwapData]);
+  //
+  // const swapDirectionValue = swapDirection(displaySwapData);
+  //
+  // // Track wizard step views for conversion funnel
+  // useEffect(() => {
+  //   if (!currentStep || !displaySwapData) return;
+  //   posthog?.capture("swap_step_viewed", {
+  //     swap_id: displaySwapData.id,
+  //     step: currentStep,
+  //     swap_direction: swapDirectionValue,
+  //   });
+  // }, [currentStep, displaySwapData, posthog?.capture, swapDirectionValue]);
+  //
+  // // Poll swap status every 2 seconds in the background
+  // useEffect(() => {
+  //   if (!swapId) {
+  //     return;
+  //   }
+  //   if (!swapData) {
+  //     // swap was not found, so no need to poll
+  //     return;
+  //   }
+  //
+  //   // Don't poll in debug mode
+  //   if (isDebugMode() && swapId === DEBUG_SWAP_ID) {
+  //     console.log("Debug mode: polling disabled");
+  //     return;
+  //   }
+  //
+  //   // Stop polling if we've reached a terminal state
+  //   const terminalStates: SwapStatus[] = [
+  //     "serverredeemed",
+  //     "expired",
+  //     "clientrefundedserverfunded",
+  //     "clientrefundedserverrefunded",
+  //     "clientrefunded",
+  //   ];
+  //
+  //   if (displaySwapData && terminalStates.includes(displaySwapData.status)) {
+  //     console.log(
+  //       `Polling stopped: swap reached terminal state '${displaySwapData.status}'`,
+  //     );
+  //     return;
+  //   }
+  //
+  //   const pollInterval = setInterval(async () => {
+  //     console.log("Background polling swap status from API...");
+  //     try {
+  //       // Fetch latest swap data from API
+  //       const updatedSwap = await api.getSwap(swapId);
+  //
+  //       // check if we can refund already
+  //       const possibleNextStep = determineStepFromStatus(updatedSwap.response);
+  //
+  //       // Check if anything has changed
+  //       if (
+  //         displaySwapData &&
+  //         updatedSwap.response.status !== displaySwapData.status
+  //       ) {
+  //         // Trigger a re-fetch to update the UI
+  //         retry();
+  //       } else if (possibleNextStep && possibleNextStep === "refundable") {
+  //         retry();
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to poll swap status:", error);
+  //     }
+  //   }, 2000);
+  //
+  //   return () => clearInterval(pollInterval);
+  // }, [swapId, retry, displaySwapData, swapData]);
+  //
+  // const { value: maybeTokens, error: loadingTokensError } = useAsync(
+  //   async () => {
+  //     return await api.getTokens();
+  //   },
+  // );
+  // if (loadingTokensError) {
+  //   console.error("Failed loading tokens", loadingTokensError);
+  // }
+  //
+  // const tokens = maybeTokens || [];
+  // let targetTokenInfo: TokenInfo | undefined;
+  //
+  // if (swapData && isEvmToken(swapData.response.target_token)) {
+  //   targetTokenInfo = tokens.find(
+  //     (t) => t.token_id === swapData.response.target_token,
+  //   );
+  // } else {
+  //   targetTokenInfo = tokens.find(
+  //     (t) => t.token_id === swapData?.response.source_token,
+  //   );
+  // }
+  //
+  // // In debug mode, provide mock token info if API didn't return tokens
+  // if (isDebugMode() && !targetTokenInfo && swapData) {
+  //   const tokenId = isEvmToken(swapData.response.target_token)
+  //     ? swapData.response.target_token
+  //     : swapData.response.source_token;
+  //   targetTokenInfo = {
+  //     token_id: tokenId,
+  //     symbol: tokenId.split("_")[0]?.toUpperCase() ?? "MOCK",
+  //     name: tokenId,
+  //     decimals: tokenId.startsWith("btc") ? 8 : 6,
+  //     chain: "polygon",
+  //   } as TokenInfo;
+  // }
 
   return (
+    <></>
+    /*
     <>
-      {/* Error State */}
+      {/!* Error State *!/}
       {error && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
           <div className="space-y-4 px-6 py-6 bg-destructive/10">
@@ -499,7 +505,7 @@ export function SwapWizardPage() {
         </div>
       )}
 
-      {/* Swap Not Found State */}
+      {/!* Swap Not Found State *!/}
       {!isLoading && !error && !swapData && swapId && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
           <div className="space-y-4 px-6 py-6 bg-warning/10">
@@ -534,7 +540,7 @@ export function SwapWizardPage() {
         </div>
       )}
 
-      {/* Loading State */}
+      {/!* Loading State *!/}
       {isLoading && !displaySwapData && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl">
           <div className="flex items-center justify-center py-12">
@@ -543,7 +549,7 @@ export function SwapWizardPage() {
         </div>
       )}
 
-      {/* Step-specific content */}
+      {/!* Step-specific content *!/}
       {displaySwapData && !error && (
         <>
           {currentStep === "user-deposit" &&
@@ -600,7 +606,7 @@ export function SwapWizardPage() {
 
           {currentStep === "server-deposit" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-              {/* Swap ID Header */}
+              {/!* Swap ID Header *!/}
               <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Swap ID:
@@ -611,7 +617,7 @@ export function SwapWizardPage() {
                 <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
               </div>
 
-              {/* Content */}
+              {/!* Content *!/}
               <div className="space-y-4 p-6">
                 <h3 className="text-xl font-semibold">Processing Swap</h3>
                 <p className="text-muted-foreground">
@@ -674,7 +680,7 @@ export function SwapWizardPage() {
 
           {currentStep === "expired" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-              {/* Swap ID Header */}
+              {/!* Swap ID Header *!/}
               <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Swap ID:
@@ -685,7 +691,7 @@ export function SwapWizardPage() {
                 <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
               </div>
 
-              {/* Content */}
+              {/!* Content *!/}
               <div className="space-y-4 p-6">
                 <h3 className="text-xl font-semibold text-destructive">
                   Swap Expired
@@ -747,7 +753,7 @@ export function SwapWizardPage() {
 
           {currentStep === "refunded" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-              {/* Swap ID Header */}
+              {/!* Swap ID Header *!/}
               <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Swap ID:
@@ -758,7 +764,7 @@ export function SwapWizardPage() {
                 <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
               </div>
 
-              {/* Content */}
+              {/!* Content *!/}
               <div className="space-y-4 p-6">
                 <h3 className="text-xl font-semibold">Swap Refunded</h3>
                 <p className="text-muted-foreground">
@@ -770,5 +776,6 @@ export function SwapWizardPage() {
         </>
       )}
     </>
+*/
   );
 }

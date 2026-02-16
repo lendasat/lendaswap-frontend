@@ -13,7 +13,7 @@ import { getSwapById, type StoredSwap } from "../db";
 import { useWalletBridge } from "../WalletBridgeContext";
 import {
   BtcToPolygonRefundStep,
-  PolygonToBtcRefundStep,
+  EvmRefundStep,
   RefundArkadeStep,
   RefundEvmStep,
 } from "../wizard/steps";
@@ -143,7 +143,7 @@ export function RefundPage() {
       )}
 
       {isEvmToBtcSwap && (
-        <PolygonToBtcRefundStep
+        <EvmRefundStep
           swapData={swapData as unknown as EvmToBtcSwapResponse}
           swapId={swapId}
         />

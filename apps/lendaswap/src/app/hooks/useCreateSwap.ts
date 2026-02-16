@@ -9,7 +9,7 @@ import {
   isBtcOnchain,
   isEvmToken,
   isLightning,
-  networkName,
+  tokenChain,
   type TokenId,
 } from "@lendasat/lendaswap-sdk-pure";
 import {
@@ -53,12 +53,18 @@ export function useCreateSwap(params: UseCreateSwapParams) {
       swapDirection = "btc-to-arkade";
     } else if (
       isBtcOnchain(swap.source_token) &&
-      isEvmToken(swap.target_token)
+      isEvmToken(swap.target_token.chain)
     ) {
       swapDirection = "onchain-to-evm";
-    } else if (isBtc(swap.source_token) && isEvmToken(swap.target_token)) {
+    } else if (
+      isBtc(swap.source_token) &&
+      isEvmToken(swap.target_token.chain)
+    ) {
       swapDirection = "btc-to-evm";
-    } else if (isEvmToken(swap.source_token) && isBtc(swap.target_token)) {
+    } else if (
+      isEvmToken(swap.source_token.chain) &&
+      isBtc(swap.target_token)
+    ) {
       swapDirection = "evm-to-btc";
     } else {
       swapDirection = "unknown";
@@ -87,7 +93,7 @@ export function useCreateSwap(params: UseCreateSwapParams) {
 
       // Detect swap direction
       const isBtcSource = isBtc(sourceAsset);
-      const isEvmSource = isEvmToken(sourceAsset);
+      const isEvmSource = isEvmToken(tokenChain(sourceAsset));
       const isOnchainBtcSource = isBtcOnchain(sourceAsset);
 
       // On-chain BTC → Arkade
@@ -107,12 +113,12 @@ export function useCreateSwap(params: UseCreateSwapParams) {
       }
 
       // On-chain BTC → EVM
-      if (isOnchainBtcSource && isEvmToken(targetAsset)) {
+      if (isOnchainBtcSource && isEvmToken(tokenChain(targetAsset))) {
         const sourceAmount = sourceAssetAmount
           ? BigInt(Math.round(sourceAssetAmount * 100_000_000))
           : BigInt(0);
 
-        const parsedNetworkName = networkName(targetAsset) as
+        const parsedNetworkName = tokenChain(targetAsset).toLowerCase() as
           | "ethereum"
           | "polygon";
 
@@ -147,7 +153,7 @@ export function useCreateSwap(params: UseCreateSwapParams) {
           console.log(`Creating a swap to send ${sourceAmount} sats`);
         }
 
-        const parsedNetworkName = networkName(targetAsset) as
+        const parsedNetworkName = tokenChain(targetAsset).toLowerCase() as
           | "ethereum"
           | "polygon";
         switch (sourceAsset) {
@@ -249,7 +255,7 @@ export function useCreateSwap(params: UseCreateSwapParams) {
               source_token: sourceAsset,
               user_address: userEvmAddress,
             },
-            networkName(sourceAsset) as "ethereum" | "polygon",
+            tokenChain(sourceAsset).toLowerCase() as "ethereum" | "polygon",
           );
 
           trackSwapInitiation(swap);

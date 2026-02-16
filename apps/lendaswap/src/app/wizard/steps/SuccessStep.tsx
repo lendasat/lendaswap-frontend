@@ -1,4 +1,3 @@
-import { isLightning } from "@lendasat/lendaswap-sdk-pure";
 import {
   ArrowRight,
   Check,
@@ -12,15 +11,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
 import { isValidSpeedWalletContext } from "../../../utils/speedWallet";
-import {
-  type BtcToArkadeSwapResponse,
-  type BtcToEvmSwapResponse,
-  type EvmToBtcSwapResponse,
-  type GetSwapResponse,
-  getTokenNetworkName,
-  getTokenSymbol,
-  type OnchainToEvmSwapResponse,
-} from "../../api";
+import { type GetSwapResponse, getTokenNetworkName } from "../../api";
 import {
   getBlockexplorerAddressLink,
   getBlockexplorerTxLink,
@@ -30,63 +21,39 @@ import {
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
-  swapDirection:
-    | "btc-to-evm"
-    | "evm-to-btc"
-    | "btc-to-arkade"
-    | "onchain-to-evm";
   swapId: string;
 }
 
-export function SuccessStep({
-  swapData,
-  swapDirection,
-  swapId,
-}: SuccessStepProps) {
+interface DirectionConfig {
+  sentAmount: string;
+  receivedAmount: string;
+  receiveAddress?: string | null;
+  isLightning: boolean;
+  swapTxId?: string | null;
+  tweetText: string;
+}
+
+export function SuccessStep({ swapData, swapId }: SuccessStepProps) {
   const navigate = useNavigate();
   const posthog = usePostHog();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
+  // Calculate swap duration if we have timestamps
+  const swapDurationSeconds = swapData.created_at
+    ? Math.floor((Date.now() - new Date(swapData.created_at).getTime()) / 1000)
+    : null;
+
   // Track swap completion event
   useEffect(() => {
-    const swapDurationSeconds = swapData.created_at
-      ? Math.floor(
-          (Date.now() - new Date(swapData.created_at).getTime()) / 1000,
-        )
-      : null;
-
-    // Resolve USD amount based on swap direction
-    let amountUsd: number | null = null;
-    let amountSats: number | null = null;
-
-    if (swapDirection === "btc-to-evm") {
-      const d = swapData as BtcToEvmSwapResponse;
-      amountUsd = d.asset_amount;
-      amountSats = d.sats_receive;
-    } else if (swapDirection === "evm-to-btc") {
-      const d = swapData as EvmToBtcSwapResponse;
-      amountUsd = d.asset_amount;
-      amountSats = d.sats_receive;
-    } else if (swapDirection === "onchain-to-evm") {
-      const d = swapData as OnchainToEvmSwapResponse;
-      amountUsd = d.target_amount;
-      amountSats = d.source_amount;
-    } else if (swapDirection === "btc-to-arkade") {
-      const d = swapData as BtcToArkadeSwapResponse;
-      amountSats = d.sats_receive;
-    }
-
     posthog?.capture("swap_completed", {
       swap_id: swapId,
-      swap_direction: swapDirection,
+      swap_direction: swapData.direction,
       source_token: swapData.source_token,
       target_token: swapData.target_token,
-      amount_usd: amountUsd,
-      amount_sats: amountSats,
       fee_sats: swapData.fee_sats,
       duration_seconds: swapDurationSeconds,
     });
-  }, [swapId, swapDirection, swapData, posthog]);
+  }, [swapId, swapData, posthog, swapDurationSeconds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCopyAddress = async (address: string) => {
     try {
@@ -102,81 +69,105 @@ export function SuccessStep({
     navigate("/", { replace: true });
   };
 
-  // Calculate swap duration if we have timestamps
-  const swapDurationSeconds = swapData.created_at
-    ? Math.floor((Date.now() - new Date(swapData.created_at).getTime()) / 1000)
-    : null;
+  const sourceSymbol = swapData.source_token.symbol;
+  const targetSymbol = swapData.target_token.symbol;
+  const sourceNetwork = getTokenNetworkName(swapData.source_token);
+  const targetNetwork = getTokenNetworkName(swapData.target_token);
 
-  // Define config based on swap direction
-  const getConfig = () => {
-    if (swapDirection === "btc-to-evm") {
-      const btcToEvmData = swapData as BtcToEvmSwapResponse;
-      return {
-        sentTokenSymbol: "sats",
-        sentTokenNetwork: getTokenNetworkName(swapData.source_token),
-        sentAmount: btcToEvmData.sats_receive.toLocaleString(),
-        receivedTokenSymbol: getTokenSymbol(swapData.target_token),
-        receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
-        receivedAmount: btcToEvmData.asset_amount.toString(),
-        receiveAddress: btcToEvmData.user_address_evm,
-        receiveAddressIsEvm: true,
-        isLightning: false,
-        swapTxId: btcToEvmData.evm_htlc_claim_txid,
-        swapTxIdIsEvm: true,
-        tweetText: `Swapped ${btcToEvmData.sats_receive.toLocaleString()} sats → $${btcToEvmData.asset_amount.toFixed(2)} ${getTokenSymbol(swapData.target_token)} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
-      };
-    } else if (swapDirection === "btc-to-arkade") {
-      const btcToArkadeData = swapData as BtcToArkadeSwapResponse;
-      return {
-        sentTokenSymbol: "sats",
-        sentTokenNetwork: "Bitcoin",
-        sentAmount: btcToArkadeData.asset_amount.toLocaleString(),
-        receivedTokenSymbol: "sats",
-        receivedTokenNetwork: "Arkade",
-        receivedAmount: btcToArkadeData.sats_receive.toLocaleString(),
-        receiveAddress: btcToArkadeData.target_arkade_address,
-        receiveAddressIsEvm: false,
-        isLightning: false,
-        swapTxId: btcToArkadeData.arkade_claim_txid,
-        swapTxIdIsEvm: false,
-        tweetText: `On-ramped ${btcToArkadeData.sats_receive.toLocaleString()} sats from Bitcoin mainchain to @arkade_os in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap!`,
-      };
-    } else if (swapDirection === "onchain-to-evm") {
-      const btcToEvmSwap = swapData as OnchainToEvmSwapResponse;
-      return {
-        sentTokenSymbol: "sats",
-        sentTokenNetwork: "Bitcoin",
-        sentAmount: btcToEvmSwap.source_amount.toLocaleString(),
-        receivedTokenSymbol: getTokenSymbol(btcToEvmSwap.target_token),
-        receivedTokenNetwork: getTokenNetworkName(btcToEvmSwap.target_token),
-        receivedAmount: btcToEvmSwap.target_amount.toLocaleString(),
-        receiveAddress: btcToEvmSwap.client_evm_address,
-        receiveAddressIsEvm: false,
-        isLightning: false,
-        swapTxId: btcToEvmSwap.evm_claim_txid,
-        swapTxIdIsEvm: false,
-        tweetText: `Swapped ${btcToEvmSwap.source_amount.toLocaleString()} sats from Bitcoin mainchain on @lendasat\n\nTrustless atomic swap!`,
-      };
-    } else {
-      // evm-to-btc
-      const evmToBtcData = swapData as EvmToBtcSwapResponse;
-      return {
-        sentTokenSymbol: getTokenSymbol(swapData.source_token),
-        sentTokenNetwork: getTokenNetworkName(swapData.source_token),
-        sentAmount: evmToBtcData.source_amount.toFixed(2),
-        receivedTokenSymbol: "sats",
-        receivedTokenNetwork: getTokenNetworkName(swapData.target_token),
-        receivedAmount: evmToBtcData.sats_receive.toLocaleString(),
-        // For Lightning swaps, show the invoice/address; for Arkade, show the Arkade address
-        receiveAddress: isLightning(swapData.target_token)
-          ? (swapData as EvmToBtcSwapResponse).ln_invoice
-          : (swapData as EvmToBtcSwapResponse).user_address_arkade,
-        receiveAddressIsEvm: false,
-        isLightning: isLightning(swapData.target_token),
-        swapTxId: evmToBtcData.bitcoin_htlc_claim_txid,
-        swapTxIdIsEvm: false,
-        tweetText: `Swapped $${evmToBtcData.asset_amount.toFixed(2)} ${getTokenSymbol(swapData.source_token)} → ${evmToBtcData.sats_receive.toLocaleString()} sats in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`,
-      };
+  function makeTweet(sent: string, received: string): string {
+    return `Swapped ${sent} ${sourceSymbol} → ${received} ${targetSymbol} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`;
+  }
+
+  // Build config based on the discriminated direction field
+  const getConfig = (): DirectionConfig => {
+    switch (swapData.direction) {
+      case "btc_to_arkade": {
+        const sent = swapData.source_amount.toLocaleString();
+        const received = swapData.target_amount.toLocaleString();
+        return {
+          sentAmount: sent,
+          receivedAmount: received,
+          receiveAddress: swapData.target_arkade_address,
+          isLightning: false,
+          swapTxId: swapData.arkade_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
+      case "bitcoin_to_evm": {
+        const sent = swapData.source_amount.toLocaleString();
+        const received = swapData.target_amount.toLocaleString();
+        return {
+          sentAmount: sent,
+          receivedAmount: received,
+          receiveAddress:
+            swapData.target_evm_address ?? swapData.client_evm_address,
+          isLightning: false,
+          swapTxId: swapData.evm_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
+      case "arkade_to_evm": {
+        const sent = swapData.source_amount.toLocaleString();
+        const received = (swapData.target_amount ?? 0).toLocaleString();
+        return {
+          sentAmount: sent,
+          receivedAmount: received,
+          receiveAddress:
+            swapData.target_evm_address ?? swapData.client_evm_address,
+          isLightning: false,
+          swapTxId: swapData.evm_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
+      case "evm_to_arkade": {
+        const sent = swapData.source_amount.toLocaleString();
+        const received = swapData.target_amount.toLocaleString();
+        return {
+          sentAmount: sent,
+          receivedAmount: received,
+          receiveAddress: swapData.target_arkade_address,
+          isLightning: false,
+          swapTxId: swapData.btc_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
+      case "evm_to_bitcoin": {
+        const sent = swapData.source_amount.toLocaleString();
+        const received = swapData.target_amount.toLocaleString();
+        return {
+          sentAmount: sent,
+          receivedAmount: received,
+          receiveAddress: swapData.btc_htlc_address,
+          isLightning: false,
+          swapTxId: swapData.btc_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
+      case "lightning_to_evm": {
+        const sent = swapData.btc_expected_sats.toLocaleString();
+        const received = (swapData.target_amount ?? 0).toLocaleString();
+        return {
+          sentAmount: sent,
+          receivedAmount: received,
+          receiveAddress:
+            swapData.target_evm_address ?? swapData.client_evm_address,
+          isLightning: false,
+          swapTxId: swapData.evm_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
+      case "evm_to_lightning": {
+        const sent = swapData.source_amount.toLocaleString();
+        const received = swapData.target_amount.toLocaleString();
+        return {
+          sentAmount: sent,
+          receivedAmount: received,
+          receiveAddress: swapData.client_lightning_invoice,
+          isLightning: true,
+          swapTxId: swapData.evm_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
     }
   };
 
@@ -215,8 +206,7 @@ export function SuccessStep({
             </div>
           </div>
           <h3 className="text-sm font-semibold">
-            {getTokenSymbol(swapData.source_token)} →{" "}
-            {getTokenSymbol(swapData.target_token)}
+            {sourceSymbol} → {targetSymbol}
           </h3>
         </div>
         <div className="flex items-center gap-2">
@@ -246,8 +236,7 @@ export function SuccessStep({
               <h3 className="text-2xl font-semibold">Swap Complete!</h3>
             )}
             <p className="text-muted-foreground text-sm">
-              Your {config.receivedTokenSymbol} has been successfully sent to
-              your address
+              Your {targetSymbol} has been successfully sent to your address
             </p>
           </div>
 
@@ -256,16 +245,16 @@ export function SuccessStep({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount Sent</span>
               <span className="font-medium">
-                {config.sentAmount} {config.sentTokenSymbol}
+                {config.sentAmount} {sourceSymbol}
                 {" on "}
-                {config.sentTokenNetwork}
+                {sourceNetwork}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount Received</span>
               <span className="font-medium">
-                {config.receivedAmount} {config.receivedTokenSymbol} {" on "}
-                {config.receivedTokenNetwork}
+                {config.receivedAmount} {targetSymbol} {" on "}
+                {targetNetwork}
               </span>
             </div>
             {config.receiveAddress && (
@@ -277,7 +266,7 @@ export function SuccessStep({
                 </span>
                 <div className="flex items-center gap-2">
                   <a
-                    href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
+                    href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.receiveAddress)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 break-all font-mono text-xs hover:underline"
@@ -306,7 +295,7 @@ export function SuccessStep({
                       className="h-8 w-8"
                     >
                       <a
-                        href={`${getBlockexplorerAddressLink(swapData.target_token, config.receiveAddress)}`}
+                        href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.receiveAddress)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -322,7 +311,7 @@ export function SuccessStep({
               {config.swapTxId ? (
                 <div className="flex items-center gap-2">
                   <a
-                    href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
+                    href={`${getBlockexplorerTxLink(swapData.target_token.chain, config.swapTxId)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 break-all font-mono text-xs hover:underline"
@@ -349,7 +338,7 @@ export function SuccessStep({
                       className="h-8 w-8"
                     >
                       <a
-                        href={`${getBlockexplorerTxLink(swapData.target_token, config.swapTxId)}`}
+                        href={`${getBlockexplorerTxLink(swapData.target_token.chain, config.swapTxId)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

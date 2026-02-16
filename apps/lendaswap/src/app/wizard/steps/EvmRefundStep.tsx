@@ -9,12 +9,13 @@ import {
 } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import {
-  type EvmToBtcSwapResponse,
-  getTokenDisplayName,
-  getTokenSymbol,
-} from "../../api";
+import { getTokenDisplayName } from "../../api";
 import { getTokenIcon, getViemChain } from "../../utils/tokenUtils";
+import type {
+  EvmToArkadeSwapResponse,
+  EvmToBitcoinSwapResponse,
+  EvmToLightningSwapResponse,
+} from "@lendasat/lendaswap-sdk-pure";
 
 // Helper function to convert UUID to bytes32
 // Example: "16446b7d-f430-4d95-b936-761e725fe637" -> "0x16446B7DF4304D95B936761E725FE63700000000000000000000000000000000"
@@ -91,19 +92,19 @@ interface ContractSwap {
   minAmountOut: bigint;
 }
 
-interface PolygonToBtcRefundStepProps {
-  swapData: EvmToBtcSwapResponse;
+interface EvmRefundStepProps {
+  swapData:
+    | EvmToArkadeSwapResponse
+    | EvmToBitcoinSwapResponse
+    | EvmToLightningSwapResponse;
   swapId: string;
 }
 
-export function PolygonToBtcRefundStep({
-  swapData,
-  swapId,
-}: PolygonToBtcRefundStepProps) {
+export function EvmRefundStep({ swapData, swapId }: EvmRefundStepProps) {
   const posthog = usePostHog();
   const { address } = useAccount();
 
-  const chain = getViemChain(swapData.source_token);
+  const chain = getViemChain(swapData.source_token.chain);
 
   const { data: walletClient } = useWalletClient({ chainId: chain?.id });
   const publicClient = usePublicClient({ chainId: chain?.id });
@@ -115,7 +116,7 @@ export function PolygonToBtcRefundStep({
   const [contractSwap, setContractSwap] = useState<ContractSwap | null>(null);
   const [isLoadingSwap, setIsLoadingSwap] = useState(false);
 
-  const tokenSymbol = getTokenSymbol(swapData.source_token);
+  const tokenSymbol = swapData.source_token.symbol;
   const refundLocktimeDate = new Date(swapData.evm_refund_locktime * 1000);
 
   // Countdown timer state
@@ -150,16 +151,16 @@ export function PolygonToBtcRefundStep({
   }, [now, swapData.evm_refund_locktime, isLocktimePassed]);
 
   // Format token amount
-  const refundAmount = `$${swapData.asset_amount.toString()} ${tokenSymbol}`;
+  const refundAmount = `$${swapData.source_amount.toString()} ${tokenSymbol}`;
 
   // Fetch swap data from contract
   useEffect(() => {
-    if (!publicClient || !swapData.htlc_address_evm) return;
+    if (!publicClient || !swapData.evm_htlc_address) return;
 
     const fetchSwapData = async () => {
       setIsLoadingSwap(true);
       try {
-        const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
+        const htlcAddress = swapData.evm_htlc_address as `0x${string}`;
         const swapIdBytes32 = uuidToBytes32(swapId);
 
         console.log("Fetching swap from contract:", {
@@ -188,7 +189,7 @@ export function PolygonToBtcRefundStep({
     };
 
     fetchSwapData();
-  }, [publicClient, swapData.htlc_address_evm, swapId]);
+  }, [publicClient, swapData.evm_htlc_address, swapId]);
 
   const handleRefund = async () => {
     if (!walletClient || !address || !publicClient) {
@@ -228,7 +229,7 @@ export function PolygonToBtcRefundStep({
       console.log("Switching to chain:", chain.name);
       await switchChainAsync({ chainId: chain.id });
 
-      const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
+      const htlcAddress = swapData.evm_htlc_address as `0x${string}`;
       const swapIdBytes32 = uuidToBytes32(swapId);
 
       console.log("Executing refund transaction...");
@@ -371,7 +372,7 @@ export function PolygonToBtcRefundStep({
                 </span>
               </div>
               <span className="text-xs text-muted-foreground ml-2">
-                (${swapData.asset_amount.toString()})
+                (${swapData.source_amount.toString()})
               </span>
             </div>
           </div>
@@ -379,7 +380,7 @@ export function PolygonToBtcRefundStep({
           <div className="space-y-1">
             <p className="text-sm font-medium">HTLC Address</p>
             <p className="text-xs text-muted-foreground font-mono break-all">
-              {swapData.htlc_address_evm}
+              {swapData.evm_htlc_address}
             </p>
           </div>
 
