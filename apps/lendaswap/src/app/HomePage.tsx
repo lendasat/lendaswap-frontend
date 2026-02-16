@@ -107,6 +107,7 @@ export function HomePage() {
     () => searchParams.get("address") ?? "",
   );
   const [isAddressValid, setIsAddressValid] = useState(true);
+  const [swapError, setSwapError] = useState("");
 
   // Sync targetAddress from URL when search params change (e.g. user edits URL bar)
   const urlAddress = searchParams.get("address");
@@ -468,17 +469,13 @@ export function HomePage() {
                 {(Number(quote.network_fee) / 100_000_000.0).toFixed(8)} BTC
               </div>
               <div>
-                Protocol Fee:{" "}
-                {(() => {
+                Protocol Fee: {(() => {
                   const qSrc = Number(quote.source_amount);
                   const scale =
-                    sourceAmount != null && qSrc > 0
-                      ? sourceAmount / qSrc
-                      : 1;
+                    sourceAmount != null && qSrc > 0 ? sourceAmount / qSrc : 1;
                   const fee = Number(quote.protocol_fee) * scale;
                   return (fee / 100_000_000.0).toFixed(8);
-                })()}{" "}
-                BTC ({(quote.protocol_fee_rate * 100).toFixed(2)}%)
+                })()} BTC ({(quote.protocol_fee_rate * 100).toFixed(2)}%)
               </div>
             </div>
           </div>
@@ -534,11 +531,11 @@ export function HomePage() {
         {/*  )}*/}
         {/*</div>*/}
         {/*Swap Error Display*/}
-        {/*{swapError && (*/}
-        {/*  <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">*/}
-        {/*    {swapError}*/}
-        {/*  </div>*/}
-        {/*)}*/}
+        {swapError && (
+          <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">
+            {swapError}
+          </div>
+        )}
       </div>
     </div>
   );
