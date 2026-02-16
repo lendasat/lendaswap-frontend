@@ -1,340 +1,134 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import { usePostHog } from "posthog-js/react";
-import { useAccount, useSwitchChain } from "wagmi";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useAccount } from "wagmi";
 import {
-  BTC_ARKADE,
-  BTC_LIGHTNING,
+  BTC_ARKADE_INFO,
   isArkade,
   isBtc,
   isBtcOnchain,
-  isEthereumToken,
   isEvmToken,
-  isLightning,
-  type TokenId,
+  type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
-import { ConnectKitButton } from "connectkit";
-import { ArrowDown, Loader, Wallet } from "lucide-react";
-import { Button } from "#/components/ui/button";
-import { Skeleton } from "#/components/ui/skeleton";
-import {
-  getSpeedLightningAddress,
-  isValidSpeedWalletContext,
-} from "../utils/speedWallet";
-import { api, getTokenSymbol, type QuoteResponse } from "./api";
-import { AddressInput } from "./components/AddressInput";
+import { ArrowDown } from "lucide-react";
+import { api } from "./api";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
-import { useCreateSwap } from "./hooks/useCreateSwap";
-import { usePairs } from "./hooks/usePairs";
-import {
-  calculateSourceAmount,
-  calculateTargetAmount,
-  computeExchangeRate,
-} from "./utils/priceUtils";
-import { getViemChain } from "./utils/tokenUtils";
-import { useWalletBridge } from "./WalletBridgeContext";
+import { useAsync } from "react-use";
+import { formatTokenUrl, parseUrlToken } from "./utils/tokenUtils";
+
+// Build query string from amounts
+function buildAmountParams(srcAmt?: number, tgtAmt?: number): string {
+  const params = new URLSearchParams();
+  if (srcAmt != null) params.set("sourceAmount", String(srcAmt));
+  if (tgtAmt != null) params.set("targetAmount", String(tgtAmt));
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
 
 export function HomePage() {
   const navigate = useNavigate();
-  const posthog = usePostHog();
   const params = useParams<{ sourceToken?: string; targetToken?: string }>();
   const {
-    address: connectedAddress,
-    isConnected,
-    chain: connectedChain,
+    address: _connectedAddress,
+    isConnected: _isWeb3WalletConnected,
+    chain: _web3WalletConnectedChain,
   } = useAccount();
-  const { switchChainAsync } = useSwitchChain();
 
   useEffect(() => {
     document.title = "LendaSwap - Lightning-Fast Bitcoin Atomic Swaps";
   }, []);
 
-  // Read tokens from URL params, validate them
-  const urlSourceToken = params.sourceToken;
-  const urlTargetToken = params.targetToken;
+  // Parse URL params like "lightning:btc" or "polygon:0x1234" into {chain, address}
+  const urlSourceToken = params.sourceToken
+    ? parseUrlToken(params.sourceToken)
+    : undefined;
+  const urlTargetToken = params.targetToken
+    ? parseUrlToken(params.targetToken)
+    : undefined;
 
-  // Redirect to default if invalid tokens in URL (skip for Speed Wallet to preserve params)
-  useEffect(() => {
-    if (!urlSourceToken || !urlTargetToken) {
-      if (!isValidSpeedWalletContext()) {
-        navigate(
-          "/lightning:btc/polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
-          { replace: true },
-        );
-      }
-    }
-  }, [urlSourceToken, urlTargetToken, navigate]);
+  const [searchParams] = useSearchParams();
 
-  // Check Speed Wallet context for defaults
-  const isSpeedWalletUser = isValidSpeedWalletContext();
-
-  const [sourceAssetAmount, setSourceAssetAmount] = useState<
-    number | undefined
-  >(undefined);
-  const [sourceAsset, setSourceAsset] = useState<TokenId>(
-    (urlSourceToken && (urlSourceToken as TokenId)) || "btc_arkade",
+  // Initialize amounts from URL search params (e.g. ?sourceAmount=100&targetAmount=0.005)
+  const [sourceAmount, setSourceAmountState] = useState<number | undefined>(
+    () => {
+      const v = searchParams.get("sourceAmount");
+      return v ? Number(v) : undefined;
+    },
   );
-  const [targetAsset, setTargetAsset] = useState<TokenId>(
-    (urlTargetToken && (urlTargetToken as TokenId)) ||
-      (isSpeedWalletUser ? BTC_LIGHTNING : BTC_ARKADE),
+  const [targetAmount, setTargetAmountState] = useState<number | undefined>(
+    () => {
+      const v = searchParams.get("targetAmount");
+      return v ? Number(v) : undefined;
+    },
   );
-  const [targetAssetAmount, setTargetAssetAmount] = useState<
-    number | undefined
-  >();
-  const [lastFieldEdited, setLastFieldEdited] = useState<
+  const [_lastEditedField, setLastEditedField] = useState<
     "sourceAsset" | "targetAsset"
-  >("targetAsset");
-  const [targetAddress, setTargetAddress] = useState("");
-  const [addressValid, setAddressValid] = useState(false);
-  const [userEvmAddress, setUserEvmAddress] = useState<string>("");
-  const [isEvmAddressValid, setIsEvmAddressValid] = useState(false);
-  const [quote, setQuote] = useState<QuoteResponse | null>(null);
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
-  const { arkAddress, isEmbedded } = useWalletBridge();
+  >("sourceAsset");
 
-  // --- Pairs ---
   const {
-    availableSourceAssets,
-    getAvailableTargetAssets,
-    tokens,
-    isLoading: isPairsLoading,
-    getSourceDecimals,
-    getTargetDecimals,
-  } = usePairs();
-  const availableTargetAssets = getAvailableTargetAssets(sourceAsset);
-  const isInitialLoading = isPairsLoading;
-
-  const sourceAssetDecimalPlaces = getSourceDecimals(sourceAsset);
-  const targetAssetDecimalPlaces = getTargetDecimals(targetAsset);
-
-  // --- Auto-populate EVM address from connected wallet ---
-  useEffect(() => {
-    if (isConnected && connectedAddress) {
-      setUserEvmAddress(connectedAddress);
-      setIsEvmAddressValid(true);
-    } else {
-      setUserEvmAddress("");
-      setIsEvmAddressValid(false);
-    }
-  }, [isConnected, connectedAddress]);
-
-  // Track wallet connection/disconnection
-  const prevConnectedRef = useRef(false);
-  useEffect(() => {
-    if (isConnected && !prevConnectedRef.current) {
-      posthog?.capture("wallet_connected", { address: connectedAddress });
-    } else if (!isConnected && prevConnectedRef.current) {
-      posthog?.capture("wallet_disconnected");
-    }
-    prevConnectedRef.current = isConnected;
-  }, [isConnected, connectedAddress, posthog?.capture]);
-
-  // Check if wallet is on the correct chain for the EVM asset (source or target)
-  const expectedChain = isEvmToken(sourceAsset)
-    ? getViemChain(sourceAsset)
-    : isEvmToken(targetAsset)
-      ? getViemChain(targetAsset)
-      : null;
-  const isWrongChain =
-    isConnected &&
-    expectedChain &&
-    connectedChain &&
-    connectedChain.id !== expectedChain.id;
-
-  // Auto-switch to correct chain when wrong chain detected
-  useEffect(() => {
-    if (isWrongChain && expectedChain && switchChainAsync) {
-      switchChainAsync({ chainId: expectedChain.id }).catch((err) => {
-        console.error("Failed to auto-switch chain:", err);
-      });
-    }
-  }, [isWrongChain, expectedChain, switchChainAsync]);
-
-  // Auto-populate target address with arkAddress if embedded and target is btc_arkade
-  useEffect(() => {
-    if (isEmbedded && arkAddress && isArkade(targetAsset) && !targetAddress) {
-      setTargetAddress(arkAddress);
-    }
-  }, [isEmbedded, arkAddress, targetAsset, targetAddress]);
-
-  // Auto-populate Lightning address from Speed Wallet if available
-  useEffect(() => {
-    const isSpeedWallet = isValidSpeedWalletContext();
-    const speedLnAddress = getSpeedLightningAddress();
-
-    if (
-      isSpeedWallet &&
-      speedLnAddress &&
-      isLightning(targetAsset) &&
-      !targetAddress
-    ) {
-      setTargetAddress(speedLnAddress);
-    }
-  }, [targetAsset, targetAddress]);
-
-  // --- Quote-based exchange rate ---
-  useEffect(() => {
-    const fetchQuote = async () => {
-      // Determine the BTC amount from whichever field has a value
-      let amount: number;
-      if (isEvmToken(sourceAsset)) {
-        amount = targetAssetAmount ?? 0;
-      } else if (isBtcOnchain(sourceAsset) && isArkade(targetAsset)) {
-        amount = targetAssetAmount ?? 0;
-      } else if (isBtcOnchain(sourceAsset) && isEvmToken(targetAsset)) {
-        amount = sourceAssetAmount ?? 0;
-      } else {
-        amount = sourceAssetAmount ?? 0;
-      }
-
-      if (!amount || amount <= 0) {
-        setQuote(null);
-        return;
-      }
-
-      setIsLoadingQuote(true);
-      try {
-        const sats = Math.round(amount * 100_000_000);
-        if (sats > 0) {
-          const q = await api.getQuote({
-            from: sourceAsset,
-            to: targetAsset,
-            base_amount: sats,
-          });
-          setQuote(q);
-        }
-      } catch {
-        setQuote(null);
-      } finally {
-        setIsLoadingQuote(false);
-      }
-    };
-
-    fetchQuote();
-  }, [sourceAssetAmount, targetAssetAmount, sourceAsset, targetAsset]);
-
-  // Derive exchange rate from quote
-  const exchangeRate = useMemo(() => {
-    if (!quote) return null;
-    const fiatPerBtc = parseFloat(quote.exchange_rate);
-    // Quote always returns "fiat per BTC"
-    // For BTC→EVM: use as-is (1 BTC = X fiat)
-    // For EVM→BTC: invert (1 fiat = 1/X BTC)
-    return computeExchangeRate(
-      1 / fiatPerBtc,
-      isBtc(sourceAsset),
-      isEvmToken(targetAsset),
-    );
-  }, [quote, sourceAsset, targetAsset]);
-
-  // Calculation effect — both rate and fees come from quote
-  useEffect(() => {
-    if (isLoadingQuote || !exchangeRate) return;
-
-    const networkFeeInBtc = Number(quote?.network_fee ?? 0) / 100_000_000;
-    const isSourceBtc = isBtc(sourceAsset);
-    const isTargetBtc = isBtc(targetAsset);
-
-    if (lastFieldEdited === "sourceAsset") {
-      if (sourceAssetAmount === undefined) {
-        setTargetAssetAmount(undefined);
-        return;
-      }
-
-      const targetAmount = calculateTargetAmount(
-        sourceAssetAmount,
-        exchangeRate,
-        networkFeeInBtc,
-        isSourceBtc,
-        isTargetBtc,
-      );
-
-      const decimals = targetAssetDecimalPlaces ?? 2;
-      const formattedTargetAssetAmount = Number.parseFloat(
-        targetAmount.toFixed(decimals),
-      );
-      console.log(
-        `Calculated target amount is ${formattedTargetAssetAmount}`,
-        targetAmount,
-        targetAssetDecimalPlaces,
-      );
-      setTargetAssetAmount(formattedTargetAssetAmount);
-    }
-
-    if (lastFieldEdited === "targetAsset") {
-      if (targetAssetAmount === undefined) {
-        setSourceAssetAmount(undefined);
-        return;
-      }
-
-      const sourceAmount = calculateSourceAmount(
-        targetAssetAmount,
-        exchangeRate,
-        networkFeeInBtc,
-        isSourceBtc,
-        isTargetBtc,
-      );
-
-      const decimals = sourceAssetDecimalPlaces ?? 2;
-      const newSourceAssetAmount = Number.parseFloat(
-        sourceAmount.toFixed(decimals),
-      );
-      setSourceAssetAmount(newSourceAssetAmount);
-    }
-  }, [
-    exchangeRate,
-    isLoadingQuote,
-    lastFieldEdited,
-    targetAssetAmount,
-    sourceAssetAmount,
-    targetAssetDecimalPlaces,
-    sourceAssetDecimalPlaces,
-    quote,
-    sourceAsset,
-    targetAsset,
-  ]);
-
-  // --- USD prices (CoinGecko, display-only) ---
-  const [usdPrices, setUsdPrices] = useState<Map<string, number>>(new Map());
-
-  useEffect(() => {
-    const fetchPrices = async () => {
-      const priceMap = await api.getTokenUsdPrices();
-      setUsdPrices(priceMap);
-    };
-
-    fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const getUsdPerToken = (tokenId: TokenId): number => {
-    const price = usdPrices.get(tokenId);
-    if (price !== undefined) return price;
-    if (tokenId.includes("usdc") || tokenId.includes("usdt")) return 1;
-    return 0;
-  };
-
-  // --- Create swap ---
-  const { createSwap, isCreatingSwap, swapError } = useCreateSwap({
-    sourceAsset,
-    targetAsset,
-    sourceAssetAmount,
-    targetAssetAmount,
-    targetAddress,
-    userEvmAddress,
-    isEvmAddressValid,
-    lastFieldEdited,
+    value: maybeAvailableTokens,
+    loading: tokensLoading,
+    error: tokensLoadingError,
+  } = useAsync(async () => {
+    return api.getTokens();
   });
 
-  const handleContinueToFund = async () => {
-    if (!targetAddress || !sourceAssetAmount || !addressValid) {
-      return;
-    }
+  if (tokensLoadingError) {
+    console.error(tokensLoadingError);
+  }
 
-    await createSwap();
-  };
+  const availableBtcTokens = maybeAvailableTokens?.btc_tokens || [];
+  const availableEvmTokens = maybeAvailableTokens?.evm_tokens || [];
+  const allAvailableTokens = [...availableBtcTokens, ...availableEvmTokens];
+
+  const sourceAsset = allAvailableTokens.find(
+    (t) =>
+      t.chain === urlSourceToken?.chain &&
+      t.token_id === urlSourceToken?.tokenId,
+  );
+  const targetAsset = allAvailableTokens.find(
+    (t) =>
+      t.chain === urlTargetToken?.chain &&
+      t.token_id === urlTargetToken?.tokenId,
+  );
+
+  // Debounced sync of amounts to URL (avoids navigating on every keystroke)
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!params.sourceToken || !params.targetToken) return;
+      const path = `/${params.sourceToken}/${params.targetToken}`;
+      navigate(`${path}${buildAmountParams(sourceAmount, targetAmount)}`, {
+        replace: true,
+      });
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [sourceAmount, targetAmount, params, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Default fallback tokens for auto-correction
+  const defaultEvmToken = allAvailableTokens.find(
+    (t) => t.token_id === "usdc_pol",
+  );
+  const defaultBtcToken = allAvailableTokens.find(
+    (t) => t.token_id === BTC_ARKADE_INFO.token_id,
+  );
+
+  // Navigate to a new source/target token pair (URL is the source of truth)
+  function navigateToTokens(
+    source: TokenInfo,
+    target: TokenInfo,
+    srcAmt?: number,
+    tgtAmt?: number,
+  ) {
+    const path = `/${formatTokenUrl(source)}/${formatTokenUrl(target)}`;
+    navigate(
+      `${path}${buildAmountParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount)}`,
+      {
+        replace: true,
+      },
+    );
+  }
+
+  const isInitialLoading = tokensLoading;
 
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
@@ -382,91 +176,65 @@ export function HomePage() {
           <div className="text-sm text-muted-foreground mb-2">Sell</div>
           <div className="flex items-start justify-between gap-4">
             <AmountInput
-              value={sourceAssetAmount}
+              value={sourceAmount}
               onChange={(value) => {
-                setLastFieldEdited("sourceAsset");
-                setSourceAssetAmount(value);
+                setLastEditedField("sourceAsset");
+                setSourceAmountState(value);
               }}
-              decimals={
-                isEvmToken(sourceAsset)
-                  ? tokens.find((t) => t.token_id === sourceAsset)?.decimals
-                  : 8
-              }
+              decimals={sourceAsset?.decimals}
               showCurrencyPrefix={true}
-              usdPerToken={getUsdPerToken(sourceAsset)}
-              tokenSymbol={
-                isEvmToken(sourceAsset) ? getTokenSymbol(sourceAsset) : "BTC"
-              }
+              // fixme: implement USD value
+              usdPerToken={0}
+              tokenSymbol={sourceAsset?.symbol}
             />
             <div className="shrink-0 pt-1">
               <AssetDropDown
                 value={sourceAsset}
-                availableAssets={availableSourceAssets}
+                availableAssets={allAvailableTokens}
                 label="sell"
                 onChange={(asset) => {
-                  // Preserve USD value when changing currency
-                  const currentUsdValue =
-                    (sourceAssetAmount ?? 0) * getUsdPerToken(sourceAsset);
-                  const newUsdPerToken = getUsdPerToken(asset);
-                  const newAmount =
-                    newUsdPerToken > 0
-                      ? currentUsdValue / newUsdPerToken
-                      : sourceAssetAmount;
-
                   // Special case: btc_onchain can be swapped to btc_arkade or EVM tokens
                   if (isBtcOnchain(asset)) {
-                    const newTarget =
-                      isArkade(targetAsset) || isEvmToken(targetAsset)
-                        ? targetAsset
-                        : "usdc_pol";
-                    setSourceAsset(asset);
-                    setTargetAsset(newTarget);
-                    setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/${newTarget}`, {
-                      replace: true,
-                    });
+                    const validTarget =
+                      targetAsset &&
+                      (isArkade(targetAsset) || isEvmToken(targetAsset.chain));
+                    const newTarget = validTarget
+                      ? targetAsset
+                      : (defaultEvmToken ?? asset);
+                    navigateToTokens(asset, newTarget);
                     return;
                   }
 
-                  const isEvmAsset = isEvmToken(asset);
+                  const isEvmAsset = isEvmToken(asset.chain);
                   const isBtcAsset = isBtc(asset);
-                  const isEvmTarget = isEvmToken(targetAsset);
-                  const isBtcTarget = isBtc(targetAsset);
+                  const isEvmTarget = targetAsset
+                    ? isEvmToken(targetAsset.chain)
+                    : false;
+                  const isBtcTarget = targetAsset ? isBtc(targetAsset) : false;
 
-                  // EVM source + BTC target = valid pair
-                  if (isEvmAsset && isBtcTarget) {
-                    setSourceAsset(asset);
-                    setTargetAsset(targetAsset);
-                    setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/${targetAsset}`, { replace: true });
-                    return;
-                  }
-
-                  // BTC source + EVM target = valid pair
-                  if (isBtcAsset && isEvmTarget) {
-                    setSourceAsset(asset);
-                    setTargetAsset(targetAsset);
-                    setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/${targetAsset}`, { replace: true });
+                  if (
+                    targetAsset &&
+                    ((isEvmAsset && isBtcTarget) || (isBtcAsset && isEvmTarget))
+                  ) {
+                    navigateToTokens(asset, targetAsset);
                     return;
                   }
 
                   // EVM source + EVM target = invalid, switch target to BTC
                   if (isEvmAsset && isEvmTarget) {
-                    setSourceAsset(asset);
-                    setTargetAsset(BTC_ARKADE);
-                    setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/btc_arkade`, { replace: true });
+                    navigateToTokens(asset, defaultBtcToken ?? BTC_ARKADE_INFO);
                     return;
                   }
 
                   // BTC source + BTC target = invalid, switch target to default stablecoin
-                  if (isBtcAsset && isBtcTarget) {
-                    setSourceAsset(asset);
-                    setTargetAsset("usdc_pol" as TokenId);
-                    setSourceAssetAmount(newAmount);
-                    navigate(`/${asset}/usdc_pol`, { replace: true });
+                  if (isBtcAsset && isBtcTarget && defaultEvmToken) {
+                    navigateToTokens(asset, defaultEvmToken);
                     return;
+                  }
+
+                  // Fallback: just update source, keep target if available
+                  if (targetAsset) {
+                    navigateToTokens(asset, targetAsset);
                   }
                 }}
               />
@@ -479,29 +247,22 @@ export function HomePage() {
           type="button"
           data-no-press
           onClick={() => {
+            if (!sourceAsset || !targetAsset) return;
             // btc_onchain can only be in sell position, not buy position
-            if (isBtcOnchain(sourceAsset)) {
-              return;
-            }
+            if (isBtcOnchain(sourceAsset)) return;
 
-            // Swap source and target tokens
-            const newSource = targetAsset;
-            const newTarget = sourceAsset;
-            setSourceAsset(newSource);
-            setTargetAsset(newTarget);
-
-            // Also swap the amounts
-            const newSourceAmount = targetAssetAmount;
-            const newTargetAmount = sourceAssetAmount;
-            setSourceAssetAmount(newSourceAmount);
-            setTargetAssetAmount(newTargetAmount);
-
-            navigate(`/${newSource}/${newTarget}`, { replace: true });
-            setTargetAddress("");
-            setAddressValid(false);
+            // Swap source and target tokens + amounts
+            setSourceAmountState(targetAmount);
+            setTargetAmountState(sourceAmount);
+            navigateToTokens(
+              targetAsset,
+              sourceAsset,
+              targetAmount,
+              sourceAmount,
+            );
           }}
-          disabled={isBtcOnchain(sourceAsset)}
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${isBtcOnchain(sourceAsset) ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={!sourceAsset || isBtcOnchain(sourceAsset)}
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${!sourceAsset || isBtcOnchain(sourceAsset) ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="bg-background rounded-xl p-1 transition-transform duration-200 ease-out group-hover/swap:scale-110 group-active/swap:scale-125">
             <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover/swap:bg-muted/80">
@@ -515,43 +276,28 @@ export function HomePage() {
           <div className="text-sm text-muted-foreground mb-2">Buy</div>
           <div className="flex items-start justify-between gap-4">
             <AmountInput
-              value={targetAssetAmount}
+              value={targetAmount}
               onChange={(value) => {
-                setLastFieldEdited("targetAsset");
-                setTargetAssetAmount(value);
+                setLastEditedField("targetAsset");
+                setTargetAmountState(value);
               }}
-              decimals={
-                isEvmToken(targetAsset)
-                  ? tokens.find((t) => t.token_id === sourceAsset)?.decimals
-                  : 8
-              }
+              decimals={targetAsset?.decimals ?? 8}
               showCurrencyPrefix={true}
-              isLoading={isLoadingQuote}
-              usdPerToken={getUsdPerToken(targetAsset)}
-              tokenSymbol={getTokenSymbol(targetAsset)}
+              // fixme: implement USD value and loading state
+              usdPerToken={0}
+              tokenSymbol={targetAsset?.symbol}
             />
             <div className="shrink-0 pt-1">
               <AssetDropDown
-                availableAssets={availableTargetAssets}
+                availableAssets={allAvailableTokens}
                 value={targetAsset}
                 onChange={(asset) => {
-                  // Preserve USD value when changing currency
-                  const currentUsdValue =
-                    (targetAssetAmount ?? 0) * getUsdPerToken(targetAsset);
-                  const newUsdPerToken = getUsdPerToken(asset);
-                  const newAmount =
-                    newUsdPerToken > 0
-                      ? currentUsdValue / newUsdPerToken
-                      : targetAssetAmount;
+                  if (!sourceAsset) return;
 
                   // Special case: when source is btc_onchain, allow btc_arkade or EVM tokens
                   if (isBtcOnchain(sourceAsset)) {
-                    if (isArkade(asset) || isEvmToken(asset)) {
-                      setTargetAsset(asset);
-                      setTargetAssetAmount(newAmount);
-                      navigate(`/${sourceAsset}/${asset}`, { replace: true });
-                      setTargetAddress("");
-                      setAddressValid(false);
+                    if (isArkade(asset) || isEvmToken(asset.chain)) {
+                      navigateToTokens(sourceAsset, asset);
                     }
                     return;
                   }
@@ -559,30 +305,23 @@ export function HomePage() {
                   // Check if new target is compatible with current source
                   const isBtcTarget = isBtc(asset);
                   const isBtcSource = isBtc(sourceAsset);
-                  const isEvmTarget = isEvmToken(asset);
-                  const isEvmSource = isEvmToken(sourceAsset);
+                  const isEvmTarget = isEvmToken(asset.chain);
+                  const isEvmSource = isEvmToken(sourceAsset.chain);
 
-                  // If both are BTC or both are EVM, auto-switch source
-                  if (isBtcTarget && isBtcSource) {
-                    setSourceAsset("usdc_pol" as TokenId);
-                    setTargetAsset(asset);
-                    setTargetAssetAmount(newAmount);
-                    navigate(`/usdc_pol/${asset}`, { replace: true });
+                  // If both are BTC, auto-switch source to EVM
+                  if (isBtcTarget && isBtcSource && defaultEvmToken) {
+                    navigateToTokens(defaultEvmToken, asset);
                     return;
                   }
 
+                  // If both are EVM, auto-switch source to BTC
                   if (isEvmTarget && isEvmSource) {
-                    setSourceAsset(BTC_ARKADE);
-                    setTargetAsset(asset);
-                    setTargetAssetAmount(newAmount);
-                    navigate(`/btc_arkade/${asset}`, { replace: true });
+                    navigateToTokens(defaultBtcToken ?? BTC_ARKADE_INFO, asset);
                     return;
                   }
 
                   // Compatible pair, just update target
-                  setTargetAsset(asset);
-                  setTargetAssetAmount(newAmount);
-                  navigate(`/${sourceAsset}/${asset}`, { replace: true });
+                  navigateToTokens(sourceAsset, asset);
                 }}
                 label="buy"
               />
@@ -592,6 +331,7 @@ export function HomePage() {
       </div>
 
       {/* Address Input */}
+      {/*
       <div className="pt-3">
         <AddressInput
           value={targetAddress}
@@ -599,13 +339,15 @@ export function HomePage() {
           targetToken={targetAsset}
           setAddressIsValid={setAddressValid}
           setBitcoinAmount={(amount) => {
-            setLastFieldEdited("targetAsset");
-            setTargetAssetAmount(amount);
+            setLastEditedField("targetAsset");
+            setTargetAmountState(amount);
           }}
-          disabled={isEmbedded && !!arkAddress && isArkade(targetAsset)}
+          disabled={
+            isEmbedded && !!arkAddress && !!targetAsset && isArkade(targetAsset)
+          }
         />
 
-        {/* Fees - below inputs, above Continue button */}
+         Fees - below inputs, above Continue button
         {isLoadingQuote ? (
           <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
             <div className="flex flex-wrap justify-between gap-y-0.5">
@@ -616,7 +358,7 @@ export function HomePage() {
                 Protocol Fee: <Skeleton className="h-3 w-32" />
               </div>
             </div>
-            {isEvmToken(sourceAsset) && isConnected && (
+            {sourceAsset && isEvmToken(sourceAsset.chain) && isConnected && (
               <div>Gas Fee: check in wallet when signing</div>
             )}
           </div>
@@ -633,21 +375,24 @@ export function HomePage() {
                 {(quote.protocol_fee_rate * 100).toFixed(2)}%)
               </div>
             </div>
-            {isEvmToken(sourceAsset) && isConnected && (
+            {sourceAsset && isEvmToken(sourceAsset.chain) && isConnected && (
               <div>Gas Fee: check in wallet when signing</div>
             )}
           </div>
         ) : null}
 
         <div className="pt-2">
-          {/* Show Connect Wallet button when:
+           Show Connect Wallet button when:
               1. EVM source (user needs to pay gas to send EVM tokens)
               2. BTC source + Ethereum target (user needs to pay gas to claim on Ethereum)
-              Note: BTC → Polygon uses Gelato Relay so no wallet needed */}
+              Note: BTC → Polygon uses Gelato Relay so no wallet needed
           {!isValidSpeedWalletContext() &&
           !isConnected &&
-          (isEvmToken(sourceAsset) ||
-            (isBtc(sourceAsset) && isEthereumToken(targetAsset))) ? (
+          ((sourceAsset && isEvmToken(sourceAsset.chain)) ||
+            (sourceAsset &&
+              isBtc(sourceAsset) &&
+              targetAsset &&
+              isEthereumToken(targetAsset.chain))) ? (
             <ConnectKitButton.Custom>
               {({ show }) => (
                 <Button onClick={show} className="w-full h-12 gap-2">
@@ -664,7 +409,9 @@ export function HomePage() {
                 !addressValid ||
                 isCreatingSwap ||
                 isWrongChain ||
-                (isEvmToken(sourceAsset) && !isEvmAddressValid)
+                (sourceAsset &&
+                  isEvmToken(sourceAsset.chain) &&
+                  !isEvmAddressValid)
               }
               className="w-full h-12"
             >
@@ -685,13 +432,14 @@ export function HomePage() {
           )}
         </div>
 
-        {/* Swap Error Display */}
+         Swap Error Display
         {swapError && (
           <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">
             {swapError}
           </div>
         )}
       </div>
+*/}
     </div>
   );
 }

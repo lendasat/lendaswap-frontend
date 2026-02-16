@@ -3,7 +3,7 @@ import {
   isBtc,
   isEthereumToken,
   isPolygonToken,
-  TokenInfo,
+  type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -24,7 +24,7 @@ import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
 import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
-import { getTokenIcon, getTokenNetworkName, getTokenSymbol } from "../api";
+import { getTokenIcon, getTokenNetworkName } from "../api";
 import { getTokenNetworkIcon } from "../utils/tokenUtils";
 
 // Hook to detect mobile viewport
@@ -60,24 +60,24 @@ const networkTabs: {
     id: "ethereum",
     label: "Ethereum",
     icon: <EthereumIcon width={14} height={14} />,
-    filter: (a) => isEthereumToken(a.token_id),
+    filter: (a) => isEthereumToken(a.chain),
   },
   {
     id: "arbitrum",
     label: "Arbitrum",
     icon: <ArbitrumIcon width={14} height={14} />,
-    filter: (a) => isArbitrumToken(a.token_id),
+    filter: (a) => isArbitrumToken(a.chain),
   },
   {
     id: "polygon",
     label: "Polygon",
     icon: <PolygonIcon width={14} height={14} />,
-    filter: (a) => isPolygonToken(a.token_id),
+    filter: (a) => isPolygonToken(a.chain),
   },
 ];
 
 interface AssetDropDownProps {
-  value: TokenInfo;
+  value: TokenInfo | undefined;
   onChange: (selectedAsset: TokenInfo) => void;
   availableAssets: TokenInfo[];
   label?: "sell" | "buy";
@@ -198,7 +198,8 @@ export function AssetDropDown({
                 <div className="relative">
                   <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
                     <div className="w-8 h-8 flex items-center justify-center">
-                      {getTokenIcon(asset)}
+                      {/*FIXME*/}
+                      {/*{getTokenIcon(asset)}*/}
                     </div>
                   </div>
                   {/* Network badge */}
@@ -211,7 +212,7 @@ export function AssetDropDown({
 
                 {/* Token Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold">{getTokenSymbol(asset)}</div>
+                  <div className="font-semibold">{asset.symbol}</div>
                   <div className="text-sm text-muted-foreground">
                     {getTokenNetworkName(asset)}
                   </div>
@@ -246,16 +247,16 @@ export function AssetDropDown({
         {/* Token icon with network badge */}
         <div className="relative">
           <div className="w-6 h-6 md:w-7 md:h-7 rounded-full overflow-hidden flex items-center justify-center">
-            {getTokenIcon(selectedAsset)}
+            {selectedAsset && getTokenIcon(selectedAsset)}
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-background p-[1px] flex items-center justify-center">
             <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
-              {getTokenNetworkIcon(selectedAsset)}
+              {selectedAsset && getTokenNetworkIcon(selectedAsset)}
             </div>
           </div>
         </div>
         <span className="font-semibold text-sm md:text-base leading-tight">
-          {getTokenSymbol(selectedAsset)}
+          {selectedAsset?.symbol}
         </span>
         <ChevronDown className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground" />
       </button>

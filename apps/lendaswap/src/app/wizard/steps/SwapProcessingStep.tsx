@@ -1,4 +1,4 @@
-import { isBtcOnchain, isLightning } from "@lendasat/lendaswap-sdk-pure";
+import { type GetSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
@@ -10,25 +10,16 @@ import {
   useWalletClient,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
-import {
-  api,
-  type BtcToArkadeSwapResponse,
-  type BtcToEvmSwapResponse,
-  type EvmToBtcSwapResponse,
-  type GetSwapResponse,
-  type OnchainToEvmSwapResponse,
-} from "../../api";
+import { api } from "../../api";
 import {
   getBlockexplorerTxLink,
   getTokenIcon,
   getTokenNetworkIcon,
-  getTokenSymbol,
   getViemChain,
-  isArbitrumToken,
   isEthereumToken,
   isPolygonToken,
+  isArbitrumToken,
 } from "../../utils/tokenUtils";
-import type { SwapDirection } from "../SwapWizardPage";
 
 // ReverseAtomicSwapHTLC ABI - claimSwap function
 const HTLC_ABI = [
@@ -63,16 +54,32 @@ function uuidToHtlcSwapId(uuid: string): `0x${string}` {
   return `0x${paddedHex}`;
 }
 
+/** Directions where the user sends BTC and receives EVM tokens (auto-claim applies) */
+function isBtcToEvmDirection(direction: GetSwapResponse["direction"]): boolean {
+  return (
+    direction === "bitcoin_to_evm" ||
+    direction === "arkade_to_evm" ||
+    direction === "lightning_to_evm"
+  );
+}
+
+/** Directions where the user sends EVM and receives BTC */
+function isEvmToBtcDirection(direction: GetSwapResponse["direction"]): boolean {
+  return (
+    direction === "evm_to_arkade" ||
+    direction === "evm_to_bitcoin" ||
+    direction === "evm_to_lightning"
+  );
+}
+
 interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;
-  swapDirection: SwapDirection;
   swapId: string;
   preimage: string | null;
 }
 
 export function SwapProcessingStep({
   swapData,
-  swapDirection,
   swapId,
   preimage,
 }: ConfirmingDepositStepProps) {
@@ -84,7 +91,7 @@ export function SwapProcessingStep({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 10;
 
-  const chain = getViemChain(swapData.target_token);
+  const chain = getViemChain(swapData.target_token.chain);
 
   // Wallet client hooks for Ethereum claiming
   const { address } = useAccount();
@@ -108,15 +115,14 @@ export function SwapProcessingStep({
     localStorage.removeItem(claimKey);
   };
 
-  // Auto-claim for btc-to-evm when server is funded
+  // Auto-claim for btc-to-evm directions when server is funded
   useEffect(() => {
-    const autoClaimBtcToPolygonSwaps = async () => {
-      if (swapDirection !== "btc-to-evm" && swapDirection !== "onchain-to-evm")
-        return;
+    const autoClaimBtcToEvmSwaps = async () => {
+      if (!isBtcToEvmDirection(swapData.direction)) return;
       if (swapData.status !== "serverfunded") return;
 
       // For Ethereum tokens, don't auto-claim if wallet not connected
-      if (isEthereumToken(swapData.target_token) && !address) {
+      if (isEthereumToken(swapData.target_token.chain) && !address) {
         return;
       }
 
@@ -152,12 +158,12 @@ export function SwapProcessingStep({
         localStorage.setItem(claimKey, Date.now().toString());
 
         if (
-          isPolygonToken(swapData.target_token) ||
-          isArbitrumToken(swapData.target_token)
+          isPolygonToken(swapData.target_token.chain) ||
+          isArbitrumToken(swapData.target_token.chain)
         ) {
           // we rely on the wasm part knowing about the secret
           await api.claimGelato(swapData.id);
-        } else if (isEthereumToken(swapData.target_token)) {
+        } else if (isEthereumToken(swapData.target_token.chain)) {
           // Ethereum: claim using user's wallet
           if (!address) {
             setOpen(true);
@@ -186,13 +192,16 @@ export function SwapProcessingStep({
           console.log("Switching to chain:", chain.name);
           await switchChainAsync({ chainId: chain.id });
 
+          // All btc-to-evm directions have evm_htlc_address after narrowing
           let htlcAddress: `0x${string}`;
-          if (isBtcOnchain(swapData.source_token)) {
-            htlcAddress = (swapData as OnchainToEvmSwapResponse)
-              .evm_htlc_address as `0x${string}`;
+          if (swapData.direction === "bitcoin_to_evm") {
+            htlcAddress = swapData.evm_htlc_address as `0x${string}`;
+          } else if (swapData.direction === "arkade_to_evm") {
+            htlcAddress = swapData.evm_htlc_address as `0x${string}`;
+          } else if (swapData.direction === "lightning_to_evm") {
+            htlcAddress = swapData.evm_htlc_address as `0x${string}`;
           } else {
-            htlcAddress = (swapData as BtcToEvmSwapResponse)
-              .htlc_address_evm as `0x${string}`;
+            throw new Error(`Unexpected direction: ${swapData.direction}`);
           }
           console.log(`Claiming for htlc contract `, htlcAddress);
 
@@ -254,7 +263,7 @@ export function SwapProcessingStep({
           posthog?.capture("swap_failed", {
             failure_type: "claim",
             swap_id: swapData.id,
-            swap_direction: swapDirection,
+            swap_direction: swapData.direction,
             error_message: errorMessage,
             retry_count: newRetryCount,
           });
@@ -276,10 +285,9 @@ export function SwapProcessingStep({
       }
     };
 
-    autoClaimBtcToPolygonSwaps();
+    autoClaimBtcToEvmSwaps();
   }, [
     swapData,
-    swapDirection,
     preimage,
     isClaiming,
     retryCount,
@@ -294,204 +302,209 @@ export function SwapProcessingStep({
   ]);
 
   // Auto-claim for evm-to-btc when server is funded
-  useEffect(() => {
-    const autoClaimPolygonToArkadeSwaps = async () => {
-      const polygonToBtcSwapData = swapData as EvmToBtcSwapResponse;
-      if (swapDirection !== "evm-to-btc") return;
-      if (isLightning(polygonToBtcSwapData.target_token)) {
-        // this will be claimed by the lightning client
-        return;
-      }
-      if (polygonToBtcSwapData.status !== "serverfunded") return;
-      if (!polygonToBtcSwapData.user_address_arkade) {
-        console.error("No user address for arkade provided");
-        setClaimError("Missing Arkade address for claim");
-        return;
-      }
-
-      const claimKey = `swap_${polygonToBtcSwapData.id}_claim_attempted`;
-      const attemptTimestamp = localStorage.getItem(claimKey);
-
-      // Check if we've exhausted retries
-      if (attemptTimestamp && retryCount >= maxRetries) {
-        console.log("Max retries reached for this swap, stopping");
-        return;
-      }
-
-      if (hasClaimedRef.current || isClaiming) return;
-
-      hasClaimedRef.current = true;
-      setIsClaiming(true);
-      setClaimError(null);
-
-      try {
-        // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
-        if (retryCount > 0) {
-          const backoffMs = 2 ** retryCount * 1000;
-          console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
-          await sleep(backoffMs);
-        }
-
-        console.log("Auto-claiming with parameters:", {
-          swapId: polygonToBtcSwapData.id,
-          retryCount,
-        });
-
-        // Mark that we've attempted to claim
-        localStorage.setItem(claimKey, Date.now().toString());
-
-        const txid = await api.claimVhtlc(polygonToBtcSwapData.id);
-        console.log(`Claim request sent successfully ${txid}`);
-        // Success! Reset retry count
-        setRetryCount(0);
-      } catch (error) {
-        console.error(
-          `Failed to auto-claim (attempt ${retryCount + 1}/${maxRetries}):`,
-          error,
-        );
-        const newRetryCount = retryCount + 1;
-        setRetryCount(newRetryCount);
-
-        if (newRetryCount >= maxRetries) {
-          const errorMessage =
-            error instanceof Error
-              ? `${error.message} (Max retries reached)`
-              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
-          setClaimError(errorMessage);
-
-          posthog?.capture("swap_failed", {
-            failure_type: "claim",
-            swap_id: polygonToBtcSwapData.id,
-            swap_direction: "evm-to-btc",
-            error_message: errorMessage,
-            retry_count: newRetryCount,
-          });
-        } else {
-          setClaimError(
-            error instanceof Error
-              ? `${error.message} (Retrying...)`
-              : `Failed to claim sats. Retrying...`,
-          );
-        }
-
-        // Only remove localStorage flag if we haven't exhausted retries
-        if (newRetryCount < maxRetries) {
-          localStorage.removeItem(claimKey);
-          hasClaimedRef.current = false;
-        }
-      } finally {
-        setIsClaiming(false);
-      }
-    };
-
-    autoClaimPolygonToArkadeSwaps();
-  }, [
-    swapData,
-    swapDirection,
-    isClaiming,
-    retryCount,
-    sleep,
-    posthog?.capture,
-  ]);
+  //   fixme: implement auto claim
+  //   useEffect(() => {
+  //     const autoClaimPolygonToArkadeSwaps = async () => {
+  //
+  //       /*
+  //       const polygonToBtcSwapData = swapData as EvmToBtcSwapResponse;
+  //       if (swapDirection !== "evm-to-btc") return;
+  //       if (isLightning(polygonToBtcSwapData.target_token)) {
+  //         // this will be claimed by the lightning client
+  //         return;
+  //       }
+  //       if (polygonToBtcSwapData.status !== "serverfunded") return;
+  //       if (!polygonToBtcSwapData.user_address_arkade) {
+  //         console.error("No user address for arkade provided");
+  //         setClaimError("Missing Arkade address for claim");
+  //         return;
+  //       }
+  //
+  //       const claimKey = `swap_${polygonToBtcSwapData.id}_claim_attempted`;
+  //       const attemptTimestamp = localStorage.getItem(claimKey);
+  //
+  //       // Check if we've exhausted retries
+  //       if (attemptTimestamp && retryCount >= maxRetries) {
+  //         console.log("Max retries reached for this swap, stopping");
+  //         return;
+  //       }
+  //
+  //       if (hasClaimedRef.current || isClaiming) return;
+  //
+  //       hasClaimedRef.current = true;
+  //       setIsClaiming(true);
+  //       setClaimError(null);
+  //
+  //       try {
+  //         // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
+  //         if (retryCount > 0) {
+  //           const backoffMs = 2 ** retryCount * 1000;
+  //           console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
+  //           await sleep(backoffMs);
+  //         }
+  //
+  //         console.log("Auto-claiming with parameters:", {
+  //           swapId: polygonToBtcSwapData.id,
+  //           retryCount,
+  //         });
+  //
+  //         // Mark that we've attempted to claim
+  //         localStorage.setItem(claimKey, Date.now().toString());
+  //
+  //         const txid = await api.claimVhtlc(polygonToBtcSwapData.id);
+  //         console.log(`Claim request sent successfully ${txid}`);
+  //         // Success! Reset retry count
+  //         setRetryCount(0);
+  //       } catch (error) {
+  //         console.error(
+  //           `Failed to auto-claim (attempt ${retryCount + 1}/${maxRetries}):`,
+  //           error,
+  //         );
+  //         const newRetryCount = retryCount + 1;
+  //         setRetryCount(newRetryCount);
+  //
+  //         if (newRetryCount >= maxRetries) {
+  //           const errorMessage =
+  //             error instanceof Error
+  //               ? `${error.message} (Max retries reached)`
+  //               : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
+  //           setClaimError(errorMessage);
+  //
+  //           posthog?.capture("swap_failed", {
+  //             failure_type: "claim",
+  //             swap_id: polygonToBtcSwapData.id,
+  //             swap_direction: "evm-to-btc",
+  //             error_message: errorMessage,
+  //             retry_count: newRetryCount,
+  //           });
+  //         } else {
+  //           setClaimError(
+  //             error instanceof Error
+  //               ? `${error.message} (Retrying...)`
+  //               : `Failed to claim sats. Retrying...`,
+  //           );
+  //         }
+  //
+  //         // Only remove localStorage flag if we haven't exhausted retries
+  //         if (newRetryCount < maxRetries) {
+  //           localStorage.removeItem(claimKey);
+  //           hasClaimedRef.current = false;
+  //         }
+  //       } finally {
+  //         setIsClaiming(false);
+  //       }
+  // */
+  //     };
+  //
+  //     autoClaimPolygonToArkadeSwaps();
+  //   }, [
+  //     swapData,
+  //     swapDirection,
+  //     isClaiming,
+  //     retryCount,
+  //     sleep,
+  //     posthog?.capture,
+  //   ]);
 
   // Auto-claim for bitcoin-to-arkade when server is funded
-  useEffect(() => {
-    const autoClaimBtcToArkadeSwaps = async () => {
-      if (swapDirection !== "evm-to-btc") return;
-      const bitcoinToArkadeSwapData = swapData as BtcToArkadeSwapResponse;
-      if (bitcoinToArkadeSwapData.status !== "serverfunded") return;
-      if (!bitcoinToArkadeSwapData.target_arkade_address) {
-        console.error("No user address for arkade provided");
-        setClaimError("Missing Arkade address for claim");
-        return;
-      }
-
-      const claimKey = `swap_${bitcoinToArkadeSwapData.id}_claim_attempted`;
-      const attemptTimestamp = localStorage.getItem(claimKey);
-
-      // Check if we've exhausted retries
-      if (attemptTimestamp && retryCount >= maxRetries) {
-        console.log("Max retries reached for this swap, stopping");
-        return;
-      }
-
-      if (hasClaimedRef.current || isClaiming) return;
-
-      hasClaimedRef.current = true;
-      setIsClaiming(true);
-      setClaimError(null);
-
-      try {
-        // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
-        if (retryCount > 0) {
-          const backoffMs = 2 ** retryCount * 1000;
-          console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
-          await sleep(backoffMs);
-        }
-
-        console.log("Auto-claiming with parameters:", {
-          swapId: bitcoinToArkadeSwapData.id,
-          retryCount,
-        });
-
-        // Mark that we've attempted to claim
-        localStorage.setItem(claimKey, Date.now().toString());
-
-        const txid = await api.claimBtcToArkadeVhtlc(
-          bitcoinToArkadeSwapData.id,
-        );
-        console.log(`Claim request sent successfully ${txid}`);
-        // Success! Reset retry count
-        setRetryCount(0);
-      } catch (error) {
-        console.error(
-          `Failed to auto-claim (attempt ${retryCount + 1}/${maxRetries}):`,
-          error,
-        );
-        const newRetryCount = retryCount + 1;
-        setRetryCount(newRetryCount);
-
-        if (newRetryCount >= maxRetries) {
-          const errorMessage =
-            error instanceof Error
-              ? `${error.message} (Max retries reached)`
-              : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
-          setClaimError(errorMessage);
-
-          posthog?.capture("swap_failed", {
-            failure_type: "claim",
-            swap_id: bitcoinToArkadeSwapData.id,
-            swap_direction: "btc-to-arkade",
-            error_message: errorMessage,
-            retry_count: newRetryCount,
-          });
-        } else {
-          setClaimError(
-            error instanceof Error
-              ? `${error.message} (Retrying...)`
-              : `Failed to claim sats. Retrying...`,
-          );
-        }
-
-        // Only remove localStorage flag if we haven't exhausted retries
-        if (newRetryCount < maxRetries) {
-          localStorage.removeItem(claimKey);
-          hasClaimedRef.current = false;
-        }
-      } finally {
-        setIsClaiming(false);
-      }
-    };
-
-    autoClaimBtcToArkadeSwaps();
-  }, [
-    swapData,
-    swapDirection,
-    isClaiming,
-    retryCount,
-    sleep,
-    posthog?.capture,
-  ]);
+  //   fixme: implement auto claim
+  // useEffect(() => {
+  //   const autoClaimBtcToArkadeSwaps = async () => {
+  //     if (swapDirection !== "evm-to-btc") return;
+  //     const bitcoinToArkadeSwapData = swapData as BtcToArkadeSwapResponse;
+  //     if (bitcoinToArkadeSwapData.status !== "serverfunded") return;
+  //     if (!bitcoinToArkadeSwapData.target_arkade_address) {
+  //       console.error("No user address for arkade provided");
+  //       setClaimError("Missing Arkade address for claim");
+  //       return;
+  //     }
+  //
+  //     const claimKey = `swap_${bitcoinToArkadeSwapData.id}_claim_attempted`;
+  //     const attemptTimestamp = localStorage.getItem(claimKey);
+  //
+  //     // Check if we've exhausted retries
+  //     if (attemptTimestamp && retryCount >= maxRetries) {
+  //       console.log("Max retries reached for this swap, stopping");
+  //       return;
+  //     }
+  //
+  //     if (hasClaimedRef.current || isClaiming) return;
+  //
+  //     hasClaimedRef.current = true;
+  //     setIsClaiming(true);
+  //     setClaimError(null);
+  //
+  //     try {
+  //       // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
+  //       if (retryCount > 0) {
+  //         const backoffMs = 2 ** retryCount * 1000;
+  //         console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
+  //         await sleep(backoffMs);
+  //       }
+  //
+  //       console.log("Auto-claiming with parameters:", {
+  //         swapId: bitcoinToArkadeSwapData.id,
+  //         retryCount,
+  //       });
+  //
+  //       // Mark that we've attempted to claim
+  //       localStorage.setItem(claimKey, Date.now().toString());
+  //
+  //       const txid = await api.claimBtcToArkadeVhtlc(
+  //         bitcoinToArkadeSwapData.id,
+  //       );
+  //       console.log(`Claim request sent successfully ${txid}`);
+  //       // Success! Reset retry count
+  //       setRetryCount(0);
+  //     } catch (error) {
+  //       console.error(
+  //         `Failed to auto-claim (attempt ${retryCount + 1}/${maxRetries}):`,
+  //         error,
+  //       );
+  //       const newRetryCount = retryCount + 1;
+  //       setRetryCount(newRetryCount);
+  //
+  //       if (newRetryCount >= maxRetries) {
+  //         const errorMessage =
+  //           error instanceof Error
+  //             ? `${error.message} (Max retries reached)`
+  //             : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
+  //         setClaimError(errorMessage);
+  //
+  //         posthog?.capture("swap_failed", {
+  //           failure_type: "claim",
+  //           swap_id: bitcoinToArkadeSwapData.id,
+  //           swap_direction: "btc-to-arkade",
+  //           error_message: errorMessage,
+  //           retry_count: newRetryCount,
+  //         });
+  //       } else {
+  //         setClaimError(
+  //           error instanceof Error
+  //             ? `${error.message} (Retrying...)`
+  //             : `Failed to claim sats. Retrying...`,
+  //         );
+  //       }
+  //
+  //       // Only remove localStorage flag if we haven't exhausted retries
+  //       if (newRetryCount < maxRetries) {
+  //         localStorage.removeItem(claimKey);
+  //         hasClaimedRef.current = false;
+  //       }
+  //     } finally {
+  //       setIsClaiming(false);
+  //     }
+  //   };
+  //
+  //   autoClaimBtcToArkadeSwaps();
+  // }, [
+  //   swapData,
+  //   swapDirection,
+  //   isClaiming,
+  //   retryCount,
+  //   sleep,
+  //   posthog?.capture,
+  // ]);
 
   const handleCopyTxId = async (txId: string) => {
     try {
@@ -509,80 +522,120 @@ export function SwapProcessingStep({
 
   // Define field mappings and labels based on swap direction
   const getConfig = () => {
-    if (swapDirection === "btc-to-evm") {
-      const swap = swapData as BtcToEvmSwapResponse;
-      return {
-        step1Label: "User Funded",
-        step1TxId: swap.bitcoin_htlc_fund_txid,
-        step1IsEvm: false,
-        step2LabelActive: "Server Funding",
-        step2LabelComplete: "Server Funded",
-        step2TxId: swap.evm_htlc_fund_txid,
-        step2IsEvm: true,
-        step3Label: "Client Redeeming",
-        step3TxId: swap.evm_htlc_claim_txid,
-        step3IsEvm: true,
-        step4Label: "Server Redeemed",
-        step4TxId: swap.bitcoin_htlc_claim_txid,
-        step4IsEvm: false,
-      };
+    switch (swapData.direction) {
+      case "btc_to_arkade":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.btc_fund_txid,
+          step1IsEvm: false,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.arkade_fund_txid,
+          step2IsEvm: false,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.arkade_claim_txid,
+          step3IsEvm: false,
+          step4Label: "Server Redeemed",
+          step4TxId: swapData.btc_claim_txid,
+          step4IsEvm: false,
+        };
+      case "bitcoin_to_evm":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.btc_fund_txid,
+          step1IsEvm: false,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.evm_fund_txid,
+          step2IsEvm: true,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.evm_claim_txid,
+          step3IsEvm: true,
+          step4Label: "Server Redeemed",
+          step4TxId: swapData.btc_claim_txid,
+          step4IsEvm: false,
+        };
+      case "arkade_to_evm":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.btc_fund_txid,
+          step1IsEvm: false,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.evm_fund_txid,
+          step2IsEvm: true,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.evm_claim_txid,
+          step3IsEvm: true,
+          step4Label: "Server Redeemed",
+          step4TxId: swapData.btc_claim_txid,
+          step4IsEvm: false,
+        };
+      case "evm_to_arkade":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.evm_fund_txid,
+          step1IsEvm: true,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.btc_fund_txid,
+          step2IsEvm: false,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.btc_claim_txid,
+          step3IsEvm: false,
+          step4Label: "Server Redeemed",
+          step4TxId: swapData.evm_claim_txid,
+          step4IsEvm: true,
+        };
+      case "evm_to_bitcoin":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.evm_fund_txid,
+          step1IsEvm: true,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.btc_fund_txid,
+          step2IsEvm: false,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.btc_claim_txid,
+          step3IsEvm: false,
+          step4Label: "Server Redeemed",
+          step4TxId: swapData.evm_claim_txid,
+          step4IsEvm: true,
+        };
+      case "lightning_to_evm":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.btc_claim_txid,
+          step1IsEvm: false,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.evm_fund_txid,
+          step2IsEvm: true,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.evm_claim_txid,
+          step3IsEvm: true,
+          step4Label: "Server Redeemed",
+          step4TxId: null,
+          step4IsEvm: false,
+        };
+      case "evm_to_lightning":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.evm_fund_txid,
+          step1IsEvm: true,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.evm_claim_txid,
+          step2IsEvm: true,
+          step3Label: "Lightning Payment",
+          step3TxId: swapData.lightning_paid ? "paid" : null,
+          step3IsEvm: false,
+          step4Label: "Complete",
+          step4TxId: swapData.lightning_paid ? "paid" : null,
+          step4IsEvm: false,
+        };
     }
-
-    if (swapDirection === "evm-to-btc") {
-      const swap = swapData as EvmToBtcSwapResponse;
-      return {
-        step1Label: "User Funded",
-        step1TxId: swap.evm_htlc_fund_txid,
-        step1IsEvm: true,
-        step2LabelActive: "Server Funding",
-        step2LabelComplete: "Server Funded",
-        step2TxId: swap.bitcoin_htlc_fund_txid,
-        step2IsEvm: false,
-        step3Label: "Client Redeeming",
-        step3TxId: swap.bitcoin_htlc_claim_txid,
-        step3IsEvm: false,
-        step4Label: "Server Redeemed",
-        step4TxId: swap.evm_htlc_claim_txid,
-        step4IsEvm: true,
-      };
-    }
-
-    if (swapDirection === "onchain-to-evm") {
-      const swap = swapData as OnchainToEvmSwapResponse;
-      return {
-        step1Label: "User Funded",
-        step1TxId: swap.btc_fund_txid,
-        step1IsEvm: true,
-        step2LabelActive: "Server Funding",
-        step2LabelComplete: "Server Funded",
-        step2TxId: swap.evm_fund_txid,
-        step2IsEvm: false,
-        step3Label: "Client Redeeming",
-        step3TxId: swap.evm_claim_txid,
-        step3IsEvm: false,
-        step4Label: "Server Redeemed",
-        step4TxId: swap.btc_claim_txid,
-        step4IsEvm: true,
-      };
-    }
-
-    // else it's btc-to-arkade: BTC HTLC → Arkade VHTLC
-    const swap = swapData as BtcToArkadeSwapResponse;
-    return {
-      step1Label: "User Funded",
-      step1TxId: swap.btc_fund_txid,
-      step1IsEvm: false,
-      step2LabelActive: "Server Funding",
-      step2LabelComplete: "Server Funded",
-      step2TxId: swap.arkade_fund_txid,
-      step2IsEvm: false,
-      step3Label: "Client Redeeming",
-      step3TxId: swap.arkade_claim_txid,
-      step3IsEvm: false,
-      step4Label: "Server Redeemed",
-      step4TxId: swap.btc_claim_txid,
-      step4IsEvm: false,
-    };
   };
 
   const config = getConfig();
@@ -600,6 +653,9 @@ export function SwapProcessingStep({
   };
 
   const currentStep = getCurrentStep();
+
+  const isBtcToEvm = isBtcToEvmDirection(swapData.direction);
+  const isEvmToBtc = isEvmToBtcDirection(swapData.direction);
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
@@ -619,7 +675,7 @@ export function SwapProcessingStep({
             </div>
           </div>
           <h3 className="text-sm font-semibold">
-            Receiving {getTokenSymbol(swapData.target_token)}
+            Receiving {swapData.target_token.symbol}
           </h3>
         </div>
         <div className="flex items-center gap-2">
@@ -670,7 +726,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step1IsEvm && (
                     <a
-                      href={`${getBlockexplorerTxLink(swapData.source_token, config.step1TxId)}`}
+                      href={`${getBlockexplorerTxLink(swapData.source_token.chain, config.step1TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"
@@ -727,7 +783,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step2IsEvm && (
                     <a
-                      href={`${getBlockexplorerTxLink(swapData.target_token, config.step2TxId)}`}
+                      href={`${getBlockexplorerTxLink(swapData.target_token.chain, config.step2TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"
@@ -775,7 +831,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step3IsEvm && (
                     <a
-                      href={`${getBlockexplorerTxLink(swapData.target_token, config.step3TxId)}`}
+                      href={`${getBlockexplorerTxLink(swapData.target_token.chain, config.step3TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"
@@ -790,23 +846,21 @@ export function SwapProcessingStep({
                 <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
                   <p className="text-sm font-medium">
                     {isClaiming
-                      ? swapDirection === "evm-to-btc"
+                      ? isEvmToBtc
                         ? "Redeeming your sats..."
                         : "Claiming your tokens..."
-                      : swapDirection === "evm-to-btc"
+                      : isEvmToBtc
                         ? "VHTLC Funded"
                         : "HTLC Funded"}
                   </p>
                   <p className="text-muted-foreground text-xs">
                     {isClaiming
-                      ? swapDirection === "evm-to-btc"
-                        ? isLightning(swapData.target_token)
-                          ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
-                          : "Lightning invoice is pending..."
-                        : isEthereumToken(swapData.target_token)
+                      ? isEvmToBtc
+                        ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
+                        : isEthereumToken(swapData.target_token.chain)
                           ? "Claiming tokens via your Ethereum wallet (you pay gas)..."
                           : "Submitting claim request via Gelato Relay..."
-                      : swapDirection === "evm-to-btc"
+                      : isEvmToBtc
                         ? "The VHTLC has been funded. Preparing to claim your sats..."
                         : "The HTLC has been funded. Preparing to claim your tokens..."}
                   </p>
@@ -815,10 +869,10 @@ export function SwapProcessingStep({
                       Retry attempt {retryCount}/{maxRetries}...
                     </p>
                   )}
-                  {swapDirection === "btc-to-evm" &&
+                  {isBtcToEvm &&
                     !isClaiming &&
                     !claimError &&
-                    isEthereumToken(swapData.target_token) &&
+                    isEthereumToken(swapData.target_token.chain) &&
                     !address && (
                       <div className="space-y-2">
                         <p className="text-muted-foreground text-xs">
@@ -833,16 +887,13 @@ export function SwapProcessingStep({
                         </Button>
                       </div>
                     )}
-                  {swapDirection === "btc-to-evm" &&
-                    !isClaiming &&
-                    !claimError &&
-                    address && (
-                      <p className="text-muted-foreground text-xs">
-                        {isEthereumToken(swapData.target_token)
-                          ? "You will need ETH in your wallet to pay for gas fees to claim your tokens."
-                          : "Gas fees fully sponsored via Gelato Relay - no fees for you!"}
-                      </p>
-                    )}
+                  {isBtcToEvm && !isClaiming && !claimError && address && (
+                    <p className="text-muted-foreground text-xs">
+                      {isEthereumToken(swapData.target_token.chain)
+                        ? "You will need ETH in your wallet to pay for gas fees to claim your tokens."
+                        : "Gas fees fully sponsored via Gelato Relay - no fees for you!"}
+                    </p>
+                  )}
                   {claimError && (
                     <div className="space-y-2">
                       <div className="bg-destructive/10 text-destructive rounded-lg p-2 text-xs">
@@ -900,7 +951,7 @@ export function SwapProcessingStep({
                   </button>
                   {config.step4IsEvm && (
                     <a
-                      href={`${getBlockexplorerTxLink(swapData.source_token, config.step4TxId)}`}
+                      href={`${getBlockexplorerTxLink(swapData.source_token.chain, config.step4TxId)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-foreground"

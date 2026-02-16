@@ -1,4 +1,10 @@
-import { isArkade, isLightning } from "@lendasat/lendaswap-sdk-pure";
+import {
+  type EvmToArkadeSwapResponse,
+  type EvmToBitcoinSwapResponse,
+  type EvmToLightningSwapResponse,
+  isArkade,
+  isLightning,
+} from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Loader } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -9,12 +15,7 @@ import {
   useWalletClient,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
-import {
-  type EvmToBtcSwapResponse,
-  getTokenNetworkName,
-  getTokenSymbol,
-  type TokenInfo,
-} from "../../api";
+import { getTokenNetworkName, type TokenInfo } from "../../api";
 import {
   getTokenIcon,
   getTokenNetworkIcon,
@@ -22,42 +23,45 @@ import {
 } from "../../utils/tokenUtils";
 
 // ERC20 ABI - approve and allowance functions
-const ERC20_ABI = [
-  {
-    inputs: [
-      { name: "spender", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      { name: "owner", type: "address" },
-      { name: "spender", type: "address" },
-    ],
-    name: "allowance",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
+// const ERC20_ABI = [
+//   {
+//     inputs: [
+//       { name: "spender", type: "address" },
+//       { name: "amount", type: "uint256" },
+//     ],
+//     name: "approve",
+//     outputs: [{ name: "", type: "bool" }],
+//     stateMutability: "nonpayable",
+//     type: "function",
+//   },
+//   {
+//     inputs: [
+//       { name: "owner", type: "address" },
+//       { name: "spender", type: "address" },
+//     ],
+//     name: "allowance",
+//     outputs: [{ name: "", type: "uint256" }],
+//     stateMutability: "view",
+//     type: "function",
+//   },
+// ] as const;
 
-interface PolygonDepositStepProps {
-  swapData: EvmToBtcSwapResponse;
+interface EvmDepositStepProps {
+  swapData:
+    | EvmToArkadeSwapResponse
+    | EvmToBitcoinSwapResponse
+    | EvmToLightningSwapResponse;
   swapId: string;
   // the token which is being swapped
   tokenInfo: TokenInfo;
 }
 
-export function PolygonDepositStep({
+export function EvmDepositStep({
   swapData,
   swapId,
   tokenInfo,
-}: PolygonDepositStepProps) {
-  const chain = getViemChain(swapData.source_token);
+}: EvmDepositStepProps) {
+  const chain = getViemChain(swapData.source_token.chain);
   console.log(`EVM chain `, chain?.name);
 
   const { address } = useAccount();
@@ -77,9 +81,9 @@ export function PolygonDepositStep({
     }
   }, [address, setOpen]);
 
-  const tokenSymbol = getTokenSymbol(swapData.source_token);
-  const receiveAmount = swapData?.sats_receive
-    ? (Number(swapData.sats_receive) / 100_000_000).toFixed(8)
+  const tokenSymbol = swapData.source_token.symbol;
+  const receiveAmount = swapData?.source_amount
+    ? (Number(swapData.source_amount) / 100_000_000).toFixed(8)
     : 0;
 
   const handleSign = async () => {
@@ -112,8 +116,8 @@ export function PolygonDepositStep({
       // Switch to the correct chain if needed
       console.log("Switching to chain:", chain.name);
       await switchChainAsync({ chainId: chain.id });
-
-      const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
+      // FIXME: implement this
+      /*const htlcAddress = swapData.htlc_address_evm as `0x${string}`;
       const tokenAddress = swapData.source_token_address as `0x${string}`;
 
       // Parse the amount needed for this swap
@@ -208,7 +212,7 @@ export function PolygonDepositStep({
       }
 
       console.log("Both transactions completed successfully!");
-      console.log("CreateSwap tx:", createSwapTxHash);
+      console.log("CreateSwap tx:", createSwapTxHash);*/
 
       // The wizard will automatically move to the next step via polling
     } catch (err) {
@@ -255,7 +259,7 @@ export function PolygonDepositStep({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
-              {swapData.asset_amount.toFixed(tokenInfo.decimals)} {tokenSymbol}{" "}
+              {swapData.source_amount.toFixed(tokenInfo.decimals)} {tokenSymbol}{" "}
               on {getTokenNetworkName(swapData.source_token)}
             </span>
           </div>
@@ -274,7 +278,7 @@ export function PolygonDepositStep({
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground"></span>
             <span className="text-muted-foreground">
-              (~{swapData.sats_receive} sats)
+              (~{swapData.target_amount} sats)
             </span>
           </div>
         </div>

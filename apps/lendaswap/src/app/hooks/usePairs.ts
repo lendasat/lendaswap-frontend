@@ -5,6 +5,7 @@ import {
   isBtc,
   isBtcOnchain,
   isEvmToken,
+  tokenChain,
   type TokenId,
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -52,9 +53,13 @@ export function usePairs() {
   //  - BTC onchain → Arkade + all EVM tokens
   //  - BTC (arkade/lightning) → all EVM tokens
   //  - EVM token → all BTC tokens (except onchain)
-  function getAvailableTargetAssets(sourceAsset: TokenId): TokenInfo[] {
+  function getAvailableTargetAssets(sourceAsset?: TokenId): TokenInfo[] {
     const sort = (list: TokenInfo[]) =>
       list.sort((a, b) => a.token_id.localeCompare(b.token_id));
+
+    if (!sourceAsset) {
+      return sort([...allTokens]);
+    }
 
     if (isBtcOnchain(sourceAsset)) {
       const arkade = btcTokens.find((t) => t.token_id === BTC_ARKADE);
@@ -65,7 +70,7 @@ export function usePairs() {
       return sort([...evmTokens]);
     }
 
-    if (isEvmToken(sourceAsset)) {
+    if (isEvmToken(tokenChain(sourceAsset))) {
       // EVM → BTC (arkade, lightning); not onchain
       return sort(btcTokens.filter((t) => !isBtcOnchain(t.token_id)));
     }
@@ -74,12 +79,11 @@ export function usePairs() {
     return sort([...btcTokens]);
   }
 
-  function getSourceDecimals(sourceAsset: TokenId): number | undefined {
-    return tokensByIdMap.get(sourceAsset)?.decimals;
-  }
-
-  function getTargetDecimals(targetAsset: TokenId): number | undefined {
-    return tokensByIdMap.get(targetAsset)?.decimals;
+  function getDecimals(assetId?: TokenId): number | undefined {
+    if (!assetId) {
+      return undefined;
+    }
+    return tokensByIdMap.get(assetId)?.decimals;
   }
 
   return {
@@ -87,7 +91,6 @@ export function usePairs() {
     getAvailableTargetAssets,
     tokens: allTokens,
     isLoading,
-    getSourceDecimals,
-    getTargetDecimals,
+    getDecimals,
   };
 }
