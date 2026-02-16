@@ -469,8 +469,16 @@ export function HomePage() {
               </div>
               <div>
                 Protocol Fee:{" "}
-                {(Number(quote.protocol_fee) / 100_000_000.0).toFixed(8)} BTC (
-                {(quote.protocol_fee_rate * 100).toFixed(2)}%)
+                {(() => {
+                  const qSrc = Number(quote.source_amount);
+                  const scale =
+                    sourceAmount != null && qSrc > 0
+                      ? sourceAmount / qSrc
+                      : 1;
+                  const fee = Number(quote.protocol_fee) * scale;
+                  return (fee / 100_000_000.0).toFixed(8);
+                })()}{" "}
+                BTC ({(quote.protocol_fee_rate * 100).toFixed(2)}%)
               </div>
             </div>
           </div>
