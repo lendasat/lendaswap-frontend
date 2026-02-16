@@ -4,23 +4,28 @@ import {
   BTC_ONCHAIN,
   type Chain,
   isBtc,
-  toChain,
-  tokenChain,
   type TokenId,
   type TokenInfo,
+  toChain,
+  tokenChain,
 } from "@lendasat/lendaswap-sdk-pure";
+import { TokenBTC } from "@web3icons/react";
 import { NetworkIcon, TokenIcon } from "@web3icons/react/dynamic";
 import type { ReactElement } from "react";
 import {
   arbitrum,
-  type Chain as ViemChain,
   mainnet,
   polygon,
+  type Chain as ViemChain,
 } from "viem/chains";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
-import { TokenBTC } from "@web3icons/react";
+import { ReactComponent as Usdc } from "../../assets/usdc.svg";
+import { ReactComponent as Usdt } from "../../assets/usdt.svg";
+import { ReactComponent as Usdt0 } from "../../assets/usdt0.svg";
+import { ReactComponent as Wbtc } from "../../assets/wbtc.svg";
+import { ReactComponent as Xaut } from "../../assets/xaut.svg";
 
 /**
  * Get the full display name for a token (including network)
@@ -38,21 +43,30 @@ export function getTokenIcon(
   height?: number,
 ): ReactElement {
   if (tokenId.token_id.toLowerCase() === "btc") {
-    return <TokenBTC height={height} width={width} />;
+    return <TokenBTC height={height} width={width} variant={"branded"} />;
   }
 
-  if (!tokenId.chain) {
-    console.log(`Unsupported token ${JSON.stringify(tokenId)}`);
+  if (tokenId.symbol.toLowerCase() === "wbtc") {
+    return <Wbtc width={64} height={64} />;
   }
-
-  console.log(`Token: ${JSON.stringify(tokenId)}`);
+  if (tokenId.symbol.toLowerCase() === "usdc") {
+    return <Usdc width={64} height={64} />;
+  }
+  if (tokenId.symbol.toLowerCase() === "usdt0") {
+    return <Usdt0 width={64} height={64} />;
+  }
+  if (tokenId.symbol.toLowerCase() === "usdt") {
+    return <Usdt width={64} height={64} />;
+  }
+  if (tokenId.symbol.toLowerCase() === "xaut") {
+    return <Xaut width={64} height={64} />;
+  }
 
   return (
     <TokenIcon
-      address={tokenId.token_id}
-      network={tokenId.chain.toLowerCase()}
-      width={width}
-      height={height}
+      symbol={tokenId.symbol.toLowerCase()}
+      size={"4rem"}
+      variant={"branded"}
     />
   );
 }
