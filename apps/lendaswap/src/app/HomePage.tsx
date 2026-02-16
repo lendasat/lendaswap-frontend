@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAccount } from "wagmi";
-import { isBtcOnchain, type TokenInfo } from "@lendasat/lendaswap-sdk-pure";
+import {
+  isArkade,
+  isBtc,
+  isBtcOnchain,
+  type TokenInfo,
+} from "@lendasat/lendaswap-sdk-pure";
 import { ArrowDown } from "lucide-react";
 import { api } from "./api";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { useAsync } from "react-use";
-import { formatTokenUrl, parseUrlToken } from "./utils/tokenUtils";
+import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
+import { AddressInput } from "./components/AddressInput";
+import { useWalletBridge } from "./WalletBridgeContext";
 
 // Build query string from amounts
 function buildAmountParams(srcAmt?: number, tgtAmt?: number): string {
@@ -35,19 +42,11 @@ function getAvailableTargetAssets(
     return sort([...allTokens]);
   }
 
-  if (
-    sourceAsset.chain === "Arkade" ||
-    sourceAsset.chain === "Bitcoin" ||
-    sourceAsset.chain === "Lightning"
-  ) {
+  if (isBtc(sourceAsset.chain)) {
     return sort([...evmTokens]);
   }
 
-  if (
-    sourceAsset.chain === "Ethereum" ||
-    sourceAsset.chain === "Polygon" ||
-    sourceAsset.chain === "Arbitrum"
-  ) {
+  if (isEvmToken(sourceAsset.chain)) {
     // EVM → BTC (arkade, lightning); not onchain
     return sort([...btcTokens]);
   }
@@ -60,10 +59,12 @@ export function HomePage() {
   const navigate = useNavigate();
   const params = useParams<{ sourceToken?: string; targetToken?: string }>();
   const {
-    address: _connectedAddress,
-    isConnected: _isWeb3WalletConnected,
+    address: connectedAddress,
+    isConnected: isWeb3WalletConnected,
     chain: _web3WalletConnectedChain,
   } = useAccount();
+
+  const { arkAddress, isEmbedded } = useWalletBridge();
 
   useEffect(() => {
     document.title = "LendaSwap - Lightning-Fast Bitcoin Atomic Swaps";
@@ -92,9 +93,21 @@ export function HomePage() {
       return v ? Number(v) : undefined;
     },
   );
+  // TODO: this needs to be set
   const [_lastEditedField, setLastEditedField] = useState<
     "sourceAsset" | "targetAsset"
   >("sourceAsset");
+  const [targetAddress, setTargetAddress] = useState<string>("");
+  const [isAddressValid, setIsAddressValid] = useState(true);
+
+  useEffect(() => {
+    const maybeWeb3Address = connectedAddress?.toString();
+    if (maybeWeb3Address && isWeb3WalletConnected) {
+      setTargetAddress(maybeWeb3Address);
+    } else {
+      setTargetAddress("");
+    }
+  }, [connectedAddress, isWeb3WalletConnected]);
 
   const {
     value: maybeAvailableTokens,
@@ -162,7 +175,7 @@ export function HomePage() {
     );
   }
 
-  const isInitialLoading = tokensLoading;
+  const isInitialLoading = tokensLoading || !isAddressValid;
 
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
@@ -307,115 +320,113 @@ export function HomePage() {
       </div>
 
       {/* Address Input */}
-      {/*
+
       <div className="pt-3">
         <AddressInput
           value={targetAddress}
           onChange={setTargetAddress}
           targetToken={targetAsset}
-          setAddressIsValid={setAddressValid}
           setBitcoinAmount={(amount) => {
             setLastEditedField("targetAsset");
             setTargetAmountState(amount);
           }}
+          setAddressIsValid={setIsAddressValid}
           disabled={
             isEmbedded && !!arkAddress && !!targetAsset && isArkade(targetAsset)
           }
         />
-
-         Fees - below inputs, above Continue button
-        {isLoadingQuote ? (
-          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
-            <div className="flex flex-wrap justify-between gap-y-0.5">
-              <div className="flex items-center gap-1">
-                Network Fee: <Skeleton className="h-3 w-24" />
-              </div>
-              <div className="flex items-center gap-1">
-                Protocol Fee: <Skeleton className="h-3 w-32" />
-              </div>
-            </div>
-            {sourceAsset && isEvmToken(sourceAsset.chain) && isConnected && (
-              <div>Gas Fee: check in wallet when signing</div>
-            )}
-          </div>
-        ) : quote ? (
-          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
-            <div className="flex flex-wrap justify-between gap-y-0.5">
-              <div>
-                Network Fee:{" "}
-                {(Number(quote.network_fee) / 100_000_000.0).toFixed(8)} BTC
-              </div>
-              <div>
-                Protocol Fee:{" "}
-                {(Number(quote.protocol_fee) / 100_000_000.0).toFixed(8)} BTC (
-                {(quote.protocol_fee_rate * 100).toFixed(2)}%)
-              </div>
-            </div>
-            {sourceAsset && isEvmToken(sourceAsset.chain) && isConnected && (
-              <div>Gas Fee: check in wallet when signing</div>
-            )}
-          </div>
-        ) : null}
-
-        <div className="pt-2">
-           Show Connect Wallet button when:
-              1. EVM source (user needs to pay gas to send EVM tokens)
-              2. BTC source + Ethereum target (user needs to pay gas to claim on Ethereum)
-              Note: BTC → Polygon uses Gelato Relay so no wallet needed
-          {!isValidSpeedWalletContext() &&
-          !isConnected &&
-          ((sourceAsset && isEvmToken(sourceAsset.chain)) ||
-            (sourceAsset &&
-              isBtc(sourceAsset) &&
-              targetAsset &&
-              isEthereumToken(targetAsset.chain))) ? (
-            <ConnectKitButton.Custom>
-              {({ show }) => (
-                <Button onClick={show} className="w-full h-12 gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Connect Wallet to Pay Gas
-                </Button>
-              )}
-            </ConnectKitButton.Custom>
-          ) : (
-            <Button
-              onClick={handleContinueToFund}
-              disabled={
-                !targetAddress ||
-                !addressValid ||
-                isCreatingSwap ||
-                isWrongChain ||
-                (sourceAsset &&
-                  isEvmToken(sourceAsset.chain) &&
-                  !isEvmAddressValid)
-              }
-              className="w-full h-12"
-            >
-              {isCreatingSwap ? (
-                <>
-                  <Loader className="animate-spin h-4 w-4" />
-                  Please Wait
-                </>
-              ) : isWrongChain ? (
-                <>
-                  <Loader className="animate-spin h-4 w-4" />
-                  Switching to {expectedChain?.name}...
-                </>
-              ) : (
-                <>Continue</>
-              )}
-            </Button>
-          )}
-        </div>
-
-         Swap Error Display
-        {swapError && (
-          <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">
-            {swapError}
-          </div>
-        )}
+        {/*Fees - below inputs, above Continue button*/}
+        {/*{isLoadingQuote ? (*/}
+        {/*  <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">*/}
+        {/*    <div className="flex flex-wrap justify-between gap-y-0.5">*/}
+        {/*      <div className="flex items-center gap-1">*/}
+        {/*        Network Fee: <Skeleton className="h-3 w-24" />*/}
+        {/*      </div>*/}
+        {/*      <div className="flex items-center gap-1">*/}
+        {/*        Protocol Fee: <Skeleton className="h-3 w-32" />*/}
+        {/*      </div>*/}
+        {/*    </div>*/}
+        {/*    {sourceAsset && isEvmToken(sourceAsset.chain) && isConnected && (*/}
+        {/*      <div>Gas Fee: check in wallet when signing</div>*/}
+        {/*    )}*/}
+        {/*  </div>*/}
+        {/*) : quote ? (*/}
+        {/*  <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">*/}
+        {/*    <div className="flex flex-wrap justify-between gap-y-0.5">*/}
+        {/*      <div>*/}
+        {/*        Network Fee:{" "}*/}
+        {/*        {(Number(quote.network_fee) / 100_000_000.0).toFixed(8)} BTC*/}
+        {/*      </div>*/}
+        {/*      <div>*/}
+        {/*        Protocol Fee:{" "}*/}
+        {/*        {(Number(quote.protocol_fee) / 100_000_000.0).toFixed(8)} BTC (*/}
+        {/*        {(quote.protocol_fee_rate * 100).toFixed(2)}%)*/}
+        {/*      </div>*/}
+        {/*    </div>*/}
+        {/*    {sourceAsset &&*/}
+        {/*      isEvmToken(sourceAsset.chain) &&*/}
+        {/*      isWeb3WalletConnected && (*/}
+        {/*        <div>Gas Fee: check in wallet when signing</div>*/}
+        {/*      )}*/}
+        {/*  </div>*/}
+        {/*) : null}*/}
+        {/*<div className="pt-2">*/}
+        {/*  Show Connect Wallet button when: 1. EVM source (user needs to pay gas*/}
+        {/*  to send EVM tokens) 2. BTC source + Ethereum target (user needs to pay*/}
+        {/*  gas to claim on Ethereum) Note: BTC → Polygon uses Gelato Relay so no*/}
+        {/*  wallet needed*/}
+        {/*  {!isValidSpeedWalletContext() &&*/}
+        {/*  !isConnected &&*/}
+        {/*  ((sourceAsset && isEvmToken(sourceAsset.chain)) ||*/}
+        {/*    (sourceAsset &&*/}
+        {/*      isBtc(sourceAsset) &&*/}
+        {/*      targetAsset &&*/}
+        {/*      isEthereumToken(targetAsset.chain))) ? (*/}
+        {/*    <ConnectKitButton.Custom>*/}
+        {/*      {({ show }) => (*/}
+        {/*        <Button onClick={show} className="w-full h-12 gap-2">*/}
+        {/*          <Wallet className="h-4 w-4" />*/}
+        {/*          Connect Wallet to Pay Gas*/}
+        {/*        </Button>*/}
+        {/*      )}*/}
+        {/*    </ConnectKitButton.Custom>*/}
+        {/*  ) : (*/}
+        {/*    <Button*/}
+        {/*      onClick={handleContinueToFund}*/}
+        {/*      disabled={*/}
+        {/*        !targetAddress ||*/}
+        {/*        !addressValid ||*/}
+        {/*        isCreatingSwap ||*/}
+        {/*        isWrongChain ||*/}
+        {/*        (sourceAsset &&*/}
+        {/*          isEvmToken(sourceAsset.chain) &&*/}
+        {/*          !isEvmAddressValid)*/}
+        {/*      }*/}
+        {/*      className="w-full h-12"*/}
+        {/*    >*/}
+        {/*      {isCreatingSwap ? (*/}
+        {/*        <>*/}
+        {/*          <Loader className="animate-spin h-4 w-4" />*/}
+        {/*          Please Wait*/}
+        {/*        </>*/}
+        {/*      ) : isWrongChain ? (*/}
+        {/*        <>*/}
+        {/*          <Loader className="animate-spin h-4 w-4" />*/}
+        {/*          Switching to {expectedChain?.name}...*/}
+        {/*        </>*/}
+        {/*      ) : (*/}
+        {/*        <>Continue</>*/}
+        {/*      )}*/}
+        {/*    </Button>*/}
+        {/*  )}*/}
+        {/*</div>*/}
+        {/*Swap Error Display*/}
+        {/*{swapError && (*/}
+        {/*  <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">*/}
+        {/*    {swapError}*/}
+        {/*  </div>*/}
+        {/*)}*/}
       </div>
-*/}
     </div>
   );
 }
