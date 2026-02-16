@@ -21,7 +21,6 @@ import {
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
-import { getEvmTokenInfo } from "./utils/tokenUtils";
 
 // Re-export SDK types for use throughout the frontend
 export type {
@@ -191,18 +190,15 @@ export const api = {
     target_address: string;
     source_amount?: bigint;
     target_amount?: bigint;
-    target_token: TokenId;
+    token_address: string;
+    evm_chain_id: number;
   }): Promise<ArkadeToEvmSwapResponse> {
     const referralCode = getReferralCode();
-    const evmToken = getEvmTokenInfo(request.target_token);
-    if (!evmToken) {
-      throw new Error(`Unsupported EVM token: ${request.target_token}`);
-    }
     const client = await getClients();
     const result = await client.createArkadeToEvmSwapGeneric({
       targetAddress: request.target_address,
-      tokenAddress: evmToken.tokenAddress,
-      evmChainId: evmToken.evmChainId,
+      tokenAddress: request.token_address,
+      evmChainId: request.evm_chain_id,
       sourceAmount: request.source_amount,
       targetAmount: request.target_amount,
       referralCode: referralCode || undefined,
@@ -213,19 +209,16 @@ export const api = {
   async createEvmToArkadeSwapGeneric(request: {
     target_address: string;
     source_amount: bigint;
-    source_token: TokenId;
+    token_address: string;
+    evm_chain_id: number;
     user_address: string;
   }): Promise<EvmToArkadeSwapResponse> {
     const referralCode = getReferralCode();
-    const evmToken = getEvmTokenInfo(request.source_token);
-    if (!evmToken) {
-      throw new Error(`Unsupported EVM token: ${request.source_token}`);
-    }
     const client = await getClients();
     const result = await client.createEvmToArkadeSwapGeneric({
       targetAddress: request.target_address,
-      tokenAddress: evmToken.tokenAddress,
-      evmChainId: evmToken.evmChainId,
+      tokenAddress: request.token_address,
+      evmChainId: request.evm_chain_id,
       userAddress: request.user_address,
       sourceAmount: request.source_amount,
       referralCode: referralCode || undefined,
