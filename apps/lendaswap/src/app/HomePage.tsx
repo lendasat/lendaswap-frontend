@@ -16,11 +16,16 @@ import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
 import { AddressInput } from "./components/AddressInput";
 import { useWalletBridge } from "./WalletBridgeContext";
 
-// Build query string from amounts
-function buildAmountParams(srcAmt?: number, tgtAmt?: number): string {
+// Build query string from amounts and target address
+function buildQueryParams(
+  srcAmt?: number,
+  tgtAmt?: number,
+  address?: string,
+): string {
   const params = new URLSearchParams();
   if (srcAmt != null) params.set("sourceAmount", String(srcAmt));
   if (tgtAmt != null) params.set("targetAmount", String(tgtAmt));
+  if (address) params.set("address", address);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }
@@ -93,21 +98,32 @@ export function HomePage() {
       return v ? Number(v) : undefined;
     },
   );
-  // TODO: this needs to be set
+
   const [lastEditedField, setLastEditedField] = useState<
     "sourceAsset" | "targetAsset"
   >("sourceAsset");
-  const [targetAddress, setTargetAddress] = useState<string>("");
+  const [targetAddress, setTargetAddress] = useState<string>(
+    () => searchParams.get("address") ?? "",
+  );
   const [isAddressValid, setIsAddressValid] = useState(true);
 
+  // Sync targetAddress from URL when search params change (e.g. user edits URL bar)
+  const urlAddress = searchParams.get("address");
+  useEffect(() => {
+    if (urlAddress != null && urlAddress !== targetAddress) {
+      setTargetAddress(urlAddress);
+    }
+  }, [urlAddress, targetAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-fill from connected wallet only if address is empty
   useEffect(() => {
     const maybeWeb3Address = connectedAddress?.toString();
-    if (maybeWeb3Address && isWeb3WalletConnected) {
+    if (maybeWeb3Address && isWeb3WalletConnected && !targetAddress) {
       setTargetAddress(maybeWeb3Address);
-    } else {
+    } else if (!isWeb3WalletConnected && targetAddress === connectedAddress) {
       setTargetAddress("");
     }
-  }, [connectedAddress, isWeb3WalletConnected]);
+  }, [connectedAddress, isWeb3WalletConnected, targetAddress]);
 
   const {
     value: maybeAvailableTokens,
@@ -234,18 +250,26 @@ export function HomePage() {
     setSourceAmountState(Math.round(targetAmount * rate));
   }, [targetAmount, quote, lastEditedField]);
 
-  // Debounced sync of amounts to URL (avoids navigating on every keystroke)
+  // Debounced sync of amounts + address to URL (avoids navigating on every keystroke)
   const { sourceToken: urlSource, targetToken: urlTarget } = params;
   useEffect(() => {
     if (!urlSource || !urlTarget) return;
     const timeout = setTimeout(() => {
       const path = `/${urlSource}/${urlTarget}`;
-      navigate(`${path}${buildAmountParams(sourceAmount, targetAmount)}`, {
-        replace: true,
-      });
+      navigate(
+        `${path}${buildQueryParams(sourceAmount, targetAmount, targetAddress)}`,
+        { replace: true },
+      );
     }, 500);
     return () => clearTimeout(timeout);
-  }, [sourceAmount, targetAmount, urlSource, urlTarget, navigate]);
+  }, [
+    sourceAmount,
+    targetAmount,
+    targetAddress,
+    urlSource,
+    urlTarget,
+    navigate,
+  ]);
 
   // Navigate to a new source/target token pair (URL is the source of truth)
   function navigateToTokens(
@@ -256,7 +280,7 @@ export function HomePage() {
   ) {
     const path = `/${formatTokenUrl(source)}/${formatTokenUrl(target)}`;
     navigate(
-      `${path}${buildAmountParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount)}`,
+      `${path}${buildQueryParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount, targetAddress)}`,
       {
         replace: true,
       },
