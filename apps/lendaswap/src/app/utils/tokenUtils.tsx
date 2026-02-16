@@ -306,17 +306,15 @@ export function parseUrlToken(raw: string): UrlToken | undefined {
   if (address === "btc") {
     switch (chain) {
       case "Lightning":
-        return { chain, tokenId: BTC_LIGHTNING };
+        return { chain, tokenId: "btc" };
       case "Arkade":
-        return { chain, tokenId: BTC_ARKADE };
+        return { chain, tokenId: "btc" };
       case "Bitcoin":
-        return { chain, tokenId: BTC_ONCHAIN };
+        return { chain, tokenId: "btc" };
     }
   }
 
-  // EVM tokens: resolve contract address → short token_id
-  const evmTokenId = resolveEvmTokenId(address);
-  return { chain, tokenId: evmTokenId ?? address };
+  return { chain, tokenId: address };
 }
 
 /**
