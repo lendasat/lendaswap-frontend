@@ -94,7 +94,7 @@ export function HomePage() {
     },
   );
   // TODO: this needs to be set
-  const [_lastEditedField, setLastEditedField] = useState<
+  const [lastEditedField, setLastEditedField] = useState<
     "sourceAsset" | "targetAsset"
   >("sourceAsset");
   const [targetAddress, setTargetAddress] = useState<string>("");
@@ -201,7 +201,38 @@ export function HomePage() {
     sourceDecimals,
   ]);
 
-  console.log(`New quote ${JSON.stringify(quote)}`);
+  // Compute the counterpart amount from the quote rate
+  // When source is edited → derive target; when target is edited → derive source
+  // Default: derive target from source
+  useEffect(() => {
+    if (
+      !quote ||
+      lastEditedField !== "sourceAsset" ||
+      sourceAmount === undefined
+    ) {
+      return;
+    }
+    const qSrc = Number(quote.source_amount);
+    const qTgt = Number(quote.target_amount);
+    if (qSrc === 0) return;
+    const rate = qTgt / qSrc;
+    setTargetAmountState(Math.round(sourceAmount * rate));
+  }, [sourceAmount, quote, lastEditedField]);
+
+  useEffect(() => {
+    if (
+      !quote ||
+      lastEditedField !== "targetAsset" ||
+      targetAmount === undefined
+    ) {
+      return;
+    }
+    const qSrc = Number(quote.source_amount);
+    const qTgt = Number(quote.target_amount);
+    if (qTgt === 0) return;
+    const rate = qSrc / qTgt;
+    setSourceAmountState(Math.round(targetAmount * rate));
+  }, [targetAmount, quote, lastEditedField]);
 
   // Debounced sync of amounts to URL (avoids navigating on every keystroke)
   const { sourceToken: urlSource, targetToken: urlTarget } = params;
@@ -224,7 +255,6 @@ export function HomePage() {
     tgtAmt?: number,
   ) {
     const path = `/${formatTokenUrl(source)}/${formatTokenUrl(target)}`;
-    console.log(`Navigate to: ${path}`);
     navigate(
       `${path}${buildAmountParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount)}`,
       {
