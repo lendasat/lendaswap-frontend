@@ -20,6 +20,7 @@ import {
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
+import { TokenBTC } from "@web3icons/react";
 
 /**
  * Get the full display name for a token (including network)
@@ -36,8 +37,8 @@ export function getTokenIcon(
   width?: number,
   height?: number,
 ): ReactElement {
-  if (tokenId.chain === "Bitcoin") {
-    return <TokenIcon symbol={"btc"} height={height} width={width} />;
+  if (tokenId.token_id.toLowerCase() === "btc") {
+    return <TokenBTC height={height} width={width} />;
   }
 
   if (!tokenId.chain) {
