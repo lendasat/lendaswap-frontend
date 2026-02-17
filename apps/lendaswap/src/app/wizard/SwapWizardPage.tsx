@@ -10,12 +10,17 @@ import type {
   SwapStatus,
 } from "@lendasat/lendaswap-sdk-pure";
 import { AlertCircle } from "lucide-react";
-import { BitcoinDepositStep, DepositArkadeStep, EvmDepositStep } from "./steps";
-import { SendLightningStep } from "./steps/SendLightningStep";
-import { useNavigate, useParams } from "react-router";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { useAsyncRetry } from "react-use";
 import { api } from "../api";
+import {
+  BitcoinDepositStep,
+  DepositArkadeStep,
+  EvmDepositStep,
+  RefundArkadeStep,
+} from "./steps";
+import { SendLightningStep } from "./steps/SendLightningStep";
 
 export type SwapDirection =
   | "btc-to-evm"
@@ -480,14 +485,12 @@ export function SwapWizardPage() {
             </div>
           )}
 
-          {/*{currentStep === "refundable" &&*/}
-          {/*  swapDirectionValue === "btc-to-evm" && (*/}
-          {/*    <BtcToPolygonRefundStep*/}
-          {/*      swapData={displaySwapData as BtcToEvmSwapResponse}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*      arkAddress={arkAddress}*/}
-          {/*    />*/}
-          {/*  )}*/}
+          {currentStep === "refundable" &&
+            swapDirectionValue === "arkade_to_evm" && (
+              <RefundArkadeStep
+                swapData={displaySwapData as ArkadeToEvmSwapResponse}
+              />
+            )}
 
           {/*{currentStep === "refundable" &&*/}
           {/*  swapDirectionValue === "evm-to-btc" && (*/}

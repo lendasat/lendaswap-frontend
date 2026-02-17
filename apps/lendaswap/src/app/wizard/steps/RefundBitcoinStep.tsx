@@ -1,6 +1,7 @@
 import {
   type BitcoinToEvmSwapResponse,
   isEvmToken,
+  toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { ArrowRight, Clock, ExternalLink, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
