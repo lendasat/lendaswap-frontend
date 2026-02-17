@@ -50,7 +50,7 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
 
       await client.sendToAddress(
         arkadeAddress,
-        swapData.btc_expected_sats,
+        swapData.source_amount,
         "bitcoin",
       );
     } catch (error) {
@@ -62,6 +62,12 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
     }
   };
 
+  const tokenAmount = (
+    swapData.target_amount /
+    10 ** swapData.target_token.decimals
+  ).toFixed(swapData.target_token.decimals);
+
+  const bip21Url = `bitcoin:?arkade=${arkadeAddress}&amount=${(swapData.source_amount / 100_000_000).toFixed(8)}`;
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
       {/* Swap ID Header */}
@@ -96,13 +102,16 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
             <div
               className={`flex flex-col items-center space-y-4 ${showQrCode ? "block" : "hidden"} md:flex`}
             >
-              <div className="rounded-lg bg-white p-1">
-                <QRCodeSVG
-                  value={`bitcoin:?arkade=${arkadeAddress}&amount=${(swapData.btc_expected_sats / 100_000_000).toFixed(8)}`}
-                  size={200}
-                  level="M"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => handleCopyAddress(bip21Url)}
+                className="rounded-lg bg-white p-1 cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <QRCodeSVG value={bip21Url} size={200} level="M" />
+              </button>
+              {copiedAddress === arkadeAddress && (
+                <span className="text-xs text-muted-foreground">Copied!</span>
+              )}
             </div>
           </>
         )}
@@ -150,17 +159,17 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
             <span className="text-muted-foreground">Required Sats</span>
             <div className="flex items-center gap-2">
               <span className="font-medium">
-                {swapData.btc_expected_sats.toLocaleString()} sats
+                {swapData.source_amount.toLocaleString()} sats
               </span>
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() =>
-                  handleCopyAddress(swapData.btc_expected_sats.toString())
+                  handleCopyAddress(swapData.source_amount.toString())
                 }
                 className="h-6 w-6"
               >
-                {copiedAddress === swapData.btc_expected_sats.toString() ? (
+                {copiedAddress === swapData.source_amount.toString() ? (
                   <CheckCheck className="h-3 w-3" />
                 ) : (
                   <Copy className="h-3 w-3" />
@@ -168,11 +177,11 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
               </Button>
             </div>
           </div>
-          {swapData.target_amount != null && (
+          {tokenAmount != null && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">
-                {swapData.target_amount} {tokenSymbol}
+                {tokenAmount} {tokenSymbol}
               </span>
             </div>
           )}

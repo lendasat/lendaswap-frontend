@@ -273,7 +273,7 @@ export function SwapWizardPage() {
 
   return (
     <>
-      {/!* Error State *!/}
+      {/* Error State */}
       {error && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
           <div className="space-y-4 px-6 py-6 bg-destructive/10">
@@ -304,7 +304,7 @@ export function SwapWizardPage() {
         </div>
       )}
 
-      {/!* Swap Not Found State *!/}
+      {/* Swap Not Found State */}
       {!isLoading && !error && !swapData && swapId && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
           <div className="space-y-4 px-6 py-6 bg-warning/10">
@@ -339,7 +339,7 @@ export function SwapWizardPage() {
         </div>
       )}
 
-      {/!* Loading State *!/}
+      {/* Loading State */}
       {isLoading && !displaySwapData && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl">
           <div className="flex items-center justify-center py-12">
@@ -348,7 +348,7 @@ export function SwapWizardPage() {
         </div>
       )}
 
-      {/!* Step-specific content *!/}
+      {/* Step-specific content */}
       {displaySwapData && !error && (
         <>
           {currentStep === "user-deposit" && (

@@ -12,6 +12,7 @@ interface SendBitcoinStepProps {
   swapData: EvmToArkadeSwapResponse;
 }
 
+// TODO: this can be deleted?
 export function DepositArkadeStep({ swapData }: SendBitcoinStepProps) {
   const navigate = useNavigate();
   const { client, isEmbedded, isReady } = useWalletBridge();
@@ -23,8 +24,12 @@ export function DepositArkadeStep({ swapData }: SendBitcoinStepProps) {
   const arkadeAddress = swapData.btc_vhtlc_address;
   const arkadeQrValue = `bitcoin:?arkade=${arkadeAddress}&amount=${(Number(swapData.source_amount) / 100_000_000).toFixed(8)}`;
   const swapId = swapData.id;
-  const tokenAmount = swapData.target_amount.toString();
+  const tokenAmount = (
+    swapData.target_amount /
+    10 ** swapData.target_token.decimals
+  ).toFixed(swapData.target_token.decimals);
   const tokenSymbol = swapData.target_token.symbol;
+  console.log(`Token amount`);
 
   const handleCopyAddress = async (address: string) => {
     try {
