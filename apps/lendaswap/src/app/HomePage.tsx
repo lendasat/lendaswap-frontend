@@ -318,11 +318,12 @@ export function HomePage() {
   const isInitialLoading = tokensLoading || isLoadingQuote;
 
   // The required EVM chain is whichever side (source or target) is an EVM token
-  const requiredEvmChain = sourceAsset && isEvmToken(sourceAsset.chain)
-    ? sourceAsset.chain
-    : targetAsset && isEvmToken(targetAsset.chain)
-      ? targetAsset.chain
-      : undefined;
+  const requiredEvmChain =
+    sourceAsset && isEvmToken(sourceAsset.chain)
+      ? sourceAsset.chain
+      : targetAsset && isEvmToken(targetAsset.chain)
+        ? targetAsset.chain
+        : undefined;
 
   const isWrongChain =
     requiredEvmChain !== undefined &&
