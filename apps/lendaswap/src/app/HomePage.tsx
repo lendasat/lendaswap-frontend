@@ -324,39 +324,55 @@ export function HomePage() {
     if (!sourceAsset || !targetAsset) {
       return;
     }
-    let selectedSourceAmount: number | undefined;
-    let selectedTargetAmount: number | undefined;
-    if (lastEditedField === "sourceAsset") {
-      selectedSourceAmount = sourceAmount;
-    } else {
-      selectedTargetAmount = targetAmount;
-    }
+    try {
+      setIsCreatingSwap(true);
 
-    switch (sourceAsset.chain) {
-      case "Bitcoin":
-      case "Lightning":
-      case "Arkade":
-        await api.createToEvmSwap({
-          sourceAsset: sourceAsset,
-          targetAsset: targetAsset,
-          sourceAmount: selectedSourceAmount,
-          targetAmount: selectedTargetAmount,
-          targetAddress: targetAddress,
-        });
-        break;
-      case "1":
-      case "137":
-      case "42161":
-        switch (targetAsset.chain) {
-          case "Bitcoin":
-          case "Lightning":
-          case "Arkade":
-            break;
-          default:
-            setSwapError("Swapping pair not supported");
-            return;
-        }
-        break;
+      let selectedSourceAmount: number | undefined;
+      let selectedTargetAmount: number | undefined;
+      if (lastEditedField === "sourceAsset") {
+        selectedSourceAmount = sourceAmount;
+      } else {
+        selectedTargetAmount = targetAmount;
+      }
+
+      switch (sourceAsset.chain) {
+        case "Bitcoin":
+        case "Lightning":
+        case "Arkade":
+          try {
+            const swap = await api.createToEvmSwap({
+              sourceAsset: sourceAsset,
+              targetAsset: targetAsset,
+              sourceAmount: selectedSourceAmount,
+              targetAmount: selectedTargetAmount,
+              targetAddress: targetAddress,
+            });
+            console.log("swap", swap);
+          } catch (e) {
+            console.error(e);
+            setSwapError(`${e}`);
+          }
+
+          break;
+        case "1":
+        case "137":
+        case "42161":
+          switch (targetAsset.chain) {
+            case "Bitcoin":
+            case "Lightning":
+            case "Arkade":
+              break;
+            default:
+              setSwapError("Swapping pair not supported");
+              return;
+          }
+          break;
+      }
+    } catch (e) {
+      console.error(e);
+      setSwapError(`${e}`);
+    } finally {
+      setIsCreatingSwap(false);
     }
   };
 
@@ -431,6 +447,7 @@ export function HomePage() {
                 availableAssets={allAvailableTokens}
                 label="sell"
                 onChange={(asset) => {
+                  setSwapError("");
                   const src = formatTokenUrl(asset);
                   if (targetAsset && isValidPair(asset, targetAsset)) {
                     navigateToTokens(asset, targetAsset);
@@ -497,6 +514,7 @@ export function HomePage() {
                 availableAssets={availableTargetTokens}
                 value={targetAsset}
                 onChange={(asset) => {
+                  setSwapError("");
                   const tgt = formatTokenUrl(asset);
                   if (sourceAsset && isValidPair(sourceAsset, asset)) {
                     navigateToTokens(sourceAsset, asset);
