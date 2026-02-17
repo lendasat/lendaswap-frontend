@@ -19,6 +19,7 @@ import {
   DepositArkadeStep,
   EvmDepositStep,
   RefundArkadeStep,
+  RefundBitcoinStep,
   SuccessStep,
   SwapProcessingStep,
 } from "./steps";
@@ -495,18 +496,17 @@ export function SwapWizardPage() {
           {/*    />*/}
           {/*  )}*/}
 
-          {/*{currentStep === "refundable" &&*/}
-          {/*  (swapDirectionValue === "btc-to-arkade" ||*/}
-          {/*    swapDirectionValue === "onchain-to-evm") && (*/}
-          {/*    <OnchainBtcRefundStep*/}
-          {/*      swapData={*/}
-          {/*        displaySwapData as*/}
-          {/*          | BtcToArkadeSwapResponse*/}
-          {/*          | OnchainToEvmSwapResponse*/}
-          {/*      }*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*    />*/}
-          {/*  )}*/}
+          {currentStep === "refundable" &&
+            (swapDirectionValue === "btc_to_arkade" ||
+              swapDirectionValue === "bitcoin_to_evm") && (
+              <RefundBitcoinStep
+                swapData={
+                  displaySwapData as
+                    | BtcToArkadeSwapResponse
+                    | BitcoinToEvmSwapResponse
+                }
+              />
+            )}
 
           {/*{currentStep === "refundable" &&*/}
           {/*  swapDirectionValue === "arkade-to-evm" && (*/}

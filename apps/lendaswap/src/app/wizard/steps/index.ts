@@ -1,7 +1,6 @@
 export { BtcToArkadeProcessingStep } from "./BtcToArkadeProcessingStep";
 export { RefundArkadeSwap } from "./RefundArkadeSwap";
 export { ClaimArkadeStep } from "./ClaimArkadeStep";
-export { ClaimEvmStep } from "./ClaimEvmStep";
 export { DepositArkadeStep } from "./DepositArkadeStep";
 export { DepositEvmStep } from "./DepositEvmStep";
 export { RefundBitcoinStep } from "./RefundBitcoinStep";

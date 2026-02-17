@@ -76,7 +76,7 @@ export function BtcToArkadeProcessingStep({
         localStorage.setItem(claimKey, Date.now().toString());
 
         // Claim the Arkade VHTLC
-        const txid = await api.claimBtcToArkadeVhtlc(swapData.id);
+        const txid = await api.claim(swapData.id);
         console.log(`Claim request sent successfully: ${txid}`);
         // Success! Reset retry count
         setRetryCount(0);
