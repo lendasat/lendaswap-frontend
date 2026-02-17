@@ -5,23 +5,15 @@ import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import {
-  api,
-  type ArkadeToEvmSwapResponse,
-  type VhtlcAmounts,
-} from "../../api";
+import { api, type VhtlcAmounts } from "../../api";
+import type { ArkadeToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
+import { useWalletBridge } from "../../WalletBridgeContext";
 
 interface RefundArkadeStepProps {
   swapData: ArkadeToEvmSwapResponse;
-  swapId: string;
-  arkAddress?: string | null;
 }
 
-export function RefundArkadeStep({
-  swapData,
-  swapId,
-  arkAddress,
-}: RefundArkadeStepProps) {
+export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
   const posthog = usePostHog();
   const [refundAddress, setRefundAddress] = useState("");
   const [isRefunding, setIsRefunding] = useState(false);
@@ -29,6 +21,7 @@ export function RefundArkadeStep({
   const [refundSuccess, setRefundSuccess] = useState<string | null>(null);
   const [amounts, setAmounts] = useState<VhtlcAmounts | null>(null);
   const [isLoadingAmounts, setIsLoadingAmounts] = useState(false);
+  const { arkAddress } = useWalletBridge();
 
   // Auto-populate refund address if arkAddress is provided
   useEffect(() => {
@@ -39,12 +32,12 @@ export function RefundArkadeStep({
 
   // Fetch amounts once
   useEffect(() => {
-    if (!swapId || amounts !== null) return;
+    if (amounts !== null) return;
 
     const fetchAmounts = async () => {
       setIsLoadingAmounts(true);
       try {
-        const fetchedAmounts = await api.amountsForSwap(swapId);
+        const fetchedAmounts = await api.amountsForSwap(swapData.id);
         setAmounts(fetchedAmounts);
       } catch (error) {
         console.error("Failed to fetch amounts:", error);
@@ -57,7 +50,7 @@ export function RefundArkadeStep({
     };
 
     fetchAmounts();
-  }, [swapId, amounts]);
+  }, [swapData, amounts]);
 
   // Calculate if swap can be refunded
   const canRefund = (() => {
@@ -102,7 +95,7 @@ export function RefundArkadeStep({
   }, [now, swapData.vhtlc_refund_locktime, isLocktimePassed]);
 
   const handleRefund = async () => {
-    if (!swapId || !refundAddress.trim()) {
+    if (!refundAddress.trim()) {
       setRefundError("Please enter a refund address");
       return;
     }
@@ -117,11 +110,11 @@ export function RefundArkadeStep({
     setRefundSuccess(null);
 
     try {
-      const txid = await api.refundVhtlc(swapId, refundAddress);
+      const txid = await api.refundVhtlc(swapData.id, refundAddress);
       setRefundSuccess(`Refund successful! Transaction ID: ${txid}`);
 
       posthog?.capture("swap_refunded", {
-        swap_id: swapId,
+        swap_id: swapData.id,
         swap_direction: "arkade-to-evm",
         refund_reason: "user_initiated",
         refund_txid: txid,
@@ -154,7 +147,7 @@ export function RefundArkadeStep({
           Swap ID:
         </p>
         <code className="text-xs font-mono text-foreground flex-1">
-          {swapId}
+          {swapData.id}
         </code>
         <div className="h-2 w-2 rounded-full bg-orange-500/50 animate-pulse" />
       </div>
