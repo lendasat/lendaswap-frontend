@@ -136,10 +136,10 @@ export function HomePage() {
   // Sync targetAddress from URL when search params change (e.g. user edits URL bar)
   const urlAddress = searchParams.get("address");
   useEffect(() => {
-    if (urlAddress != null && urlAddress !== targetAddress) {
+    if (urlAddress != null) {
       setTargetAddress(urlAddress);
     }
-  }, [urlAddress, targetAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [urlAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill from connected wallet only if address is empty
   useEffect(() => {
