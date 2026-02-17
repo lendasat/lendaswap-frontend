@@ -188,10 +188,11 @@ export const getSpeedLanguage = (): string | null => {
  * Checks if we have a valid Speed Wallet context (has account_id with correct prefix).
  * Works even after redirects that lose URL params, thanks to sessionStorage persistence.
  */
-export const isValidSpeedWalletContext = (): boolean => {
+const isValidSpeedWalletContext = (): boolean => {
   const accountId = getSpeedAccountId();
   return !!accountId?.startsWith("acct_");
 };
+export default isValidSpeedWalletContext;
 
 /**
  * Triggers a payment request via Speed Wallet's native payment UI.

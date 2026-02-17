@@ -2,8 +2,7 @@ import { Loader2, Zap } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import {
-  isValidSpeedWalletContext,
+import isValidSpeedWalletContext, {
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
 import { useWalletBridge } from "../../WalletBridgeContext";

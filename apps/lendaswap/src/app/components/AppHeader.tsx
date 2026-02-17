@@ -23,7 +23,7 @@ import {
 import lendasatLogoBlack from "../../assets/lendasat_black.svg?url";
 import lendasatLogoWhite from "../../assets/lendasat_grey.svg?url";
 import { ReactComponent as XLogo } from "../../assets/x-com-logo.svg";
-import { isValidSpeedWalletContext } from "../../utils/speedWallet";
+import isValidSpeedWalletContext from "../../utils/speedWallet";
 import { useTheme } from "../utils/theme-provider";
 import { ThemeToggle } from "../utils/theme-toggle";
 

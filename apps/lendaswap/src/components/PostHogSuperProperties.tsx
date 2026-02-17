@@ -1,7 +1,7 @@
 import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
 import { api } from "../app/api";
-import { isValidSpeedWalletContext } from "../utils/speedWallet";
+import isValidSpeedWalletContext from "../utils/speedWallet";
 
 export function PostHogSuperProperties() {
   const posthog = usePostHog();

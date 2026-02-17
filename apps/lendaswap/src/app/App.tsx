@@ -9,7 +9,7 @@ import {
 import "../assets/styles.css";
 import { ArrowLeftRight, Zap } from "lucide-react";
 import { Card } from "#/components/ui/card";
-import { isValidSpeedWalletContext } from "../utils/speedWallet";
+import isValidSpeedWalletContext from "../utils/speedWallet";
 import { api } from "./api";
 import { AppHeader } from "./components/AppHeader";
 import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
