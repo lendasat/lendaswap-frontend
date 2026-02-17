@@ -14,13 +14,9 @@ import { api, type BtcToArkadeSwapResponse } from "../../api";
 
 interface OnchainBtcRefundStepProps {
   swapData: BtcToArkadeSwapResponse | BitcoinToEvmSwapResponse;
-  swapId: string;
 }
 
-export function RefundBitcoinStep({
-  swapData,
-  swapId,
-}: OnchainBtcRefundStepProps) {
+export function RefundBitcoinStep({ swapData }: OnchainBtcRefundStepProps) {
   const posthog = usePostHog();
   const [refundAddress, setRefundAddress] = useState("");
   const [isRefunding, setIsRefunding] = useState(false);
@@ -29,6 +25,8 @@ export function RefundBitcoinStep({
 
   // Countdown timer state
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+
+  const swapId = swapData.id;
 
   // Update countdown every second
   useEffect(() => {
