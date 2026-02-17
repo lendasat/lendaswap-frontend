@@ -155,14 +155,10 @@ export function SwapWizardPage() {
     if (!swapData) return;
 
     const statusChanged = swapData.response.status !== lastStatusRef.current;
-    const directionChanged =
-      displaySwapData &&
-      (swapData.response.source_token !== displaySwapData.source_token ||
-        swapData.response.target_token !== displaySwapData.target_token);
 
-    if (statusChanged || directionChanged || !displaySwapData) {
+    if (statusChanged || !displaySwapData) {
       console.log(
-        `Swap data updated: status=${swapData.response.status}, source=${swapData.response.source_token}, target=${swapData.response.target_token}`,
+        `Swap data updated: status=${JSON.stringify(swapData.response.status)}, source=${JSON.stringify(swapData.response.source_token)}, target=${JSON.stringify(swapData.response.target_token)}`,
       );
       lastStatusRef.current = swapData.response.status;
       setDisplaySwapData(swapData.response);
