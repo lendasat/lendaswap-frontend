@@ -9,11 +9,7 @@ import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import {
-  api,
-  type BtcToArkadeSwapResponse,
-  getTokenNetworkName,
-} from "../../api";
+import { api, type BtcToArkadeSwapResponse } from "../../api";
 
 interface OnchainBtcRefundStepProps {
   swapData: BtcToArkadeSwapResponse | BitcoinToEvmSwapResponse;
@@ -173,12 +169,12 @@ export function RefundBitcoinStep({
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium">
                 {swapData.source_token.symbol} on{" "}
-                {getTokenNetworkName(swapData.source_token)}
+                {toChainName(swapData.source_token.chain)}
               </span>
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs font-medium">
                 {swapData.target_token.symbol} on{" "}
-                {getTokenNetworkName(swapData.target_token)}
+                {toChainName(swapData.target_token.chain)}
               </span>
             </div>
           </div>

@@ -3,8 +3,10 @@ import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { getTokenNetworkName } from "../../api";
-import { type EvmToArkadeSwapResponse } from "@lendasat/lendaswap-sdk-pure";
+import {
+  toChainName,
+  type EvmToArkadeSwapResponse,
+} from "@lendasat/lendaswap-sdk-pure";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 import { useWalletBridge } from "../../WalletBridgeContext";
 
@@ -197,7 +199,7 @@ export function DepositArkadeStep({ swapData }: SendBitcoinStepProps) {
             <span className="text-muted-foreground">You Receive</span>
             <span className="font-medium">
               {tokenAmount} {tokenSymbol} on{" "}
-              {getTokenNetworkName(swapData.target_token)}
+              {toChainName(swapData.target_token.chain)}
             </span>
           </div>
         </div>

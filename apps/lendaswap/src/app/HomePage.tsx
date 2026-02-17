@@ -335,40 +335,15 @@ export function HomePage() {
         selectedTargetAmount = targetAmount;
       }
 
-      switch (sourceAsset.chain) {
-        case "Bitcoin":
-        case "Lightning":
-        case "Arkade":
-          try {
-            const swap = await api.createToEvmSwap({
-              sourceAsset: sourceAsset,
-              targetAsset: targetAsset,
-              sourceAmount: selectedSourceAmount,
-              targetAmount: selectedTargetAmount,
-              targetAddress: targetAddress,
-            });
-            const swapId = swap.id;
-            navigate(`/swap/${swapId}/wizard`);
-          } catch (e) {
-            console.error(e);
-            setSwapError(`${e}`);
-          }
-
-          break;
-        case "1":
-        case "137":
-        case "42161":
-          switch (targetAsset.chain) {
-            case "Bitcoin":
-            case "Lightning":
-            case "Arkade":
-              break;
-            default:
-              setSwapError("Swapping pair not supported");
-              return;
-          }
-          break;
-      }
+      const swap = await api.createSwap({
+        sourceAsset,
+        targetAsset,
+        sourceAmount: selectedSourceAmount,
+        targetAmount: selectedTargetAmount,
+        targetAddress,
+        userAddress: connectedAddress,
+      });
+      navigate(`/swap/${swap.id}/wizard`);
     } catch (e) {
       console.error(e);
       setSwapError(`${e}`);

@@ -7,7 +7,6 @@ import {
   isValidSpeedWalletContext,
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
-import { getTokenNetworkName } from "../../api";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import type { LightningToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
@@ -207,7 +206,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
             <span className="text-muted-foreground">You Receive</span>
             <span className="font-medium">
               {tokenAmount} {tokenSymbol} on{" "}
-              {getTokenNetworkName(swapData.target_token)}
+              {toChainName(swapData.target_token.chain)}
             </span>
           </div>
         </div>
