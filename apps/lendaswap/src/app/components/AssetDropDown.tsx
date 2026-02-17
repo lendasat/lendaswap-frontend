@@ -3,6 +3,7 @@ import {
   isBtc,
   isEthereumToken,
   isPolygonToken,
+  toChainName,
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
 import { Check, ChevronDown, Search } from "lucide-react";
@@ -25,7 +26,7 @@ import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
 import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
-import { getTokenIcon, getTokenNetworkName } from "../api";
+import { getTokenIcon } from "../api";
 import { getTokenNetworkIcon } from "../utils/tokenUtils";
 
 // Hook to detect mobile viewport
@@ -55,7 +56,7 @@ const networkTabs: {
     id: "bitcoin",
     label: "Bitcoin",
     icon: <BitcoinIcon width={14} height={14} />,
-    filter: (a) => isBtc(a.token_id),
+    filter: (a) => isBtc(a),
   },
   {
     id: "ethereum",
@@ -214,7 +215,7 @@ export function AssetDropDown({
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold">{asset.symbol}</div>
                   <div className="text-sm text-muted-foreground">
-                    {getTokenNetworkName(asset)}
+                    {toChainName(asset.chain)}
                   </div>
                 </div>
 

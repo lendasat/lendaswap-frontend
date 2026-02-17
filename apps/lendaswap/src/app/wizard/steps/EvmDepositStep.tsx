@@ -4,6 +4,7 @@ import {
   type EvmToLightningSwapResponse,
   isArkade,
   isLightning,
+  toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Loader } from "lucide-react";
@@ -15,7 +16,6 @@ import {
   useWalletClient,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { getTokenNetworkName } from "../../api";
 import {
   getTokenIcon,
   getTokenNetworkIcon,
@@ -254,7 +254,7 @@ export function EvmDepositStep({ swapData, swapId }: EvmDepositStepProps) {
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
               {swapData.source_amount.toFixed(swapData.source_token.decimals)}{" "}
-              {tokenSymbol} on {getTokenNetworkName(swapData.source_token)}
+              {tokenSymbol} on {toChainName(swapData.source_token.chain)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
@@ -265,8 +265,7 @@ export function EvmDepositStep({ swapData, swapId }: EvmDepositStepProps) {
               <span className="text-muted-foreground">You receive</span>
             )}
             <span className="font-medium">
-              ~{receiveAmount} BTC on{" "}
-              {getTokenNetworkName(swapData.target_token)}
+              ~{receiveAmount} BTC on {toChainName(swapData.target_token.chain)}
             </span>
           </div>
           <div className="flex justify-between text-xs">

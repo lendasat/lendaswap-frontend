@@ -11,13 +11,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
 import { isValidSpeedWalletContext } from "../../../utils/speedWallet";
-import { type GetSwapResponse, getTokenNetworkName } from "../../api";
+import { type GetSwapResponse } from "../../api";
 import {
   getBlockexplorerAddressLink,
   getBlockexplorerTxLink,
   getTokenIcon,
   getTokenNetworkIcon,
 } from "../../utils/tokenUtils";
+import { toChainName } from "@lendasat/lendaswap-sdk-pure";
 
 interface SuccessStepProps {
   swapData: GetSwapResponse;
@@ -71,8 +72,8 @@ export function SuccessStep({ swapData, swapId }: SuccessStepProps) {
 
   const sourceSymbol = swapData.source_token.symbol;
   const targetSymbol = swapData.target_token.symbol;
-  const sourceNetwork = getTokenNetworkName(swapData.source_token);
-  const targetNetwork = getTokenNetworkName(swapData.target_token);
+  const sourceNetwork = toChainName(swapData.source_token.chain);
+  const targetNetwork = toChainName(swapData.target_token.chain);
 
   function makeTweet(sent: string, received: string): string {
     return `Swapped ${sent} ${sourceSymbol} → ${received} ${targetSymbol} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`;
