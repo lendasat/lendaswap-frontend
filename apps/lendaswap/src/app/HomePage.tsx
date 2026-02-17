@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { useAccount } from "wagmi";
+import { useAccount, useSwitchChain } from "wagmi";
 import {
   isArkade,
   isBtc,
@@ -92,6 +92,7 @@ export function HomePage() {
     chain: web3WalletConnectedChain,
   } = useAccount();
 
+  const { switchChain } = useSwitchChain();
   const { arkAddress, isEmbedded } = useWalletBridge();
 
   useEffect(() => {
@@ -398,6 +399,12 @@ export function HomePage() {
     );
   }
 
+  const buttonDisabled =
+    !targetAddress ||
+    !isAddressValid ||
+    isCreatingSwap ||
+    (!sourceAmount && !targetAmount);
+
   return (
     <div className="flex flex-col p-3">
       {/* Sell/Buy container with arrow */}
@@ -556,25 +563,29 @@ export function HomePage() {
           </div>
         ) : null}
         <div className="pt-2">
-          <Button
-            onClick={createSwap}
-            disabled={!targetAddress || !isAddressValid || isCreatingSwap}
-            className="w-full h-12"
-          >
-            {isCreatingSwap ? (
-              <>
-                <Loader className="animate-spin h-4 w-4" />
-                Please Wait
-              </>
-            ) : isWrongChain ? (
-              <>
-                <Loader className="animate-spin h-4 w-4" />
-                Switching to {targetChainName}...
-              </>
-            ) : (
-              <>Continue</>
-            )}
-          </Button>
+          {isWrongChain && targetChain ? (
+            <Button
+              onClick={() => switchChain({ chainId: Number(targetChain) })}
+              className="w-full h-12"
+            >
+              Switch to {targetChainName}
+            </Button>
+          ) : (
+            <Button
+              onClick={createSwap}
+              disabled={buttonDisabled}
+              className="w-full h-12"
+            >
+              {isCreatingSwap ? (
+                <>
+                  <Loader className="animate-spin h-4 w-4" />
+                  Please Wait
+                </>
+              ) : (
+                <>Continue</>
+              )}
+            </Button>
+          )}
         </div>
         {/*Swap Error Display*/}
         {swapError && (
