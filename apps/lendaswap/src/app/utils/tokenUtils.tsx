@@ -14,6 +14,9 @@ import {
   polygon,
   type Chain as ViemChain,
 } from "viem/chains";
+import { ReactComponent as Arbitrum } from "../../assets/arbitrum.svg";
+import { ReactComponent as Polygon } from "../../assets/polygon.svg";
+import { ReactComponent as Ethereum } from "../../assets/eth.svg";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
@@ -85,7 +88,17 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
     return <span>?</span>;
   }
 
-  return <NetworkIcon name={tokenId.chain.toString().toLowerCase()} />;
+  if (tokenId.chain === "1") {
+    return <Ethereum width={8} height={8} />;
+  }
+  if (tokenId.chain === "137") {
+    return <Polygon width={8} height={8} />;
+  }
+  if (tokenId.chain === "42161") {
+    return <Arbitrum width={8} height={8} />;
+  }
+
+  return <NetworkIcon chainId={tokenId.chain} />;
 }
 
 /**
@@ -136,7 +149,6 @@ export {
   isEthereumToken,
   isEvmToken,
   isPolygonToken,
-  tokenChain,
 } from "@lendasat/lendaswap-sdk-pure";
 
 export function getBlockexplorerTxLink(
@@ -147,11 +159,11 @@ export function getBlockexplorerTxLink(
     return "";
   }
   switch (chaub) {
-    case "Polygon":
+    case "137":
       return `https://polygonscan.com/tx/${txid}`;
-    case "Arbitrum":
+    case "42161":
       return `https://arbiscan.io/tx/${txid}`;
-    case "Ethereum":
+    case "1":
       return `https://etherscan.com/tx/${txid}`;
     case "Bitcoin":
       return `https://mempool.space/tx/${txid}`;
@@ -172,11 +184,11 @@ export function getBlockexplorerAddressLink(
     return "";
   }
   switch (chain) {
-    case "Polygon":
+    case "137":
       return `https://polygonscan.com/address/${address}`;
-    case "Arbitrum":
+    case "42161":
       return `https://arbiscan.io/address/${address}`;
-    case "Ethereum":
+    case "1":
       return `https://etherscan.com/address/${address}`;
     case "Bitcoin":
       return `https://mempool.space/address/${address}`;

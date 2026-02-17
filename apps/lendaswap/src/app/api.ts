@@ -1,6 +1,7 @@
 // Re-export types from SDK - single source of truth
 import {
   type ArkadeToEvmSwapResponse,
+  type BitcoinToEvmSwapResponse,
   type BtcToArkadeSwapResponse,
   type Chain,
   type CoordinatorFundingCallData,
@@ -9,6 +10,7 @@ import {
   getUsdPrices,
   IdbSwapStorage,
   IdbWalletStorage,
+  type LightningToEvmSwapResponse,
   type TokenInfo as PureTokenInfo,
   type QuoteResponse,
   type RefundResult,
@@ -21,6 +23,7 @@ import {
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
+import { isEvmToken } from "./utils/tokenUtils";
 
 // Re-export SDK types for use throughout the frontend
 export type {
@@ -186,24 +189,42 @@ export const api = {
     return await client.getQuote(request);
   },
 
-  async createArkadeToEvmSwap(request: {
-    target_address: string;
-    source_amount?: bigint;
-    target_amount?: bigint;
-    token_address: string;
-    evm_chain_id: number;
-  }): Promise<ArkadeToEvmSwapResponse> {
+  async createToEvmSwap(request: {
+    sourceAsset: TokenInfo;
+    targetAsset: TokenInfo;
+    sourceAmount?: number;
+    targetAmount?: number;
+    targetAddress: string;
+  }): Promise<
+    | BitcoinToEvmSwapResponse
+    | ArkadeToEvmSwapResponse
+    | LightningToEvmSwapResponse
+  > {
     const referralCode = getReferralCode();
     const client = await getClients();
-    const result = await client.createArkadeToEvmSwapGeneric({
-      targetAddress: request.target_address,
-      tokenAddress: request.token_address,
-      evmChainId: request.evm_chain_id,
-      sourceAmount: request.source_amount,
-      targetAmount: request.target_amount,
-      referralCode: referralCode || undefined,
-    });
-    return result.response;
+
+    if (
+      request.sourceAsset.chain === "Arkade" &&
+      isEvmToken(request.targetAsset.chain)
+    ) {
+      const sourceAmount = request.sourceAmount
+        ? BigInt(request.sourceAmount)
+        : undefined;
+      const targetAmount = request.targetAmount
+        ? BigInt(request.targetAmount)
+        : undefined;
+      const result = await client.createArkadeToEvmSwapGeneric({
+        targetAddress: request.targetAddress,
+        tokenAddress: request.targetAsset.token_id,
+        evmChainId: Number(request.targetAsset.chain),
+        sourceAmount,
+        targetAmount,
+        referralCode: referralCode || undefined,
+      });
+      return result.response;
+    }
+
+    throw Error("Trading pair not supported");
   },
 
   async createEvmToArkadeSwapGeneric(request: {
