@@ -222,7 +222,7 @@ export const api = {
     return await client.listAllSwaps();
   },
 
-  async claimGelato(id: string): Promise<void> {
+  async claim(id: string): Promise<void> {
     const client = await getClients();
     await client.claim(id);
   },

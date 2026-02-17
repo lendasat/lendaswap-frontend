@@ -1,58 +1,17 @@
-import { type GetSwapResponse } from "@lendasat/lendaswap-sdk-pure";
+import type { GetSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  useAccount,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi";
+import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import {
   getBlockexplorerTxLink,
   getTokenIcon,
   getTokenNetworkIcon,
-  getViemChain,
   isEthereumToken,
-  isPolygonToken,
-  isArbitrumToken,
 } from "../../utils/tokenUtils";
-
-// ReverseAtomicSwapHTLC ABI - claimSwap function
-const HTLC_ABI = [
-  {
-    type: "function",
-    name: "claimSwap",
-    inputs: [
-      { name: "swapId", type: "bytes32", internalType: "bytes32" },
-      { name: "secret", type: "bytes32", internalType: "bytes32" },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-] as const;
-
-/**
- * Convert a UUID string to a bytes32 HTLC swap ID
- *
- * The HTLC swap ID is derived from the database swap UUID by:
- * 1. Taking the 16 bytes of the UUID (removing hyphens)
- * 2. Padding with zeros to make 32 bytes
- *
- * This matches the backend's uuid_to_htlc_swap_id function.
- */
-function uuidToHtlcSwapId(uuid: string): `0x${string}` {
-  // Remove hyphens from UUID
-  const uuidHex = uuid.replace(/-/g, "");
-
-  // Pad with zeros to make 32 bytes (64 hex chars)
-  const paddedHex = uuidHex.padEnd(64, "0");
-
-  return `0x${paddedHex}`;
-}
 
 /** Directions where the user sends BTC and receives EVM tokens (auto-claim applies) */
 function isBtcToEvmDirection(direction: GetSwapResponse["direction"]): boolean {
@@ -75,13 +34,11 @@ function isEvmToBtcDirection(direction: GetSwapResponse["direction"]): boolean {
 interface ConfirmingDepositStepProps {
   swapData: GetSwapResponse;
   swapId: string;
-  preimage: string | null;
 }
 
 export function SwapProcessingStep({
   swapData,
   swapId,
-  preimage,
 }: ConfirmingDepositStepProps) {
   const posthog = usePostHog();
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
@@ -91,13 +48,8 @@ export function SwapProcessingStep({
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 10;
 
-  const chain = getViemChain(swapData.target_token.chain);
-
   // Wallet client hooks for Ethereum claiming
   const { address } = useAccount();
-  const { data: walletClient } = useWalletClient({ chainId: chain?.id });
-  const publicClient = usePublicClient({ chainId: chain?.id });
-  const { switchChainAsync } = useSwitchChain();
   const { setOpen } = useModal();
 
   // Helper function to sleep
@@ -117,14 +69,9 @@ export function SwapProcessingStep({
 
   // Auto-claim for btc-to-evm directions when server is funded
   useEffect(() => {
-    const autoClaimBtcToEvmSwaps = async () => {
+    const autoClaimEvmSwap = async () => {
       if (!isBtcToEvmDirection(swapData.direction)) return;
       if (swapData.status !== "serverfunded") return;
-
-      // For Ethereum tokens, don't auto-claim if wallet not connected
-      if (isEthereumToken(swapData.target_token.chain) && !address) {
-        return;
-      }
 
       const claimKey = `swap_${swapData.id}_claim_attempted`;
       const attemptTimestamp = localStorage.getItem(claimKey);
@@ -154,93 +101,7 @@ export function SwapProcessingStep({
           retryCount,
         });
 
-        // Mark that we've attempted to claim
-        localStorage.setItem(claimKey, Date.now().toString());
-
-        if (
-          isPolygonToken(swapData.target_token.chain) ||
-          isArbitrumToken(swapData.target_token.chain)
-        ) {
-          // we rely on the wasm part knowing about the secret
-          await api.claimGelato(swapData.id);
-        } else if (isEthereumToken(swapData.target_token.chain)) {
-          // Ethereum: claim using user's wallet
-          if (!address) {
-            setOpen(true);
-            hasClaimedRef.current = false;
-            return;
-          }
-
-          console.log(`Claim Ethereum ${preimage}`);
-
-          if (!preimage) {
-            console.error(`Can't claim on ethereum without preimage`);
-            return;
-          }
-
-          if (!walletClient || !publicClient || !switchChainAsync) {
-            throw new Error("Wallet client not ready. Please try again.");
-          }
-
-          if (!chain) {
-            throw new Error(
-              `Unsupported token for chain switching: ${swapData.target_token}`,
-            );
-          }
-
-          // Switch to the correct chain if needed
-          console.log("Switching to chain:", chain.name);
-          await switchChainAsync({ chainId: chain.id });
-
-          // All btc-to-evm directions have evm_htlc_address after narrowing
-          let htlcAddress: `0x${string}`;
-          if (swapData.direction === "bitcoin_to_evm") {
-            htlcAddress = swapData.evm_htlc_address as `0x${string}`;
-          } else if (swapData.direction === "arkade_to_evm") {
-            htlcAddress = swapData.evm_htlc_address as `0x${string}`;
-          } else if (swapData.direction === "lightning_to_evm") {
-            htlcAddress = swapData.evm_htlc_address as `0x${string}`;
-          } else {
-            throw new Error(`Unexpected direction: ${swapData.direction}`);
-          }
-          console.log(`Claiming for htlc contract `, htlcAddress);
-
-          // Convert UUID to bytes32 by removing hyphens and padding with zeros
-          const swapIdBytes32 = uuidToHtlcSwapId(swapData.id);
-
-          console.log(`Preimage ${preimage} and ${typeof preimage}`);
-          const secretBytes32 = `0x${preimage}` as `0x${string}`;
-
-          console.log("Claiming Ethereum HTLC with wallet...", {
-            htlcAddress,
-            swapIdBytes32,
-            secretBytes32,
-          });
-
-          // Call claimSwap on the HTLC contract
-          const claimTxHash = await walletClient.writeContract({
-            address: htlcAddress,
-            abi: HTLC_ABI,
-            functionName: "claimSwap",
-            args: [swapIdBytes32, secretBytes32],
-            account: walletClient.account,
-            chain,
-          });
-
-          console.log("Claim transaction hash:", claimTxHash);
-          console.log("Waiting for claim transaction to be mined...");
-
-          // Wait for the claim transaction to be confirmed
-          const claimReceipt = await publicClient.waitForTransactionReceipt({
-            hash: claimTxHash,
-          });
-
-          console.log("Claim transaction confirmed:", claimReceipt.status);
-
-          if (claimReceipt.status !== "success") {
-            throw new Error("Claim transaction failed");
-          }
-        }
+        await api.claim(swapId);
 
         console.log("Claim request sent successfully");
         // Success! Reset retry count
@@ -285,21 +146,8 @@ export function SwapProcessingStep({
       }
     };
 
-    autoClaimBtcToEvmSwaps();
-  }, [
-    swapData,
-    preimage,
-    isClaiming,
-    retryCount,
-    sleep,
-    address,
-    walletClient,
-    publicClient,
-    switchChainAsync,
-    chain,
-    setOpen,
-    posthog?.capture,
-  ]);
+    autoClaimEvmSwap();
+  }, [swapData, swapId, isClaiming, retryCount, sleep, posthog?.capture]);
 
   // Auto-claim for evm-to-btc when server is funded
   //   fixme: implement auto claim
