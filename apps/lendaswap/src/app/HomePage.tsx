@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAccount, useSwitchChain } from "wagmi";
+import { useModal } from "connectkit";
 import {
   isArkade,
   isBtc,
@@ -93,6 +94,7 @@ export function HomePage() {
   } = useAccount();
 
   const { switchChain } = useSwitchChain();
+  const { setOpen: openConnectModal } = useModal();
   const { arkAddress, isEmbedded } = useWalletBridge();
 
   useEffect(() => {
@@ -315,10 +317,17 @@ export function HomePage() {
 
   const isInitialLoading = tokensLoading || isLoadingQuote;
 
+  // The required EVM chain is whichever side (source or target) is an EVM token
+  const requiredEvmChain = sourceAsset && isEvmToken(sourceAsset.chain)
+    ? sourceAsset.chain
+    : targetAsset && isEvmToken(targetAsset.chain)
+      ? targetAsset.chain
+      : undefined;
+
   const isWrongChain =
-    targetChain !== undefined &&
+    requiredEvmChain !== undefined &&
     web3WalletConnectedChain !== undefined &&
-    targetChain !== web3WalletConnectedChain.id.toString();
+    requiredEvmChain !== web3WalletConnectedChain.id.toString();
 
   const createSwap = async () => {
     if (!sourceAsset || !targetAsset) {
@@ -352,7 +361,9 @@ export function HomePage() {
     }
   };
 
-  const targetChainName = targetChain && toChainName(targetChain);
+  const requiredChainName = requiredEvmChain && toChainName(requiredEvmChain);
+  const isWeb3WalletNeeded = sourceAsset && isEvmToken(sourceAsset.chain);
+  const isConnectionStillNeeded = isWeb3WalletNeeded && !isWeb3WalletConnected;
 
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
@@ -557,12 +568,19 @@ export function HomePage() {
           </div>
         ) : null}
         <div className="pt-2">
-          {isWrongChain && targetChain ? (
+          {isConnectionStillNeeded ? (
             <Button
-              onClick={() => switchChain({ chainId: Number(targetChain) })}
+              onClick={() => openConnectModal(true)}
               className="w-full h-12"
             >
-              Switch to {targetChainName}
+              Connect Wallet
+            </Button>
+          ) : isWrongChain && requiredEvmChain ? (
+            <Button
+              onClick={() => switchChain({ chainId: Number(requiredEvmChain) })}
+              className="w-full h-12"
+            >
+              Switch to {requiredChainName}
             </Button>
           ) : (
             <Button
