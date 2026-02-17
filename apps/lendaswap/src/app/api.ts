@@ -224,6 +224,27 @@ export const api = {
       return result.response;
     }
 
+    if (
+      request.sourceAsset.chain === "Bitcoin" &&
+      isEvmToken(request.targetAsset.chain)
+    ) {
+      const sourceAmount = request.sourceAmount
+        ? BigInt(request.sourceAmount)
+        : undefined;
+      const targetAmount = request.targetAmount
+        ? BigInt(request.targetAmount)
+        : undefined;
+      const result = await client.createBitcoinToEvmSwap({
+        targetAddress: request.targetAddress,
+        tokenAddress: request.targetAsset.token_id,
+        evmChainId: Number(request.targetAsset.chain),
+        sourceAmount: sourceAmount ? Number(sourceAmount) : undefined,
+        targetAmount: targetAmount ? Number(targetAmount) : undefined,
+        referralCode: referralCode || undefined,
+      });
+      return result.response;
+    }
+
     throw Error("Trading pair not supported");
   },
 
