@@ -347,7 +347,8 @@ export function HomePage() {
               targetAmount: selectedTargetAmount,
               targetAddress: targetAddress,
             });
-            console.log("swap", swap);
+            const swapId = swap.id;
+            navigate(`/swap/${swapId}/wizard`);
           } catch (e) {
             console.error(e);
             setSwapError(`${e}`);
