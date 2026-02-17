@@ -2,13 +2,14 @@ import {
   type BitcoinToEvmSwapResponse,
   isArkade,
   isEvmToken,
+  toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { CheckCheck, Clock, Copy, ExternalLink, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { type BtcToArkadeSwapResponse, getTokenNetworkName } from "../../api";
+import type { BtcToArkadeSwapResponse } from "../../api";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 
 interface SendOnchainBtcStepProps {
@@ -76,6 +77,11 @@ export function BitcoinDepositStep({
   );
   const bitcoinUri = `bitcoin:${swapData.btc_htlc_address}?amount=${btcAmountInBtc}`;
 
+  const tokenAmount = (
+    swapData.target_amount /
+    10 ** swapData.target_token.decimals
+  ).toFixed(swapData.target_token.decimals);
+
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
       {/* Header */}
@@ -121,9 +127,16 @@ export function BitcoinDepositStep({
         <div
           className={`flex flex-col items-center space-y-4 ${showQrCode ? "block" : "hidden"} md:flex`}
         >
-          <div className="rounded-lg bg-white p-1">
+          <button
+            type="button"
+            onClick={() => handleCopy(bitcoinUri)}
+            className="rounded-lg bg-white p-1 cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <QRCodeSVG value={bitcoinUri} size={200} level="M" />
-          </div>
+          </button>
+          {copiedValue === bitcoinUri && (
+            <span className="text-xs text-muted-foreground">Copied!</span>
+          )}
         </div>
 
         {/* Bitcoin HTLC Address */}
@@ -167,9 +180,23 @@ export function BitcoinDepositStep({
         <div className="bg-muted/50 space-y-2 rounded-lg p-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
-            <span className="font-medium">
-              {swapData.source_amount.toLocaleString()} sats
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">
+                {swapData.source_amount.toLocaleString()} sats
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleCopy(swapData.source_amount.toString())}
+                className="h-6 w-6"
+              >
+                {copiedValue === swapData.source_amount.toString() ? (
+                  <CheckCheck className="h-3 w-3" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
           </div>
           {isArkade(swapData.target_token) && (
             <div className="flex justify-between text-sm">
@@ -186,11 +213,8 @@ export function BitcoinDepositStep({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">
-                {(swapData.target_amount as number).toFixed(
-                  swapData.target_token.decimals,
-                )}{" "}
-                {swapData.target_token.symbol} on{" "}
-                {getTokenNetworkName(swapData.target_token)}
+                {tokenAmount} {swapData.target_token.symbol} on{" "}
+                {toChainName(swapData.target_token.chain)}
               </span>
             </div>
           )}

@@ -122,7 +122,6 @@ export interface OnchainToEvmSwapRequest {
 export {
   getTokenDisplayName,
   getTokenIcon,
-  getTokenNetworkName,
 } from "./utils/tokenUtils";
 
 // API client for Lendaswap backend

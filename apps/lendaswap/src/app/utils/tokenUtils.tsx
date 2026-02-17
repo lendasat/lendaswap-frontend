@@ -102,13 +102,6 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
 }
 
 /**
- * Get the network name for a token
- */
-export function getTokenNetworkName(tokenId: TokenInfo): string {
-  return tokenId.chain;
-}
-
-/**
  * Get viem chain from a chain name string (case-insensitive)
  */
 export function getViemChain(chain?: string): ViemChain | undefined {
