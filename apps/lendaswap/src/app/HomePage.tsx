@@ -5,9 +5,10 @@ import {
   isArkade,
   isBtc,
   isBtcOnchain,
+  toChainName,
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Loader } from "lucide-react";
 import { api, type QuoteResponse } from "./api";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
@@ -16,6 +17,7 @@ import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
 import { AddressInput } from "./components/AddressInput";
 import { useWalletBridge } from "./WalletBridgeContext";
 import { Skeleton } from "#/components/ui/skeleton";
+import { Button } from "#/components/ui/button";
 
 // Build query string from amounts and target address
 function buildQueryParams(
@@ -87,7 +89,7 @@ export function HomePage() {
   const {
     address: connectedAddress,
     isConnected: isWeb3WalletConnected,
-    chain: _web3WalletConnectedChain,
+    chain: web3WalletConnectedChain,
   } = useAccount();
 
   const { arkAddress, isEmbedded } = useWalletBridge();
@@ -119,6 +121,7 @@ export function HomePage() {
       return v ? Number(v) : undefined;
     },
   );
+  const [isCreatingSwap, setIsCreatingSwap] = useState(false);
 
   const [lastEditedField, setLastEditedField] = useState<
     "sourceAsset" | "targetAsset"
@@ -310,6 +313,53 @@ export function HomePage() {
   }
 
   const isInitialLoading = tokensLoading || isLoadingQuote;
+
+  const isWrongChain =
+    targetChain !== undefined &&
+    web3WalletConnectedChain !== undefined &&
+    targetChain !== web3WalletConnectedChain.id.toString();
+
+  const createSwap = async () => {
+    if (!sourceAsset || !targetAsset) {
+      return;
+    }
+    let selectedSourceAmount: number | undefined;
+    let selectedTargetAmount: number | undefined;
+    if (lastEditedField === "sourceAsset") {
+      selectedSourceAmount = sourceAmount;
+    } else {
+      selectedTargetAmount = targetAmount;
+    }
+
+    switch (sourceAsset.chain) {
+      case "Bitcoin":
+      case "Lightning":
+      case "Arkade":
+        await api.createToEvmSwap({
+          sourceAsset: sourceAsset,
+          targetAsset: targetAsset,
+          sourceAmount: selectedSourceAmount,
+          targetAmount: selectedTargetAmount,
+          targetAddress: targetAddress,
+        });
+        break;
+      case "1":
+      case "137":
+      case "42161":
+        switch (targetAsset.chain) {
+          case "Bitcoin":
+          case "Lightning":
+          case "Arkade":
+            break;
+          default:
+            setSwapError("Swapping pair not supported");
+            return;
+        }
+        break;
+    }
+  };
+
+  const targetChainName = targetChain && toChainName(targetChain);
 
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
@@ -505,56 +555,27 @@ export function HomePage() {
             </div>
           </div>
         ) : null}
-        {/*<div className="pt-2">*/}
-        {/*  Show Connect Wallet button when: 1. EVM source (user needs to pay gas*/}
-        {/*  to send EVM tokens) 2. BTC source + Ethereum target (user needs to pay*/}
-        {/*  gas to claim on Ethereum) Note: BTC → Polygon uses Gelato Relay so no*/}
-        {/*  wallet needed*/}
-        {/*  {!isValidSpeedWalletContext() &&*/}
-        {/*  !isConnected &&*/}
-        {/*  ((sourceAsset && isEvmToken(sourceAsset.chain)) ||*/}
-        {/*    (sourceAsset &&*/}
-        {/*      isBtc(sourceAsset) &&*/}
-        {/*      targetAsset &&*/}
-        {/*      isEthereumToken(targetAsset.chain))) ? (*/}
-        {/*    <ConnectKitButton.Custom>*/}
-        {/*      {({ show }) => (*/}
-        {/*        <Button onClick={show} className="w-full h-12 gap-2">*/}
-        {/*          <Wallet className="h-4 w-4" />*/}
-        {/*          Connect Wallet to Pay Gas*/}
-        {/*        </Button>*/}
-        {/*      )}*/}
-        {/*    </ConnectKitButton.Custom>*/}
-        {/*  ) : (*/}
-        {/*    <Button*/}
-        {/*      onClick={handleContinueToFund}*/}
-        {/*      disabled={*/}
-        {/*        !targetAddress ||*/}
-        {/*        !addressValid ||*/}
-        {/*        isCreatingSwap ||*/}
-        {/*        isWrongChain ||*/}
-        {/*        (sourceAsset &&*/}
-        {/*          isEvmToken(sourceAsset.chain) &&*/}
-        {/*          !isEvmAddressValid)*/}
-        {/*      }*/}
-        {/*      className="w-full h-12"*/}
-        {/*    >*/}
-        {/*      {isCreatingSwap ? (*/}
-        {/*        <>*/}
-        {/*          <Loader className="animate-spin h-4 w-4" />*/}
-        {/*          Please Wait*/}
-        {/*        </>*/}
-        {/*      ) : isWrongChain ? (*/}
-        {/*        <>*/}
-        {/*          <Loader className="animate-spin h-4 w-4" />*/}
-        {/*          Switching to {expectedChain?.name}...*/}
-        {/*        </>*/}
-        {/*      ) : (*/}
-        {/*        <>Continue</>*/}
-        {/*      )}*/}
-        {/*    </Button>*/}
-        {/*  )}*/}
-        {/*</div>*/}
+        <div className="pt-2">
+          <Button
+            onClick={createSwap}
+            disabled={!targetAddress || !isAddressValid || isCreatingSwap}
+            className="w-full h-12"
+          >
+            {isCreatingSwap ? (
+              <>
+                <Loader className="animate-spin h-4 w-4" />
+                Please Wait
+              </>
+            ) : isWrongChain ? (
+              <>
+                <Loader className="animate-spin h-4 w-4" />
+                Switching to {targetChainName}...
+              </>
+            ) : (
+              <>Continue</>
+            )}
+          </Button>
+        </div>
         {/*Swap Error Display*/}
         {swapError && (
           <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">
