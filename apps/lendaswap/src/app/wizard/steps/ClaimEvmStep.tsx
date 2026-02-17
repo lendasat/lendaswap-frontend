@@ -66,7 +66,7 @@ export function ClaimEvmStep({ swapData, swapId }: ClaimEvmStepProps) {
 
         localStorage.setItem(claimKey, Date.now().toString());
 
-        await api.claimGelato(swapData.id);
+        await api.claim(swapData.id);
 
         console.log("Claim request sent successfully");
         setRetryCount(0);

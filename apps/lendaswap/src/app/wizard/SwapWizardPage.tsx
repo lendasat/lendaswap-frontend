@@ -19,6 +19,7 @@ import {
   DepositArkadeStep,
   EvmDepositStep,
   RefundArkadeStep,
+  SwapProcessingStep,
 } from "./steps";
 import { SendLightningStep } from "./steps/SendLightningStep";
 
@@ -416,17 +417,14 @@ export function SwapWizardPage() {
             </div>
           )}
 
-          {/*{swapDirectionValue &&*/}
-          {/*  (currentStep === "user-deposit-seen" ||*/}
-          {/*    currentStep === "server-depositing") &&*/}
-          {/*  swapDirectionValue !== "btc-to-arkade" &&*/}
-          {/*  swapDirectionValue !== "arkade-to-evm" &&*/}
-          {/*  swapDirectionValue !== "evm-to-arkade" && (*/}
-          {/*    <SwapProcessingStep*/}
-          {/*      swapData={displaySwapData}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*    />*/}
-          {/*  )}*/}
+          {swapDirectionValue &&
+            (currentStep === "user-deposit-seen" ||
+              currentStep === "server-depositing") && (
+              <SwapProcessingStep
+                swapData={displaySwapData}
+                swapId={displaySwapData.id}
+              />
+            )}
           {/*{(currentStep === "user-deposit-seen" ||*/}
           {/*  currentStep === "server-depositing") &&*/}
           {/*  swapDirectionValue === "btc-to-arkade" && (*/}
