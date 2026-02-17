@@ -12,7 +12,7 @@ interface SendBitcoinStepProps {
   swapData: EvmToArkadeSwapResponse;
 }
 
-export function ArkadeDepositStep({ swapData }: SendBitcoinStepProps) {
+export function DepositArkadeStep({ swapData }: SendBitcoinStepProps) {
   const navigate = useNavigate();
   const { client, isEmbedded, isReady } = useWalletBridge();
   const [isSending, setIsSending] = useState(false);

@@ -15,7 +15,7 @@ import {
   useWalletClient,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { getTokenNetworkName, type TokenInfo } from "../../api";
+import { getTokenNetworkName } from "../../api";
 import {
   getTokenIcon,
   getTokenNetworkIcon,
@@ -52,15 +52,9 @@ interface EvmDepositStepProps {
     | EvmToBitcoinSwapResponse
     | EvmToLightningSwapResponse;
   swapId: string;
-  // the token which is being swapped
-  tokenInfo: TokenInfo;
 }
 
-export function EvmDepositStep({
-  swapData,
-  swapId,
-  tokenInfo,
-}: EvmDepositStepProps) {
+export function EvmDepositStep({ swapData, swapId }: EvmDepositStepProps) {
   const chain = getViemChain(swapData.source_token.chain);
   console.log(`EVM chain `, chain?.name);
 
@@ -259,8 +253,8 @@ export function EvmDepositStep({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
-              {swapData.source_amount.toFixed(tokenInfo.decimals)} {tokenSymbol}{" "}
-              on {getTokenNetworkName(swapData.source_token)}
+              {swapData.source_amount.toFixed(swapData.source_token.decimals)}{" "}
+              {tokenSymbol} on {getTokenNetworkName(swapData.source_token)}
             </span>
           </div>
           <div className="flex justify-between text-sm">

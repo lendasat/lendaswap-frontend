@@ -1,21 +1,20 @@
-import { isBtc, isEvmToken } from "@lendasat/lendaswap-sdk-pure";
+import type {
+  ArkadeToEvmSwapResponse,
+  BitcoinToEvmSwapResponse,
+  BtcToArkadeSwapResponse,
+  EvmToArkadeSwapResponse,
+  EvmToBitcoinSwapResponse,
+  EvmToLightningSwapResponse,
+} from "@lendasat/lendaswap-sdk-pure";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Alert, AlertDescription } from "#/components/ui/alert";
-import type {
-  ArkadeToEvmSwapResponse,
-  BtcToEvmSwapResponse,
-  EvmToArkadeSwapResponse,
-  EvmToBtcSwapResponse,
-} from "../api";
 import { getSwapById, type StoredSwap } from "../db";
 import { useWalletBridge } from "../WalletBridgeContext";
 import {
-  BtcToPolygonRefundStep,
   EvmRefundStep,
-  RefundArkadeStep,
-  RefundEvmStep,
+  RefundBitcoinStep,
+  RefundArkadeSwap,
 } from "../wizard/steps";
 
 export function RefundPage() {
@@ -65,20 +64,12 @@ export function RefundPage() {
   }, [swapId]);
 
   // Determine swap direction - check direction field first, then fall back to token checks
-  const swapDirection =
-    swapData && "direction" in swapData
-      ? (swapData as { direction?: string }).direction
-      : undefined;
-  const isArkadeToEvmSwap = swapDirection === "arkade_to_evm";
-  const isEvmToArkadeSwap = swapDirection === "evm_to_arkade";
-  const isBtcToEvmSwap =
-    !isArkadeToEvmSwap && !isEvmToArkadeSwap && swapData
-      ? isBtc(swapData.source_token)
-      : false;
-  const isEvmToBtcSwap =
-    !isArkadeToEvmSwap && !isEvmToArkadeSwap && swapData
-      ? isEvmToken(swapData.source_token)
-      : false;
+  const swapDirection = swapData?.direction;
+  const isArkadeSwap = swapDirection === "arkade_to_evm";
+  const isBitcoinSwap =
+    swapDirection === "bitcoin_to_evm" || swapDirection === "btc_to_arkade";
+  const isEvmSwap =
+    swapDirection === "evm_to_arkade" || swapDirection === "evm_to_bitcoin";
 
   if (isLoading) {
     return (
@@ -134,46 +125,34 @@ export function RefundPage() {
 
   return (
     <div className="container max-w-2xl mx-auto py-8 px-4">
-      {isBtcToEvmSwap && (
-        <BtcToPolygonRefundStep
-          swapData={swapData as unknown as BtcToEvmSwapResponse}
+      {isArkadeSwap && (
+        <RefundArkadeSwap
+          swapData={swapData as ArkadeToEvmSwapResponse}
           swapId={swapId}
           arkAddress={arkAddress}
         />
       )}
 
-      {isEvmToBtcSwap && (
+      {isBitcoinSwap && (
+        <RefundBitcoinStep
+          swapData={
+            swapData as BitcoinToEvmSwapResponse | BtcToArkadeSwapResponse
+          }
+          swapId={swapId}
+        />
+      )}
+
+      {isEvmSwap && (
         <EvmRefundStep
-          swapData={swapData as unknown as EvmToBtcSwapResponse}
+          swapData={
+            swapData as
+              | EvmToArkadeSwapResponse
+              | EvmToBitcoinSwapResponse
+              | EvmToLightningSwapResponse
+          }
           swapId={swapId}
         />
       )}
-
-      {isArkadeToEvmSwap && (
-        <RefundArkadeStep
-          swapData={swapData as unknown as ArkadeToEvmSwapResponse}
-          swapId={swapId}
-          arkAddress={arkAddress}
-        />
-      )}
-
-      {isEvmToArkadeSwap && (
-        <RefundEvmStep
-          swapData={swapData as unknown as EvmToArkadeSwapResponse}
-          swapId={swapId}
-        />
-      )}
-
-      {!isEvmToBtcSwap &&
-        !isBtcToEvmSwap &&
-        !isArkadeToEvmSwap &&
-        !isEvmToArkadeSwap && (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Unknown swap direction. Cannot display refund interface.
-            </AlertDescription>
-          </Alert>
-        )}
     </div>
   );
 }

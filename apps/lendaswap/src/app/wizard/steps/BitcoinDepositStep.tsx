@@ -8,24 +8,17 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import {
-  type BtcToArkadeSwapResponse,
-  getTokenNetworkName,
-  type TokenInfo,
-} from "../../api";
+import { type BtcToArkadeSwapResponse, getTokenNetworkName } from "../../api";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 
 interface SendOnchainBtcStepProps {
   swapData: BitcoinToEvmSwapResponse | BtcToArkadeSwapResponse;
   swapId: string;
-  // the token which is being swapped
-  targetTokenInfo: TokenInfo;
 }
 
 export function BitcoinDepositStep({
   swapData,
   swapId,
-  targetTokenInfo,
 }: SendOnchainBtcStepProps) {
   const navigate = useNavigate();
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
@@ -194,7 +187,7 @@ export function BitcoinDepositStep({
               <span className="text-muted-foreground">You Receive</span>
               <span className="font-medium">
                 {(swapData.target_amount as number).toFixed(
-                  targetTokenInfo.decimals,
+                  swapData.target_token.decimals,
                 )}{" "}
                 {swapData.target_token.symbol} on{" "}
                 {getTokenNetworkName(swapData.target_token)}
