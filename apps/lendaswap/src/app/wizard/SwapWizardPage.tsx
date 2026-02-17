@@ -19,6 +19,7 @@ import {
   DepositArkadeStep,
   EvmDepositStep,
   RefundArkadeStep,
+  SuccessStep,
   SwapProcessingStep,
 } from "./steps";
 import { SendLightningStep } from "./steps/SendLightningStep";
@@ -451,13 +452,9 @@ export function SwapWizardPage() {
           {/*    />*/}
           {/*  )}*/}
 
-          {/*{currentStep === "success" && swapDirectionValue && (*/}
-          {/*  <SuccessStep*/}
-          {/*    swapData={displaySwapData}*/}
-          {/*    swapDirection={swapDirectionValue}*/}
-          {/*    swapId={displaySwapData.id}*/}
-          {/*  />*/}
-          {/*)}*/}
+          {currentStep === "success" && swapDirectionValue && (
+            <SuccessStep swapData={displaySwapData} />
+          )}
 
           {currentStep === "expired" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">

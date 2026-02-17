@@ -16,7 +16,7 @@ import {
   isBolt11Invoice,
   isLightningAddress,
 } from "../../utils/lightningAddress";
-import { isValidSpeedWalletContext } from "../../utils/speedWallet";
+import isValidSpeedWalletContext from "../../utils/speedWallet";
 
 interface AddressInputProps {
   value: string;
