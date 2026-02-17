@@ -3,8 +3,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import type { ArkadeToEvmSwapResponse } from "../../api";
 import { useWalletBridge } from "../../WalletBridgeContext";
+import type { ArkadeToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 
 interface DepositArkadeStepProps {
   swapData: ArkadeToEvmSwapResponse;

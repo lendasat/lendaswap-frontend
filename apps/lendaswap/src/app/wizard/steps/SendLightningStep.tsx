@@ -7,16 +7,13 @@ import {
   isValidSpeedWalletContext,
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
-import {
-  type BtcToEvmSwapResponse,
-  getTokenNetworkName,
-  getTokenSymbol,
-} from "../../api";
+import { getTokenNetworkName } from "../../api";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 import { useWalletBridge } from "../../WalletBridgeContext";
+import type { LightningToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 
 interface SendLightningStepProps {
-  swapData: BtcToEvmSwapResponse;
+  swapData: LightningToEvmSwapResponse;
 }
 
 export function SendLightningStep({ swapData }: SendLightningStepProps) {
@@ -28,12 +25,11 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
   const [showQrCode, setShowQrCode] = useState(false);
   const [speedPaymentTriggered, setSpeedPaymentTriggered] = useState(false);
 
-  const arkadeAddress = swapData.htlc_address_arkade;
-  const lightningAddress = swapData.ln_invoice;
-  const lightningQrValue = `lightning:${lightningAddress}`;
+  const lightningInvoice = swapData.boltz_invoice;
+  const lightningQrValue = `lightning:${lightningInvoice}`;
   const swapId = swapData.id;
-  const tokenAmount = swapData.asset_amount.toString();
-  const tokenSymbol = getTokenSymbol(swapData.target_token);
+  const tokenAmount = swapData.target_amount.toString();
+  const tokenSymbol = swapData.target_token.symbol;
 
   // Check if we're running inside Speed Wallet
   const isSpeedWallet = isValidSpeedWalletContext();
@@ -56,7 +52,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
   };
 
   const handleSendFromWallet = async () => {
-    if (!client || !arkadeAddress || !swapData || !swapId) {
+    if (!client || !swapData || !swapId) {
       return;
     }
 
@@ -66,8 +62,8 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
 
       // Send Bitcoin using the wallet bridge
       await client.sendToAddress(
-        arkadeAddress,
-        Number(swapData.sats_receive),
+        lightningInvoice,
+        swapData.source_amount,
         "bitcoin",
       );
 
@@ -82,14 +78,14 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
   };
 
   const handleSpeedWalletPayment = () => {
-    if (!lightningAddress || !swapData) {
+    if (!lightningInvoice || !swapData) {
       setSendError("Payment details not available");
       return;
     }
 
     const success = triggerSpeedWalletPayment(
-      lightningAddress,
-      Number(swapData.sats_receive),
+      lightningInvoice,
+      swapData.source_amount,
       `LendaSwap: ${tokenAmount} ${tokenSymbol} swap`,
     );
 
@@ -109,12 +105,12 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
           <div className="relative">
             <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
               <div className="w-5 h-5 flex items-center justify-center">
-                {getTokenIcon("btc_lightning")}
+                {getTokenIcon(swapData.source_token)}
               </div>
             </div>
             <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
               <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
-                {getTokenNetworkIcon("btc_lightning")}
+                {getTokenNetworkIcon(swapData.source_token)}
               </div>
             </div>
           </div>
@@ -140,7 +136,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
         )}
 
         {/* Standard Mode: QR Code - Hidden on mobile by default, always visible on desktop */}
-        {!isSpeedWallet && lightningAddress && (
+        {!isSpeedWallet && lightningInvoice && (
           <>
             {/* Toggle button - only visible on mobile */}
             <div className="md:hidden">
@@ -173,28 +169,28 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="dark:bg-muted/50 border-border flex-1 rounded-lg border bg-white p-3 font-mono text-xs">
-                {lightningAddress ? (
+                {lightningInvoice ? (
                   <>
                     {/* Show shortened on mobile, full on desktop */}
                     <span className="md:hidden">
-                      {shortenAddress(lightningAddress)}
+                      {shortenAddress(lightningInvoice)}
                     </span>
                     <span className="hidden md:inline break-all">
-                      {lightningAddress}
+                      {lightningInvoice}
                     </span>
                   </>
                 ) : (
                   "N/A"
                 )}
               </div>
-              {lightningAddress && (
+              {lightningInvoice && (
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => handleCopyAddress(lightningAddress)}
+                  onClick={() => handleCopyAddress(lightningInvoice)}
                   className="shrink-0"
                 >
-                  {copiedAddress === lightningAddress ? (
+                  {copiedAddress === lightningInvoice ? (
                     <CheckCheck className="h-4 w-4" />
                   ) : (
                     <Copy className="h-4 w-4" />
@@ -240,37 +236,33 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
               ) : (
                 <>
                   <Zap className="mr-2 h-5 w-5" />
-                  Pay {swapData?.sats_receive.toLocaleString()} sats
+                  Pay {swapData?.source_amount.toLocaleString()} sats
                 </>
               )}
             </Button>
           )}
 
           {/* Send from wallet - only on embedded wallets (non-Speed) - First on mobile, second on desktop */}
-          {!isSpeedWallet &&
-            isEmbedded &&
-            isReady &&
-            client &&
-            arkadeAddress && (
-              <Button
-                variant="outline"
-                className="h-12 w-full text-base font-semibold order-first md:order-2"
-                onClick={handleSendFromWallet}
-                disabled={isSending}
-              >
-                {isSending ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Wallet className="mr-2 h-5 w-5" />
-                    Send from Wallet
-                  </>
-                )}
-              </Button>
-            )}
+          {!isSpeedWallet && isEmbedded && isReady && client && (
+            <Button
+              variant="outline"
+              className="h-12 w-full text-base font-semibold order-first md:order-2"
+              onClick={handleSendFromWallet}
+              disabled={isSending}
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Wallet className="mr-2 h-5 w-5" />
+                  Send from Wallet
+                </>
+              )}
+            </Button>
+          )}
 
           {/* Waiting for payment - Standard mode only */}
           {!isSpeedWallet && (
