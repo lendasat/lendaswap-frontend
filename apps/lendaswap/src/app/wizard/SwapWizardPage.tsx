@@ -15,15 +15,15 @@ import { useNavigate, useParams } from "react-router";
 import { useAsyncRetry } from "react-use";
 import { api } from "../api";
 import {
-  DepositBitcoinStep,
   ClaimArkadeStep,
   DepositArkadeStep,
+  DepositBitcoinStep,
   DepositEvmStep,
   RefundArkadeStep,
   RefundBitcoinStep,
+  RefundEvmStep,
   SuccessStep,
   SwapProcessingStep,
-  RefundEvmStep,
 } from "./steps";
 import { SendLightningStep } from "./steps/SendLightningStep";
 
@@ -275,8 +275,6 @@ export function SwapWizardPage() {
   //   } as TokenInfo;
   // }
 
-  console.log(`Current step: ${currentStep} and ${swapDirectionValue}`);
-
   return (
     <>
       {/* Error State */}
@@ -470,15 +468,15 @@ export function SwapWizardPage() {
               {(swapDirectionValue === "evm_to_bitcoin" ||
                 swapDirectionValue === "evm_to_arkade" ||
                 swapDirectionValue === "evm_to_lightning") && (
-                  <RefundEvmStep
-                    swapData={
-                      displaySwapData as
-                        | EvmToBitcoinSwapResponse
-                        | EvmToArkadeSwapResponse
-                        | EvmToLightningSwapResponse
-                    }
-                  />
-                )}
+                <RefundEvmStep
+                  swapData={
+                    displaySwapData as
+                      | EvmToBitcoinSwapResponse
+                      | EvmToArkadeSwapResponse
+                      | EvmToLightningSwapResponse
+                  }
+                />
+              )}
 
               {(swapDirectionValue === "btc_to_arkade" ||
                 swapDirectionValue === "bitcoin_to_evm") && (
