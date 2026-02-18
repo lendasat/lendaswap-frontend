@@ -67,10 +67,11 @@ export function SwapProcessingStep({
     localStorage.removeItem(claimKey);
   };
 
-  // Auto-claim for btc-to-evm directions when server is funded
+  // Auto-claim when server is funded (works for all directions via api.claim)
   useEffect(() => {
     const autoClaimEvmSwap = async () => {
-      if (!isBtcToEvmDirection(swapData.direction)) return;
+      // Lightning-to-evm is claimed by the lightning client, skip auto-claim
+      if (swapData.direction === "evm_to_lightning") return;
       if (swapData.status !== "serverfunded") return;
 
       const claimKey = `swap_${swapData.id}_claim_attempted`;

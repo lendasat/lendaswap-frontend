@@ -15,7 +15,6 @@ import { useNavigate, useParams } from "react-router";
 import { useAsyncRetry } from "react-use";
 import { api } from "../api";
 import {
-  ClaimArkadeStep,
   DepositArkadeStep,
   DepositBitcoinStep,
   DepositEvmStep,
@@ -426,11 +425,6 @@ export function SwapWizardPage() {
                 swapData={displaySwapData}
                 swapId={displaySwapData.id}
               />
-            )}
-          {(currentStep === "user-deposit-seen" ||
-            currentStep === "server-depositing") &&
-            swapDirectionValue === "evm_to_arkade" && (
-              <ClaimArkadeStep swapData={displaySwapData} />
             )}
 
           {currentStep === "expired" && (

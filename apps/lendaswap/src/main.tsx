@@ -6,6 +6,7 @@ import { Theme } from "@radix-ui/themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { PostHogProvider } from "posthog-js/react";
+import { http } from "viem";
 import { arbitrum, mainnet, polygon } from "viem/chains";
 import { createConfig, WagmiProvider } from "wagmi";
 import App from "./app/App";
@@ -19,14 +20,26 @@ import { getSpeedWalletParams } from "./utils/speedWallet";
 // This persists them to sessionStorage so they survive React Router redirects.
 getSpeedWalletParams();
 
-const config = createConfig(
-  getDefaultConfig({
-    appName: "LendaSwap",
-    appUrl: window.location.origin,
-    walletConnectProjectId: "a15c535db177c184c98bdbdc5ff12590",
-    chains: [mainnet, polygon, arbitrum],
-  }),
-);
+// Allow overriding the RPC URL for a specific chain via env variable.
+// e.g. VITE_RPC_OVERRIDE_CHAIN_ID=137 VITE_RPC_OVERRIDE_URL=http://localhost:8545
+const chains = [mainnet, polygon, arbitrum] as const;
+const rpcOverrideChainId = import.meta.env.VITE_RPC_OVERRIDE_CHAIN_ID;
+const rpcOverrideUrl = import.meta.env.VITE_RPC_OVERRIDE_URL;
+
+const defaultCfg = getDefaultConfig({
+  appName: "LendaSwap",
+  appUrl: window.location.origin,
+  walletConnectProjectId: "a15c535db177c184c98bdbdc5ff12590",
+  chains,
+});
+
+if (rpcOverrideChainId && rpcOverrideUrl) {
+  const overrideId = Number(rpcOverrideChainId);
+  const original = defaultCfg.transports as Record<number, ReturnType<typeof http>>;
+  original[overrideId] = http(rpcOverrideUrl);
+}
+
+const config = createConfig(defaultCfg);
 
 const queryClient = new QueryClient();
 
