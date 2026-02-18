@@ -313,10 +313,11 @@ export function HomePage() {
     target: TokenInfo,
     srcAmt?: number,
     tgtAmt?: number,
+    address?: string,
   ) {
     const path = `/${formatTokenUrl(source)}/${formatTokenUrl(target)}`;
     navigate(
-      `${path}${buildQueryParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount, targetAddress)}`,
+      `${path}${buildQueryParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount, address ?? targetAddress)}`,
       {
         replace: true,
       },
@@ -501,11 +502,13 @@ export function HomePage() {
             // Swap source and target tokens + amounts
             setSourceAmountState(targetAmount);
             setTargetAmountState(sourceAmount);
+            setTargetAddress("");
             navigateToTokens(
               targetAsset,
               sourceAsset,
               targetAmount,
               sourceAmount,
+              "",
             );
           }}
           className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${!sourceAsset || isBtcOnchain(sourceAsset) ? "opacity-50 cursor-not-allowed" : ""}`}
