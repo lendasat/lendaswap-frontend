@@ -14,14 +14,14 @@ import {
   RefreshCw,
   AlertCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   useAccount,
-  usePublicClient,
   useSwitchChain,
   useWalletClient,
 } from "wagmi";
+import { erc20Abi, publicActions } from "viem";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import { getViemChain } from "../../utils/tokenUtils";
@@ -61,7 +61,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
   const { address, chainId: currentChainId } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient({ chainId: chain?.id });
+  const walletPublicClient = walletClient?.extend(publicActions);
   const { switchChainAsync } = useSwitchChain();
   const { setOpen } = useModal();
 
@@ -79,6 +79,18 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     }
   }, [address, setOpen]);
 
+  // Cache funding calldata so we don't fetch it multiple times
+  const fundingRef = useRef<Awaited<
+    ReturnType<typeof api.getCoordinatorFundingCallData>
+  > | null>(null);
+
+  const fetchFunding = useCallback(async () => {
+    if (!fundingRef.current) {
+      fundingRef.current = await api.getCoordinatorFundingCallData(swapId);
+    }
+    return fundingRef.current;
+  }, [swapId]);
+
   // Auto-mark switchChain as completed if already on the correct chain
   useEffect(() => {
     if (chain && currentChainId === chain.id) {
@@ -88,6 +100,38 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       }));
     }
   }, [currentChainId, chain]);
+
+  // Auto-mark approve as completed if allowance is already sufficient
+  useEffect(() => {
+    if (!address || !walletPublicClient || !chain || currentChainId !== chain.id) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const funding = await fetchFunding();
+        const tokenAddress = funding.approve.to as `0x${string}`;
+        const spender = funding.executeAndCreate.to as `0x${string}`;
+
+        const allowance = await walletPublicClient.readContract({
+          address: tokenAddress,
+          abi: erc20Abi,
+          functionName: "allowance",
+          args: [address, spender],
+        });
+
+        if (!cancelled && allowance >= BigInt(swapData.source_amount)) {
+          setSteps((prev) => ({
+            ...prev,
+            approve: { status: "completed" },
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to check allowance:", err);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [address, walletPublicClient, chain, currentChainId, swapData.source_amount, fetchFunding]);
 
   const tokenSymbol = swapData.source_token.symbol;
   const sourceDecimals = swapData.source_token.decimals;
@@ -117,7 +161,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       setOpen(true);
       return;
     }
-    if (!walletClient || !publicClient) {
+    if (!walletClient || !walletPublicClient) {
       setOpen(true);
       return;
     }
@@ -146,36 +190,51 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         }
 
         if (step === "approve") {
-          const funding = await api.getCoordinatorFundingCallData(swapId);
-          const approveTxHash = await walletClient.sendTransaction({
-            to: funding.approve.to as `0x${string}`,
-            data: funding.approve.data as `0x${string}`,
-            chain,
+          const funding = await fetchFunding();
+          const tokenAddress = funding.approve.to as `0x${string}`;
+          const spender = funding.executeAndCreate.to as `0x${string}`;
+
+          // Check if allowance is already sufficient
+          const allowance = await walletPublicClient.readContract({
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "allowance",
+            args: [address, spender],
           });
-          const approveReceipt = await publicClient.waitForTransactionReceipt({
-            hash: approveTxHash,
-          });
-          if (approveReceipt.status !== "success") {
-            updateStep(step, {
-              status: "error",
-              error: "Approve transaction reverted",
+
+          if (allowance >= BigInt(swapData.source_amount)) {
+            updateStep(step, { status: "completed" });
+          } else {
+            const approveTxHash = await walletClient.sendTransaction({
+              to: tokenAddress,
+              data: funding.approve.data as `0x${string}`,
+              chain,
             });
-            return;
+            const approveReceipt = await walletPublicClient.waitForTransactionReceipt({
+              hash: approveTxHash,
+            });
+            if (approveReceipt.status !== "success") {
+              updateStep(step, {
+                status: "error",
+                error: "Approve transaction reverted",
+              });
+              return;
+            }
+            updateStep(step, { status: "completed" });
           }
-          updateStep(step, { status: "completed" });
         }
 
         if (step === "fund") {
-          // Fetch fresh calldata — 1inch quotes expire quickly
-          const freshFunding =
-            await api.getCoordinatorFundingCallData(swapId);
+          // Invalidate cache and fetch fresh calldata — 1inch quotes expire quickly
+          fundingRef.current = null;
+          const freshFunding = await fetchFunding();
           const executeTxHash = await walletClient.sendTransaction({
             to: freshFunding.executeAndCreate.to as `0x${string}`,
             data: freshFunding.executeAndCreate.data as `0x${string}`,
             chain,
           });
           const executeReceipt =
-            await publicClient.waitForTransactionReceipt({
+            await walletPublicClient.waitForTransactionReceipt({
               hash: executeTxHash,
             });
           if (executeReceipt.status !== "success") {
@@ -313,14 +372,29 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
       {/* Action Buttons */}
       <div className="flex flex-col gap-3">
-        {!address && (
+        {!address ? (
           <Button
             onClick={() => setOpen(true)}
             className="h-12 w-full text-base font-semibold"
           >
             Connect Wallet
           </Button>
-        )}
+        ) : currentStepKey ? (
+          <Button
+            onClick={() => runFromStep(currentStepKey)}
+            disabled={isRunning}
+            className="h-12 w-full text-base font-semibold bg-black text-white hover:bg-black/90"
+          >
+            {isRunning ? (
+              <>
+                <Loader className="animate-spin h-4 w-4 mr-2" />
+                Processing...
+              </>
+            ) : (
+              "Fund Swap"
+            )}
+          </Button>
+        ) : null}
 
         <Button
           variant="outline"
