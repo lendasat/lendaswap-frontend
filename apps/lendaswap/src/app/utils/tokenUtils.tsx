@@ -104,16 +104,16 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
 /**
  * Get viem chain from a chain name string (case-insensitive)
  */
-export function getViemChain(chain?: string): ViemChain | undefined {
+export function getViemChain(chain?: Chain): ViemChain | undefined {
   if (!chain) {
     return undefined;
   }
-  switch (chain.toLowerCase()) {
-    case "polygon":
+  switch (chain) {
+    case "137":
       return polygon;
-    case "arbitrum":
+    case "42161":
       return arbitrum;
-    case "ethereum":
+    case "1":
       return mainnet;
     default:
       return undefined;
