@@ -1,24 +1,22 @@
 import { Check, Circle, Copy, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "#/components/ui/button";
-import {
-  api,
-  type EvmToArkadeSwapResponse,
-  type GetSwapResponse,
-} from "../../api";
+import { api, type GetSwapResponse } from "../../api";
+import type { EvmToArkadeSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 
 interface ClaimArkadeStepProps {
   swapData: GetSwapResponse;
-  swapId: string;
 }
 
-export function ClaimArkadeStep({ swapData, swapId }: ClaimArkadeStepProps) {
+export function ClaimArkadeStep({ swapData }: ClaimArkadeStepProps) {
   const [copiedTxId, setCopiedTxId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const hasClaimedRef = useRef(false);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 10;
+
+  const swapId = swapData.id;
 
   const sleep = useCallback(
     (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
@@ -66,9 +64,11 @@ export function ClaimArkadeStep({ swapData, swapId }: ClaimArkadeStepProps) {
 
         localStorage.setItem(claimKey, Date.now().toString());
 
-        await api.claimVhtlc(swapData.id);
+        const result = await api.claim(swapData.id);
 
-        console.log("Claim request sent successfully");
+        console.log(
+          `Claim request sent successfully ${JSON.stringify(result)}`,
+        );
         setRetryCount(0);
       } catch (error) {
         console.error(
@@ -119,9 +119,7 @@ export function ClaimArkadeStep({ swapData, swapId }: ClaimArkadeStepProps) {
   };
 
   // Cast for field access
-  const swap = swapData as EvmToArkadeSwapResponse & {
-    direction: "evm_to_arkade";
-  };
+  const swap = swapData as EvmToArkadeSwapResponse;
 
   const config = {
     step1Label: "User Funded",
