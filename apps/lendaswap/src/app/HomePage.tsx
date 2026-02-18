@@ -143,16 +143,6 @@ export function HomePage() {
     }
   }, [urlAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-fill from connected wallet only if address is empty
-  useEffect(() => {
-    const maybeWeb3Address = connectedAddress?.toString();
-    if (maybeWeb3Address && isWeb3WalletConnected && !targetAddress) {
-      setTargetAddress(maybeWeb3Address);
-    } else if (!isWeb3WalletConnected && targetAddress === connectedAddress) {
-      setTargetAddress("");
-    }
-  }, [connectedAddress, isWeb3WalletConnected, targetAddress]);
-
   const {
     value: maybeAvailableTokens,
     loading: tokensLoading,
@@ -181,6 +171,24 @@ export function HomePage() {
       t.chain.toLowerCase() === urlTargetToken?.chain.toLowerCase() &&
       t.token_id.toLowerCase() === urlTargetToken?.tokenId.toLowerCase(),
   );
+
+  // Auto-fill from connected wallet only when target is an EVM token
+  const isEvmTarget = targetAsset ? isEvmToken(targetAsset.chain) : false;
+  useEffect(() => {
+    const maybeWeb3Address = connectedAddress?.toString();
+    if (
+      maybeWeb3Address &&
+      isWeb3WalletConnected &&
+      isEvmTarget &&
+      !targetAddress
+    ) {
+      setTargetAddress(maybeWeb3Address);
+    } else if (!isWeb3WalletConnected && targetAddress === connectedAddress) {
+      setTargetAddress("");
+    }
+    // Note: targetAddress intentionally excluded to avoid re-filling after user clears it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectedAddress, isWeb3WalletConnected, isEvmTarget, targetAddress]);
 
   const availableTargetTokens = getAvailableTargetAssets(
     maybeAvailableTokens?.btc_tokens || [],
