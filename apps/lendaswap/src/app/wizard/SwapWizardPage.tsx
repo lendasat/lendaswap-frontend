@@ -23,6 +23,7 @@ import {
   RefundBitcoinStep,
   SuccessStep,
   SwapProcessingStep,
+  RefundEvmStep,
 } from "./steps";
 import { SendLightningStep } from "./steps/SendLightningStep";
 
@@ -137,8 +138,6 @@ export function SwapWizardPage() {
   const [displaySwapData, setDisplaySwapData] =
     useState<GetSwapResponse | null>(null);
   const [currentStep, setCurrentStep] = useState<StepId | undefined>();
-  // const [preimage, setPreimage] = useState<string | null>(null);
-  // const { arkAddress } = useWalletBridge();
 
   const {
     loading: isLoading,
@@ -275,6 +274,8 @@ export function SwapWizardPage() {
   //     chain: "polygon",
   //   } as TokenInfo;
   // }
+
+  console.log(`Current step: ${currentStep} and ${swapDirectionValue}`);
 
   return (
     <>
@@ -428,32 +429,11 @@ export function SwapWizardPage() {
                 swapId={displaySwapData.id}
               />
             )}
-          {/*{(currentStep === "user-deposit-seen" ||*/}
-          {/*  currentStep === "server-depositing") &&*/}
-          {/*  swapDirectionValue === "btc-to-arkade" && (*/}
-          {/*    <BtcToArkadeProcessingStep*/}
-          {/*      swapData={displaySwapData as BtcToArkadeSwapResponse}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*      preimage={preimage}*/}
-          {/*    />*/}
-          {/*  )}*/}
-          {/*{(currentStep === "user-deposit-seen" ||*/}
-          {/*  currentStep === "server-depositing") &&*/}
-          {/*  swapDirectionValue === "arkade-to-evm" && (*/}
-          {/*    <ClaimEvmStep*/}
-          {/*      swapData={displaySwapData}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*    />*/}
-          {/*  )}*/}
           {(currentStep === "user-deposit-seen" ||
             currentStep === "server-depositing") &&
             swapDirectionValue === "evm_to_arkade" && (
               <ClaimArkadeStep swapData={displaySwapData} />
             )}
-
-          {currentStep === "success" && swapDirectionValue && (
-            <SuccessStep swapData={displaySwapData} />
-          )}
 
           {currentStep === "expired" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
@@ -479,49 +459,43 @@ export function SwapWizardPage() {
             </div>
           )}
 
-          {currentStep === "refundable" &&
-            swapDirectionValue === "arkade_to_evm" && (
-              <RefundArkadeStep
-                swapData={displaySwapData as ArkadeToEvmSwapResponse}
-              />
-            )}
+          {currentStep === "refundable" && (
+            <>
+              {swapDirectionValue === "arkade_to_evm" && (
+                <RefundArkadeStep
+                  swapData={displaySwapData as ArkadeToEvmSwapResponse}
+                />
+              )}
 
-          {/*{currentStep === "refundable" &&*/}
-          {/*  swapDirectionValue === "evm-to-btc" && (*/}
-          {/*    <PolygonToBtcRefundStep*/}
-          {/*      swapData={displaySwapData as EvmToBtcSwapResponse}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*    />*/}
-          {/*  )}*/}
+              {(swapDirectionValue === "evm_to_bitcoin" ||
+                swapDirectionValue === "evm_to_arkade" ||
+                swapDirectionValue === "evm_to_lightning") && (
+                  <RefundEvmStep
+                    swapData={
+                      displaySwapData as
+                        | EvmToBitcoinSwapResponse
+                        | EvmToArkadeSwapResponse
+                        | EvmToLightningSwapResponse
+                    }
+                  />
+                )}
 
-          {currentStep === "refundable" &&
-            (swapDirectionValue === "btc_to_arkade" ||
-              swapDirectionValue === "bitcoin_to_evm") && (
-              <RefundBitcoinStep
-                swapData={
-                  displaySwapData as
-                    | BtcToArkadeSwapResponse
-                    | BitcoinToEvmSwapResponse
-                }
-              />
-            )}
+              {(swapDirectionValue === "btc_to_arkade" ||
+                swapDirectionValue === "bitcoin_to_evm") && (
+                <RefundBitcoinStep
+                  swapData={
+                    displaySwapData as
+                      | BtcToArkadeSwapResponse
+                      | BitcoinToEvmSwapResponse
+                  }
+                />
+              )}
+            </>
+          )}
 
-          {/*{currentStep === "refundable" &&*/}
-          {/*  swapDirectionValue === "arkade-to-evm" && (*/}
-          {/*    <RefundArkadeStep*/}
-          {/*      swapData={displaySwapData as ArkadeToEvmSwapResponse}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*      arkAddress={arkAddress}*/}
-          {/*    />*/}
-          {/*  )}*/}
-
-          {/*{currentStep === "refundable" &&*/}
-          {/*  swapDirectionValue === "evm-to-arkade" && (*/}
-          {/*    <RefundEvmStep*/}
-          {/*      swapData={displaySwapData as EvmToArkadeSwapResponse}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*    />*/}
-          {/*  )}*/}
+          {currentStep === "success" && swapDirectionValue && (
+            <SuccessStep swapData={displaySwapData} />
+          )}
 
           {currentStep === "refunded" && (
             <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">

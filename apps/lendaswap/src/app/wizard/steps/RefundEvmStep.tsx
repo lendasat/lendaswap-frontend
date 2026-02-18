@@ -9,18 +9,26 @@ import {
 } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import { api, type EvmToArkadeSwapResponse } from "../../api";
+import { api } from "../../api";
 import { getViemChainById } from "../../utils/tokenUtils";
+import type {
+  EvmToLightningSwapResponse,
+  EvmToBitcoinSwapResponse,
+  EvmToArkadeSwapResponse,
+} from "@lendasat/lendaswap-sdk-pure";
 
 interface RefundEvmStepProps {
-  swapData: EvmToArkadeSwapResponse;
-  swapId: string;
+  swapData:
+    | EvmToBitcoinSwapResponse
+    | EvmToArkadeSwapResponse
+    | EvmToLightningSwapResponse;
 }
 
-export function RefundEvmStep({ swapData, swapId }: RefundEvmStepProps) {
+export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
   const posthog = usePostHog();
   const { address } = useAccount();
 
+  const swapId = swapData.id;
   const chain = getViemChainById(swapData.evm_chain_id);
 
   const { data: walletClient } = useWalletClient({ chainId: chain?.id });
@@ -184,7 +192,6 @@ export function RefundEvmStep({ swapData, swapId }: RefundEvmStepProps) {
         </code>
         <div className="h-2 w-2 rounded-full bg-orange-500/50 animate-pulse" />
       </div>
-
       {/* Content */}
       <div className="space-y-6 p-6">
         {/* Refund Status Banner */}
