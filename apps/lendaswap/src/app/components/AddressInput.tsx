@@ -47,6 +47,7 @@ export function AddressInput({
   useEffect(() => {
     if (!value || !targetToken) {
       setValidationError("");
+      setAddressIsValid(true);
       return;
     }
 
