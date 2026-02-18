@@ -72,7 +72,12 @@ export function DepositBitcoinStep({
       : undefined;
 
   return (
-    <DepositCard sourceToken={swapData.source_token} targetToken={swapData.target_token} swapId={swapId} title={`${swapData.source_token.symbol} → ${swapData.target_token.symbol}`}>
+    <DepositCard
+      sourceToken={swapData.source_token}
+      targetToken={swapData.target_token}
+      swapId={swapId}
+      title={`${swapData.source_token.symbol} → ${swapData.target_token.symbol}`}
+    >
       <QrCodeSection value={bitcoinUri} />
       <AddressDisplay
         label="Bitcoin Address"

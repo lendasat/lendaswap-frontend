@@ -7,7 +7,14 @@ import {
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
-import { Check, Circle, Clock, Loader, RefreshCw, AlertCircle } from "lucide-react";
+import {
+  Check,
+  Circle,
+  Clock,
+  Loader,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
@@ -122,7 +129,10 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   useEffect(() => {
     if (!refundLocktime) return;
-    const interval = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    const interval = setInterval(
+      () => setNow(Math.floor(Date.now() / 1000)),
+      1000,
+    );
     return () => clearInterval(interval);
   }, [refundLocktime]);
   const isExpired = refundLocktime > 0 && now >= refundLocktime;
@@ -422,7 +432,10 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       ) : timeRemaining ? (
         <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20 flex items-center gap-2">
           <Clock className="h-4 w-4 shrink-0" />
-          <span>Time remaining to fund: <span className="font-mono font-medium">{timeRemaining}</span></span>
+          <span>
+            Time remaining to fund:{" "}
+            <span className="font-mono font-medium">{timeRemaining}</span>
+          </span>
         </div>
       ) : null}
 
@@ -458,17 +471,19 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
                   Retry
                 </Button>
               )}
-              {key === currentStepKey && step.status === "pending" && !isExpired && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 px-3 text-xs"
-                  onClick={() => runFromStep(key)}
-                  disabled={isRunning}
-                >
-                  {action}
-                </Button>
-              )}
+              {key === currentStepKey &&
+                step.status === "pending" &&
+                !isExpired && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-3 text-xs"
+                    onClick={() => runFromStep(key)}
+                    disabled={isRunning}
+                  >
+                    {action}
+                  </Button>
+                )}
             </div>
           );
         })}
