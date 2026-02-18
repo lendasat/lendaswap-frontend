@@ -79,7 +79,7 @@ export function AddressInput({
               if (amount > 0) {
                 setAddressIsValid(true);
                 hasAmount = true;
-                setBitcoinAmount(amount / 1_000 / 100_000_000);
+                setBitcoinAmount(amount / 1_000);
               }
             }
           }
