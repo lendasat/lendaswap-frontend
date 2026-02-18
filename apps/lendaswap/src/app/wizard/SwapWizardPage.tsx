@@ -24,7 +24,7 @@ import {
   SuccessStep,
   SwapProcessingStep,
 } from "./steps";
-import { SendLightningStep } from "./steps/SendLightningStep";
+import { DepositLightningStep } from "./steps/DepositLightningStep";
 
 export type SwapDirection =
   | "btc-to-evm"
@@ -364,7 +364,7 @@ export function SwapWizardPage() {
                 />
               )}
               {swapDirectionValue === "lightning_to_evm" && (
-                <SendLightningStep
+                <DepositLightningStep
                   swapData={displaySwapData as LightningToEvmSwapResponse}
                 />
               )}
