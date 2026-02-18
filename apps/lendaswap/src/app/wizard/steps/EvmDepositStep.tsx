@@ -76,9 +76,17 @@ export function EvmDepositStep({ swapData, swapId }: EvmDepositStepProps) {
   }, [address, setOpen]);
 
   const tokenSymbol = swapData.source_token.symbol;
-  const receiveAmount = swapData?.source_amount
-    ? (Number(swapData.source_amount) / 100_000_000).toFixed(8)
-    : 0;
+  const sourceDecimals = swapData.source_token.decimals;
+  const sourceAmount = (
+    Number(swapData.source_amount) /
+    10 ** sourceDecimals
+  ).toFixed(sourceDecimals);
+
+  const targetDecimals = swapData.target_token.decimals;
+  const targetAmount = (
+    Number(swapData.target_amount) /
+    10 ** targetDecimals
+  ).toFixed(targetDecimals);
 
   const handleSign = async () => {
     if (!address) {
@@ -253,8 +261,8 @@ export function EvmDepositStep({ swapData, swapId }: EvmDepositStepProps) {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Send</span>
             <span className="font-medium">
-              {swapData.source_amount.toFixed(swapData.source_token.decimals)}{" "}
-              {tokenSymbol} on {toChainName(swapData.source_token.chain)}
+              {sourceAmount} {tokenSymbol} on{" "}
+              {toChainName(swapData.source_token.chain)}
             </span>
           </div>
           <div className="flex justify-between text-sm">
@@ -265,7 +273,7 @@ export function EvmDepositStep({ swapData, swapId }: EvmDepositStepProps) {
               <span className="text-muted-foreground">You receive</span>
             )}
             <span className="font-medium">
-              ~{receiveAmount} BTC on {toChainName(swapData.target_token.chain)}
+              ~{targetAmount} BTC on {toChainName(swapData.target_token.chain)}
             </span>
           </div>
           <div className="flex justify-between text-xs">

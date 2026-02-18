@@ -8,8 +8,9 @@ import {
   useWalletClient,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { api, type EvmToArkadeSwapResponse } from "../../api";
+import { api } from "../../api";
 import { getViemChainById } from "../../utils/tokenUtils";
+import type { EvmToArkadeSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 
 interface DepositEvmStepProps {
   swapData: EvmToArkadeSwapResponse;
@@ -37,8 +38,8 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
 
   const tokenSymbol = swapData.source_token.symbol;
   const tokenDecimals = swapData.source_token.decimals;
-  const receiveAmount = swapData.btc_expected_sats
-    ? (Number(swapData.btc_expected_sats) / 100_000_000).toFixed(8)
+  const targetAmount = swapData.target_amount
+    ? (Number(swapData.target_amount) / 100_000_000).toFixed(8)
     : 0;
 
   const handleSign = async () => {
@@ -151,12 +152,12 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">You Receive</span>
-            <span className="font-medium">~{receiveAmount} BTC on Arkade</span>
+            <span className="font-medium">~{targetAmount} BTC on Arkade</span>
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground" />
             <span className="text-muted-foreground">
-              (~{swapData.btc_expected_sats} sats)
+              (~{targetAmount} sats)
             </span>
           </div>
         </div>
