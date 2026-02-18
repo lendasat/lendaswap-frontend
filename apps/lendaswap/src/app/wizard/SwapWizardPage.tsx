@@ -212,10 +212,12 @@ export function SwapWizardPage() {
     }
 
     const pollInterval = setInterval(async () => {
-      console.log("Background polling swap status from API...");
       try {
         // Fetch latest swap data from API
         const updatedSwap = await api.getSwap(swapId);
+        console.log(
+          `Polled swap status from API... ${updatedSwap.response.status}`,
+        );
 
         // check if we can refund already
         const possibleNextStep = determineStepFromStatus(updatedSwap.response);
