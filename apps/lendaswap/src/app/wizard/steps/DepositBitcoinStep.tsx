@@ -22,7 +22,7 @@ interface SendOnchainBtcStepProps {
   swapId: string;
 }
 
-export function BitcoinDepositStep({
+export function DepositBitcoinStep({
   swapData,
   swapId,
 }: SendOnchainBtcStepProps) {

@@ -7,6 +7,6 @@ export { DepositEvmStep } from "./DepositEvmStep";
 export { EvmRefundStep } from "./EvmRefundStep";
 export { RefundArkadeStep } from "./RefundArkadeStep";
 export { RefundEvmStep } from "./RefundEvmStep";
-export { BitcoinDepositStep } from "./BitcoinDepositStep";
+export { DepositBitcoinStep } from "./DepositBitcoinStep";
 export { SuccessStep } from "./SuccessStep";
 export { SwapProcessingStep } from "./SwapProcessingStep";

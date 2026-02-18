@@ -15,7 +15,7 @@ import { useNavigate, useParams } from "react-router";
 import { useAsyncRetry } from "react-use";
 import { api } from "../api";
 import {
-  BitcoinDepositStep,
+  DepositBitcoinStep,
   ClaimArkadeStep,
   DepositArkadeStep,
   DepositEvmStep,
@@ -370,7 +370,7 @@ export function SwapWizardPage() {
               )}
               {(swapDirectionValue === "bitcoin_to_evm" ||
                 swapDirectionValue === "btc_to_arkade") && (
-                <BitcoinDepositStep
+                <DepositBitcoinStep
                   swapData={
                     displaySwapData as
                       | BtcToArkadeSwapResponse
