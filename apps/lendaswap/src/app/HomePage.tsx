@@ -508,7 +508,6 @@ export function HomePage() {
               sourceAmount,
             );
           }}
-          disabled={!sourceAsset || isBtcOnchain(sourceAsset)}
           className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${!sourceAsset || isBtcOnchain(sourceAsset) ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <div className="bg-background rounded-xl p-1 transition-transform duration-200 ease-out group-hover/swap:scale-110 group-active/swap:scale-125">
