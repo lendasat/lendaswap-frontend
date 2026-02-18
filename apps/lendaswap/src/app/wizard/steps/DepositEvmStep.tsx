@@ -1,6 +1,15 @@
+import {
+  type EvmToArkadeSwapResponse,
+  type EvmToBitcoinSwapResponse,
+  type EvmToLightningSwapResponse,
+  isArkade,
+  isLightning,
+  toChainName,
+} from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Loader } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import {
   useAccount,
   usePublicClient,
@@ -8,17 +17,20 @@ import {
   useWalletClient,
 } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { api } from "../../api";
-import { getViemChainById } from "../../utils/tokenUtils";
-import type { EvmToArkadeSwapResponse } from "@lendasat/lendaswap-sdk-pure";
+import { getViemChain } from "../../utils/tokenUtils";
+import { DepositCard, AmountSummary, AmountRow } from "../components";
 
-interface DepositEvmStepProps {
-  swapData: EvmToArkadeSwapResponse;
+interface EvmDepositStepProps {
+  swapData:
+    | EvmToArkadeSwapResponse
+    | EvmToBitcoinSwapResponse
+    | EvmToLightningSwapResponse;
   swapId: string;
 }
 
-export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
-  const chain = getViemChainById(swapData.evm_chain_id);
+export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
+  const navigate = useNavigate();
+  const chain = getViemChain(swapData.source_token.chain);
 
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -37,10 +49,23 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
   }, [address, setOpen]);
 
   const tokenSymbol = swapData.source_token.symbol;
-  const tokenDecimals = swapData.source_token.decimals;
-  const targetAmount = swapData.target_amount
-    ? (Number(swapData.target_amount) / 100_000_000).toFixed(8)
-    : 0;
+  const sourceDecimals = swapData.source_token.decimals;
+  const sourceAmount = (
+    Number(swapData.source_amount) /
+    10 ** sourceDecimals
+  ).toFixed(sourceDecimals);
+
+  const targetDecimals = swapData.target_token.decimals;
+  const targetAmount = (
+    Number(swapData.target_amount) /
+    10 ** targetDecimals
+  ).toFixed(targetDecimals);
+
+  const receiveLabel = isLightning(swapData.target_token)
+    ? "We will send"
+    : isArkade(swapData.target_token)
+      ? "You Receive"
+      : "You Receive";
 
   const handleSign = async () => {
     if (!address) {
@@ -63,60 +88,13 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
 
     try {
       if (!chain) {
-        throw new Error(`Unsupported chain ID: ${swapData.evm_chain_id}`);
-      }
-
-      // Switch to the correct chain if needed
-      console.log("Switching to chain:", chain.name);
-      await switchChainAsync({ chainId: chain.id });
-
-      // Get coordinator funding calldata from SDK
-      console.log("Getting coordinator funding calldata...");
-      const funding = await api.getCoordinatorFundingCallData(swapId);
-
-      // Step 1: Approve source token to coordinator
-      console.log("Step 1: Approving source token to coordinator...");
-      const approveTxHash = await walletClient.sendTransaction({
-        to: funding.approve.to as `0x${string}`,
-        data: funding.approve.data as `0x${string}`,
-        chain,
-      });
-
-      console.log("Approve transaction hash:", approveTxHash);
-      const approveReceipt = await publicClient.waitForTransactionReceipt({
-        hash: approveTxHash,
-      });
-
-      console.log("Approve transaction confirmed:", approveReceipt.status);
-      if (approveReceipt.status !== "success") {
-        throw new Error("Approve transaction failed");
-      }
-
-      // Step 2: Execute swap + create HTLC
-      console.log("Step 2: Executing coordinator swap + HTLC creation...");
-      const executeTxHash = await walletClient.sendTransaction({
-        to: funding.executeAndCreate.to as `0x${string}`,
-        data: funding.executeAndCreate.data as `0x${string}`,
-        chain,
-      });
-
-      console.log("ExecuteAndCreate transaction hash:", executeTxHash);
-      const executeReceipt = await publicClient.waitForTransactionReceipt({
-        hash: executeTxHash,
-      });
-
-      console.log(
-        "ExecuteAndCreate transaction confirmed:",
-        executeReceipt.status,
-      );
-      if (executeReceipt.status !== "success") {
         throw new Error(
-          `ExecuteAndCreate transaction failed: ${executeReceipt.status}`,
+          `Could not switch to chain for token: ${swapData.source_token}`,
         );
       }
 
-      console.log("Both transactions completed successfully!");
-      // The wizard will automatically move to the next step via polling
+      await switchChainAsync({ chainId: chain.id });
+      // FIXME: implement ERC20 approve + fund swap transaction
     } catch (err) {
       console.error("Transaction error:", err);
       setError(
@@ -128,74 +106,67 @@ export function DepositEvmStep({ swapData, swapId }: DepositEvmStepProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-      {/* Swap ID Header */}
-      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Swap ID:
-        </p>
-        <code className="text-xs font-mono text-foreground flex-1">
-          {swapId}
-        </code>
-        <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
-      </div>
+    <DepositCard
+      sourceToken={swapData.source_token}
+      swapId={swapId}
+      title={`Send ${tokenSymbol}`}
+    >
+      <AmountSummary>
+        <AmountRow
+          label="You Send"
+          value={`${sourceAmount} ${tokenSymbol} on ${toChainName(swapData.source_token.chain)}`}
+        />
+        <AmountRow
+          label={receiveLabel}
+          value={`~${targetAmount} ${swapData.target_token.symbol} on ${toChainName(swapData.target_token.chain)}`}
+        />
+        <AmountRow
+          label="Fee"
+          value={`${swapData.fee_sats.toLocaleString()} sats`}
+        />
+      </AmountSummary>
 
-      {/* Content */}
-      <div className="space-y-6 p-6">
-        {/* Amount Reminder */}
-        <div className="bg-muted/50 space-y-2 rounded-lg p-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">You Send</span>
-            <span className="font-medium">
-              {swapData.source_amount} {tokenSymbol}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">You Receive</span>
-            <span className="font-medium">~{targetAmount} BTC on Arkade</span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground" />
-            <span className="text-muted-foreground">
-              (~{targetAmount} sats)
-            </span>
-          </div>
+      {/* Error Display */}
+      {error && (
+        <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
+          {error}
         </div>
+      )}
 
-        {/* Error Display */}
-        {error && (
-          <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
-            {error}
-          </div>
-        )}
-
-        {/* Wallet Connection Warning */}
-        {!address && (
-          <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20">
-            Please connect your wallet to continue
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-3">
-          <Button
-            onClick={handleSign}
-            disabled={isSigning}
-            className="h-12 w-full text-base font-semibold"
-          >
-            {isSigning ? (
-              <>
-                <Loader className="animate-spin h-4 w-4 mr-2" />
-                Processing Transactions...
-              </>
-            ) : !address ? (
-              "Connect Wallet"
-            ) : (
-              "Fund Swap"
-            )}
-          </Button>
+      {/* Wallet Connection Warning */}
+      {!address && (
+        <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20">
+          Please connect your wallet to continue
         </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex flex-col gap-3">
+        <Button
+          onClick={handleSign}
+          disabled={isSigning}
+          className="h-12 w-full text-base font-semibold"
+        >
+          {isSigning ? (
+            <>
+              <Loader className="animate-spin h-4 w-4 mr-2" />
+              Processing Transactions...
+            </>
+          ) : !address ? (
+            "Connect Wallet"
+          ) : (
+            "Fund Swap"
+          )}
+        </Button>
+
+        <Button
+          variant="outline"
+          className="h-12 w-full"
+          onClick={() => navigate("/")}
+        >
+          Cancel Swap
+        </Button>
       </div>
-    </div>
+    </DepositCard>
   );
 }
