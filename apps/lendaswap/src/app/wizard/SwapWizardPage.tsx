@@ -16,6 +16,7 @@ import { useAsyncRetry } from "react-use";
 import { api } from "../api";
 import {
   BitcoinDepositStep,
+  ClaimArkadeStep,
   DepositArkadeStep,
   DepositEvmStep,
   RefundArkadeStep,
@@ -444,14 +445,11 @@ export function SwapWizardPage() {
           {/*      swapId={displaySwapData.id}*/}
           {/*    />*/}
           {/*  )}*/}
-          {/*{(currentStep === "user-deposit-seen" ||*/}
-          {/*  currentStep === "server-depositing") &&*/}
-          {/*  swapDirectionValue === "evm-to-arkade" && (*/}
-          {/*    <ClaimArkadeStep*/}
-          {/*      swapData={displaySwapData}*/}
-          {/*      swapId={displaySwapData.id}*/}
-          {/*    />*/}
-          {/*  )}*/}
+          {(currentStep === "user-deposit-seen" ||
+            currentStep === "server-depositing") &&
+            swapDirectionValue === "evm_to_arkade" && (
+              <ClaimArkadeStep swapData={displaySwapData} />
+            )}
 
           {currentStep === "success" && swapDirectionValue && (
             <SuccessStep swapData={displaySwapData} />

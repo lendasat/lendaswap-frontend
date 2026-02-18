@@ -2,6 +2,7 @@
 import {
   type BtcToArkadeSwapResponse,
   type Chain,
+  ClaimResult,
   type CoordinatorFundingCallData,
   type GetSwapResponse,
   getUsdPrices,
@@ -222,19 +223,14 @@ export const api = {
     return await client.listAllSwaps();
   },
 
-  async claim(id: string): Promise<void> {
+  async claim(id: string): Promise<ClaimResult> {
     const client = await getClients();
-    await client.claim(id);
+    return await client.claim(id);
   },
 
   async amountsForSwap(id: string): Promise<VhtlcAmounts> {
     const client = await getClients();
     return await client.amountsForSwap(id);
-  },
-
-  async claimVhtlc(id: string): Promise<void> {
-    const client = await getClients();
-    await client.claim(id);
   },
 
   async refundVhtlc(id: string, refundAddress: string): Promise<string> {
