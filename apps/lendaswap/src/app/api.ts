@@ -296,9 +296,10 @@ export const api = {
 
   async refundEvmSwap(
     swapId: string,
+    mode: "swap-back" | "direct" = "swap-back",
   ): Promise<NonNullable<RefundResult["evmRefundData"]>> {
     const client = await getClients();
-    const result = await client.refundSwap(swapId);
+    const result = await client.refundSwap(swapId, { mode });
     if (result.evmRefundData) {
       return result.evmRefundData;
     }
