@@ -81,6 +81,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
     return (
       <DepositCard
         sourceToken={swapData.source_token}
+        targetToken={swapData.target_token}
         swapId={swapData.id}
         title="Pay with Speed Wallet"
       >
@@ -134,7 +135,7 @@ export function SendLightningStep({ swapData }: SendLightningStepProps) {
 
   // Standard mode: QR code + invoice + wallet bridge
   return (
-    <DepositCard sourceToken={swapData.source_token} swapId={swapData.id}>
+    <DepositCard sourceToken={swapData.source_token} targetToken={swapData.target_token} swapId={swapData.id} title={`${swapData.source_token.symbol} → ${swapData.target_token.symbol}`}>
       <QrCodeSection value={lightningQrValue} />
       <AddressDisplay label="Lightning Invoice" value={lightningInvoice} />
       <AmountSummary>

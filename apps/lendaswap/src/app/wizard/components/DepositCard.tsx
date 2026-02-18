@@ -1,9 +1,28 @@
 import type { TokenInfo } from "@lendasat/lendaswap-sdk-pure";
+import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
 
+function TokenBadge({ token }: { token: TokenInfo }) {
+  return (
+    <div className="relative">
+      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
+        <div className="w-5 h-5 flex items-center justify-center">
+          {getTokenIcon(token)}
+        </div>
+      </div>
+      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
+        <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+          {getTokenNetworkIcon(token)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface DepositCardProps {
   sourceToken: TokenInfo;
+  targetToken?: TokenInfo;
   swapId: string;
   title?: string;
   children: ReactNode;
@@ -11,6 +30,7 @@ interface DepositCardProps {
 
 export function DepositCard({
   sourceToken,
+  targetToken,
   swapId,
   title = "Send BTC",
   children,
@@ -20,18 +40,13 @@ export function DepositCard({
       {/* Header */}
       <div className="px-6 py-4 flex items-center justify-between border-b border-border/50 bg-muted/30">
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
-              <div className="w-5 h-5 flex items-center justify-center">
-                {getTokenIcon(sourceToken)}
-              </div>
-            </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
-              <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
-                {getTokenNetworkIcon(sourceToken)}
-              </div>
-            </div>
-          </div>
+          <TokenBadge token={sourceToken} />
+          {targetToken && (
+            <>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              <TokenBadge token={targetToken} />
+            </>
+          )}
           <h3 className="text-sm font-semibold">{title}</h3>
         </div>
         <div className="flex items-center gap-2">

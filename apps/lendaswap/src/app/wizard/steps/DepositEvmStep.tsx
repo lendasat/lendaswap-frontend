@@ -374,8 +374,9 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   return (
     <DepositCard
       sourceToken={swapData.source_token}
+      targetToken={swapData.target_token}
       swapId={swapId}
-      title={`Send ${tokenSymbol}`}
+      title={`${tokenSymbol} → ${swapData.target_token.symbol}`}
     >
       <AmountSummary>
         <AmountRow
