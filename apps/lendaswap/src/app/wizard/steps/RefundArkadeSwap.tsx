@@ -11,6 +11,7 @@ import {
   getTokenIcon,
   type VhtlcAmounts,
 } from "../../api";
+import { DepositCard } from "../components";
 import type {
   ArkadeToEvmSwapResponse,
   BitcoinToEvmSwapResponse,
@@ -164,20 +165,13 @@ export function RefundArkadeSwap({
     Number(amounts.spent) > 0;
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-      {/* Swap ID Header */}
-      <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Swap ID:
-        </p>
-        <code className="text-xs font-mono text-foreground flex-1">
-          {swapId}
-        </code>
-        <div className="h-2 w-2 rounded-full bg-orange-500/50 animate-pulse" />
-      </div>
-
-      {/* Content */}
-      <div className="space-y-6 p-6">
+    <DepositCard
+      sourceToken={swapData.source_token}
+      targetToken={swapData.target_token}
+      swapId={swapId}
+      title={`Refund ${swapData.source_token.symbol} → ${swapData.target_token.symbol}`}
+    >
+      <div className="space-y-6">
         {/* Refund Status Banner */}
         {alreadyRefunded && (
           <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
@@ -379,6 +373,6 @@ export function RefundArkadeSwap({
           </Alert>
         )}
       </div>
-    </div>
+    </DepositCard>
   );
 }
