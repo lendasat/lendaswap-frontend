@@ -1,8 +1,4 @@
-import {
-  isBtc,
-  type StoredSwap,
-  type SwapStatus,
-} from "@lendasat/lendaswap-sdk-pure";
+import { type StoredSwap, type SwapStatus } from "@lendasat/lendaswap-sdk-pure";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   Check,
@@ -33,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
-import { api } from "../api";
+import { api, getTokenIcon } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
 
 // Get status display info
@@ -160,8 +156,8 @@ export function SwapsPage() {
   useEffect(() => {
     const loadSwaps = async () => {
       try {
-        const dexieSwaps = await api.listAllSwaps();
-        setSwaps(dexieSwaps);
+        const swaps = await api.listAllSwaps();
+        setSwaps(swaps);
       } catch (error) {
         console.error("Failed to load swaps from Dexie:", error);
       }
@@ -212,17 +208,18 @@ export function SwapsPage() {
 
   // Format amounts for display - returns primary display string
   const formatSwapAmount = (swap: StoredSwap) => {
-    const isBtcSource = isBtc(swap.response.source_token);
+    const decimals = swap.response.source_token.decimals;
+    const formatted = (
+      Number(swap.response.source_amount) /
+      10 ** decimals
+    ).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals,
+    });
 
-    if (isBtcSource) {
-      return {
-        primary: `${swap.response.source_amount.toLocaleString()} sats`,
-      };
-    } else {
-      return {
-        primary: `$${Number(swap.response.source_amount).toFixed(2)}`,
-      };
-    }
+    return {
+      primary: `${formatted} ${swap.response.source_token.symbol}`,
+    };
   };
 
   const sortedFilteredSwaps = filteredSwaps.sort((a, b) => {
@@ -341,15 +338,13 @@ export function SwapsPage() {
                       {/* Source token (front) */}
                       <div className="absolute left-0 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden z-10 shadow-sm">
                         <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {/*fixme: get token for source token*/}
-                          {/*{getTokenIcon(swap.response.source_token)}*/}
+                          {getTokenIcon(swap.response.source_token)}
                         </div>
                       </div>
                       {/* Target token (behind) */}
                       <div className="absolute left-3.5 sm:left-4 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
                         <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {/*fixme: get token for target token*/}
-                          {/*{getTokenIcon(swap.response.target_token)}*/}
+                          {getTokenIcon(swap.response.target_token)}
                         </div>
                       </div>
                     </div>
