@@ -1,4 +1,3 @@
-export { BtcToArkadeProcessingStep } from "./BtcToArkadeProcessingStep";
 export { RefundArkadeSwap } from "./RefundArkadeSwap";
 export { DepositArkadeStep } from "./DepositArkadeStep";
 export { RefundBitcoinStep } from "./RefundBitcoinStep";
