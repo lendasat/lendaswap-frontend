@@ -1,10 +1,12 @@
 import { decode } from "@gandlaf21/bolt11-decode";
 import {
   isArkade,
+  isBtcOnchain,
   isEvmToken,
   isLightning,
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
+import { validate as validateBtcAddress } from "bitcoin-address-validation";
 import { ConnectKitButton } from "connectkit";
 import { isAddress } from "ethers";
 import { Wallet } from "lucide-react";
@@ -103,24 +105,24 @@ export function AddressInput({
       } else {
         setValidationError("");
       }
+    } else if (isBtcOnchain(targetToken)) {
+      if (!validateBtcAddress(value)) {
+        setValidationError("Invalid Bitcoin address");
+        setAddressIsValid(false);
+      } else {
+        setValidationError("");
+      }
     }
   }, [value, targetToken, isEvmTarget, setAddressIsValid, setBitcoinAmount]);
 
   const getPlaceholder = () => {
-    switch (targetToken?.chain) {
-      case "Lightning":
-        return "BOLT11 invoice or Lightning address (LNURL)";
-      case "Arkade":
-        return "Provide an Arkade address";
-      case "Polygon":
-        return "Provide a Polygon address";
-      case "Ethereum":
-        return "Provide a Ethereum address";
-      case "Arbitrum":
-        return "Provide a Arbitrum address";
-      case "Bitcoin":
-        return "Provide a Bitcoin address";
-    }
+    if (!targetToken) return "";
+    if (isLightning(targetToken))
+      return "BOLT11 invoice or Lightning address (LNURL)";
+    if (isArkade(targetToken)) return "Provide an Arkade address";
+    if (isBtcOnchain(targetToken)) return "Provide a Bitcoin address";
+    if (isEvmToken(targetToken.chain)) return "Provide an EVM address";
+    return "";
   };
 
   return (
