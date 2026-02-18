@@ -23,7 +23,7 @@ interface SendLightningStepProps {
   swapData: LightningToEvmSwapResponse;
 }
 
-export function SendLightningStep({ swapData }: SendLightningStepProps) {
+export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   const navigate = useNavigate();
   const { client, isEmbedded, isReady } = useWalletBridge();
   const [isSending, setIsSending] = useState(false);
