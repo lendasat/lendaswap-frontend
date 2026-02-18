@@ -8,10 +8,10 @@ import {
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { Check, Circle, Loader, RefreshCw, AlertCircle } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
-import { erc20Abi, publicActions } from "viem";
+import { createPublicClient, erc20Abi, http } from "viem";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import { getViemChain } from "../../utils/tokenUtils";
@@ -45,9 +45,36 @@ function StepIcon({ status }: { status: StepStatus }) {
   }
 }
 
+/** Poll for a transaction receipt — works reliably with Anvil's auto-mine mode. */
+async function pollForReceipt(
+  // biome-ignore lint/suspicious/noExplicitAny: accepts any viem public client
+  client: any,
+  hash: `0x${string}`,
+  timeoutMs = 60_000,
+) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const receipt = await client.getTransactionReceipt({ hash });
+      console.log(
+        "[pollForReceipt] got:",
+        JSON.stringify(receipt, (_, v) =>
+          typeof v === "bigint" ? v.toString() : v,
+        ),
+      );
+      if (receipt?.status != null) return receipt;
+    } catch (e) {
+      console.log("[pollForReceipt] error:", e);
+    }
+    await new Promise((r) => setTimeout(r, 1_000));
+  }
+  throw new Error("Timed out waiting for transaction receipt");
+}
+
 /** Replay a reverted tx to extract the on-chain revert reason. */
 async function getRevertReason(
-  client: ReturnType<typeof publicActions>,
+  // biome-ignore lint/suspicious/noExplicitAny: accepts any viem client with getTransaction + call
+  client: any,
   txHash: `0x${string}`,
   blockNumber: bigint,
 ): Promise<string> {
@@ -76,9 +103,19 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
   const { address, chainId: currentChainId } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const walletPublicClient = walletClient?.extend(publicActions);
   const { switchChainAsync } = useSwitchChain();
   const { setOpen } = useModal();
+
+  // Direct public client for reliable reads — bypasses wallet transport
+  // which returns raw JSON-RPC envelopes instead of parsed responses.
+  const rpcClient = useMemo(() => {
+    if (!chain) return null;
+    const rpcUrl =
+      import.meta.env.VITE_RPC_OVERRIDE_CHAIN_ID === String(chain.id)
+        ? import.meta.env.VITE_RPC_OVERRIDE_URL
+        : undefined;
+    return createPublicClient({ chain, transport: http(rpcUrl) });
+  }, [chain]);
 
   const [steps, setSteps] = useState<Record<string, StepState>>({
     switchChain: { status: "pending" },
@@ -118,13 +155,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
   // Auto-mark approve as completed if allowance is already sufficient
   useEffect(() => {
-    if (
-      !address ||
-      !walletPublicClient ||
-      !chain ||
-      currentChainId !== chain.id
-    )
-      return;
+    if (!address || !rpcClient || !chain || currentChainId !== chain.id) return;
 
     let cancelled = false;
     (async () => {
@@ -133,7 +164,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         const tokenAddress = funding.approve.to as `0x${string}`;
         const spender = funding.executeAndCreate.to as `0x${string}`;
 
-        const allowance = await walletPublicClient.readContract({
+        const allowance = await rpcClient.readContract({
           address: tokenAddress,
           abi: erc20Abi,
           functionName: "allowance",
@@ -156,7 +187,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     };
   }, [
     address,
-    walletPublicClient,
+    rpcClient,
     chain,
     currentChainId,
     swapData.source_amount,
@@ -191,7 +222,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       setOpen(true);
       return;
     }
-    if (!walletClient || !walletPublicClient) {
+    if (!walletClient || !rpcClient) {
       setOpen(true);
       return;
     }
@@ -223,33 +254,56 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           const funding = await fetchFunding();
           const tokenAddress = funding.approve.to as `0x${string}`;
           const spender = funding.executeAndCreate.to as `0x${string}`;
+          console.log(
+            "[approve] tokenAddress:",
+            tokenAddress,
+            "spender:",
+            spender,
+          );
 
           // Check if allowance is already sufficient
-          const allowance = await walletPublicClient.readContract({
+          const allowance = await rpcClient.readContract({
             address: tokenAddress,
             abi: erc20Abi,
             functionName: "allowance",
             args: [address, spender],
           });
+          console.log(
+            "[approve] current allowance:",
+            allowance.toString(),
+            "required:",
+            swapData.source_amount,
+          );
 
           if (allowance >= BigInt(swapData.source_amount)) {
             updateStep(step, { status: "completed" });
           } else {
+            console.log(
+              "[approve] sending approve tx…",
+              "walletClient chain:",
+              walletClient.chain?.id,
+              "expected:",
+              chain?.id,
+            );
             const approveTxHash = await walletClient.sendTransaction({
               to: tokenAddress,
               data: funding.approve.data as `0x${string}`,
               chain,
+              gas: 100_000n, // Anvil fork needs extra gas for proxy reentrancy guards
             });
-            const approveReceipt =
-              await walletPublicClient.waitForTransactionReceipt({
-                hash: approveTxHash,
-              });
+            console.log("[approve] tx hash:", approveTxHash);
+            const approveReceipt = await pollForReceipt(
+              rpcClient,
+              approveTxHash,
+            );
+            console.log("[approve] receipt status:", approveReceipt.status);
             if (approveReceipt.status !== "success") {
               const reason = await getRevertReason(
-                walletPublicClient,
+                rpcClient,
                 approveTxHash,
                 approveReceipt.blockNumber,
               );
+              console.log("[approve] revert reason:", reason);
               updateStep(step, { status: "error", error: reason });
               return;
             }
@@ -267,13 +321,10 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
             chain,
             gas: 500_000n, // Anvil fork needs extra gas for proxy reentrancy guards
           });
-          const executeReceipt =
-            await walletPublicClient.waitForTransactionReceipt({
-              hash: executeTxHash,
-            });
+          const executeReceipt = await pollForReceipt(rpcClient, executeTxHash);
           if (executeReceipt.status !== "success") {
             const reason = await getRevertReason(
-              walletPublicClient,
+              rpcClient,
               executeTxHash,
               executeReceipt.blockNumber,
             );
