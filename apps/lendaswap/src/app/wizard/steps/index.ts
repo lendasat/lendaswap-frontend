@@ -3,7 +3,6 @@ export { RefundArkadeSwap } from "./RefundArkadeSwap";
 export { DepositArkadeStep } from "./DepositArkadeStep";
 export { RefundBitcoinStep } from "./RefundBitcoinStep";
 export { DepositEvmStep } from "./DepositEvmStep";
-export { EvmRefundStep } from "./EvmRefundStep";
 export { RefundArkadeStep } from "./RefundArkadeStep";
 export { RefundEvmStep } from "./RefundEvmStep";
 export { DepositBitcoinStep } from "./DepositBitcoinStep";
