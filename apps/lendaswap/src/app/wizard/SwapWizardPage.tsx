@@ -17,7 +17,7 @@ import { api } from "../api";
 import {
   BitcoinDepositStep,
   DepositArkadeStep,
-  EvmDepositStep,
+  DepositEvmStep,
   RefundArkadeStep,
   RefundBitcoinStep,
   SuccessStep,
@@ -381,7 +381,7 @@ export function SwapWizardPage() {
               {(swapDirectionValue === "evm_to_arkade" ||
                 swapDirectionValue === "evm_to_bitcoin" ||
                 swapDirectionValue === "evm_to_lightning") && (
-                <EvmDepositStep
+                <DepositEvmStep
                   swapData={
                     displaySwapData as
                       | EvmToArkadeSwapResponse
