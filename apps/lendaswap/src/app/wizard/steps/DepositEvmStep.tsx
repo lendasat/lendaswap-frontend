@@ -55,6 +55,32 @@ function StepIcon({ status }: { status: StepStatus }) {
   }
 }
 
+/** Replay a reverted tx to extract the on-chain revert reason. */
+async function getRevertReason(
+  client: ReturnType<typeof publicActions>,
+  txHash: `0x${string}`,
+  blockNumber: bigint,
+): Promise<string> {
+  try {
+    const tx = await client.getTransaction({ hash: txHash });
+    if (!tx.to) return "Transaction reverted";
+    await client.call({
+      to: tx.to,
+      data: tx.input,
+      account: tx.from,
+      blockNumber,
+    });
+    return "Transaction reverted";
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error ? err.message : String(err);
+    // Extract the revert reason from viem's error message
+    const match = msg.match(/reverted with.*?:\s*(.+)/i)
+      ?? msg.match(/reason:\s*(.+)/i);
+    return match?.[1]?.trim() ?? msg;
+  }
+}
+
 export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   const navigate = useNavigate();
   const chain = getViemChain(swapData.source_token.chain);
@@ -214,10 +240,10 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
               hash: approveTxHash,
             });
             if (approveReceipt.status !== "success") {
-              updateStep(step, {
-                status: "error",
-                error: "Approve transaction reverted",
-              });
+              const reason = await getRevertReason(
+                walletPublicClient, approveTxHash, approveReceipt.blockNumber,
+              );
+              updateStep(step, { status: "error", error: reason });
               return;
             }
             updateStep(step, { status: "completed" });
@@ -232,16 +258,17 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
             to: freshFunding.executeAndCreate.to as `0x${string}`,
             data: freshFunding.executeAndCreate.data as `0x${string}`,
             chain,
+            gas: 500_000n, // Anvil fork needs extra gas for proxy reentrancy guards
           });
           const executeReceipt =
             await walletPublicClient.waitForTransactionReceipt({
               hash: executeTxHash,
             });
           if (executeReceipt.status !== "success") {
-            updateStep(step, {
-              status: "error",
-              error: "Fund transaction reverted",
-            });
+            const reason = await getRevertReason(
+              walletPublicClient, executeTxHash, executeReceipt.blockNumber,
+            );
+            updateStep(step, { status: "error", error: reason });
             return;
           }
           updateStep(step, { status: "completed" });
