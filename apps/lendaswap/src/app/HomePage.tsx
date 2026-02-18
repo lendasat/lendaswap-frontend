@@ -374,6 +374,34 @@ export function HomePage() {
   const isWeb3WalletNeeded = sourceAsset && isEvmToken(sourceAsset.chain);
   const isConnectionStillNeeded = isWeb3WalletNeeded && !isWeb3WalletConnected;
 
+  // Compute the BTC-equivalent amount in sats for limit validation
+  // Limits from the quote are always in sats
+  const btcAmountSats = useMemo(() => {
+    if (!quote) return undefined;
+    const qSrc = Number(quote.source_amount);
+    const qTgt = Number(quote.target_amount);
+    if (isSourceBtc && sourceAmount != null) {
+      return sourceAmount;
+    }
+    if (!isSourceBtc && targetAmount != null && qTgt > 0) {
+      return targetAmount;
+    }
+    if (!isSourceBtc && sourceAmount != null && qSrc > 0) {
+      const rate = qTgt / qSrc;
+      return Math.round(sourceAmount * rate);
+    }
+    return undefined;
+  }, [quote, sourceAmount, targetAmount, isSourceBtc]);
+
+  const isBelowMin =
+    quote != null &&
+    btcAmountSats != null &&
+    btcAmountSats < quote.min_amount &&
+    btcAmountSats > 0;
+  const isAboveMax =
+    quote != null && btcAmountSats != null && btcAmountSats > quote.max_amount;
+  const isOutOfLimits = isBelowMin || isAboveMax;
+
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
     return (
@@ -415,6 +443,7 @@ export function HomePage() {
     !targetAddress ||
     !isAddressValid ||
     isCreatingSwap ||
+    isOutOfLimits ||
     (!sourceAmount && !targetAmount);
 
   return (
@@ -559,6 +588,18 @@ export function HomePage() {
           </div>
         ) : quote ? (
           <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
+            {isBelowMin && (
+              <div className="text-destructive">
+                Amount too low — minimum is {quote.min_amount.toLocaleString()}{" "}
+                sats
+              </div>
+            )}
+            {isAboveMax && (
+              <div className="text-destructive">
+                Amount too high — maximum is {quote.max_amount.toLocaleString()}{" "}
+                sats
+              </div>
+            )}
             <div className="flex flex-wrap justify-between gap-y-0.5">
               <div>
                 Network Fee:{" "}
