@@ -7,7 +7,7 @@ import {
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
-import { Check, Circle, Loader, RefreshCw, AlertCircle } from "lucide-react";
+import { Check, Circle, Clock, Loader, RefreshCw, AlertCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
@@ -116,6 +116,26 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         : undefined;
     return createPublicClient({ chain, transport: http(rpcUrl) });
   }, [chain]);
+
+  // Expiry countdown
+  const refundLocktime = swapData.evm_refund_locktime ?? 0;
+  const [now, setNow] = useState(Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    if (!refundLocktime) return;
+    const interval = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [refundLocktime]);
+  const isExpired = refundLocktime > 0 && now >= refundLocktime;
+  const timeRemaining = useMemo(() => {
+    if (!refundLocktime || isExpired) return null;
+    const secondsLeft = refundLocktime - now;
+    const hours = Math.floor(secondsLeft / 3600);
+    const minutes = Math.floor((secondsLeft % 3600) / 60);
+    const seconds = secondsLeft % 60;
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+  }, [now, refundLocktime, isExpired]);
 
   const [steps, setSteps] = useState<Record<string, StepState>>({
     switchChain: { status: "pending" },
@@ -393,6 +413,19 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         />
       </AmountSummary>
 
+      {/* Expiry warning */}
+      {isExpired ? (
+        <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          This swap has expired. Funding is no longer possible.
+        </div>
+      ) : timeRemaining ? (
+        <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20 flex items-center gap-2">
+          <Clock className="h-4 w-4 shrink-0" />
+          <span>Time remaining to fund: <span className="font-mono font-medium">{timeRemaining}</span></span>
+        </div>
+      ) : null}
+
       {/* Step Checklist */}
       <div className="space-y-2">
         {stepDefs.map(({ key, label, action }) => {
@@ -413,7 +446,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
               >
                 {label}
               </span>
-              {step.status === "error" && (
+              {step.status === "error" && !isExpired && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -425,7 +458,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
                   Retry
                 </Button>
               )}
-              {key === currentStepKey && step.status === "pending" && (
+              {key === currentStepKey && step.status === "pending" && !isExpired && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -470,7 +503,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           >
             Connect Wallet
           </Button>
-        ) : currentStepKey ? (
+        ) : currentStepKey && !isExpired ? (
           <Button
             onClick={() => runFromStep(currentStepKey)}
             disabled={isRunning}
