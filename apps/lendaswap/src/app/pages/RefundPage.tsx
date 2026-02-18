@@ -12,7 +12,7 @@ import { useNavigate, useParams } from "react-router";
 import { getSwapById, type StoredSwap } from "../db";
 import { useWalletBridge } from "../WalletBridgeContext";
 import {
-  EvmRefundStep,
+  RefundEvmStep,
   RefundBitcoinStep,
   RefundArkadeSwap,
 } from "../wizard/steps";
@@ -138,19 +138,17 @@ export function RefundPage() {
           swapData={
             swapData as BitcoinToEvmSwapResponse | BtcToArkadeSwapResponse
           }
-          swapId={swapId}
         />
       )}
 
       {isEvmSwap && (
-        <EvmRefundStep
+        <RefundEvmStep
           swapData={
             swapData as
               | EvmToArkadeSwapResponse
               | EvmToBitcoinSwapResponse
               | EvmToLightningSwapResponse
           }
-          swapId={swapId}
         />
       )}
     </div>
