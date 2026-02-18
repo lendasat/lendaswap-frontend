@@ -10,17 +10,15 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { getSwapById, type StoredSwap } from "../db";
-import { useWalletBridge } from "../WalletBridgeContext";
 import {
   RefundEvmStep,
   RefundBitcoinStep,
-  RefundArkadeSwap,
+  RefundArkadeStep,
 } from "../wizard/steps";
 
 export function RefundPage() {
   const { swapId } = useParams<{ swapId: string }>();
   const navigate = useNavigate();
-  const { arkAddress } = useWalletBridge();
   const [swapData, setSwapData] = useState<StoredSwap | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,11 +124,7 @@ export function RefundPage() {
   return (
     <div className="container max-w-2xl mx-auto py-8 px-4">
       {isArkadeSwap && (
-        <RefundArkadeSwap
-          swapData={swapData as ArkadeToEvmSwapResponse}
-          swapId={swapId}
-          arkAddress={arkAddress}
-        />
+        <RefundArkadeStep swapData={swapData as ArkadeToEvmSwapResponse} />
       )}
 
       {isBitcoinSwap && (

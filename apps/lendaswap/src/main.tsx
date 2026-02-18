@@ -35,7 +35,10 @@ const defaultCfg = getDefaultConfig({
 
 if (rpcOverrideChainId && rpcOverrideUrl) {
   const overrideId = Number(rpcOverrideChainId);
-  const original = defaultCfg.transports as Record<number, ReturnType<typeof http>>;
+  const original = defaultCfg.transports as Record<
+    number,
+    ReturnType<typeof http>
+  >;
   original[overrideId] = http(rpcOverrideUrl);
 }
 

@@ -50,7 +50,12 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
   };
 
   return (
-    <DepositCard sourceToken={swapData.source_token} targetToken={swapData.target_token} swapId={swapData.id} title={`${swapData.source_token.symbol} → ${swapData.target_token.symbol}`}>
+    <DepositCard
+      sourceToken={swapData.source_token}
+      targetToken={swapData.target_token}
+      swapId={swapData.id}
+      title={`${swapData.source_token.symbol} → ${swapData.target_token.symbol}`}
+    >
       <QrCodeSection value={bip21Url} />
       <AddressDisplay label="Arkade Address" value={arkadeAddress} />
       <AmountSummary>
