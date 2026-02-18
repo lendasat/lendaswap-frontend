@@ -69,7 +69,7 @@ export function SwapProcessingStep({
 
   // Auto-claim when server is funded (works for all directions via api.claim)
   useEffect(() => {
-    const autoClaimEvmSwap = async () => {
+    const autoClaim = async () => {
       // Lightning-to-evm is claimed by the lightning client, skip auto-claim
       if (swapData.direction === "evm_to_lightning") return;
       if (swapData.status !== "serverfunded") return;
@@ -102,9 +102,11 @@ export function SwapProcessingStep({
           retryCount,
         });
 
-        await api.claim(swapId);
+        const claimResponse = await api.claim(swapId);
+        console.log(
+          `Claim request sent successfully ${JSON.stringify(claimResponse)}`,
+        );
 
-        console.log("Claim request sent successfully");
         // Success! Reset retry count
         setRetryCount(0);
       } catch (error) {
@@ -147,213 +149,8 @@ export function SwapProcessingStep({
       }
     };
 
-    autoClaimEvmSwap();
+    autoClaim();
   }, [swapData, swapId, isClaiming, retryCount, sleep, posthog?.capture]);
-
-  // Auto-claim for evm-to-btc when server is funded
-  //   fixme: implement auto claim
-  //   useEffect(() => {
-  //     const autoClaimPolygonToArkadeSwaps = async () => {
-  //
-  //       /*
-  //       const polygonToBtcSwapData = swapData as EvmToBtcSwapResponse;
-  //       if (swapDirection !== "evm-to-btc") return;
-  //       if (isLightning(polygonToBtcSwapData.target_token)) {
-  //         // this will be claimed by the lightning client
-  //         return;
-  //       }
-  //       if (polygonToBtcSwapData.status !== "serverfunded") return;
-  //       if (!polygonToBtcSwapData.user_address_arkade) {
-  //         console.error("No user address for arkade provided");
-  //         setClaimError("Missing Arkade address for claim");
-  //         return;
-  //       }
-  //
-  //       const claimKey = `swap_${polygonToBtcSwapData.id}_claim_attempted`;
-  //       const attemptTimestamp = localStorage.getItem(claimKey);
-  //
-  //       // Check if we've exhausted retries
-  //       if (attemptTimestamp && retryCount >= maxRetries) {
-  //         console.log("Max retries reached for this swap, stopping");
-  //         return;
-  //       }
-  //
-  //       if (hasClaimedRef.current || isClaiming) return;
-  //
-  //       hasClaimedRef.current = true;
-  //       setIsClaiming(true);
-  //       setClaimError(null);
-  //
-  //       try {
-  //         // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
-  //         if (retryCount > 0) {
-  //           const backoffMs = 2 ** retryCount * 1000;
-  //           console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
-  //           await sleep(backoffMs);
-  //         }
-  //
-  //         console.log("Auto-claiming with parameters:", {
-  //           swapId: polygonToBtcSwapData.id,
-  //           retryCount,
-  //         });
-  //
-  //         // Mark that we've attempted to claim
-  //         localStorage.setItem(claimKey, Date.now().toString());
-  //
-  //         const txid = await api.claimVhtlc(polygonToBtcSwapData.id);
-  //         console.log(`Claim request sent successfully ${txid}`);
-  //         // Success! Reset retry count
-  //         setRetryCount(0);
-  //       } catch (error) {
-  //         console.error(
-  //           `Failed to auto-claim (attempt ${retryCount + 1}/${maxRetries}):`,
-  //           error,
-  //         );
-  //         const newRetryCount = retryCount + 1;
-  //         setRetryCount(newRetryCount);
-  //
-  //         if (newRetryCount >= maxRetries) {
-  //           const errorMessage =
-  //             error instanceof Error
-  //               ? `${error.message} (Max retries reached)`
-  //               : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
-  //           setClaimError(errorMessage);
-  //
-  //           posthog?.capture("swap_failed", {
-  //             failure_type: "claim",
-  //             swap_id: polygonToBtcSwapData.id,
-  //             swap_direction: "evm-to-btc",
-  //             error_message: errorMessage,
-  //             retry_count: newRetryCount,
-  //           });
-  //         } else {
-  //           setClaimError(
-  //             error instanceof Error
-  //               ? `${error.message} (Retrying...)`
-  //               : `Failed to claim sats. Retrying...`,
-  //           );
-  //         }
-  //
-  //         // Only remove localStorage flag if we haven't exhausted retries
-  //         if (newRetryCount < maxRetries) {
-  //           localStorage.removeItem(claimKey);
-  //           hasClaimedRef.current = false;
-  //         }
-  //       } finally {
-  //         setIsClaiming(false);
-  //       }
-  // */
-  //     };
-  //
-  //     autoClaimPolygonToArkadeSwaps();
-  //   }, [
-  //     swapData,
-  //     swapDirection,
-  //     isClaiming,
-  //     retryCount,
-  //     sleep,
-  //     posthog?.capture,
-  //   ]);
-
-  // Auto-claim for bitcoin-to-arkade when server is funded
-  //   fixme: implement auto claim
-  // useEffect(() => {
-  //   const autoClaimBtcToArkadeSwaps = async () => {
-  //     if (swapDirection !== "evm-to-btc") return;
-  //     const bitcoinToArkadeSwapData = swapData as BtcToArkadeSwapResponse;
-  //     if (bitcoinToArkadeSwapData.status !== "serverfunded") return;
-  //     if (!bitcoinToArkadeSwapData.target_arkade_address) {
-  //       console.error("No user address for arkade provided");
-  //       setClaimError("Missing Arkade address for claim");
-  //       return;
-  //     }
-  //
-  //     const claimKey = `swap_${bitcoinToArkadeSwapData.id}_claim_attempted`;
-  //     const attemptTimestamp = localStorage.getItem(claimKey);
-  //
-  //     // Check if we've exhausted retries
-  //     if (attemptTimestamp && retryCount >= maxRetries) {
-  //       console.log("Max retries reached for this swap, stopping");
-  //       return;
-  //     }
-  //
-  //     if (hasClaimedRef.current || isClaiming) return;
-  //
-  //     hasClaimedRef.current = true;
-  //     setIsClaiming(true);
-  //     setClaimError(null);
-  //
-  //     try {
-  //       // Exponential backoff: wait before retry (0s, 2s, 4s, 8s)
-  //       if (retryCount > 0) {
-  //         const backoffMs = 2 ** retryCount * 1000;
-  //         console.log(`Waiting ${backoffMs}ms before retry ${retryCount}...`);
-  //         await sleep(backoffMs);
-  //       }
-  //
-  //       console.log("Auto-claiming with parameters:", {
-  //         swapId: bitcoinToArkadeSwapData.id,
-  //         retryCount,
-  //       });
-  //
-  //       // Mark that we've attempted to claim
-  //       localStorage.setItem(claimKey, Date.now().toString());
-  //
-  //       const txid = await api.claimBtcToArkadeVhtlc(
-  //         bitcoinToArkadeSwapData.id,
-  //       );
-  //       console.log(`Claim request sent successfully ${txid}`);
-  //       // Success! Reset retry count
-  //       setRetryCount(0);
-  //     } catch (error) {
-  //       console.error(
-  //         `Failed to auto-claim (attempt ${retryCount + 1}/${maxRetries}):`,
-  //         error,
-  //       );
-  //       const newRetryCount = retryCount + 1;
-  //       setRetryCount(newRetryCount);
-  //
-  //       if (newRetryCount >= maxRetries) {
-  //         const errorMessage =
-  //           error instanceof Error
-  //             ? `${error.message} (Max retries reached)`
-  //             : `Failed to claim sats after ${maxRetries} attempts. Please try manually.`;
-  //         setClaimError(errorMessage);
-  //
-  //         posthog?.capture("swap_failed", {
-  //           failure_type: "claim",
-  //           swap_id: bitcoinToArkadeSwapData.id,
-  //           swap_direction: "btc-to-arkade",
-  //           error_message: errorMessage,
-  //           retry_count: newRetryCount,
-  //         });
-  //       } else {
-  //         setClaimError(
-  //           error instanceof Error
-  //             ? `${error.message} (Retrying...)`
-  //             : `Failed to claim sats. Retrying...`,
-  //         );
-  //       }
-  //
-  //       // Only remove localStorage flag if we haven't exhausted retries
-  //       if (newRetryCount < maxRetries) {
-  //         localStorage.removeItem(claimKey);
-  //         hasClaimedRef.current = false;
-  //       }
-  //     } finally {
-  //       setIsClaiming(false);
-  //     }
-  //   };
-  //
-  //   autoClaimBtcToArkadeSwaps();
-  // }, [
-  //   swapData,
-  //   swapDirection,
-  //   isClaiming,
-  //   retryCount,
-  //   sleep,
-  //   posthog?.capture,
-  // ]);
 
   const handleCopyTxId = async (txId: string) => {
     try {
