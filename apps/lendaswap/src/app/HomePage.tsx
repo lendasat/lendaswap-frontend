@@ -9,7 +9,7 @@ import {
   toChainName,
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
-import { ArrowDown, Loader } from "lucide-react";
+import { ArrowDown, ChevronDown, Loader } from "lucide-react";
 import { api, type QuoteResponse } from "./api";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
@@ -20,7 +20,9 @@ import {
   deriveSourceAmount,
   evmSmallestToSats,
   extractFees,
-  totalNetworkFeeBtc,
+  serverNetworkFeeBtc,
+  gaslessFeeBtc,
+  totalFeeBtc,
   protocolFeeBtc,
 } from "./utils/quoteUtils";
 import { AddressInput } from "./components/AddressInput";
@@ -208,6 +210,7 @@ export function HomePage() {
   // Fetch a baseline quote whenever the asset pair changes (1000 source units)
   const [quote, setQuote] = useState<QuoteResponse | undefined>();
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const [feeExpanded, setFeeExpanded] = useState(false);
 
   const sourceTokenId = sourceAsset?.token_id;
   const sourceChain = sourceAsset?.chain;
@@ -484,6 +487,12 @@ export function HomePage() {
     isOutOfLimits ||
     (!sourceAmount && !targetAmount);
 
+  const gaslessFeeEstimate =
+    quote && quote.gasless_network_fee > 0 && gaslessFeeBtc(quote);
+  const totalFee = quote && totalFeeBtc(btcAmountSats, quote);
+  const networkFee = quote && serverNetworkFeeBtc(quote);
+  const protocolFee = quote && protocolFeeBtc(btcAmountSats, quote);
+
   return (
     <div className="flex flex-col p-3">
       {/* Sell/Buy container with arrow */}
@@ -639,12 +648,29 @@ export function HomePage() {
                 sats
               </div>
             )}
-            <div className="flex flex-wrap justify-between gap-y-0.5">
-              <div>Network Fee: {totalNetworkFeeBtc(quote)} BTC</div>
-              <div>
-                Protocol Fee: {protocolFeeBtc(btcAmountSats, quote)} BTC (
-                {(quote.protocol_fee_rate * 100).toFixed(2)}%)
-              </div>
+            <div className="space-y-1 flex flex-col items-end">
+              <button
+                type="button"
+                className="flex items-center gap-0.5 hover:text-muted-foreground transition-colors"
+                onClick={() => setFeeExpanded((v) => !v)}
+              >
+                Total Fee: {totalFee} BTC
+                <ChevronDown
+                  className={`w-3 h-3 transition-transform ${feeExpanded ? "rotate-180" : ""}`}
+                />
+              </button>
+              {feeExpanded && (
+                <div className="text-muted-foreground/50 space-y-0.5 text-right">
+                  <div>Network Fee: {networkFee} BTC</div>
+                  {gaslessFeeEstimate && (
+                    <div>Gasless Fee: {gaslessFeeEstimate} BTC</div>
+                  )}
+                  <div>
+                    Protocol Fee ({(quote.protocol_fee_rate * 100).toFixed(2)}
+                    %): {protocolFee} BTC
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : null}

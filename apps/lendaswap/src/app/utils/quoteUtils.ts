@@ -111,6 +111,30 @@ export function totalNetworkFeeBtc(quote: QuoteResponse): string {
   return (totalSats / 1e8).toFixed(8);
 }
 
+/** Server network fee in BTC. */
+export function serverNetworkFeeBtc(quote: QuoteResponse): string {
+  return (Number(quote.network_fee) / 1e8).toFixed(8);
+}
+
+/** Gasless execution fee in BTC. */
+export function gaslessFeeBtc(quote: QuoteResponse): string {
+  return (Number(quote.gasless_network_fee) / 1e8).toFixed(8);
+}
+
+/** Total fee (network + gasless + protocol) in BTC. */
+export function totalFeeBtc(
+  btcAmountSats: number | undefined,
+  quote: QuoteResponse,
+): string {
+  const networkSats =
+    Number(quote.network_fee) + Number(quote.gasless_network_fee);
+  const protocolSats =
+    btcAmountSats != null
+      ? btcAmountSats * quote.protocol_fee_rate
+      : Number(quote.protocol_fee);
+  return ((networkSats + protocolSats) / 1e8).toFixed(8);
+}
+
 /** Protocol fee in BTC for a given BTC amount in sats. */
 export function protocolFeeBtc(
   btcAmountSats: number | undefined,
