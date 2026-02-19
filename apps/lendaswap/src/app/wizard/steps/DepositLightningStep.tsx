@@ -1,3 +1,7 @@
+import {
+  type LightningToEvmSwapResponse,
+  toChainName,
+} from "@lendasat/lendaswap-sdk-pure";
 import { Loader2, Zap } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -7,16 +11,12 @@ import isValidSpeedWalletContext, {
 } from "../../../utils/speedWallet";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import {
-  toChainName,
-  type LightningToEvmSwapResponse,
-} from "@lendasat/lendaswap-sdk-pure";
-import {
+  AddressDisplay,
+  AmountRow,
+  AmountSummary,
+  DepositActions,
   DepositCard,
   QrCodeSection,
-  AddressDisplay,
-  AmountSummary,
-  AmountRow,
-  DepositActions,
 } from "../components";
 
 interface SendLightningStepProps {

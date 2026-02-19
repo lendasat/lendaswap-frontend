@@ -3,8 +3,8 @@ import {
   isBtc,
   isEthereumToken,
   isPolygonToken,
-  toChainName,
   type TokenInfo,
+  toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

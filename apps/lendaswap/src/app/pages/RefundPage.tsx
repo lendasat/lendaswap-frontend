@@ -11,9 +11,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { getSwapById, type StoredSwap } from "../db";
 import {
-  RefundEvmStep,
-  RefundBitcoinStep,
   RefundArkadeStep,
+  RefundBitcoinStep,
+  RefundEvmStep,
 } from "../wizard/steps";
 
 export function RefundPage() {

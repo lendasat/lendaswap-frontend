@@ -8,21 +8,21 @@ import {
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import {
+  AlertCircle,
   Check,
   Circle,
   Clock,
   Loader,
   RefreshCw,
-  AlertCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { createPublicClient, erc20Abi, http } from "viem";
+import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import { getViemChain } from "../../utils/tokenUtils";
-import { DepositCard, AmountSummary, AmountRow } from "../components";
+import { AmountRow, AmountSummary, DepositCard } from "../components";
 
 type StepStatus = "pending" | "active" | "completed" | "error";
 

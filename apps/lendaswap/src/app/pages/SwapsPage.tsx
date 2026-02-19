@@ -1,4 +1,4 @@
-import { type StoredSwap, type SwapStatus } from "@lendasat/lendaswap-sdk-pure";
+import type { StoredSwap, SwapStatus } from "@lendasat/lendaswap-sdk-pure";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   Check,

@@ -1,6 +1,6 @@
 import { CheckCheck, Copy } from "lucide-react";
-import { Button } from "#/components/ui/button";
 import type { ReactNode } from "react";
+import { Button } from "#/components/ui/button";
 import { useCopyToClipboard } from "./useCopyToClipboard";
 
 interface AmountRowProps {
