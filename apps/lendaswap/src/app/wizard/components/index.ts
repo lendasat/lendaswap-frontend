@@ -1,6 +1,6 @@
+export { AddressDisplay } from "./AddressDisplay";
+export { AmountRow, AmountSummary } from "./AmountSummary";
+export { DepositActions } from "./DepositActions";
 export { DepositCard } from "./DepositCard";
 export { QrCodeSection } from "./QrCodeSection";
-export { AddressDisplay } from "./AddressDisplay";
-export { AmountSummary, AmountRow } from "./AmountSummary";
-export { DepositActions } from "./DepositActions";
 export { useCopyToClipboard } from "./useCopyToClipboard";

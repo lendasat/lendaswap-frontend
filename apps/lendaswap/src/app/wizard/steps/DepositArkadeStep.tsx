@@ -1,14 +1,14 @@
+import type { ArkadeToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useWalletBridge } from "../../WalletBridgeContext";
-import type { ArkadeToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 import {
+  AddressDisplay,
+  AmountRow,
+  AmountSummary,
+  DepositActions,
   DepositCard,
   QrCodeSection,
-  AddressDisplay,
-  AmountSummary,
-  AmountRow,
-  DepositActions,
 } from "../components";
 
 interface DepositArkadeStepProps {

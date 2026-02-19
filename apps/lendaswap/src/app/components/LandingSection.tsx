@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   ArrowDown,
   ArrowLeftRight,
@@ -7,13 +6,14 @@ import {
   Key,
   Shield,
 } from "lucide-react";
-import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
+import { useState } from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "#/components/ui/accordion";
+import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 
 export function LandingSection() {
   const [copiedTerminal, setCopiedTerminal] = useState(false);

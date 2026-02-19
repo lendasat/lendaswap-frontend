@@ -1,35 +1,35 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
-import { useAccount, useSwitchChain } from "wagmi";
-import { useModal } from "connectkit";
 import {
   isArkade,
   isBtc,
   isBtcOnchain,
-  toChainName,
   type TokenInfo,
+  toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
+import { useModal } from "connectkit";
 import { ArrowDown, ChevronDown, Loader } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useAsync } from "react-use";
+import { useAccount, useSwitchChain } from "wagmi";
+import { Button } from "#/components/ui/button";
+import { Skeleton } from "#/components/ui/skeleton";
 import { api, type QuoteResponse } from "./api";
+import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
-import { useAsync } from "react-use";
-import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
 import {
-  deriveTargetAmount,
   deriveSourceAmount,
+  deriveTargetAmount,
   evmSmallestToSats,
   extractFees,
-  serverNetworkFeeBtc,
   gaslessFeeBtc,
-  totalFeeBtc,
   protocolFeeBtc,
+  serverNetworkFeeBtc,
+  totalFeeBtc,
 } from "./utils/quoteUtils";
 import { setReferralCode, validateReferralCode } from "./utils/referralCode";
-import { AddressInput } from "./components/AddressInput";
+import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
 import { useWalletBridge } from "./WalletBridgeContext";
-import { Skeleton } from "#/components/ui/skeleton";
-import { Button } from "#/components/ui/button";
 
 // Build query string from amounts and target address
 function buildQueryParams(
@@ -638,14 +638,14 @@ export function HomePage() {
           <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
             {!isLoadingQuote && isBelowMin && (
               <div className="text-destructive">
-                Amount too low — minimum is {quote!.min_amount.toLocaleString()}{" "}
+                Amount too low — minimum is {quote.min_amount.toLocaleString()}{" "}
                 sats
               </div>
             )}
             {!isLoadingQuote && isAboveMax && (
               <div className="text-destructive">
-                Amount too high — maximum is{" "}
-                {quote!.max_amount.toLocaleString()} sats
+                Amount too high — maximum is {quote.max_amount.toLocaleString()}{" "}
+                sats
               </div>
             )}
             <div className="space-y-1 flex flex-col items-end">
@@ -679,7 +679,7 @@ export function HomePage() {
                       )}
                       <div>
                         Protocol Fee (
-                        {(quote!.protocol_fee_rate * 100).toFixed(2)}
+                        {(quote.protocol_fee_rate * 100).toFixed(2)}
                         %): {protocolFee} BTC
                       </div>
                     </>

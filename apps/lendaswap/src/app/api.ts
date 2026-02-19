@@ -2,7 +2,7 @@
 import {
   type BtcToArkadeSwapResponse,
   type Chain,
-  ClaimResult,
+  type ClaimResult,
   type CoordinatorFundingCallData,
   type GetSwapResponse,
   getUsdPrices,

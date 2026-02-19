@@ -15,11 +15,11 @@ import {
   type Chain as ViemChain,
 } from "viem/chains";
 import { ReactComponent as Arbitrum } from "../../assets/arbitrum.svg";
-import { ReactComponent as Polygon } from "../../assets/polygon.svg";
-import { ReactComponent as Ethereum } from "../../assets/eth.svg";
 import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
+import { ReactComponent as Ethereum } from "../../assets/eth.svg";
+import { ReactComponent as Polygon } from "../../assets/polygon.svg";
 import { ReactComponent as Usdc } from "../../assets/usdc.svg";
 import { ReactComponent as Usdt } from "../../assets/usdt.svg";
 import { ReactComponent as Usdt0 } from "../../assets/usdt0.svg";

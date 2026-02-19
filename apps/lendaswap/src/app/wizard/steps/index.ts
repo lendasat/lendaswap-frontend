@@ -1,8 +1,8 @@
 export { DepositArkadeStep } from "./DepositArkadeStep";
-export { RefundBitcoinStep } from "./RefundBitcoinStep";
+export { DepositBitcoinStep } from "./DepositBitcoinStep";
 export { DepositEvmStep } from "./DepositEvmStep";
 export { RefundArkadeStep } from "./RefundArkadeStep";
+export { RefundBitcoinStep } from "./RefundBitcoinStep";
 export { RefundEvmStep } from "./RefundEvmStep";
-export { DepositBitcoinStep } from "./DepositBitcoinStep";
 export { SuccessStep } from "./SuccessStep";
 export { SwapProcessingStep } from "./SwapProcessingStep";

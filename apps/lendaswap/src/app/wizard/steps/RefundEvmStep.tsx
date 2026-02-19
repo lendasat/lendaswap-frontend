@@ -7,8 +7,8 @@ import {
 import { useModal } from "connectkit";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { publicActions } from "viem";
+import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";

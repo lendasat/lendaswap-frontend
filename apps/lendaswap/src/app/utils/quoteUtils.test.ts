@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  satsToEvmSmallest,
-  evmSmallestToSats,
-  deriveTargetAmount,
   deriveSourceAmount,
+  deriveTargetAmount,
+  evmSmallestToSats,
   type QuoteFees,
+  satsToEvmSmallest,
 } from "./quoteUtils";
 
 // Example: 1 BTC ≈ 70,000 USDC → exchangeRate = 70000
