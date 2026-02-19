@@ -363,7 +363,7 @@ export function HomePage() {
     );
   }
 
-  const isInitialLoading = tokensLoading || isLoadingQuote;
+  const isInitialLoading = tokensLoading;
 
   // The required EVM chain is whichever side (source or target) is an EVM token
   const requiredEvmChain =
@@ -509,6 +509,7 @@ export function HomePage() {
               }}
               decimals={sourceAsset?.decimals}
               showCurrencyPrefix={true}
+              isLoading={isLoadingQuote && lastEditedField !== "sourceAsset"}
               // fixme: implement USD value
               usdPerToken={0}
               tokenSymbol={sourceAsset?.symbol}
@@ -578,6 +579,7 @@ export function HomePage() {
               }}
               decimals={targetAsset?.decimals ?? 8}
               showCurrencyPrefix={true}
+              isLoading={isLoadingQuote && lastEditedField !== "targetAsset"}
               // fixme: implement USD value and loading state
               usdPerToken={0}
               tokenSymbol={targetAsset?.symbol}
@@ -623,29 +625,18 @@ export function HomePage() {
           }
         />
         {/*Fees - below inputs, above Continue button*/}
-        {isLoadingQuote ? (
+        {(isLoadingQuote || quote) && (
           <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
-            <div className="flex flex-wrap justify-between gap-y-0.5">
-              <div className="flex items-center gap-1">
-                Network Fee: <Skeleton className="h-3 w-24" />
-              </div>
-              <div className="flex items-center gap-1">
-                Protocol Fee: <Skeleton className="h-3 w-32" />
-              </div>
-            </div>
-          </div>
-        ) : quote ? (
-          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
-            {isBelowMin && (
+            {!isLoadingQuote && isBelowMin && (
               <div className="text-destructive">
-                Amount too low — minimum is {quote.min_amount.toLocaleString()}{" "}
+                Amount too low — minimum is {quote!.min_amount.toLocaleString()}{" "}
                 sats
               </div>
             )}
-            {isAboveMax && (
+            {!isLoadingQuote && isAboveMax && (
               <div className="text-destructive">
-                Amount too high — maximum is {quote.max_amount.toLocaleString()}{" "}
-                sats
+                Amount too high — maximum is{" "}
+                {quote!.max_amount.toLocaleString()} sats
               </div>
             )}
             <div className="space-y-1 flex flex-col items-end">
@@ -654,26 +645,41 @@ export function HomePage() {
                 className="flex items-center gap-0.5 hover:text-muted-foreground transition-colors"
                 onClick={() => setFeeExpanded((v) => !v)}
               >
-                Total Fee: {totalFee} BTC
+                Total Fee:{" "}
+                {isLoadingQuote ? (
+                  <Skeleton className="h-3 w-20 inline-block" />
+                ) : (
+                  <>{totalFee} BTC</>
+                )}
                 <ChevronDown
                   className={`w-3 h-3 transition-transform ${feeExpanded ? "rotate-180" : ""}`}
                 />
               </button>
               {feeExpanded && (
                 <div className="text-muted-foreground/50 space-y-0.5 text-right">
-                  <div>Network Fee: {networkFee} BTC</div>
-                  {gaslessFeeEstimate && (
-                    <div>Gasless Fee: {gaslessFeeEstimate} BTC</div>
+                  {isLoadingQuote ? (
+                    <>
+                      <Skeleton className="h-3 w-32 ml-auto" />
+                      <Skeleton className="h-3 w-28 ml-auto" />
+                    </>
+                  ) : (
+                    <>
+                      <div>Network Fee: {networkFee} BTC</div>
+                      {gaslessFeeEstimate && (
+                        <div>Gasless Fee: {gaslessFeeEstimate} BTC</div>
+                      )}
+                      <div>
+                        Protocol Fee (
+                        {(quote!.protocol_fee_rate * 100).toFixed(2)}
+                        %): {protocolFee} BTC
+                      </div>
+                    </>
                   )}
-                  <div>
-                    Protocol Fee ({(quote.protocol_fee_rate * 100).toFixed(2)}
-                    %): {protocolFee} BTC
-                  </div>
                 </div>
               )}
             </div>
           </div>
-        ) : null}
+        )}
         <div className="pt-2">
           {isConnectionStillNeeded ? (
             <Button
