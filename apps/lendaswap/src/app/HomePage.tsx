@@ -677,11 +677,13 @@ export function HomePage() {
                       {gaslessFeeEstimate && (
                         <div>Gasless Fee: {gaslessFeeEstimate} BTC</div>
                       )}
-                      <div>
-                        Protocol Fee (
-                        {(quote.protocol_fee_rate * 100).toFixed(2)}
-                        %): {protocolFee} BTC
-                      </div>
+                      {quote && (
+                        <div>
+                          Protocol Fee (
+                          {(quote.protocol_fee_rate * 100).toFixed(2)}
+                          %): {protocolFee} BTC
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
