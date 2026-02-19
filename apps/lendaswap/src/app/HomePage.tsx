@@ -25,6 +25,7 @@ import {
   totalFeeBtc,
   protocolFeeBtc,
 } from "./utils/quoteUtils";
+import { setReferralCode, validateReferralCode } from "./utils/referralCode";
 import { AddressInput } from "./components/AddressInput";
 import { useWalletBridge } from "./WalletBridgeContext";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -152,6 +153,14 @@ export function HomePage() {
       setTargetAddress(urlAddress);
     }
   }, [urlAddress]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist referral code from URL (?ref=...) to localStorage
+  const urlRef = searchParams.get("ref");
+  useEffect(() => {
+    if (urlRef && validateReferralCode(urlRef)) {
+      setReferralCode(urlRef);
+    }
+  }, [urlRef]);
 
   const {
     value: maybeAvailableTokens,
