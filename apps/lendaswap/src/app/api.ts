@@ -293,6 +293,11 @@ export const api = {
     return client.getMnemonic();
   },
 
+  async getNostrKeyHex(): Promise<string> {
+    const client = await getClients();
+    return client.getNostrKeyHex();
+  },
+
   async getUserIdXpub() {
     const client = await getClients();
     return client.getUserIdXpub();

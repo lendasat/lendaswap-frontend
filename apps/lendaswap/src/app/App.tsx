@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { ChatWidget } from "@frontend/nostr-chat";
+import { useEffect, useState } from "react";
 import {
   Navigate,
   Route,
@@ -85,6 +86,11 @@ export default function App() {
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
+  const [nostrKey, setNostrKey] = useState<string | undefined>();
+
+  useEffect(() => {
+    api.getNostrKeyHex().then(setNostrKey).catch(console.error);
+  }, []);
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
   const isHomePage =
@@ -287,6 +293,9 @@ export default function App() {
           }}
         />
       </div>
+
+      {/* Nostr Support Chat */}
+      {nostrKey && <ChatWidget privateKeyHex={nostrKey} />}
     </div>
   );
 }
