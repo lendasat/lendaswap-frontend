@@ -15,6 +15,14 @@ import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { useAsync } from "react-use";
 import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
+import {
+  deriveTargetAmount,
+  deriveSourceAmount,
+  evmSmallestToSats,
+  extractFees,
+  totalNetworkFeeBtc,
+  protocolFeeBtc,
+} from "./utils/quoteUtils";
 import { AddressInput } from "./components/AddressInput";
 import { useWalletBridge } from "./WalletBridgeContext";
 import { Skeleton } from "#/components/ui/skeleton";
@@ -207,6 +215,7 @@ export function HomePage() {
   const isSourceBtc = sourceAsset ? isBtc(sourceAsset) : false;
   const targetTokenId = targetAsset?.token_id;
   const targetChain = targetAsset?.chain;
+  const targetDecimals = targetAsset?.decimals;
 
   useEffect(() => {
     if (!sourceTokenId || !sourceChain || !targetTokenId || !targetChain) {
@@ -253,9 +262,7 @@ export function HomePage() {
     sourceDecimals,
   ]);
 
-  // Compute the counterpart amount from the quote rate
-  // When source is edited → derive target; when target is edited → derive source
-  // Default: derive target from source
+  // Source edited → derive target (fees deducted from target side)
   useEffect(() => {
     if (
       !quote ||
@@ -264,13 +271,28 @@ export function HomePage() {
     ) {
       return;
     }
-    const qSrc = Number(quote.source_amount);
-    const qTgt = Number(quote.target_amount);
-    if (qSrc === 0) return;
-    const rate = qTgt / qSrc;
-    setTargetAmountState(Math.round(sourceAmount * rate));
-  }, [sourceAmount, quote, lastEditedField]);
+    const exchangeRate = Number(quote.exchange_rate);
+    if (exchangeRate === 0) return;
+    const evmDecimals = (isSourceBtc ? targetDecimals : sourceDecimals) ?? 0;
+    setTargetAmountState(
+      deriveTargetAmount({
+        amount: sourceAmount,
+        exchangeRate,
+        evmDecimals,
+        isSourceBtc,
+        fees: extractFees(quote),
+      }),
+    );
+  }, [
+    sourceAmount,
+    quote,
+    lastEditedField,
+    isSourceBtc,
+    sourceDecimals,
+    targetDecimals,
+  ]);
 
+  // Target edited → derive source (fees added to source side)
   useEffect(() => {
     if (
       !quote ||
@@ -279,12 +301,26 @@ export function HomePage() {
     ) {
       return;
     }
-    const qSrc = Number(quote.source_amount);
-    const qTgt = Number(quote.target_amount);
-    if (qTgt === 0) return;
-    const rate = qSrc / qTgt;
-    setSourceAmountState(Math.round(targetAmount * rate));
-  }, [targetAmount, quote, lastEditedField]);
+    const exchangeRate = Number(quote.exchange_rate);
+    if (exchangeRate === 0) return;
+    const evmDecimals = (isSourceBtc ? targetDecimals : sourceDecimals) ?? 0;
+    setSourceAmountState(
+      deriveSourceAmount({
+        amount: targetAmount,
+        exchangeRate,
+        evmDecimals,
+        isSourceBtc,
+        fees: extractFees(quote),
+      }),
+    );
+  }, [
+    targetAmount,
+    quote,
+    lastEditedField,
+    isSourceBtc,
+    sourceDecimals,
+    targetDecimals,
+  ]);
 
   // Debounced sync of amounts + address to URL (avoids navigating on every keystroke)
   const { sourceToken: urlSource, targetToken: urlTarget } = params;
@@ -379,20 +415,21 @@ export function HomePage() {
   // Limits from the quote are always in sats
   const btcAmountSats = useMemo(() => {
     if (!quote) return undefined;
-    const qSrc = Number(quote.source_amount);
-    const qTgt = Number(quote.target_amount);
     if (isSourceBtc && sourceAmount != null) {
       return sourceAmount;
     }
-    if (!isSourceBtc && targetAmount != null && qTgt > 0) {
+    if (!isSourceBtc && targetAmount != null) {
       return targetAmount;
     }
-    if (!isSourceBtc && sourceAmount != null && qSrc > 0) {
-      const rate = qTgt / qSrc;
-      return Math.round(sourceAmount * rate);
+    if (!isSourceBtc && sourceAmount != null) {
+      const exchangeRate = Number(quote.exchange_rate);
+      if (exchangeRate === 0) return undefined;
+      return Math.round(
+        evmSmallestToSats(sourceAmount, exchangeRate, sourceDecimals ?? 0),
+      );
     }
     return undefined;
-  }, [quote, sourceAmount, targetAmount, isSourceBtc]);
+  }, [quote, sourceAmount, targetAmount, isSourceBtc, sourceDecimals]);
 
   const isBelowMin =
     quote != null &&
@@ -603,18 +640,10 @@ export function HomePage() {
               </div>
             )}
             <div className="flex flex-wrap justify-between gap-y-0.5">
+              <div>Network Fee: {totalNetworkFeeBtc(quote)} BTC</div>
               <div>
-                Network Fee:{" "}
-                {(Number(quote.network_fee) / 100_000_000.0).toFixed(8)} BTC
-              </div>
-              <div>
-                Protocol Fee: {(() => {
-                  const qSrc = Number(quote.source_amount);
-                  const scale =
-                    sourceAmount != null && qSrc > 0 ? sourceAmount / qSrc : 1;
-                  const fee = Number(quote.protocol_fee) * scale;
-                  return (fee / 100_000_000.0).toFixed(8);
-                })()} BTC ({(quote.protocol_fee_rate * 100).toFixed(2)}%)
+                Protocol Fee: {protocolFeeBtc(btcAmountSats, quote)} BTC (
+                {(quote.protocol_fee_rate * 100).toFixed(2)}%)
               </div>
             </div>
           </div>
