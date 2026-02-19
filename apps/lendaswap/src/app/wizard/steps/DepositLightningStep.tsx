@@ -32,7 +32,11 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
 
   const lightningInvoice = swapData.boltz_invoice;
   const lightningQrValue = `lightning:${lightningInvoice}`;
-  const tokenAmount = swapData.target_amount.toString();
+  const tokenAmount = (
+    swapData.target_amount /
+    10 ** swapData.target_token.decimals
+  ).toFixed(swapData.target_token.decimals);
+
   const tokenSymbol = swapData.target_token.symbol;
 
   const isSpeedWallet = isValidSpeedWalletContext();
@@ -145,8 +149,17 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
       <AddressDisplay label="Lightning Invoice" value={lightningInvoice} />
       <AmountSummary>
         <AmountRow
+          label="Required Sats"
+          value={`${swapData.source_amount.toLocaleString()} sats`}
+          copiable
+        />
+        <AmountRow
           label="You Receive"
-          value={`${tokenAmount} ${tokenSymbol} on ${toChainName(swapData.target_token.chain)}`}
+          value={`~${tokenAmount} ${tokenSymbol} on ${toChainName(swapData.target_token.chain)}`}
+        />
+        <AmountRow
+          label="Fee"
+          value={`${swapData.fee_sats.toLocaleString()} sats`}
         />
       </AmountSummary>
       <DepositActions
