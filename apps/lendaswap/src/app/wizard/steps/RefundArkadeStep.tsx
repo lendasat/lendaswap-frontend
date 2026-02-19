@@ -53,15 +53,16 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
     fetchAmounts();
   }, [swapData, amounts]);
 
-  // Calculate if swap can be refunded
+  // Calculate if swap can be refunded (spendable or recoverable VTXOs after locktime)
   const canRefund = (() => {
     if (!swapData || amounts === null) return false;
 
     const now = Math.floor(Date.now() / 1000);
-    const hasSpendableAmount = amounts.spendable > 0;
+    const hasRefundableAmount =
+      amounts.spendable > 0 || amounts.recoverable > 0;
     const isLocktimePassed = now >= swapData.vhtlc_refund_locktime;
 
-    return hasSpendableAmount && isLocktimePassed;
+    return hasRefundableAmount && isLocktimePassed;
   })();
 
   const refundLocktimeDate = new Date(swapData.vhtlc_refund_locktime * 1000);
@@ -132,10 +133,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
     }
   };
 
-  const alreadyRefunded =
-    amounts !== null &&
-    Number(amounts.spendable) === 0 &&
-    Number(amounts.spent) > 0;
+  const alreadyRefunded = amounts !== null && amounts.vtxoStatus === "spent";
 
   const sourceSymbol = swapData.source_token.symbol;
   const targetSymbol = swapData.target_token.symbol;
@@ -150,7 +148,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
       <div className="space-y-6">
         {/* Refund Status Banner */}
         {alreadyRefunded && (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
+          <div className="space-y-3 rounded-lg border border-green-500 bg-green-50 p-4 dark:bg-green-950/20">
             <div className="flex items-center gap-3">
               <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" />
               <h3 className="text-sm font-semibold text-green-900 dark:text-green-100">
@@ -164,7 +162,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
         )}
 
         {!alreadyRefunded && isLocktimePassed && (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
+          <div className="space-y-3 rounded-lg border border-green-500 bg-green-50 p-4 dark:bg-green-950/20">
             <div className="flex items-center gap-3">
               <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" />
               <h3 className="text-sm font-semibold text-green-900 dark:text-green-100">
@@ -178,7 +176,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
           </div>
         )}
         {!alreadyRefunded && !isLocktimePassed && (
-          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-500 rounded-lg p-4 space-y-3">
+          <div className="space-y-3 rounded-lg border border-orange-500 bg-orange-50 p-4 dark:bg-orange-950/20">
             <div className="flex items-center gap-3">
               <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
               <h3 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
@@ -188,7 +186,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
             <p className="text-sm text-orange-800 dark:text-orange-200">
               Your funds are temporarily locked. Refund will be available in:
             </p>
-            <div className="text-2xl font-bold text-orange-900 dark:text-orange-100 font-mono">
+            <div className="font-mono text-2xl font-bold text-orange-900 dark:text-orange-100">
               {timeRemaining}
             </div>
           </div>
@@ -200,65 +198,75 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
             <p className="text-sm font-medium">Swap</p>
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium">{sourceSymbol}</span>
-              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              <ArrowRight className="text-muted-foreground h-3 w-3" />
               <span className="text-xs font-medium">{targetSymbol}</span>
             </div>
           </div>
 
           <div className="space-y-1">
             <p className="text-sm font-medium">Swap Status</p>
-            <p className="text-xs text-muted-foreground font-mono break-all">
+            <p className="text-muted-foreground break-all font-mono text-xs">
               {swapData.status}
             </p>
           </div>
 
           <div className="space-y-1">
             <p className="text-sm font-medium">VHTLC Address</p>
-            <p className="text-xs text-muted-foreground font-mono break-all">
+            <p className="text-muted-foreground break-all font-mono text-xs">
               {swapData.btc_vhtlc_address}
             </p>
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm font-medium">VHTLC Amounts</p>
+            <p className="text-sm font-medium">VHTLC Status</p>
             {isLoadingAmounts ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                <p className="text-xs text-muted-foreground">Loading...</p>
+                <p className="text-muted-foreground text-xs">Loading...</p>
               </div>
             ) : amounts !== null ? (
               <div className="space-y-1">
-                {amounts.spendable > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Spendable: {amounts.spendable.toLocaleString()} sats
+                {amounts.vtxoStatus === "not_funded" && (
+                  <p className="text-muted-foreground text-xs">
+                    Not yet funded
                   </p>
                 )}
-                {amounts.spent > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Spent: {amounts.spent.toLocaleString()} sats
+                {amounts.vtxoStatus === "spendable" && (
+                  <p className="text-xs text-green-600 dark:text-green-400">
+                    {amounts.spendable.toLocaleString()} sats — spendable
                   </p>
                 )}
-                {amounts.recoverable > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Recoverable: {amounts.recoverable.toLocaleString()} sats
+                {amounts.vtxoStatus === "recoverable" && (
+                  <p className="text-xs text-orange-600 dark:text-orange-400">
+                    {amounts.recoverable.toLocaleString()} sats — recoverable
+                    (batch expired)
                   </p>
                 )}
-                {amounts.spendable === 0 &&
-                  amounts.spent === 0 &&
-                  amounts.recoverable === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Not yet funded
+                {amounts.vtxoStatus === "mixed" && (
+                  <>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      {amounts.spendable.toLocaleString()} sats — spendable
                     </p>
-                  )}
+                    <p className="text-xs text-orange-600 dark:text-orange-400">
+                      {amounts.recoverable.toLocaleString()} sats — recoverable
+                      (batch expired)
+                    </p>
+                  </>
+                )}
+                {amounts.vtxoStatus === "spent" && (
+                  <p className="text-muted-foreground text-xs">
+                    {amounts.spent.toLocaleString()} sats — already spent
+                  </p>
+                )}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">Unknown</p>
+              <p className="text-muted-foreground text-xs">Unknown</p>
             )}
           </div>
 
           <div className="space-y-1">
             <p className="text-sm font-medium">Refund Locktime</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {refundLocktimeDate.toLocaleString()}
               <span
                 className={`ml-2 ${isLocktimePassed ? "text-green-600" : "text-orange-600"}`}
@@ -273,10 +281,10 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
         {!canRefund && amounts !== null && isLocktimePassed && (
           <Alert>
             <AlertDescription>
-              {amounts.spent > 0 && amounts.spendable === 0
+              {amounts.vtxoStatus === "spent"
                 ? "This VHTLC has already been refunded."
-                : amounts.spendable === 0
-                  ? "No spendable funds available for this swap."
+                : amounts.vtxoStatus === "not_funded"
+                  ? "No funds found at this VHTLC address."
                   : "This swap cannot be refunded at this time."}
             </AlertDescription>
           </Alert>
@@ -303,7 +311,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
             <Button
               onClick={handleRefund}
               disabled={isRefunding || !refundAddress.trim() || !canRefund}
-              className="w-full h-12 text-base font-semibold"
+              className="h-12 w-full text-base font-semibold"
             >
               {isRefunding ? (
                 <>
