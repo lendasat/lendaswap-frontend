@@ -1,7 +1,7 @@
 import type { ArkadeToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
@@ -54,48 +54,16 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
     fetchAmounts();
   }, [swapData, amounts]);
 
-  // Calculate if swap can be refunded (spendable or recoverable VTXOs after locktime)
+  // Calculate if swap can be refunded.
+  // With collaborative refund, no locktime wait is needed — the server cosigns
+  // immediately when the swap is in a safe state. The SDK handles the fallback
+  // to non-collab (locktime-based) refund if the server rejects.
   const canRefund = (() => {
     if (!swapData || amounts === null) return false;
-
-    const now = Math.floor(Date.now() / 1000);
-    const hasRefundableAmount =
-      amounts.spendable > 0 || amounts.recoverable > 0;
-    const isLocktimePassed = now >= swapData.vhtlc_refund_locktime;
-
-    return hasRefundableAmount && isLocktimePassed;
+    return amounts.spendable > 0 || amounts.recoverable > 0;
   })();
 
   const refundLocktimeDate = new Date(swapData.vhtlc_refund_locktime * 1000);
-
-  // Countdown timer state
-  const [now, setNow] = useState(Math.floor(Date.now() / 1000));
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(Math.floor(Date.now() / 1000));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const isLocktimePassed = now >= swapData.vhtlc_refund_locktime;
-
-  const timeRemaining = useMemo(() => {
-    if (isLocktimePassed) return null;
-
-    const secondsLeft = swapData.vhtlc_refund_locktime - now;
-    const hours = Math.floor(secondsLeft / 3600);
-    const minutes = Math.floor((secondsLeft % 3600) / 60);
-    const seconds = secondsLeft % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    } else {
-      return `${seconds}s`;
-    }
-  }, [now, swapData.vhtlc_refund_locktime, isLocktimePassed]);
 
   const handleRefund = async () => {
     if (!refundAddress.trim()) {
@@ -134,7 +102,15 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
     }
   };
 
-  const alreadyRefunded = amounts !== null && amounts.vtxoStatus === "spent";
+  // Only consider it "already refunded" if VTXOs are spent AND the swap
+  // status confirms it. A failed collab refund attempt can leave VTXOs in
+  // a spent state (submitTx succeeded but finalizeTx failed) without the
+  // swap actually being refunded.
+  const swapIsRefunded =
+    swapData.status === "clientrefunded" ||
+    swapData.status === "clientredeemedandclientrefunded";
+  const alreadyRefunded =
+    amounts !== null && amounts.vtxoStatus === "spent" && swapIsRefunded;
 
   const sourceSymbol = swapData.source_token.symbol;
   const targetSymbol = swapData.target_token.symbol;
@@ -162,7 +138,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
           </div>
         )}
 
-        {!alreadyRefunded && isLocktimePassed && (
+        {!alreadyRefunded && canRefund && (
           <div className="space-y-3 rounded-lg border border-green-500 bg-green-50 p-4 dark:bg-green-950/20">
             <div className="flex items-center gap-3">
               <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -171,27 +147,28 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
               </h3>
             </div>
             <p className="text-sm text-green-800 dark:text-green-200">
-              The refund locktime has passed. You can now refund your Bitcoin
-              from this swap.
+              You can refund your Bitcoin from this swap instantly.
             </p>
           </div>
         )}
-        {!alreadyRefunded && !isLocktimePassed && (
-          <div className="space-y-3 rounded-lg border border-orange-500 bg-orange-50 p-4 dark:bg-orange-950/20">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              <h3 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
-                Refund Locked
-              </h3>
+        {!alreadyRefunded &&
+          !canRefund &&
+          amounts !== null &&
+          amounts.vtxoStatus !== "spent" &&
+          amounts.vtxoStatus !== "not_funded" && (
+            <div className="space-y-3 rounded-lg border border-orange-500 bg-orange-50 p-4 dark:bg-orange-950/20">
+              <div className="flex items-center gap-3">
+                <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                <h3 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                  Refund Unavailable
+                </h3>
+              </div>
+              <p className="text-sm text-orange-800 dark:text-orange-200">
+                This swap cannot be refunded at this time. Please try again
+                later.
+              </p>
             </div>
-            <p className="text-sm text-orange-800 dark:text-orange-200">
-              Your funds are temporarily locked. Refund will be available in:
-            </p>
-            <div className="font-mono text-2xl font-bold text-orange-900 dark:text-orange-100">
-              {timeRemaining}
-            </div>
-          </div>
-        )}
+          )}
 
         {/* Swap Details */}
         <div className="space-y-4">
@@ -269,17 +246,12 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
             <p className="text-sm font-medium">Refund Locktime</p>
             <p className="text-muted-foreground text-xs">
               {refundLocktimeDate.toLocaleString()}
-              <span
-                className={`ml-2 ${isLocktimePassed ? "text-green-600" : "text-orange-600"}`}
-              >
-                ({isLocktimePassed ? "Passed" : "Not yet reached"})
-              </span>
             </p>
           </div>
         </div>
 
         {/* Refund not available warning */}
-        {!canRefund && amounts !== null && isLocktimePassed && (
+        {!canRefund && amounts !== null && (
           <Alert>
             <AlertDescription>
               {amounts.vtxoStatus === "spent"
