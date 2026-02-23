@@ -10,19 +10,6 @@ interface AmountInputProps {
   decimals: number | undefined;
   /** Whether the input is loading */
   isLoading?: boolean;
-  /** USD price per display unit (i.e. per sat for BTC, per 1 USDC for USDC) */
-  usdPerToken: number;
-  /** The token symbol (e.g., "USDC", "BTC") */
-  tokenSymbol: string | undefined;
-}
-
-/** Format a number as USD with 2 decimal places and thousands separators */
-function formatUsd(val: number | undefined): string {
-  if (val === undefined || val === 0) return "$0.00";
-  return `$${val.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 /** Format a number without scientific notation, preserving precision */
@@ -36,14 +23,11 @@ export function AmountInput({
   onChange,
   decimals,
   isLoading = false,
-  usdPerToken,
 }: AmountInputProps) {
   const [inputValue, setInputValue] = useState<string>("");
 
   const divisor = 10 ** (decimals ?? 0);
   const displayValue = value !== undefined ? value / divisor : undefined;
-  const usdValue =
-    displayValue !== undefined ? displayValue * usdPerToken : undefined;
 
   // Sync internal input string when external value changes (e.g. other side recalculated)
   useEffect(() => {
@@ -95,9 +79,6 @@ export function AmountInput({
         <div className="h-10 flex items-center">
           <Skeleton className="h-8 w-32" />
         </div>
-        <div className="text-sm text-muted-foreground mt-1 opacity-70">
-          <Skeleton className="h-4 w-20" />
-        </div>
       </div>
     );
   }
@@ -120,9 +101,6 @@ export function AmountInput({
         data-lpignore="true"
         autoComplete="off"
       />
-      <div className="text-sm font-sans text-muted-foreground mt-1 opacity-70">
-        {formatUsd(usdValue)}
-      </div>
     </div>
   );
 }
