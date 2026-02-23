@@ -6,10 +6,10 @@ import { Loader2, Zap } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
-import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import isValidSpeedWalletContext, {
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import {
   AddressDisplay,

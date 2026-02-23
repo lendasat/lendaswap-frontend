@@ -515,7 +515,13 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         })}
         {userRejected && (
           <div className="ml-7 rounded-lg border border-orange-500 bg-orange-50 p-2 text-xs text-orange-600 dark:bg-orange-950/20">
-            You rejected the {userRejected === "approve" ? "token approval" : userRejected === "fund" ? "funding transaction" : "request"} in your wallet. Click the button above to try again.
+            You rejected the{" "}
+            {userRejected === "approve"
+              ? "token approval"
+              : userRejected === "fund"
+                ? "funding transaction"
+                : "request"}{" "}
+            in your wallet. Click the button above to try again.
           </div>
         )}
       </div>

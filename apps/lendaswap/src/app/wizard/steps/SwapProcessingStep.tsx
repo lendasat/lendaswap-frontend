@@ -5,8 +5,8 @@ import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
-import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { api } from "../../api";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import {
   getBlockexplorerTxLink,
   getTokenIcon,

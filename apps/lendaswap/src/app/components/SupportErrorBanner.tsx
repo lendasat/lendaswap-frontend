@@ -7,11 +7,28 @@ const SUPPORT_EMAIL = "support@lendasat.com";
 
 /** Error messages the user can resolve themselves — no support needed. */
 const KNOWN_ERROR_PATTERNS: Array<{ pattern: RegExp; action: string }> = [
-  { pattern: /please enter a.*address/i, action: "Please enter a valid address above." },
-  { pattern: /please enter a valid/i, action: "Please check the address format and try again." },
-  { pattern: /locktime has not been reached/i, action: "The refund locktime hasn't passed yet. Please wait and try again later." },
-  { pattern: /payment details not available/i, action: "Payment details are still loading. Please wait a moment and try again." },
-  { pattern: /please refresh and try again/i, action: "Please refresh the page and try again." },
+  {
+    pattern: /please enter a.*address/i,
+    action: "Please enter a valid address above.",
+  },
+  {
+    pattern: /please enter a valid/i,
+    action: "Please check the address format and try again.",
+  },
+  {
+    pattern: /locktime has not been reached/i,
+    action:
+      "The refund locktime hasn't passed yet. Please wait and try again later.",
+  },
+  {
+    pattern: /payment details not available/i,
+    action:
+      "Payment details are still loading. Please wait a moment and try again.",
+  },
+  {
+    pattern: /please refresh and try again/i,
+    action: "Please refresh the page and try again.",
+  },
 ];
 
 function getKnownAction(error: string): string | null {
@@ -59,7 +76,10 @@ export function SupportErrorBanner({
 
   useEffect(() => {
     if (!knownAction) {
-      api.getUserIdXpub().then(setXpub).catch(() => {});
+      api
+        .getUserIdXpub()
+        .then(setXpub)
+        .catch(() => {});
     }
   }, [knownAction]);
 
