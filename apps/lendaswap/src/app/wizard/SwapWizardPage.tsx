@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAsyncRetry } from "react-use";
 import { api } from "../api";
+import { SupportErrorBanner } from "../components/SupportErrorBanner";
 import {
   DepositArkadeStep,
   DepositBitcoinStep,
@@ -281,14 +282,12 @@ export function SwapWizardPage() {
       {/* Error State */}
       {error && (
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-          <div className="space-y-4 px-6 py-6 bg-destructive/10">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-destructive" />
-              <h3 className="text-xl font-semibold text-destructive">
-                Failed to Load Swap
-              </h3>
-            </div>
-            <p className="text-muted-foreground">{JSON.stringify(error)}</p>
+          <div className="space-y-4 px-6 py-6">
+            <SupportErrorBanner
+              message="Failed to load swap"
+              error={String(error)}
+              swapId={swapId}
+            />
             <div className="flex gap-3">
               <button
                 type="button"

@@ -21,6 +21,7 @@ import {
 import { api, type QuoteResponse } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
+import { SupportErrorBanner } from "./components/SupportErrorBanner";
 import { AssetDropDown } from "./components/AssetDropDown";
 import {
   deriveSourceAmount,
@@ -784,9 +785,10 @@ export function HomePage() {
         </div>
         {/*Swap Error Display*/}
         {swapError && (
-          <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 text-sm">
-            {swapError}
-          </div>
+          <SupportErrorBanner
+            message="Failed to create swap"
+            error={swapError}
+          />
         )}
       </div>
     </div>

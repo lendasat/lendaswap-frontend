@@ -6,9 +6,10 @@ import type {
   EvmToBitcoinSwapResponse,
   EvmToLightningSwapResponse,
 } from "@lendasat/lendaswap-sdk-pure";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { SupportErrorBanner } from "../components/SupportErrorBanner";
 import { getSwapById, type StoredSwap } from "../db";
 import {
   RefundArkadeStep,
@@ -86,19 +87,12 @@ export function RefundPage() {
     return (
       <div className="container max-w-2xl mx-auto py-8 px-4">
         <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-          <div className="space-y-4 px-6 py-6 bg-destructive/10">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-destructive" />
-              <h3 className="text-xl font-semibold">Error Loading Swap</h3>
-            </div>
-            <p className="text-muted-foreground">
-              {error || "Could not load swap data"}
-            </p>
-            {swapId && (
-              <p className="text-xs text-muted-foreground font-mono">
-                Swap ID: {swapId}
-              </p>
-            )}
+          <div className="space-y-4 px-6 py-6">
+            <SupportErrorBanner
+              message="Error loading swap"
+              error={error || "Could not load swap data"}
+              swapId={swapId}
+            />
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
