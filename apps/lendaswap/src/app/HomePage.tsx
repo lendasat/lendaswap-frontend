@@ -2,6 +2,7 @@ import {
   isArkade,
   isBtc,
   isBtcOnchain,
+  isLightning,
   type TokenInfo,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -13,6 +14,10 @@ import { useAsync } from "react-use";
 import { useAccount, useSwitchChain } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
+import {
+  isLightningAddress,
+  resolveLightningAddress,
+} from "../utils/lightningAddress";
 import { api, type QuoteResponse } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
@@ -451,12 +456,19 @@ export function HomePage() {
         selectedTargetAmount = targetAmount;
       }
 
+      // Resolve Lightning address (user@domain) to BOLT11 invoice via LNURL-pay
+      let resolvedAddress = targetAddress;
+      if (isLightning(targetAsset) && isLightningAddress(targetAddress)) {
+        const amountSats = targetAmount ?? 0;
+        resolvedAddress = await resolveLightningAddress(targetAddress, amountSats);
+      }
+
       const swap = await api.createSwap({
         sourceAsset,
         targetAsset,
         sourceAmount: selectedSourceAmount,
         targetAmount: selectedTargetAmount,
-        targetAddress,
+        targetAddress: resolvedAddress,
         userAddress: connectedAddress,
       });
       navigate(`/swap/${swap.id}/wizard`);
