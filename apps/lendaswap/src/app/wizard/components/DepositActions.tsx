@@ -1,12 +1,14 @@
 import { Loader2, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "#/components/ui/button";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 
 interface DepositActionsProps {
   onSendFromWallet?: () => Promise<void>;
   onCancel: () => void;
   isSending?: boolean;
   sendError?: string | null;
+  swapId?: string;
   extraButtons?: ReactNode;
 }
 
@@ -15,15 +17,18 @@ export function DepositActions({
   onCancel,
   isSending = false,
   sendError,
+  swapId,
   extraButtons,
 }: DepositActionsProps) {
   return (
     <>
       {/* Send Error */}
       {sendError && (
-        <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
-          {sendError}
-        </div>
+        <SupportErrorBanner
+          message="Failed to send payment"
+          error={sendError}
+          swapId={swapId}
+        />
       )}
 
       {/* Action Buttons */}

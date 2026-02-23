@@ -21,6 +21,7 @@ import { createPublicClient, erc20Abi, http } from "viem";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { getViemChain } from "../../utils/tokenUtils";
 import { AmountRow, AmountSummary, DepositCard } from "../components";
 
@@ -503,11 +504,12 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           const step = steps[key];
           if (step.status !== "error" || !step.error) return null;
           return (
-            <div
-              key={`${key}-error`}
-              className="ml-7 rounded-lg border border-red-500 bg-red-50 p-2 text-xs text-red-600 dark:bg-red-950/20"
-            >
-              {step.error}
+            <div key={`${key}-error`} className="ml-7">
+              <SupportErrorBanner
+                message={`${key === "approve" ? "Token approval" : key === "fund" ? "Funding transaction" : "Transaction"} failed`}
+                error={step.error}
+                swapId={swapId}
+              />
             </div>
           );
         })}
