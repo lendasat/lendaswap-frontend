@@ -14,6 +14,7 @@ function GoldBar(props: SVGProps<SVGSVGElement>) {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
       {...props}
     >
       <path d="M8 6h8l3 12H5z" />
@@ -36,6 +37,7 @@ function SatoshiIcon(props: SVGProps<SVGSVGElement>) {
       stroke="currentColor"
       strokeWidth={2}
       strokeLinecap="round"
+      aria-hidden="true"
       {...props}
     >
       {/* Three parallel diagonal lines — official Bitcoin Design coordinates */}
@@ -75,19 +77,27 @@ const CATEGORY_ICON: Record<CurrencyCategory, IconComponent> = {
 };
 
 const ICON_CLASS = "h-6 w-6 md:h-8 md:w-8 text-muted-foreground/70 shrink-0";
-const SATS_ICON_CLASS = "h-7 w-7 md:h-9 md:w-9 text-muted-foreground/70 shrink-0";
+const SATS_ICON_CLASS =
+  "h-7 w-7 md:h-9 md:w-9 text-muted-foreground/70 shrink-0";
 
 // ── Exported component ───────────────────────────────────────────────
 
 export function CurrencyIcon({
   symbol,
   isSatsMode,
-}: { symbol: string | undefined; isSatsMode: boolean }) {
+}: {
+  symbol: string | undefined;
+  isSatsMode: boolean;
+}) {
   if (!symbol) return null;
   const category = SYMBOL_CATEGORY[symbol.toLowerCase()];
   if (!category) return null;
   const effectiveCategory =
     isSatsMode && category === "bitcoin" ? "sats" : category;
   const Icon = CATEGORY_ICON[effectiveCategory];
-  return <Icon className={effectiveCategory === "sats" ? SATS_ICON_CLASS : ICON_CLASS} />;
+  return (
+    <Icon
+      className={effectiveCategory === "sats" ? SATS_ICON_CLASS : ICON_CLASS}
+    />
+  );
 }
