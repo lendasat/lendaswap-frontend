@@ -5,6 +5,7 @@ import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { api } from "../../api";
 import {
   getBlockexplorerTxLink,
@@ -542,9 +543,11 @@ export function SwapProcessingStep({
                   )}
                   {claimError && (
                     <div className="space-y-2">
-                      <div className="bg-destructive/10 text-destructive rounded-lg p-2 text-xs">
-                        {claimError}
-                      </div>
+                      <SupportErrorBanner
+                        message="Claim failed"
+                        error={claimError}
+                        swapId={swapId}
+                      />
                       {retryCount >= maxRetries && (
                         <Button
                           onClick={handleManualRetry}
