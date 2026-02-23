@@ -441,7 +441,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           This swap has expired. Funding is no longer possible.
         </div>
       ) : timeRemaining ? (
-        <div className="rounded-lg border border-orange-500 bg-orange-50 p-3 text-sm text-orange-600 dark:bg-orange-950/20 flex items-center gap-2">
+        <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm text-muted-foreground flex items-center gap-2">
           <Clock className="h-4 w-4 shrink-0" />
           <span>
             Time remaining to fund:{" "}
