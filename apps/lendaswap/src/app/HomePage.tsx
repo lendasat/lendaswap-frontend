@@ -546,6 +546,7 @@ export function HomePage() {
               }}
               decimals={sourceAsset?.decimals}
               isLoading={isLoadingQuote && lastEditedField !== "sourceAsset"}
+              symbol={sourceAsset?.symbol}
             />
             <div className="shrink-0 pt-1">
               <AssetDropDown
@@ -612,6 +613,7 @@ export function HomePage() {
               }}
               decimals={targetAsset?.decimals ?? 8}
               isLoading={isLoadingQuote && lastEditedField !== "targetAsset"}
+              symbol={targetAsset?.symbol}
             />
             <div className="shrink-0 pt-1">
               <AssetDropDown
