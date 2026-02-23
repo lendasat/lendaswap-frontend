@@ -155,6 +155,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     fund: { status: "pending" },
   });
   const [isRunning, setIsRunning] = useState(false);
+  const [userRejected, setUserRejected] = useState<string | null>(null);
 
   // Open wallet connect dialog when landing on page if not connected
   useEffect(() => {
@@ -263,6 +264,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     }
 
     setIsRunning(true);
+    setUserRejected(null);
 
     const stepOrder: Array<"switchChain" | "approve" | "fund"> = [
       "switchChain",
@@ -369,15 +371,22 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       // Wizard polling will detect the status change and advance
     } catch (err) {
       console.error("Transaction error:", err);
+      const rawMsg = err instanceof Error ? err.message : "Transaction failed";
+      const isUserRejection =
+        /user rejected|user denied|rejected the request/i.test(rawMsg);
+
       // Mark the currently active step as errored
       const activeStep = stepOrder.find(
         (s) => steps[s]?.status === "active" || s === stepOrder[startIndex],
       );
       if (activeStep) {
         updateStep(activeStep, {
-          status: "error",
-          error: err instanceof Error ? err.message : "Transaction failed",
+          status: isUserRejection ? "pending" : "error",
+          error: isUserRejection ? undefined : rawMsg,
         });
+        if (isUserRejection) {
+          setUserRejected(activeStep);
+        }
       }
     } finally {
       setIsRunning(false);
@@ -502,6 +511,11 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
             </div>
           );
         })}
+        {userRejected && (
+          <div className="ml-7 rounded-lg border border-orange-500 bg-orange-50 p-2 text-xs text-orange-600 dark:bg-orange-950/20">
+            You rejected the {userRejected === "approve" ? "token approval" : userRejected === "fund" ? "funding transaction" : "request"} in your wallet. Click the button above to try again.
+          </div>
+        )}
       </div>
 
       {/* Wallet Connection Warning */}
