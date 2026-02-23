@@ -1,9 +1,25 @@
-import { Mail } from "lucide-react";
+import { AlertCircle, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
 import { api } from "../api";
 
 const SUPPORT_EMAIL = "support@lendasat.com";
+
+/** Error messages the user can resolve themselves — no support needed. */
+const KNOWN_ERROR_PATTERNS: Array<{ pattern: RegExp; action: string }> = [
+  { pattern: /please enter a.*address/i, action: "Please enter a valid address above." },
+  { pattern: /please enter a valid/i, action: "Please check the address format and try again." },
+  { pattern: /locktime has not been reached/i, action: "The refund locktime hasn't passed yet. Please wait and try again later." },
+  { pattern: /payment details not available/i, action: "Payment details are still loading. Please wait a moment and try again." },
+  { pattern: /please refresh and try again/i, action: "Please refresh the page and try again." },
+];
+
+function getKnownAction(error: string): string | null {
+  for (const { pattern, action } of KNOWN_ERROR_PATTERNS) {
+    if (pattern.test(error)) return action;
+  }
+  return null;
+}
 
 interface SupportErrorBannerProps {
   /** Short user-facing message (e.g. "Failed to create swap"). */
@@ -39,11 +55,25 @@ export function SupportErrorBanner({
   swapId,
 }: SupportErrorBannerProps) {
   const [xpub, setXpub] = useState<string>();
+  const knownAction = getKnownAction(error);
 
   useEffect(() => {
-    api.getUserIdXpub().then(setXpub).catch(() => {});
-  }, []);
+    if (!knownAction) {
+      api.getUserIdXpub().then(setXpub).catch(() => {});
+    }
+  }, [knownAction]);
 
+  // Known/actionable error — show instruction, no support button
+  if (knownAction) {
+    return (
+      <div className="rounded-xl border border-orange-500/30 bg-orange-50 p-3 flex items-center gap-3 dark:bg-orange-950/20">
+        <AlertCircle className="h-4 w-4 shrink-0 text-orange-600" />
+        <span className="text-sm text-orange-600">{knownAction}</span>
+      </div>
+    );
+  }
+
+  // Unknown error — show support button
   return (
     <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 flex items-center justify-between gap-3">
       <span className="text-sm font-medium">{message}</span>
