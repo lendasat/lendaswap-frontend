@@ -221,7 +221,7 @@ export default function App() {
                               path="/"
                               element={
                                 <Navigate
-                                  to="/lightning:btc/polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+                                  to="/lightning:BTC/polygon:USDC"
                                   replace
                                 />
                               }
