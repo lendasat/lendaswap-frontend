@@ -1,5 +1,65 @@
+import { Bitcoin, DollarSign } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "#/components/ui/skeleton";
+
+// ── Currency icon mapping ────────────────────────────────────────────
+// Maps token symbols to their visual prefix icon. Grouped by category
+// so new tokens can be added in one place.
+
+/** Gold bar icon – stroke-based SVG matching the Lucide icon style. */
+function GoldBar(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      {/* Trapezoid gold bar shape */}
+      <path d="M8 6h8l3 12H5z" />
+      {/* Top shine line */}
+      <path d="M10 6l1 5" />
+    </svg>
+  );
+}
+
+type CurrencyCategory = "stablecoin" | "bitcoin" | "gold";
+
+const SYMBOL_CATEGORY: Record<string, CurrencyCategory> = {
+  usdc: "stablecoin",
+  usdt: "stablecoin",
+  usdt0: "stablecoin",
+  dai: "stablecoin",
+  busd: "stablecoin",
+  btc: "bitcoin",
+  wbtc: "bitcoin",
+  xaut: "gold",
+};
+
+type IconComponent = ComponentType<{ className?: string }>;
+
+const CATEGORY_ICON: Record<CurrencyCategory, IconComponent> = {
+  stablecoin: DollarSign,
+  bitcoin: Bitcoin,
+  gold: GoldBar,
+};
+
+const ICON_CLASS = "h-5 w-5 md:h-7 md:w-7 text-muted-foreground/70 shrink-0";
+
+function CurrencyIcon({ symbol }: { symbol: string | undefined }) {
+  if (!symbol) return null;
+  const category = SYMBOL_CATEGORY[symbol.toLowerCase()];
+  if (!category) return null;
+  const Icon = CATEGORY_ICON[category];
+  return <Icon className={ICON_CLASS} />;
+}
+
+// ── AmountInput ──────────────────────────────────────────────────────
 
 interface AmountInputProps {
   /** Current amount in the token's smallest unit (e.g. sats for BTC, 10^-6 for USDC) */
@@ -10,6 +70,8 @@ interface AmountInputProps {
   decimals: number | undefined;
   /** Whether the input is loading */
   isLoading?: boolean;
+  /** Token symbol used to determine the currency icon (e.g. "BTC", "USDC", "XAUt") */
+  symbol?: string;
 }
 
 /** Format a number without scientific notation, preserving precision */
@@ -23,6 +85,7 @@ export function AmountInput({
   onChange,
   decimals,
   isLoading = false,
+  symbol,
 }: AmountInputProps) {
   const [inputValue, setInputValue] = useState<string>("");
 
@@ -84,7 +147,8 @@ export function AmountInput({
   }
 
   return (
-    <div className="flex-1 min-w-0 overflow-hidden">
+    <div className="flex-1 min-w-0 overflow-hidden flex items-center gap-1">
+      <CurrencyIcon symbol={symbol} />
       <input
         type="text"
         inputMode="decimal"
