@@ -120,7 +120,9 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     const rpcUrl =
       import.meta.env.VITE_RPC_OVERRIDE_CHAIN_ID === String(chain.id)
         ? import.meta.env.VITE_RPC_OVERRIDE_URL
-        : undefined;
+        : chain.id === 137
+          ? "https://polygon.drpc.org"
+          : undefined;
     return createPublicClient({ chain, transport: http(rpcUrl) });
   }, [chain]);
 
