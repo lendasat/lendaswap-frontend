@@ -1,7 +1,5 @@
 import {
   type Chain,
-  isBtc,
-  type TokenId,
   type TokenInfo,
   toChain,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -198,16 +196,16 @@ export function getBlockexplorerAddressLink(
 // URL token format: "chain:token_id" (e.g., "lightning:btc", "polygon:usdc_pol")
 // ---------------------------------------------------------------------------
 
-/** Parsed representation of a URL token string like "lightning:btc" or "polygon:usdc_pol". */
+/** Parsed representation of a URL token string like "lightning:BTC" or "polygon:USDC". */
 export interface UrlToken {
-  /** Chain in canonical PascalCase (e.g., "Lightning", "Polygon"). */
+  /** Chain in canonical form (e.g., "Lightning", "137"). */
   chain: Chain;
-  /** SDK TokenId (e.g., "btc", "usdc_pol"). */
-  tokenId: TokenId;
+  /** Token symbol (e.g., "BTC", "USDC"). Unique per chain. */
+  symbol: string;
 }
 
 /**
- * Parse a URL token string like "lightning:btc" or "polygon:usdc_pol" into a {@link UrlToken}.
+ * Parse a URL token string like "lightning:BTC" or "polygon:USDC" into a {@link UrlToken}.
  *
  * Returns `undefined` if the string is not a valid URL token.
  */
@@ -216,24 +214,21 @@ export function parseUrlToken(raw: string): UrlToken | undefined {
   if (idx === -1) return undefined;
 
   const chainStr = raw.substring(0, idx).toLowerCase();
-  const tokenId = raw.substring(idx + 1);
+  const symbol = raw.substring(idx + 1);
   const chain = toChain(chainStr);
 
-  if (!tokenId) return undefined;
+  if (!symbol) return undefined;
 
-  return { chain, tokenId };
+  return { chain, symbol };
 }
 
 /**
- * Format a TokenInfo into URL token string format "chain:token_id".
+ * Format a TokenInfo into URL token string format "chain:symbol".
  *
- * Examples: "lightning:btc", "polygon:usdc_pol", "ethereum:xaut_eth"
+ * Examples: "lightning:BTC", "polygon:USDC", "ethereum:XAUt"
  *
  * Round-trips correctly with {@link parseUrlToken}.
  */
 export function formatTokenUrl(token: TokenInfo): string {
-  if (isBtc(token)) {
-    return `${token.chain.toLowerCase()}:btc`;
-  }
-  return `${token.chain.toLowerCase()}:${token.token_id}`;
+  return `${token.chain.toLowerCase()}:${token.symbol}`;
 }

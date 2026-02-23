@@ -45,9 +45,8 @@ function buildQueryParams(
   return qs ? `?${qs}` : "";
 }
 
-const DEFAULT_USDC_POLYGON =
-  "polygon:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
-const DEFAULT_BTC_LIGHTNING = "lightning:btc";
+const DEFAULT_USDC_POLYGON = "polygon:USDC";
+const DEFAULT_BTC_LIGHTNING = "lightning:BTC";
 
 /** Check if a source→target pair is a valid swap direction */
 function isValidPair(source: TokenInfo, target: TokenInfo): boolean {
@@ -183,12 +182,12 @@ export function HomePage() {
   const sourceAsset = allAvailableTokens.find(
     (t) =>
       t.chain.toLowerCase() === urlSourceToken?.chain.toLowerCase() &&
-      t.token_id.toLowerCase() === urlSourceToken?.tokenId.toLowerCase(),
+      t.symbol.toLowerCase() === urlSourceToken?.symbol.toLowerCase(),
   );
   const targetAsset = allAvailableTokens.find(
     (t) =>
       t.chain.toLowerCase() === urlTargetToken?.chain.toLowerCase() &&
-      t.token_id.toLowerCase() === urlTargetToken?.tokenId.toLowerCase(),
+      t.symbol.toLowerCase() === urlTargetToken?.symbol.toLowerCase(),
   );
 
   // Auto-fill from connected wallet only when target is an EVM token
