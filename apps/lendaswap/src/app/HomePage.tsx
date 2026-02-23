@@ -215,6 +215,22 @@ export function HomePage() {
     sourceAsset,
   );
 
+  // Fetch USD prices once tokens are loaded (dep is the raw API result for
+  // referential stability — it only changes once: undefined → data)
+  const { value: usdPrices } = useAsync(async () => {
+    if (!maybeAvailableTokens) return new Map<string, number>();
+    const tokens = [
+      ...maybeAvailableTokens.btc_tokens,
+      ...maybeAvailableTokens.evm_tokens,
+    ];
+    return api.getTokenUsdPrices(tokens);
+  }, [maybeAvailableTokens]);
+
+  const getUsdPrice = (token: TokenInfo) =>
+    usdPrices?.get(`${token.chain}:${token.symbol}`) ?? 0;
+  const sourceUsdPerToken = sourceAsset ? getUsdPrice(sourceAsset) : 0;
+  const targetUsdPerToken = targetAsset ? getUsdPrice(targetAsset) : 0;
+
   // Fetch a baseline quote whenever the asset pair changes (1000 source units)
   const [quote, setQuote] = useState<QuoteResponse | undefined>();
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
@@ -516,10 +532,8 @@ export function HomePage() {
                 setSourceAmountState(value);
               }}
               decimals={sourceAsset?.decimals}
-              showCurrencyPrefix={true}
               isLoading={isLoadingQuote && lastEditedField !== "sourceAsset"}
-              // fixme: implement USD value
-              usdPerToken={0}
+              usdPerToken={sourceUsdPerToken}
               tokenSymbol={sourceAsset?.symbol}
             />
             <div className="shrink-0 pt-1">
@@ -586,10 +600,8 @@ export function HomePage() {
                 setTargetAmountState(value);
               }}
               decimals={targetAsset?.decimals ?? 8}
-              showCurrencyPrefix={true}
               isLoading={isLoadingQuote && lastEditedField !== "targetAsset"}
-              // fixme: implement USD value and loading state
-              usdPerToken={0}
+              usdPerToken={targetUsdPerToken}
               tokenSymbol={targetAsset?.symbol}
             />
             <div className="shrink-0 pt-1">

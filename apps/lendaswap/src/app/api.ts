@@ -310,28 +310,17 @@ export const api = {
   },
 
   /**
-   * Fetch USD prices for all supported tokens from CoinGecko.
-   * Returns a Map of tokenId -> USD price.
+   * Fetch USD prices for the given tokens from CoinGecko.
+   * Returns a Map keyed by "chain:symbol" (e.g. "Lightning:BTC", "137:USDC").
    */
-  async getTokenUsdPrices(): Promise<Map<string, number>> {
-    const tokenIds: TokenId[] = [
-      "btc_lightning",
-      "btc_arkade",
-      "btc_onchain",
-      "usdc_pol",
-      "usdt0_pol",
-      "usdc_eth",
-      "usdt_eth",
-      "xaut_eth",
-      "wbtc_pol",
-      "wbtc_eth",
-    ];
-
-    const results = await getUsdPrices(tokenIds);
+  async getTokenUsdPrices(
+    tokens: TokenInfo[],
+  ): Promise<Map<string, number>> {
+    const results = await getUsdPrices(tokens);
     const priceMap = new Map<string, number>();
-    for (const result of results) {
-      if (result.usdPrice !== null) {
-        priceMap.set(result.tokenId, result.usdPrice);
+    for (const { token, usdPrice } of results) {
+      if (usdPrice !== null) {
+        priceMap.set(`${token.chain}:${token.symbol}`, usdPrice);
       }
     }
     return priceMap;
