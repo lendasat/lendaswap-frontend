@@ -5,7 +5,6 @@ import {
   type ClaimResult,
   type CoordinatorFundingCallData,
   type GetSwapResponse,
-  getUsdPrices,
   IdbSwapStorage,
   IdbWalletStorage,
   type TokenInfo as PureTokenInfo,
@@ -307,22 +306,5 @@ export const api = {
   async deleteSwap(id: string): Promise<void> {
     const client = await getClients();
     await client.deleteSwap(id);
-  },
-
-  /**
-   * Fetch USD prices for the given tokens from CoinGecko.
-   * Returns a Map keyed by "chain:symbol" (e.g. "Lightning:BTC", "137:USDC").
-   */
-  async getTokenUsdPrices(
-    tokens: TokenInfo[],
-  ): Promise<Map<string, number>> {
-    const results = await getUsdPrices(tokens);
-    const priceMap = new Map<string, number>();
-    for (const { token, usdPrice } of results) {
-      if (usdPrice !== null) {
-        priceMap.set(`${token.chain}:${token.symbol}`, usdPrice);
-      }
-    }
-    return priceMap;
   },
 };
