@@ -7,6 +7,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { api, type VhtlcAmounts } from "../../api";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import { DepositCard } from "../components";
 
@@ -327,9 +328,11 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
 
         {/* Error Display */}
         {refundError && (
-          <Alert variant="destructive">
-            <AlertDescription>{refundError}</AlertDescription>
-          </Alert>
+          <SupportErrorBanner
+            message="Refund failed"
+            error={refundError}
+            swapId={swapData.id}
+          />
         )}
 
         {/* Success Display */}

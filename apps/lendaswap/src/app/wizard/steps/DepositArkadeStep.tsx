@@ -80,6 +80,7 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
         onCancel={() => navigate("/")}
         isSending={isSending}
         sendError={sendError}
+        swapId={swapData.id}
       />
     </DepositCard>
   );

@@ -6,6 +6,7 @@ import { Loader2, Zap } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import isValidSpeedWalletContext, {
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
@@ -101,9 +102,11 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
         </AmountSummary>
 
         {sendError && (
-          <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
-            {sendError}
-          </div>
+          <SupportErrorBanner
+            message="Failed to send payment"
+            error={sendError}
+            swapId={swapData.id}
+          />
         )}
 
         <div className="flex flex-col gap-3">
@@ -169,6 +172,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
         onCancel={() => navigate("/")}
         isSending={isSending}
         sendError={sendError}
+        swapId={swapData.id}
       />
     </DepositCard>
   );

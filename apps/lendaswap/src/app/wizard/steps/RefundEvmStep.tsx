@@ -12,6 +12,7 @@ import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";
+import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { getViemChain } from "../../utils/tokenUtils";
 import { DepositCard } from "../components";
 
@@ -328,9 +329,11 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
 
         {/* Error Display */}
         {refundError && (
-          <Alert variant="destructive">
-            <AlertDescription>{refundError}</AlertDescription>
-          </Alert>
+          <SupportErrorBanner
+            message="Refund failed"
+            error={refundError}
+            swapId={swapId}
+          />
         )}
 
         {/* Success Display */}
