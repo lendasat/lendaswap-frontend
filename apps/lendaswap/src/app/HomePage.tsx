@@ -190,23 +190,43 @@ export function HomePage() {
       t.symbol.toLowerCase() === urlTargetToken?.symbol.toLowerCase(),
   );
 
-  // Auto-fill from connected wallet only when target is an EVM token
+  // ── Target address auto-fill / clear ─────────────────────────────────
+  // When the target token type changes (EVM ↔ BTC), clear the address so
+  // an EVM address doesn't linger in a BTC field and vice-versa.
+  // When switching to an EVM target, auto-fill from the connected wallet.
+
   const isEvmTarget = targetAsset ? isEvmToken(targetAsset.chain) : false;
+  const targetChainKey = targetAsset?.chain;
+
   useEffect(() => {
+    if (!targetChainKey) return;
+
+    if (isEvmTarget) {
+      // Switching to an EVM target — auto-fill wallet address
+      const maybeWeb3Address = connectedAddress?.toString();
+      if (maybeWeb3Address && isWeb3WalletConnected) {
+        setTargetAddress(maybeWeb3Address);
+      } else {
+        setTargetAddress("");
+      }
+    } else {
+      // Switching to a BTC target — clear any stale EVM address
+      setTargetAddress("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetChainKey]);
+
+  // Also react to wallet connect/disconnect while target is EVM
+  useEffect(() => {
+    if (!isEvmTarget) return;
     const maybeWeb3Address = connectedAddress?.toString();
-    if (
-      maybeWeb3Address &&
-      isWeb3WalletConnected &&
-      isEvmTarget &&
-      !targetAddress
-    ) {
+    if (maybeWeb3Address && isWeb3WalletConnected && !targetAddress) {
       setTargetAddress(maybeWeb3Address);
     } else if (!isWeb3WalletConnected && targetAddress === connectedAddress) {
       setTargetAddress("");
     }
-    // Note: targetAddress intentionally excluded to avoid re-filling after user clears it
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectedAddress, isWeb3WalletConnected, isEvmTarget, targetAddress]);
+  }, [connectedAddress, isWeb3WalletConnected]);
 
   const availableTargetTokens = getAvailableTargetAssets(
     maybeAvailableTokens?.btc_tokens || [],
