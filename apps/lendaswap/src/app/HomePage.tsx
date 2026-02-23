@@ -203,6 +203,7 @@ export function HomePage() {
   const isEvmTarget = targetAsset ? isEvmToken(targetAsset.chain) : false;
   const targetChainKey = targetAsset?.chain;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only re-run when target chain changes, not on every dep change
   useEffect(() => {
     if (!targetChainKey) return;
 
@@ -218,10 +219,10 @@ export function HomePage() {
       // Switching to a BTC target — clear any stale EVM address
       setTargetAddress("");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetChainKey]);
 
   // Also react to wallet connect/disconnect while target is EVM
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only re-run on wallet connect/disconnect events
   useEffect(() => {
     if (!isEvmTarget) return;
     const maybeWeb3Address = connectedAddress?.toString();
@@ -230,7 +231,6 @@ export function HomePage() {
     } else if (!isWeb3WalletConnected && targetAddress === connectedAddress) {
       setTargetAddress("");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectedAddress, isWeb3WalletConnected]);
 
   const availableTargetTokens = getAvailableTargetAssets(
@@ -460,7 +460,10 @@ export function HomePage() {
       let resolvedAddress = targetAddress;
       if (isLightning(targetAsset) && isLightningAddress(targetAddress)) {
         const amountSats = targetAmount ?? 0;
-        resolvedAddress = await resolveLightningAddress(targetAddress, amountSats);
+        resolvedAddress = await resolveLightningAddress(
+          targetAddress,
+          amountSats,
+        );
       }
 
       const swap = await api.createSwap({
