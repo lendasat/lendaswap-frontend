@@ -7,7 +7,7 @@ import {
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { ArrowDown, ChevronDown, Loader } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAsync } from "react-use";
 import { useAccount, useSwitchChain } from "wagmi";
@@ -103,7 +103,7 @@ export function HomePage() {
     chain: web3WalletConnectedChain,
   } = useAccount();
 
-  const { switchChain } = useSwitchChain();
+  const { switchChainAsync } = useSwitchChain();
   const { setOpen: openConnectModal } = useModal();
   const { arkAddress, isEmbedded } = useWalletBridge();
 
@@ -373,7 +373,11 @@ export function HomePage() {
 
   const isInitialLoading = tokensLoading;
 
-  // The required EVM chain is whichever side (source or target) is an EVM token
+  // ── EVM chain switching ──────────────────────────────────────────────
+  // Determine which EVM chain the current asset pair requires, then
+  // auto-switch the wallet. If the switch fails (user rejects, wallet
+  // doesn't support it, etc.) we surface a manual fallback button.
+
   const requiredEvmChain =
     sourceAsset && isEvmToken(sourceAsset.chain)
       ? sourceAsset.chain
@@ -381,10 +385,36 @@ export function HomePage() {
         ? targetAsset.chain
         : undefined;
 
+  const requiredChainId = requiredEvmChain
+    ? Number(requiredEvmChain)
+    : undefined;
+
   const isWrongChain =
-    requiredEvmChain !== undefined &&
+    requiredChainId !== undefined &&
     web3WalletConnectedChain !== undefined &&
-    requiredEvmChain !== web3WalletConnectedChain.id.toString();
+    web3WalletConnectedChain.id !== requiredChainId;
+
+  const [chainSwitchFailed, setChainSwitchFailed] = useState(false);
+
+  const requestChainSwitch = useCallback(() => {
+    if (!requiredChainId || !switchChainAsync) return;
+    setChainSwitchFailed(false);
+    switchChainAsync({ chainId: requiredChainId }).catch(() =>
+      setChainSwitchFailed(true),
+    );
+  }, [requiredChainId, switchChainAsync]);
+
+  // Auto-switch when the required chain changes
+  useEffect(() => {
+    if (isWrongChain) requestChainSwitch();
+  }, [isWrongChain, requestChainSwitch]);
+
+  // Clear failure state once the wallet is on the correct chain
+  useEffect(() => {
+    if (!isWrongChain) setChainSwitchFailed(false);
+  }, [isWrongChain]);
+
+  const requiredChainName = requiredEvmChain && toChainName(requiredEvmChain);
 
   const createSwap = async () => {
     if (!sourceAsset || !targetAsset) {
@@ -418,7 +448,6 @@ export function HomePage() {
     }
   };
 
-  const requiredChainName = requiredEvmChain && toChainName(requiredEvmChain);
   const isWeb3WalletNeeded = sourceAsset && isEvmToken(sourceAsset.chain);
   const isConnectionStillNeeded = isWeb3WalletNeeded && !isWeb3WalletConnected;
 
@@ -690,12 +719,14 @@ export function HomePage() {
             >
               Connect Wallet
             </Button>
-          ) : isWrongChain && requiredEvmChain ? (
-            <Button
-              onClick={() => switchChain({ chainId: Number(requiredEvmChain) })}
-              className="w-full h-12"
-            >
+          ) : isWrongChain && chainSwitchFailed ? (
+            <Button onClick={requestChainSwitch} className="w-full h-12">
               Switch to {requiredChainName}
+            </Button>
+          ) : isWrongChain ? (
+            <Button disabled className="w-full h-12">
+              <Loader className="animate-spin h-4 w-4" />
+              Switching Network...
             </Button>
           ) : (
             <Button
