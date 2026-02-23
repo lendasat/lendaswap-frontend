@@ -28,10 +28,7 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
     10 ** swapData.target_token.decimals
   ).toFixed(swapData.target_token.decimals);
 
-  // TODO: Re-enable BIP21 once Arkade wallet supports it.
-  // Arkade wallet doesn't parse BIP21 URIs yet, so we use the plain address.
-  // const bip21Url = `bitcoin:?arkade=${arkadeAddress}&amount=${(swapData.source_amount / 100_000_000).toFixed(8)}`;
-  const qrValue = arkadeAddress;
+  const qrValue = `bitcoin:?ark=${arkadeAddress}&amount=${(swapData.source_amount / 100_000_000).toFixed(8)}`;
 
   const handleSendFromWallet = async () => {
     if (!client || !arkadeAddress) return;
