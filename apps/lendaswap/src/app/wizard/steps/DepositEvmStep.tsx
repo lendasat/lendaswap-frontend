@@ -3,6 +3,7 @@ import {
   type EvmToBitcoinSwapResponse,
   type EvmToLightningSwapResponse,
   isArkade,
+  isBtcOnchain,
   isLightning,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -127,8 +128,11 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     return createPublicClient({ chain, transport: http(rpcUrl) });
   }, [chain]);
 
-  // Expiry countdown
-  const refundLocktime = swapData.evm_refund_locktime ?? 0;
+  // Expiry countdown — field name depends on swap type
+  const refundLocktime = isBtcOnchain(swapData.target_token)
+    ? ((swapData as EvmToBitcoinSwapResponse).btc_refund_locktime ?? 0)
+    : ((swapData as EvmToArkadeSwapResponse | EvmToLightningSwapResponse)
+        .vhtlc_refund_locktime ?? 0);
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   useEffect(() => {
     if (!refundLocktime) return;
