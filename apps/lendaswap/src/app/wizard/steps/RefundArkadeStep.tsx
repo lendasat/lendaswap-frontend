@@ -102,15 +102,7 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
     }
   };
 
-  // Only consider it "already refunded" if VTXOs are spent AND the swap
-  // status confirms it. A failed collab refund attempt can leave VTXOs in
-  // a spent state (submitTx succeeded but finalizeTx failed) without the
-  // swap actually being refunded.
-  const swapIsRefunded =
-    swapData.status === "clientrefunded" ||
-    swapData.status === "clientredeemedandclientrefunded";
-  const alreadyRefunded =
-    amounts !== null && amounts.vtxoStatus === "spent" && swapIsRefunded;
+  const alreadyRefunded = amounts !== null && amounts.vtxoStatus === "spent";
 
   const sourceSymbol = swapData.source_token.symbol;
   const targetSymbol = swapData.target_token.symbol;
