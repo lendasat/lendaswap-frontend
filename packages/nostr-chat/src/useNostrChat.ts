@@ -71,7 +71,7 @@ export function useNostrChat(agents: AgentConfig[]) {
     saveMessages(messages);
   }, [messages]);
 
-  // Fetch agent profiles (kind:0 metadata)
+  // Fetch agent profiles (kind:0 metadata) with retry for missing avatars
   useEffect(() => {
     if (
       !ndk ||
@@ -82,40 +82,51 @@ export function useNostrChat(agents: AgentConfig[]) {
       return;
     profileFetched.current = true;
 
-    log("Fetching agent profiles for:", agentPubkeys);
+    let cancelled = false;
 
-    const filter = { kinds: [0], authors: agentPubkeys };
-    const sub = ndk.subscribe(filter, { closeOnEose: true });
+    async function fetchProfiles(authors: string[], attempt: number) {
+      log(`Fetching agent profiles (attempt ${attempt}) for:`, authors);
 
-    sub.on("event", (event: NDKEvent) => {
-      try {
-        const metadata = JSON.parse(event.content);
-        const pubkey = event.pubkey;
-        const config = agentConfigByPubkey.get(pubkey);
+      const events = await ndk!.fetchEvents({
+        kinds: [0],
+        authors,
+      });
 
-        log(
-          "Agent profile:",
-          pubkey.substring(0, 16) + "...",
-          metadata.name,
-          metadata.picture ? "(has avatar)" : "(no avatar)",
-        );
+      if (cancelled) return;
 
-        setAgentProfiles((prev) => {
-          const next = new Map(prev);
-          next.set(pubkey, {
-            pubkeyHex: pubkey,
-            // Consumer-provided overrides take priority over kind:0 metadata
-            name: config?.name || metadata.name || metadata.display_name,
-            picture: config?.picture || metadata.picture,
+      const resolved = new Set<string>();
+
+      for (const event of events) {
+        try {
+          const metadata = JSON.parse(event.content);
+          const pubkey = event.pubkey;
+          const config = agentConfigByPubkey.get(pubkey);
+
+          log(
+            "Agent profile:",
+            pubkey.substring(0, 16) + "...",
+            metadata.name,
+            metadata.picture ? "(has avatar)" : "(no avatar)",
+          );
+
+          if (metadata.picture || metadata.name) {
+            resolved.add(pubkey);
+          }
+
+          setAgentProfiles((prev) => {
+            const next = new Map(prev);
+            next.set(pubkey, {
+              pubkeyHex: pubkey,
+              name: config?.name || metadata.name || metadata.display_name,
+              picture: config?.picture || metadata.picture,
+            });
+            return next;
           });
-          return next;
-        });
-      } catch (err) {
-        logError("Failed to parse agent profile:", err);
+        } catch (err) {
+          logError("Failed to parse agent profile:", err);
+        }
       }
-    });
 
-    sub.on("eose", () => {
       // Ensure all agents have a profile entry (even without kind:0 metadata)
       setAgentProfiles((prev) => {
         const next = new Map(prev);
@@ -130,7 +141,24 @@ export function useNostrChat(agents: AgentConfig[]) {
         }
         return next;
       });
-    });
+
+      // Retry once for agents that came back without a picture
+      if (attempt < 2) {
+        const missing = authors.filter((pk) => !resolved.has(pk));
+        if (missing.length > 0 && !cancelled) {
+          log("Retrying profile fetch for", missing.length, "agents without avatar");
+          setTimeout(() => {
+            if (!cancelled) fetchProfiles(missing, attempt + 1);
+          }, 3000);
+        }
+      }
+    }
+
+    fetchProfiles(agentPubkeys, 1);
+
+    return () => {
+      cancelled = true;
+    };
   }, [ndk, connectionStatus, agentPubkeys, agentConfigByPubkey]);
 
   // Add message with dedup
