@@ -81,7 +81,7 @@ export function NostrProvider({
       const ndk = new NDK({
         explicitRelayUrls: relays,
         signer,
-        aiGuardrails: true,
+        aiGuardrails: { skip: new Set(["ndk-no-cache"]) },
       });
 
       const ndkUser = await signer.user();
