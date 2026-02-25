@@ -1,10 +1,10 @@
 import type { NDKEvent } from "@nostr-dev-kit/ndk";
 import { nip19 } from "nostr-tools";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { EVENT_KINDS, STORAGE_KEYS, SUPPORT_NPUB } from "./constants";
-import { sendNip17DM, unwrapGiftWrap } from "./nip17";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { EVENT_KINDS, STORAGE_KEYS } from "./constants";
+import { sendNip17GroupDM, unwrapGiftWrap } from "./nip17";
 import { useNostr } from "./NostrProvider";
-import type { ChatMessage, SupportProfile } from "./types";
+import type { AgentConfig, AgentProfile, ChatMessage } from "./types";
 
 const log = (...args: unknown[]) => console.log("[nostr-chat]", ...args);
 const logError = (...args: unknown[]) => console.error("[nostr-chat]", ...args);
@@ -25,22 +25,35 @@ function saveMessages(messages: ChatMessage[]) {
   localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
 }
 
-function decodeSupportPubkey(): string {
-  const decoded = nip19.decode(SUPPORT_NPUB);
-  const pubkey = decoded.data as string;
-  log("Support pubkey (hex):", pubkey);
-  return pubkey;
-}
-
-export function useNostrChat() {
+export function useNostrChat(agents: AgentConfig[]) {
   const { ndk, user, connectionStatus, connect } = useNostr();
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [isSending, setIsSending] = useState(false);
-  const [supportProfile, setSupportProfile] = useState<SupportProfile | null>(
-    null,
+  const [agentProfiles, setAgentProfiles] = useState<Map<string, AgentProfile>>(
+    new Map(),
   );
   const subRef = useRef<{ stop: () => void } | null>(null);
   const profileFetched = useRef(false);
+
+  // Decode all agent npubs to hex pubkeys
+  const agentPubkeys = useMemo(() => {
+    return agents.map((agent) => {
+      const decoded = nip19.decode(agent.npub);
+      return decoded.data as string;
+    });
+  }, [agents]);
+
+  // Set of agent pubkeys for fast lookup
+  const agentPubkeySet = useMemo(() => new Set(agentPubkeys), [agentPubkeys]);
+
+  // Map from hex pubkey to AgentConfig (for consumer overrides)
+  const agentConfigByPubkey = useMemo(() => {
+    const map = new Map<string, AgentConfig>();
+    agents.forEach((agent, i) => {
+      map.set(agentPubkeys[i], agent);
+    });
+    return map;
+  }, [agents, agentPubkeys]);
 
   log(
     "useNostrChat render - connectionStatus:",
@@ -49,6 +62,8 @@ export function useNostrChat() {
     !!ndk,
     "user:",
     !!user,
+    "agents:",
+    agents.length,
   );
 
   // Persist messages to localStorage
@@ -56,36 +71,67 @@ export function useNostrChat() {
     saveMessages(messages);
   }, [messages]);
 
-  // Fetch support agent profile (kind:0 metadata)
+  // Fetch agent profiles (kind:0 metadata)
   useEffect(() => {
-    if (!ndk || connectionStatus !== "connected" || profileFetched.current)
+    if (
+      !ndk ||
+      connectionStatus !== "connected" ||
+      profileFetched.current ||
+      agentPubkeys.length === 0
+    )
       return;
     profileFetched.current = true;
 
-    const supportPubkey = decodeSupportPubkey();
-    log("Fetching support agent profile for:", supportPubkey);
+    log("Fetching agent profiles for:", agentPubkeys);
 
-    const filter = { kinds: [0], authors: [supportPubkey] };
+    const filter = { kinds: [0], authors: agentPubkeys };
     const sub = ndk.subscribe(filter, { closeOnEose: true });
 
     sub.on("event", (event: NDKEvent) => {
       try {
         const metadata = JSON.parse(event.content);
+        const pubkey = event.pubkey;
+        const config = agentConfigByPubkey.get(pubkey);
+
         log(
-          "Support agent profile:",
+          "Agent profile:",
+          pubkey.substring(0, 16) + "...",
           metadata.name,
           metadata.picture ? "(has avatar)" : "(no avatar)",
         );
-        setSupportProfile({
-          name: metadata.name || metadata.display_name,
-          picture: metadata.picture,
-          about: metadata.about,
+
+        setAgentProfiles((prev) => {
+          const next = new Map(prev);
+          next.set(pubkey, {
+            pubkeyHex: pubkey,
+            // Consumer-provided overrides take priority over kind:0 metadata
+            name: config?.name || metadata.name || metadata.display_name,
+            picture: config?.picture || metadata.picture,
+          });
+          return next;
         });
       } catch (err) {
-        logError("Failed to parse support profile:", err);
+        logError("Failed to parse agent profile:", err);
       }
     });
-  }, [ndk, connectionStatus]);
+
+    sub.on("eose", () => {
+      // Ensure all agents have a profile entry (even without kind:0 metadata)
+      setAgentProfiles((prev) => {
+        const next = new Map(prev);
+        for (const [pubkey, config] of agentConfigByPubkey) {
+          if (!next.has(pubkey)) {
+            next.set(pubkey, {
+              pubkeyHex: pubkey,
+              name: config.name,
+              picture: config.picture,
+            });
+          }
+        }
+        return next;
+      });
+    });
+  }, [ndk, connectionStatus, agentPubkeys, agentConfigByPubkey]);
 
   // Add message with dedup
   const addMessage = useCallback((msg: ChatMessage) => {
@@ -113,12 +159,11 @@ export function useNostrChat() {
       return;
     }
 
-    const supportPubkey = decodeSupportPubkey();
     log("Setting up NIP-17 gift wrap subscription for pubkey:", user.pubkey);
     let cancelled = false;
 
     (async () => {
-      const unwrap = await unwrapGiftWrap(ndk, supportPubkey);
+      const unwrap = await unwrapGiftWrap(ndk, agentPubkeys);
 
       const filter = {
         kinds: [EVENT_KINDS.GIFT_WRAP as number],
@@ -147,9 +192,9 @@ export function useNostrChat() {
           return;
         }
 
-        // Only accept messages from the support agent
-        if (sealPubkey !== supportPubkey) {
-          log("Ignoring message from non-support pubkey:", sealPubkey);
+        // Only accept messages from known agents
+        if (!agentPubkeySet.has(sealPubkey)) {
+          log("Ignoring message from unknown pubkey:", sealPubkey);
           return;
         }
 
@@ -159,6 +204,7 @@ export function useNostrChat() {
           direction: "received",
           timestamp: (rumor.created_at ?? Math.floor(Date.now() / 1000)) * 1000,
           status: "sent",
+          senderPubkey: sealPubkey,
         });
       });
 
@@ -174,7 +220,7 @@ export function useNostrChat() {
       cancelled = true;
       subRef.current?.stop();
     };
-  }, [ndk, user, connectionStatus, addMessage]);
+  }, [ndk, user, connectionStatus, addMessage, agentPubkeys, agentPubkeySet]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -190,12 +236,13 @@ export function useNostrChat() {
         return;
       }
 
-      const supportPubkey = decodeSupportPubkey();
       const tempId = crypto.randomUUID();
       const now = Date.now();
 
       log(
-        "Sending message to support:",
+        "Sending message to",
+        agentPubkeys.length,
+        "agents:",
         content.trim().substring(0, 50) + "...",
       );
 
@@ -212,9 +259,9 @@ export function useNostrChat() {
       try {
         const text = content.trim();
 
-        log("Sending NIP-17 gift-wrapped DM...");
-        const rumor = await sendNip17DM(ndk, user, supportPubkey, text);
-        log("NIP-17 send successful, rumor id:", rumor.id);
+        log("Sending NIP-17 group gift-wrapped DM...");
+        const rumor = await sendNip17GroupDM(ndk, user, agentPubkeys, text);
+        log("NIP-17 group send successful, rumor id:", rumor.id);
 
         setMessages((prev) =>
           prev.map((m) =>
@@ -234,7 +281,7 @@ export function useNostrChat() {
         setIsSending(false);
       }
     },
-    [ndk, user, addMessage],
+    [ndk, user, addMessage, agentPubkeys],
   );
 
   return {
@@ -243,6 +290,6 @@ export function useNostrChat() {
     isSending,
     connectionStatus,
     connect,
-    supportProfile,
+    agentProfiles,
   };
 }

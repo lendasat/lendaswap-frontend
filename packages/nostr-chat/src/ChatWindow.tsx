@@ -11,9 +11,9 @@ import {
 } from "react";
 import { ChatMessage } from "./ChatMessage";
 import type {
+  AgentProfile,
   ChatMessage as ChatMessageType,
   ConnectionStatus,
-  SupportProfile,
 } from "./types";
 
 interface ChatWindowProps {
@@ -22,7 +22,7 @@ interface ChatWindowProps {
   isSending: boolean;
   onSend: (content: string) => void;
   onClose: () => void;
-  supportProfile: SupportProfile | null;
+  agentProfiles: Map<string, AgentProfile>;
 }
 
 export function ChatWindow({
@@ -31,7 +31,7 @@ export function ChatWindow({
   isSending,
   onSend,
   onClose,
-  supportProfile,
+  agentProfiles,
 }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -39,9 +39,11 @@ export function ChatWindow({
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    const el = scrollRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
+    if (messages) {
+      const el = scrollRef.current;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -82,6 +84,12 @@ export function ChatWindow({
     connected: "bg-green-400",
   };
 
+  const profilesArray = Array.from(agentProfiles.values());
+  const isSingleAgent = profilesArray.length <= 1;
+  const headerName = isSingleAgent
+    ? profilesArray[0]?.name || "Support"
+    : "Support Team";
+
   return (
     <div
       className={cn(
@@ -96,18 +104,34 @@ export function ChatWindow({
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          {supportProfile?.picture ? (
-            <img
-              src={supportProfile.picture}
-              alt={supportProfile.name || "Support"}
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-muted-foreground/20" />
-          )}
+          {/* Stacked avatars (max 3) */}
+          <div className="flex -space-x-2">
+            {profilesArray
+              .slice(0, 3)
+              .map((profile, i) =>
+                profile.picture ? (
+                  <img
+                    key={profile.pubkeyHex}
+                    src={profile.picture}
+                    alt={profile.name || "Agent"}
+                    className="h-8 w-8 rounded-full object-cover border-2 border-card"
+                    style={{ zIndex: 3 - i }}
+                  />
+                ) : (
+                  <div
+                    key={profile.pubkeyHex}
+                    className="h-8 w-8 rounded-full bg-muted-foreground/20 border-2 border-card"
+                    style={{ zIndex: 3 - i }}
+                  />
+                ),
+              )}
+            {profilesArray.length === 0 && (
+              <div className="h-8 w-8 rounded-full bg-muted-foreground/20" />
+            )}
+          </div>
           <div className="flex items-center gap-1.5">
             <h3 className="text-sm font-semibold text-foreground">
-              {supportProfile?.name || "Support"}
+              {headerName}
             </h3>
             <span
               className={cn(
@@ -144,7 +168,11 @@ export function ChatWindow({
             <ChatMessage
               key={msg.id}
               message={msg}
-              supportAvatar={supportProfile?.picture}
+              agentProfile={
+                msg.senderPubkey
+                  ? agentProfiles.get(msg.senderPubkey)
+                  : undefined
+              }
             />
           ))}
         </div>

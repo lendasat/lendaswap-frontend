@@ -1,6 +1,6 @@
 import { cn } from "#/lib/utils";
 import { Check, Clock, AlertCircle } from "lucide-react";
-import type { ChatMessage as ChatMessageType } from "./types";
+import type { AgentProfile, ChatMessage as ChatMessageType } from "./types";
 
 function formatTime(ts: number): string {
   const d = new Date(ts);
@@ -9,10 +9,10 @@ function formatTime(ts: number): string {
 
 interface ChatMessageProps {
   message: ChatMessageType;
-  supportAvatar?: string;
+  agentProfile?: AgentProfile;
 }
 
-export function ChatMessage({ message, supportAvatar }: ChatMessageProps) {
+export function ChatMessage({ message, agentProfile }: ChatMessageProps) {
   const isSent = message.direction === "sent";
 
   return (
@@ -24,10 +24,10 @@ export function ChatMessage({ message, supportAvatar }: ChatMessageProps) {
     >
       {!isSent && (
         <div className="flex-shrink-0 mt-auto">
-          {supportAvatar ? (
+          {agentProfile?.picture ? (
             <img
-              src={supportAvatar}
-              alt="Support"
+              src={agentProfile.picture}
+              alt={agentProfile.name || "Agent"}
               className="h-6 w-6 rounded-full object-cover"
             />
           ) : (
@@ -35,31 +35,40 @@ export function ChatMessage({ message, supportAvatar }: ChatMessageProps) {
           )}
         </div>
       )}
-      <div
-        className={cn(
-          "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
-          isSent
-            ? "bg-orange-500 text-white rounded-br-md"
-            : "bg-muted text-foreground rounded-bl-md",
+      <div className="max-w-[75%]">
+        {!isSent && agentProfile?.name && (
+          <span className="mb-0.5 block text-[11px] font-medium text-muted-foreground">
+            {agentProfile.name}
+          </span>
         )}
-      >
-        <p className="whitespace-pre-wrap break-words">{message.content}</p>
         <div
           className={cn(
-            "mt-1 flex items-center gap-1 text-[10px]",
+            "rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
             isSent
-              ? "justify-end text-white/70"
-              : "justify-start text-muted-foreground",
+              ? "bg-orange-500 text-white rounded-br-md"
+              : "bg-muted text-foreground rounded-bl-md",
           )}
         >
-          <span>{formatTime(message.timestamp)}</span>
-          {isSent && message.status === "sending" && (
-            <Clock className="h-3 w-3" />
-          )}
-          {isSent && message.status === "sent" && <Check className="h-3 w-3" />}
-          {isSent && message.status === "failed" && (
-            <AlertCircle className="h-3 w-3 text-red-200" />
-          )}
+          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <div
+            className={cn(
+              "mt-1 flex items-center gap-1 text-[10px]",
+              isSent
+                ? "justify-end text-white/70"
+                : "justify-start text-muted-foreground",
+            )}
+          >
+            <span>{formatTime(message.timestamp)}</span>
+            {isSent && message.status === "sending" && (
+              <Clock className="h-3 w-3" />
+            )}
+            {isSent && message.status === "sent" && (
+              <Check className="h-3 w-3" />
+            )}
+            {isSent && message.status === "failed" && (
+              <AlertCircle className="h-3 w-3 text-red-200" />
+            )}
+          </div>
         </div>
       </div>
     </div>

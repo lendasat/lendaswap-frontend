@@ -12,29 +12,34 @@ const logError = (...args: unknown[]) =>
   console.error("[nostr-chat:nip17]", ...args);
 
 /**
- * Create a NIP-17 gift-wrapped DM and publish to relays.
+ * Create NIP-17 gift-wrapped DMs for multiple recipients (group DM).
  *
- * Flow:
- *  1. Build unsigned kind:14 rumor with content + `p` tag
- *  2. Seal it (kind:13) — encrypt with NIP-44 to recipient
- *  3. Gift-wrap (kind:1059) with random ephemeral keypair
- *  4. Gift-wrap a copy to self for conversation recovery
- *  5. Publish both gift wraps
+ * Flow per recipient:
+ *  1. Build unsigned kind:14 rumor with content + `p` tags for ALL recipients
+ *  2. Seal it (kind:13) — encrypt with NIP-44 to each recipient individually
+ *  3. Gift-wrap (kind:1059) with random ephemeral keypair per recipient
+ *  4. Gift-wrap a self-copy (seal encrypted to first agent's pubkey, wrapped to self)
+ *  5. Publish all gift wraps
  */
-export async function sendNip17DM(
+export async function sendNip17GroupDM(
   ndk: NDK,
   sender: NDKUser,
-  recipientPubkeyHex: string,
+  recipientPubkeysHex: string[],
   content: string,
 ): Promise<NDKEvent> {
-  log("sendNip17DM - sender:", sender.pubkey, "recipient:", recipientPubkeyHex);
+  log(
+    "sendNip17GroupDM - sender:",
+    sender.pubkey,
+    "recipients:",
+    recipientPubkeysHex.length,
+  );
 
-  // Build the kind:14 rumor (unsigned inner event).
-  // Per NIP-17: "The id MUST be computed as if it were being published."
+  // Build the kind:14 rumor with p tags for ALL participants (including sender per NIP-17 group DM spec)
+  const allParticipants = [sender.pubkey, ...recipientPubkeysHex];
   const rumor = new NDKEvent(ndk);
   rumor.kind = EVENT_KINDS.RUMOR;
   rumor.content = content;
-  rumor.tags = [["p", recipientPubkeyHex]];
+  rumor.tags = allParticipants.map((pk) => ["p", pk]);
   rumor.created_at = Math.floor(Date.now() / 1000);
   rumor.pubkey = sender.pubkey;
 
@@ -44,36 +49,45 @@ export async function sendNip17DM(
   rumor.id = rumorRaw.id;
   log("Built kind:14 rumor, id:", rumor.id);
 
-  // Seal it (kind:13) — encrypt the rumor JSON to recipient
-  const seal = new NDKEvent(ndk);
-  seal.kind = EVENT_KINDS.SEAL;
-  seal.created_at = randomTimestamp();
-  seal.pubkey = sender.pubkey;
-  log("Encrypting seal with NIP-44...");
-  seal.content = await ndk.signer!.encrypt(
-    ndk.getUser({ pubkey: recipientPubkeyHex }),
+  // Seal + gift-wrap for each recipient
+  for (const recipientPubkey of recipientPubkeysHex) {
+    const seal = new NDKEvent(ndk);
+    seal.kind = EVENT_KINDS.SEAL;
+    seal.created_at = randomTimestamp();
+    seal.pubkey = sender.pubkey;
+
+    seal.content = await ndk.signer!.encrypt(
+      ndk.getUser({ pubkey: recipientPubkey }),
+      JSON.stringify(rumorRaw),
+      "nip44",
+    );
+    await seal.sign();
+    log("Seal signed for recipient:", recipientPubkey.substring(0, 16) + "...");
+
+    const wrap = await giftWrap(ndk, seal, recipientPubkey);
+    const result = await wrap.publish();
+    log(
+      "Gift wrap published to",
+      result?.size ?? 0,
+      "relays for recipient:",
+      recipientPubkey.substring(0, 16) + "...",
+    );
+  }
+
+  // Self-copy: seal encrypted to first agent's pubkey, gift-wrapped to self
+  const selfSeal = new NDKEvent(ndk);
+  selfSeal.kind = EVENT_KINDS.SEAL;
+  selfSeal.created_at = randomTimestamp();
+  selfSeal.pubkey = sender.pubkey;
+
+  selfSeal.content = await ndk.signer!.encrypt(
+    ndk.getUser({ pubkey: recipientPubkeysHex[0] }),
     JSON.stringify(rumorRaw),
     "nip44",
   );
-  log("Signing seal...");
-  await seal.sign();
-  log("Seal signed, id:", seal.id);
+  await selfSeal.sign();
 
-  // Gift-wrap to recipient
-  log("Gift-wrapping to recipient...");
-  const wrapToRecipient = await giftWrap(ndk, seal, recipientPubkeyHex);
-  log("Publishing gift wrap to recipient...");
-  const recipientResult = await wrapToRecipient.publish();
-  log(
-    "Gift wrap to recipient published to",
-    recipientResult?.size ?? 0,
-    "relays",
-  );
-
-  // Gift-wrap copy to self
-  log("Gift-wrapping to self...");
-  const wrapToSelf = await giftWrap(ndk, seal, sender.pubkey);
-  log("Publishing gift wrap to self...");
+  const wrapToSelf = await giftWrap(ndk, selfSeal, sender.pubkey);
   const selfResult = await wrapToSelf.publish();
   log("Gift wrap to self published to", selfResult?.size ?? 0, "relays");
 
@@ -81,16 +95,28 @@ export async function sendNip17DM(
 }
 
 /**
+ * Send a NIP-17 gift-wrapped DM to a single recipient.
+ * Thin wrapper around sendNip17GroupDM for backward compatibility.
+ */
+export async function sendNip17DM(
+  ndk: NDK,
+  sender: NDKUser,
+  recipientPubkeyHex: string,
+  content: string,
+): Promise<NDKEvent> {
+  return sendNip17GroupDM(ndk, sender, [recipientPubkeyHex], content);
+}
+
+/**
  * Unwrap a received kind:1059 gift-wrap event to extract the inner kind:14 rumor.
  *
- * @param conversationPartnerPubkey - The other party's pubkey hex. Needed because
- *   the seal is encrypted between sender↔recipient. When we receive our own self-copy,
- *   `seal.pubkey` is our own key, so decryption with it fails (wrong shared secret).
- *   We retry with the partner's pubkey in that case.
+ * @param knownAgentPubkeys - Array of known agent hex pubkeys. When we receive our own
+ *   self-copy, `seal.pubkey` is our own key, so decryption with it fails. We iterate
+ *   through agent pubkeys as fallback to find the correct shared secret.
  */
 export async function unwrapGiftWrap(
   ndk: NDK,
-  conversationPartnerPubkey: string,
+  knownAgentPubkeys: string[],
 ): Promise<
   (
     giftWrap: NDKEvent,
@@ -110,10 +136,9 @@ export async function unwrapGiftWrap(
       log("Decrypted seal, kind:", sealData.kind, "from:", sealData.pubkey);
 
       // Decrypt the seal content to get the rumor.
-      // The seal was encrypted from sender→recipient. If we ARE the sender (self-copy),
-      // sealData.pubkey is our own key — decrypting against it uses the wrong shared secret.
-      // Try sealData.pubkey first; on failure, retry with the conversation partner's pubkey.
-      let rumorJson: string;
+      // Try sealData.pubkey first (normal case: agent sent to us).
+      // On failure, iterate all known agent pubkeys as fallback (self-copy case).
+      let rumorJson: string | null = null;
       try {
         rumorJson = await ndk.signer!.decrypt(
           ndk.getUser({ pubkey: sealData.pubkey }),
@@ -122,14 +147,29 @@ export async function unwrapGiftWrap(
         );
       } catch {
         log(
-          "Seal decryption failed with seal pubkey, retrying with partner pubkey:",
-          conversationPartnerPubkey.substring(0, 16) + "...",
+          "Seal decryption failed with seal pubkey, trying known agent pubkeys...",
         );
-        rumorJson = await ndk.signer!.decrypt(
-          ndk.getUser({ pubkey: conversationPartnerPubkey }),
-          sealData.content,
-          "nip44",
-        );
+        for (const agentPubkey of knownAgentPubkeys) {
+          try {
+            rumorJson = await ndk.signer!.decrypt(
+              ndk.getUser({ pubkey: agentPubkey }),
+              sealData.content,
+              "nip44",
+            );
+            log(
+              "Decrypted with agent pubkey:",
+              agentPubkey.substring(0, 16) + "...",
+            );
+            break;
+          } catch {
+            // Try next agent
+          }
+        }
+      }
+
+      if (!rumorJson) {
+        logError("Could not decrypt seal with any known pubkey");
+        return null;
       }
 
       const rumorData = JSON.parse(rumorJson);

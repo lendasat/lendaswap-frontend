@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatBubble } from "./ChatBubble";
 import { ChatWindow } from "./ChatWindow";
 import { NostrProvider } from "./NostrProvider";
+import type { AgentConfig } from "./types";
 import { useNostrChat } from "./useNostrChat";
 
 const log = (...args: unknown[]) => console.log("[nostr-chat:widget]", ...args);
@@ -9,17 +10,18 @@ const log = (...args: unknown[]) => console.log("[nostr-chat:widget]", ...args);
 interface ChatWidgetInnerProps {
   isOpen: boolean;
   onToggle: () => void;
+  agents: AgentConfig[];
 }
 
-function ChatWidgetInner({ isOpen, onToggle }: ChatWidgetInnerProps) {
+function ChatWidgetInner({ isOpen, onToggle, agents }: ChatWidgetInnerProps) {
   const {
     messages,
     sendMessage,
     isSending,
     connectionStatus,
     connect,
-    supportProfile,
-  } = useNostrChat();
+    agentProfiles,
+  } = useNostrChat(agents);
   const [unreadCount, setUnreadCount] = useState(0);
   const prevMessageCount = useRef(messages.length);
 
@@ -59,7 +61,7 @@ function ChatWidgetInner({ isOpen, onToggle }: ChatWidgetInnerProps) {
         isSending={isSending}
         onSend={sendMessage}
         onClose={handleToggle}
-        supportProfile={supportProfile}
+        agentProfiles={agentProfiles}
       />
     );
   }
@@ -70,15 +72,17 @@ function ChatWidgetInner({ isOpen, onToggle }: ChatWidgetInnerProps) {
 export interface ChatWidgetProps {
   privateKeyHex?: string;
   relays?: string[];
+  /** Agent configurations — at least one agent is required. */
+  agents: AgentConfig[];
 }
 
-export function ChatWidget({ privateKeyHex, relays }: ChatWidgetProps) {
+export function ChatWidget({ privateKeyHex, relays, agents }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const toggle = useCallback(() => setIsOpen((o) => !o), []);
 
   return (
     <NostrProvider privateKeyHex={privateKeyHex} relays={relays}>
-      <ChatWidgetInner isOpen={isOpen} onToggle={toggle} />
+      <ChatWidgetInner isOpen={isOpen} onToggle={toggle} agents={agents} />
     </NostrProvider>
   );
 }

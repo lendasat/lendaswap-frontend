@@ -125,10 +125,10 @@ export default function App() {
   };
 
   return (
-    <div className="bg-background min-h-screen relative overflow-hidden">
+    <div className="bg-background relative min-h-screen overflow-hidden">
       {/* Grid Pattern Background */}
       <div
-        className="fixed inset-0 pointer-events-none z-0"
+        className="pointer-events-none fixed inset-0 z-0"
         style={{
           backgroundImage: `
             linear-gradient(to right, hsl(var(--foreground) / 0.015) 1px, transparent 1px),
@@ -139,10 +139,10 @@ export default function App() {
       />
 
       {/* Modern Gradient Glows */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+      <div className="pointer-events-none fixed inset-0 z-0">
         {/* Top Left - Orange Gradient */}
         <div
-          className="absolute -top-48 -left-48 w-[600px] h-[600px] opacity-100 dark:opacity-40"
+          className="absolute -left-48 -top-48 h-[600px] w-[600px] opacity-100 dark:opacity-40"
           style={{
             background:
               "radial-gradient(circle at center, rgba(251, 146, 60, 0.08) 0%, rgba(249, 115, 22, 0.05) 25%, rgba(234, 88, 12, 0.03) 50%, transparent 70%)",
@@ -153,7 +153,7 @@ export default function App() {
 
         {/* Bottom Right - Orange to Amber Gradient */}
         <div
-          className="absolute -bottom-40 -right-40 w-[550px] h-[550px] opacity-100 dark:opacity-40"
+          className="absolute -bottom-40 -right-40 h-[550px] w-[550px] opacity-100 dark:opacity-40"
           style={{
             background:
               "radial-gradient(circle at center, rgba(251, 146, 60, 0.07) 0%, rgba(249, 115, 22, 0.04) 30%, rgba(245, 158, 11, 0.03) 50%, transparent 68%)",
@@ -177,26 +177,26 @@ export default function App() {
 
         {/* Main Content */}
         {location.pathname !== "/terms" && (
-          <main className="container mx-auto px-4 sm:px-5 md:px-6 py-16">
+          <main className="container mx-auto px-4 py-16 sm:px-5 md:px-6">
             <div className="mx-auto max-w-2xl space-y-10">
               {/* Title */}
               <div className="text-center">
                 {stepInfo.isHomePage ? (
                   <div className="space-y-1">
-                    <div className="flex items-center justify-center gap-1.5 text-muted-foreground/60">
-                      <Zap className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                      <span className="font-sans text-xs md:text-sm font-semibold tracking-widest uppercase">
+                    <div className="text-muted-foreground/60 flex items-center justify-center gap-1.5">
+                      <Zap className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                      <span className="font-sans text-xs font-semibold uppercase tracking-widest md:text-sm">
                         Lightning-fast
                       </span>
                     </div>
-                    <h1 className="font-sans text-xl md:text-3xl font-bold tracking-tight flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-b from-foreground to-foreground/40 bg-clip-text text-transparent">
+                    <h1 className="from-foreground to-foreground/40 flex items-center justify-center gap-2 bg-gradient-to-b bg-clip-text font-sans text-xl font-bold tracking-tight text-transparent md:gap-3 md:text-3xl">
                       <span>Bitcoin</span>
-                      <ArrowLeftRight className="w-4 h-4 md:w-6 md:h-6 text-muted-foreground/30" />
+                      <ArrowLeftRight className="text-muted-foreground/30 h-4 w-4 md:h-6 md:w-6" />
                       <span>Stablecoins</span>
                     </h1>
                   </div>
                 ) : (
-                  <h2 className="font-sans text-2xl md:text-4xl font-bold tracking-tight leading-snug">
+                  <h2 className="font-sans text-2xl font-bold leading-snug tracking-tight md:text-4xl">
                     {stepInfo.title}
                   </h2>
                 )}
@@ -220,8 +220,8 @@ export default function App() {
                     element={
                       <div className="group relative">
                         {/* Orange glow effect on hover */}
-                        <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/0 opacity-0 blur-xl transition-all duration-500 group-hover:from-orange-500/10 group-hover:via-orange-400/8 group-hover:to-orange-500/10 group-hover:opacity-100" />
-                        <Card className="relative rounded-3xl border border-border bg-gradient-to-br from-card via-card to-orange-500/5 shadow-sm !py-0 !gap-0">
+                        <div className="group-hover:via-orange-400/8 absolute -inset-1 rounded-[28px] bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/0 opacity-0 blur-xl transition-all duration-500 group-hover:from-orange-500/10 group-hover:to-orange-500/10 group-hover:opacity-100" />
+                        <Card className="border-border from-card via-card relative !gap-0 rounded-3xl border bg-gradient-to-br to-orange-500/5 !py-0 shadow-sm">
                           <Routes>
                             <Route
                               path="/"
@@ -257,13 +257,13 @@ export default function App() {
             {/* Debug Navigation */}
             <DebugNavigation />
 
-            <div className="text-muted-foreground text-center text-sm space-y-2">
+            <div className="text-muted-foreground space-y-2 text-center text-sm">
               <p>© 2026 LendaSwap. All rights reserved.</p>
               <p>
                 <button
                   type="button"
                   onClick={() => navigate("/terms")}
-                  className="underline hover:text-foreground transition-colors"
+                  className="hover:text-foreground underline transition-colors"
                 >
                   Terms of Service
                 </button>
@@ -295,7 +295,19 @@ export default function App() {
       </div>
 
       {/* Nostr Support Chat */}
-      {nostrKey && <ChatWidget privateKeyHex={nostrKey} />}
+      {nostrKey && (
+        <ChatWidget
+          privateKeyHex={nostrKey}
+          agents={[
+            {
+              npub: "npub1tthrhn3mc8k6c72rn6uwfnclnlk6hcsg7lr60xfc0w3jlnxgy4jqmf5yzk",
+            },
+            {
+              npub: "npub15m80ju0kqusseu0un6mztyadarhk8thx0ujmc4wcdf09r5zxrx7syy5naj",
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }
