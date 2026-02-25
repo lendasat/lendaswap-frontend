@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { EVENT_KINDS, STORAGE_KEYS, SUPPORT_NPUB } from "./constants";
 import { sendNip17DM, unwrapGiftWrap } from "./nip17";
 import { useNostr } from "./NostrProvider";
-import type { ChatMessage } from "./types";
+import type { ChatMessage, SupportProfile } from "./types";
 
 const log = (...args: unknown[]) => console.log("[nostr-chat]", ...args);
 const logError = (...args: unknown[]) => console.error("[nostr-chat]", ...args);
@@ -36,7 +36,11 @@ export function useNostrChat() {
   const { ndk, user, connectionStatus, connect } = useNostr();
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [isSending, setIsSending] = useState(false);
+  const [supportProfile, setSupportProfile] = useState<SupportProfile | null>(
+    null,
+  );
   const subRef = useRef<{ stop: () => void } | null>(null);
+  const profileFetched = useRef(false);
 
   log(
     "useNostrChat render - connectionStatus:",
@@ -51,6 +55,37 @@ export function useNostrChat() {
   useEffect(() => {
     saveMessages(messages);
   }, [messages]);
+
+  // Fetch support agent profile (kind:0 metadata)
+  useEffect(() => {
+    if (!ndk || connectionStatus !== "connected" || profileFetched.current)
+      return;
+    profileFetched.current = true;
+
+    const supportPubkey = decodeSupportPubkey();
+    log("Fetching support agent profile for:", supportPubkey);
+
+    const filter = { kinds: [0], authors: [supportPubkey] };
+    const sub = ndk.subscribe(filter, { closeOnEose: true });
+
+    sub.on("event", (event: NDKEvent) => {
+      try {
+        const metadata = JSON.parse(event.content);
+        log(
+          "Support agent profile:",
+          metadata.name,
+          metadata.picture ? "(has avatar)" : "(no avatar)",
+        );
+        setSupportProfile({
+          name: metadata.name || metadata.display_name,
+          picture: metadata.picture,
+          about: metadata.about,
+        });
+      } catch (err) {
+        logError("Failed to parse support profile:", err);
+      }
+    });
+  }, [ndk, connectionStatus]);
 
   // Add message with dedup
   const addMessage = useCallback((msg: ChatMessage) => {
@@ -208,5 +243,6 @@ export function useNostrChat() {
     isSending,
     connectionStatus,
     connect,
+    supportProfile,
   };
 }

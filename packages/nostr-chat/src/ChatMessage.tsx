@@ -9,15 +9,32 @@ function formatTime(ts: number): string {
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  supportAvatar?: string;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, supportAvatar }: ChatMessageProps) {
   const isSent = message.direction === "sent";
 
   return (
     <div
-      className={cn("flex w-full", isSent ? "justify-end" : "justify-start")}
+      className={cn(
+        "flex w-full gap-2",
+        isSent ? "justify-end" : "justify-start",
+      )}
     >
+      {!isSent && (
+        <div className="flex-shrink-0 mt-auto">
+          {supportAvatar ? (
+            <img
+              src={supportAvatar}
+              alt="Support"
+              className="h-6 w-6 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-6 w-6 rounded-full bg-muted-foreground/20" />
+          )}
+        </div>
+      )}
       <div
         className={cn(
           "max-w-[75%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed",

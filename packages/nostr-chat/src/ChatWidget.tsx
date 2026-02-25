@@ -12,8 +12,14 @@ interface ChatWidgetInnerProps {
 }
 
 function ChatWidgetInner({ isOpen, onToggle }: ChatWidgetInnerProps) {
-  const { messages, sendMessage, isSending, connectionStatus, connect } =
-    useNostrChat();
+  const {
+    messages,
+    sendMessage,
+    isSending,
+    connectionStatus,
+    connect,
+    supportProfile,
+  } = useNostrChat();
   const [unreadCount, setUnreadCount] = useState(0);
   const prevMessageCount = useRef(messages.length);
 
@@ -53,6 +59,7 @@ function ChatWidgetInner({ isOpen, onToggle }: ChatWidgetInnerProps) {
         isSending={isSending}
         onSend={sendMessage}
         onClose={handleToggle}
+        supportProfile={supportProfile}
       />
     );
   }

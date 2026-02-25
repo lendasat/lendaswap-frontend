@@ -10,3 +10,9 @@ export interface ChatMessage {
 }
 
 export type ConnectionStatus = "disconnected" | "connecting" | "connected";
+
+export interface SupportProfile {
+  name?: string;
+  picture?: string;
+  about?: string;
+}

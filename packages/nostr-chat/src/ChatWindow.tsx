@@ -10,7 +10,11 @@ import {
   type KeyboardEvent,
 } from "react";
 import { ChatMessage } from "./ChatMessage";
-import type { ChatMessage as ChatMessageType, ConnectionStatus } from "./types";
+import type {
+  ChatMessage as ChatMessageType,
+  ConnectionStatus,
+  SupportProfile,
+} from "./types";
 
 interface ChatWindowProps {
   messages: ChatMessageType[];
@@ -18,6 +22,7 @@ interface ChatWindowProps {
   isSending: boolean;
   onSend: (content: string) => void;
   onClose: () => void;
+  supportProfile: SupportProfile | null;
 }
 
 export function ChatWindow({
@@ -26,6 +31,7 @@ export function ChatWindow({
   isSending,
   onSend,
   onClose,
+  supportProfile,
 }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -90,11 +96,27 @@ export function ChatWindow({
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">Support</h3>
-          <span
-            className={cn("h-2 w-2 rounded-full", statusDot[connectionStatus])}
-            title={connectionStatus}
-          />
+          {supportProfile?.picture ? (
+            <img
+              src={supportProfile.picture}
+              alt={supportProfile.name || "Support"}
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-muted-foreground/20" />
+          )}
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-semibold text-foreground">
+              {supportProfile?.name || "Support"}
+            </h3>
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                statusDot[connectionStatus],
+              )}
+              title={connectionStatus}
+            />
+          </div>
         </div>
         <Button
           variant="ghost"
@@ -119,7 +141,11 @@ export function ChatWindow({
             </p>
           )}
           {messages.map((msg) => (
-            <ChatMessage key={msg.id} message={msg} />
+            <ChatMessage
+              key={msg.id}
+              message={msg}
+              supportAvatar={supportProfile?.picture}
+            />
           ))}
         </div>
       </ScrollArea>
