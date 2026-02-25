@@ -1,6 +1,3 @@
-/** Hardcoded support agent npub */
-export const SUPPORT_NPUB =
-  "npub1tthrhn3mc8k6c72rn6uwfnclnlk6hcsg7lr60xfc0w3jlnxgy4jqmf5yzk";
 
 /** Default relay URLs */
 export const DEFAULT_RELAYS = [
