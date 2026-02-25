@@ -1,4 +1,4 @@
-import { ChatWidget } from "@frontend/nostr-chat";
+import { type AgentConfig, ChatWidget } from "@frontend/nostr-chat";
 import { useEffect, useState } from "react";
 import {
   Navigate,
@@ -87,9 +87,14 @@ export default function App() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
   const [nostrKey, setNostrKey] = useState<string | undefined>();
+  const [supportAgents, setSupportAgents] = useState<AgentConfig[]>([]);
 
   useEffect(() => {
     api.getNostrKeyHex().then(setNostrKey).catch(console.error);
+    api
+      .getSupportAgents()
+      .then((agents) => setSupportAgents(agents.map((a) => ({ npub: a.npub }))))
+      .catch(console.error);
   }, []);
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
@@ -295,18 +300,8 @@ export default function App() {
       </div>
 
       {/* Nostr Support Chat */}
-      {nostrKey && (
-        <ChatWidget
-          privateKeyHex={nostrKey}
-          agents={[
-            {
-              npub: "npub1tthrhn3mc8k6c72rn6uwfnclnlk6hcsg7lr60xfc0w3jlnxgy4jqmf5yzk",
-            },
-            {
-              npub: "npub15m80ju0kqusseu0un6mztyadarhk8thx0ujmc4wcdf09r5zxrx7syy5naj",
-            },
-          ]}
-        />
+      {nostrKey && supportAgents.length > 0 && (
+        <ChatWidget privateKeyHex={nostrKey} agents={supportAgents} />
       )}
     </div>
   );
