@@ -1,5 +1,5 @@
+import { AlertCircle, Check, Clock } from "lucide-react";
 import { cn } from "#/lib/utils";
-import { Check, Clock, AlertCircle } from "lucide-react";
 import type { AgentProfile, ChatMessage as ChatMessageType } from "./types";
 
 function formatTime(ts: number): string {

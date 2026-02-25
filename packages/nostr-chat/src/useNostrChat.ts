@@ -3,8 +3,8 @@ import { nip19 } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EVENT_KINDS, STORAGE_KEYS } from "./constants";
 import { createLogger } from "./logger";
-import { sendNip17GroupDM, unwrapGiftWrap } from "./nip17";
 import { useNostr } from "./NostrProvider";
+import { sendNip17GroupDM, unwrapGiftWrap } from "./nip17";
 import type { AgentConfig, AgentProfile, ChatMessage } from "./types";
 
 const logger = createLogger("nostr-chat");
@@ -87,7 +87,10 @@ export function useNostrChat(agents: AgentConfig[]) {
     async function fetchProfiles(authors: string[], attempt: number) {
       logger.info(`Fetching agent profiles (attempt ${attempt}) for:`, authors);
 
-      const events = await ndk!.fetchEvents({
+      if (!ndk) {
+        return;
+      }
+      const events = await ndk.fetchEvents({
         kinds: [0],
         authors,
       });
@@ -104,7 +107,7 @@ export function useNostrChat(agents: AgentConfig[]) {
 
           logger.debug(
             "Agent profile:",
-            pubkey.substring(0, 16) + "...",
+            `${pubkey.substring(0, 16)}...`,
             metadata.name,
             metadata.picture ? "(has avatar)" : "(no avatar)",
           );
@@ -278,7 +281,7 @@ export function useNostrChat(agents: AgentConfig[]) {
         "Sending message to",
         agentPubkeys.length,
         "agents:",
-        content.trim().substring(0, 50) + "...",
+        `${content.trim().substring(0, 50)}...`,
       );
 
       // Optimistically add the message

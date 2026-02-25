@@ -48,6 +48,9 @@ export async function sendNip17GroupDM(
   rumor.id = rumorRaw.id;
   logger.debug("Built kind:14 rumor, id:", rumor.id);
 
+  if (!ndk.signer) {
+    throw Error("Cannot encrypt without signer");
+  }
   // Seal + gift-wrap for each recipient
   for (const recipientPubkey of recipientPubkeysHex) {
     const seal = new NDKEvent(ndk);
@@ -55,15 +58,20 @@ export async function sendNip17GroupDM(
     seal.created_at = randomTimestamp();
     seal.pubkey = sender.pubkey;
 
-    seal.content = await ndk.signer!.encrypt(
-      ndk.getUser({ pubkey: recipientPubkey }),
+    const recipient1 = await ndk.fetchUser(recipientPubkey);
+    if (!recipient1) {
+      logger.warn("Cannot encrypt without recipient");
+      continue;
+    }
+    seal.content = await ndk.signer.encrypt(
+      recipient1,
       JSON.stringify(rumorRaw),
       "nip44",
     );
     await seal.sign();
     logger.debug(
       "Seal signed for recipient:",
-      recipientPubkey.substring(0, 16) + "...",
+      `${recipientPubkey.substring(0, 16)}...`,
     );
 
     const wrap = await giftWrap(ndk, seal, recipientPubkey);
@@ -72,7 +80,7 @@ export async function sendNip17GroupDM(
       "Gift wrap published to",
       result?.size ?? 0,
       "relays for recipient:",
-      recipientPubkey.substring(0, 16) + "...",
+      `${recipientPubkey.substring(0, 16)}...`,
     );
   }
 
@@ -82,8 +90,16 @@ export async function sendNip17GroupDM(
   selfSeal.created_at = randomTimestamp();
   selfSeal.pubkey = sender.pubkey;
 
-  selfSeal.content = await ndk.signer!.encrypt(
-    ndk.getUser({ pubkey: recipientPubkeysHex[0] }),
+  if (!ndk.signer) {
+    throw new Error("Cannot decrypt without signer");
+  }
+
+  const recipient = await ndk.fetchUser(recipientPubkeysHex[0]);
+  if (!recipient) {
+    throw new Error("Cannot encrypt without recipient");
+  }
+  selfSeal.content = await ndk.signer.encrypt(
+    recipient,
     JSON.stringify(rumorRaw),
     "nip44",
   );
@@ -129,6 +145,9 @@ export async function unwrapGiftWrap(
   ) => Promise<{ rumor: NDKEvent; sealPubkey: string } | null>
 > {
   return async (giftWrap: NDKEvent) => {
+    if (!ndk.signer) {
+      throw Error("Cannot unwrwap gift without signer");
+    }
     try {
       logger.debug(
         "Unwrapping gift wrap, id:",
@@ -138,7 +157,7 @@ export async function unwrapGiftWrap(
       );
 
       // Decrypt the gift-wrap content to get the seal
-      const sealJson = await ndk.signer!.decrypt(
+      const sealJson = await ndk.signer.decrypt(
         ndk.getUser({ pubkey: giftWrap.pubkey }),
         giftWrap.content,
         "nip44",
@@ -156,25 +175,29 @@ export async function unwrapGiftWrap(
       // On failure, iterate all known agent pubkeys as fallback (self-copy case).
       let rumorJson: string | null = null;
       try {
-        rumorJson = await ndk.signer!.decrypt(
-          ndk.getUser({ pubkey: sealData.pubkey }),
-          sealData.content,
-          "nip44",
-        );
+        const sender = await ndk.fetchUser(sealData.pubkey);
+        if (!sender) {
+          throw Error("Unable to fetch user info");
+        }
+        rumorJson = await ndk.signer.decrypt(sender, sealData.content, "nip44");
       } catch {
         logger.debug(
           "Seal decryption failed with seal pubkey, trying known agent pubkeys...",
         );
         for (const agentPubkey of knownAgentPubkeys) {
+          const agent = await ndk.fetchUser(agentPubkey);
+          if (!agent) {
+            throw Error("Unable to fetch agent info");
+          }
           try {
-            rumorJson = await ndk.signer!.decrypt(
-              ndk.getUser({ pubkey: agentPubkey }),
+            rumorJson = await ndk.signer.decrypt(
+              agent,
               sealData.content,
               "nip44",
             );
             logger.debug(
               "Decrypted with agent pubkey:",
-              agentPubkey.substring(0, 16) + "...",
+              `${agentPubkey.substring(0, 16)}...`,
             );
             break;
           } catch {
@@ -220,11 +243,14 @@ export async function sendNip04DM(
   event.tags = [["p", recipientPubkeyHex]];
 
   logger.debug("Encrypting with NIP-04...");
-  event.content = await ndk.signer!.encrypt(
-    ndk.getUser({ pubkey: recipientPubkeyHex }),
-    content,
-    "nip04",
-  );
+  if (!ndk.signer) {
+    throw Error("Cannot proceed without signer");
+  }
+  const recipient = await ndk.fetchUser(recipientPubkeyHex);
+  if (!recipient) {
+    throw Error("Cannot proceed without recipient");
+  }
+  event.content = await ndk.signer.encrypt(recipient, content, "nip04");
 
   logger.debug("Publishing NIP-04 DM...");
   const result = await event.publish();
@@ -244,7 +270,7 @@ async function giftWrap(
 ): Promise<NDKEvent> {
   logger.debug(
     "giftWrap - recipient:",
-    recipientPubkeyHex.substring(0, 16) + "...",
+    `${recipientPubkeyHex.substring(0, 16)}...`,
   );
 
   // Generate ephemeral keypair for the gift wrap
@@ -256,7 +282,7 @@ async function giftWrap(
   const ephemeralUser = await ephemeralSigner.user();
   logger.debug(
     "Ephemeral pubkey:",
-    ephemeralUser.pubkey.substring(0, 16) + "...",
+    `${ephemeralUser.pubkey.substring(0, 16)}...`,
   );
 
   const wrap = new NDKEvent(ndk);

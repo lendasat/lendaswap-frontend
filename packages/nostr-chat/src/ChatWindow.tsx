@@ -1,14 +1,14 @@
-import { Button } from "#/components/ui/button";
-import { ScrollArea } from "#/components/ui/scroll-area";
-import { cn } from "#/lib/utils";
 import { Loader2, Send, X } from "lucide-react";
 import {
+  type FormEvent,
+  type KeyboardEvent,
   useEffect,
   useRef,
   useState,
-  type FormEvent,
-  type KeyboardEvent,
 } from "react";
+import { Button } from "#/components/ui/button";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { cn } from "#/lib/utils";
 import { ChatMessage } from "./ChatMessage";
 import type {
   AgentProfile,

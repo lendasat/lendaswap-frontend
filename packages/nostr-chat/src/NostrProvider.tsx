@@ -1,12 +1,12 @@
 import NDK, { NDKPrivateKeySigner, type NDKUser } from "@nostr-dev-kit/ndk";
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
 import { DEFAULT_RELAYS, STORAGE_KEYS } from "./constants";
 import { createLogger } from "./logger";
