@@ -379,8 +379,13 @@ export function HomePage() {
     if (!urlSource || !urlTarget) return;
     const timeout = setTimeout(() => {
       const path = `/${urlSource}/${urlTarget}`;
+      // Only persist the user-edited amount; the other is derived from the quote
+      const syncSrcAmt =
+        lastEditedField === "sourceAsset" ? sourceAmount : undefined;
+      const syncTgtAmt =
+        lastEditedField === "targetAsset" ? targetAmount : undefined;
       navigate(
-        `${path}${buildQueryParams(sourceAmount, targetAmount, targetAddress)}`,
+        `${path}${buildQueryParams(syncSrcAmt, syncTgtAmt, targetAddress)}`,
         { replace: true },
       );
     }, 500);
@@ -389,6 +394,7 @@ export function HomePage() {
     sourceAmount,
     targetAmount,
     targetAddress,
+    lastEditedField,
     urlSource,
     urlTarget,
     navigate,
@@ -403,8 +409,13 @@ export function HomePage() {
     address?: string,
   ) {
     const path = `/${formatTokenUrl(source)}/${formatTokenUrl(target)}`;
+    // Only persist the user-edited amount; the other is derived from the quote
+    const syncSrcAmt =
+      lastEditedField === "sourceAsset" ? (srcAmt ?? sourceAmount) : undefined;
+    const syncTgtAmt =
+      lastEditedField === "targetAsset" ? (tgtAmt ?? targetAmount) : undefined;
     navigate(
-      `${path}${buildQueryParams(srcAmt ?? sourceAmount, tgtAmt ?? targetAmount, address ?? targetAddress)}`,
+      `${path}${buildQueryParams(syncSrcAmt, syncTgtAmt, address ?? targetAddress)}`,
       {
         replace: true,
       },
