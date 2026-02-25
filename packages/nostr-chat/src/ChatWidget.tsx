@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatBubble } from "./ChatBubble";
 import { ChatWindow } from "./ChatWindow";
+import { createLogger } from "./logger";
 import { NostrProvider } from "./NostrProvider";
 import type { AgentConfig } from "./types";
 import { useNostrChat } from "./useNostrChat";
 
-const log = (...args: unknown[]) => console.log("[nostr-chat:widget]", ...args);
+const logger = createLogger("nostr-chat:widget");
 
 interface ChatWidgetInnerProps {
   isOpen: boolean;
@@ -27,9 +28,9 @@ function ChatWidgetInner({ isOpen, onToggle, agents }: ChatWidgetInnerProps) {
 
   // Lazy connect on first open
   useEffect(() => {
-    log("isOpen:", isOpen, "connectionStatus:", connectionStatus);
+    logger.debug("isOpen:", isOpen, "connectionStatus:", connectionStatus);
     if (isOpen && connectionStatus === "disconnected") {
-      log("Chat opened, triggering connect...");
+      logger.info("Chat opened, triggering connect...");
       connect();
     }
   }, [isOpen, connectionStatus, connect]);

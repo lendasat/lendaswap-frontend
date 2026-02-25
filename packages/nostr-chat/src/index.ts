@@ -1,6 +1,6 @@
 export { ChatWidget } from "./ChatWidget";
 export type { ChatWidgetProps } from "./ChatWidget";
-export { SUPPORT_NPUB } from "./constants";
+export { setDebug as setNostrChatDebug } from "./logger";
 export type {
   AgentConfig,
   AgentProfile,

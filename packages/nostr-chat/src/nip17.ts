@@ -6,10 +6,9 @@ import {
 } from "@nostr-dev-kit/ndk";
 import { getEventHash } from "nostr-tools";
 import { EVENT_KINDS } from "./constants";
+import { createLogger } from "./logger";
 
-const log = (...args: unknown[]) => console.log("[nostr-chat:nip17]", ...args);
-const logError = (...args: unknown[]) =>
-  console.error("[nostr-chat:nip17]", ...args);
+const logger = createLogger("nostr-chat:nip17");
 
 /**
  * Create NIP-17 gift-wrapped DMs for multiple recipients (group DM).
@@ -27,7 +26,7 @@ export async function sendNip17GroupDM(
   recipientPubkeysHex: string[],
   content: string,
 ): Promise<NDKEvent> {
-  log(
+  logger.debug(
     "sendNip17GroupDM - sender:",
     sender.pubkey,
     "recipients:",
@@ -47,7 +46,7 @@ export async function sendNip17GroupDM(
   const rumorRaw = rumor.rawEvent();
   rumorRaw.id = getEventHash(rumorRaw as Parameters<typeof getEventHash>[0]);
   rumor.id = rumorRaw.id;
-  log("Built kind:14 rumor, id:", rumor.id);
+  logger.debug("Built kind:14 rumor, id:", rumor.id);
 
   // Seal + gift-wrap for each recipient
   for (const recipientPubkey of recipientPubkeysHex) {
@@ -62,11 +61,14 @@ export async function sendNip17GroupDM(
       "nip44",
     );
     await seal.sign();
-    log("Seal signed for recipient:", recipientPubkey.substring(0, 16) + "...");
+    logger.debug(
+      "Seal signed for recipient:",
+      recipientPubkey.substring(0, 16) + "...",
+    );
 
     const wrap = await giftWrap(ndk, seal, recipientPubkey);
     const result = await wrap.publish();
-    log(
+    logger.debug(
       "Gift wrap published to",
       result?.size ?? 0,
       "relays for recipient:",
@@ -89,7 +91,11 @@ export async function sendNip17GroupDM(
 
   const wrapToSelf = await giftWrap(ndk, selfSeal, sender.pubkey);
   const selfResult = await wrapToSelf.publish();
-  log("Gift wrap to self published to", selfResult?.size ?? 0, "relays");
+  logger.debug(
+    "Gift wrap to self published to",
+    selfResult?.size ?? 0,
+    "relays",
+  );
 
   return rumor;
 }
@@ -124,7 +130,12 @@ export async function unwrapGiftWrap(
 > {
   return async (giftWrap: NDKEvent) => {
     try {
-      log("Unwrapping gift wrap, id:", giftWrap.id, "from:", giftWrap.pubkey);
+      logger.debug(
+        "Unwrapping gift wrap, id:",
+        giftWrap.id,
+        "from:",
+        giftWrap.pubkey,
+      );
 
       // Decrypt the gift-wrap content to get the seal
       const sealJson = await ndk.signer!.decrypt(
@@ -133,7 +144,12 @@ export async function unwrapGiftWrap(
         "nip44",
       );
       const sealData = JSON.parse(sealJson);
-      log("Decrypted seal, kind:", sealData.kind, "from:", sealData.pubkey);
+      logger.debug(
+        "Decrypted seal, kind:",
+        sealData.kind,
+        "from:",
+        sealData.pubkey,
+      );
 
       // Decrypt the seal content to get the rumor.
       // Try sealData.pubkey first (normal case: agent sent to us).
@@ -146,7 +162,7 @@ export async function unwrapGiftWrap(
           "nip44",
         );
       } catch {
-        log(
+        logger.debug(
           "Seal decryption failed with seal pubkey, trying known agent pubkeys...",
         );
         for (const agentPubkey of knownAgentPubkeys) {
@@ -156,7 +172,7 @@ export async function unwrapGiftWrap(
               sealData.content,
               "nip44",
             );
-            log(
+            logger.debug(
               "Decrypted with agent pubkey:",
               agentPubkey.substring(0, 16) + "...",
             );
@@ -168,12 +184,12 @@ export async function unwrapGiftWrap(
       }
 
       if (!rumorJson) {
-        logError("Could not decrypt seal with any known pubkey");
+        logger.error("Could not decrypt seal with any known pubkey");
         return null;
       }
 
       const rumorData = JSON.parse(rumorJson);
-      log(
+      logger.debug(
         "Decrypted rumor, kind:",
         rumorData.kind,
         "content length:",
@@ -183,7 +199,7 @@ export async function unwrapGiftWrap(
       const rumor = new NDKEvent(ndk, rumorData);
       return { rumor, sealPubkey: sealData.pubkey };
     } catch (err) {
-      logError("Failed to unwrap gift wrap:", err);
+      logger.error("Failed to unwrap gift wrap:", err);
       return null;
     }
   };
@@ -197,22 +213,27 @@ export async function sendNip04DM(
   recipientPubkeyHex: string,
   content: string,
 ): Promise<NDKEvent> {
-  log("sendNip04DM - recipient:", recipientPubkeyHex);
+  logger.debug("sendNip04DM - recipient:", recipientPubkeyHex);
 
   const event = new NDKEvent(ndk);
   event.kind = EVENT_KINDS.ENCRYPTED_DM;
   event.tags = [["p", recipientPubkeyHex]];
 
-  log("Encrypting with NIP-04...");
+  logger.debug("Encrypting with NIP-04...");
   event.content = await ndk.signer!.encrypt(
     ndk.getUser({ pubkey: recipientPubkeyHex }),
     content,
     "nip04",
   );
 
-  log("Publishing NIP-04 DM...");
+  logger.debug("Publishing NIP-04 DM...");
   const result = await event.publish();
-  log("NIP-04 DM published to", result?.size ?? 0, "relays, id:", event.id);
+  logger.debug(
+    "NIP-04 DM published to",
+    result?.size ?? 0,
+    "relays, id:",
+    event.id,
+  );
   return event;
 }
 
@@ -221,7 +242,10 @@ async function giftWrap(
   seal: NDKEvent,
   recipientPubkeyHex: string,
 ): Promise<NDKEvent> {
-  log("giftWrap - recipient:", recipientPubkeyHex.substring(0, 16) + "...");
+  logger.debug(
+    "giftWrap - recipient:",
+    recipientPubkeyHex.substring(0, 16) + "...",
+  );
 
   // Generate ephemeral keypair for the gift wrap
   const ephemeralBytes = crypto.getRandomValues(new Uint8Array(32));
@@ -230,7 +254,10 @@ async function giftWrap(
     .join("");
   const ephemeralSigner = new NDKPrivateKeySigner(ephemeralHex);
   const ephemeralUser = await ephemeralSigner.user();
-  log("Ephemeral pubkey:", ephemeralUser.pubkey.substring(0, 16) + "...");
+  logger.debug(
+    "Ephemeral pubkey:",
+    ephemeralUser.pubkey.substring(0, 16) + "...",
+  );
 
   const wrap = new NDKEvent(ndk);
   wrap.kind = EVENT_KINDS.GIFT_WRAP;
@@ -238,16 +265,16 @@ async function giftWrap(
   wrap.pubkey = ephemeralUser.pubkey;
   wrap.tags = [["p", recipientPubkeyHex]];
 
-  log("Encrypting gift wrap content with NIP-44...");
+  logger.debug("Encrypting gift wrap content with NIP-44...");
   wrap.content = await ephemeralSigner.encrypt(
     ndk.getUser({ pubkey: recipientPubkeyHex }),
     JSON.stringify(seal.rawEvent()),
     "nip44",
   );
 
-  log("Signing gift wrap with ephemeral key...");
+  logger.debug("Signing gift wrap with ephemeral key...");
   await wrap.sign(ephemeralSigner);
-  log("Gift wrap signed, id:", wrap.id);
+  logger.debug("Gift wrap signed, id:", wrap.id);
   return wrap;
 }
 

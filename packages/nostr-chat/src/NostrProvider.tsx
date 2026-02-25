@@ -9,10 +9,10 @@ import {
   type ReactNode,
 } from "react";
 import { DEFAULT_RELAYS, STORAGE_KEYS } from "./constants";
+import { createLogger } from "./logger";
 import type { ConnectionStatus } from "./types";
 
-const log = (...args: unknown[]) => console.log("[nostr-chat]", ...args);
-const logError = (...args: unknown[]) => console.error("[nostr-chat]", ...args);
+const logger = createLogger("nostr-chat");
 
 interface NostrContextValue {
   ndk: NDK | null;
@@ -35,7 +35,7 @@ export function useNostr() {
 function getOrCreatePrivateKey(): string {
   const stored = localStorage.getItem(STORAGE_KEYS.PRIVATE_KEY);
   if (stored) {
-    log("Using existing private key from localStorage");
+    logger.debug("Using existing private key from localStorage");
     return stored;
   }
 
@@ -45,7 +45,7 @@ function getOrCreatePrivateKey(): string {
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
   localStorage.setItem(STORAGE_KEYS.PRIVATE_KEY, hex);
-  log("Generated and stored new private key");
+  logger.debug("Generated and stored new private key");
   return hex;
 }
 
@@ -67,15 +67,15 @@ export function NostrProvider({
 
   const connect = useCallback(async () => {
     if (ndkRef.current && connectionStatus !== "disconnected") {
-      log("Already connected or connecting, skipping");
+      logger.debug("Already connected or connecting, skipping");
       return;
     }
 
-    log("Connecting to relays:", relays);
+    logger.info("Connecting to relays:", relays);
     setConnectionStatus("connecting");
     try {
       const keyHex = privateKeyHex ?? getOrCreatePrivateKey();
-      log("Creating signer...");
+      logger.debug("Creating signer...");
       const signer = new NDKPrivateKeySigner(keyHex);
 
       const ndk = new NDK({
@@ -85,8 +85,8 @@ export function NostrProvider({
       });
 
       const ndkUser = await signer.user();
-      log("User pubkey:", ndkUser.pubkey);
-      log("User npub:", ndkUser.npub);
+      logger.debug("User pubkey:", ndkUser.pubkey);
+      logger.debug("User npub:", ndkUser.npub);
 
       // Store refs before connecting so they're available once a relay connects
       ndkRef.current = ndk;
@@ -95,24 +95,24 @@ export function NostrProvider({
       // Listen to relay connection events — mark as connected on first relay
       let connected = false;
       ndk.pool.on("relay:connect", (relay: { url: string }) => {
-        log("Relay connected:", relay.url);
+        logger.debug("Relay connected:", relay.url);
         if (!connected) {
           connected = true;
           setConnectionStatus("connected");
-          log("First relay connected — status set to connected");
+          logger.info("First relay connected — status set to connected");
         }
       });
       ndk.pool.on("relay:disconnect", (relay: { url: string }) => {
-        log("Relay disconnected:", relay.url);
+        logger.debug("Relay disconnected:", relay.url);
       });
 
       // ndk.connect() is fire-and-forget — it does not reliably resolve its promise
-      log("Calling ndk.connect() (fire-and-forget)...");
+      logger.debug("Calling ndk.connect() (fire-and-forget)...");
       ndk.connect().catch((err: unknown) => {
-        logError("ndk.connect() errored:", err);
+        logger.error("ndk.connect() errored:", err);
       });
     } catch (err) {
-      logError("Connection setup failed:", err);
+      logger.error("Connection setup failed:", err);
       ndkRef.current = null;
       setUser(null);
       setConnectionStatus("disconnected");

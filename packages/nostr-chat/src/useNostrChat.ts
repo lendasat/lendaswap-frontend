@@ -2,21 +2,21 @@ import type { NDKEvent } from "@nostr-dev-kit/ndk";
 import { nip19 } from "nostr-tools";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EVENT_KINDS, STORAGE_KEYS } from "./constants";
+import { createLogger } from "./logger";
 import { sendNip17GroupDM, unwrapGiftWrap } from "./nip17";
 import { useNostr } from "./NostrProvider";
 import type { AgentConfig, AgentProfile, ChatMessage } from "./types";
 
-const log = (...args: unknown[]) => console.log("[nostr-chat]", ...args);
-const logError = (...args: unknown[]) => console.error("[nostr-chat]", ...args);
+const logger = createLogger("nostr-chat");
 
 function loadMessages(): ChatMessage[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     const msgs = raw ? JSON.parse(raw) : [];
-    log("Loaded", msgs.length, "messages from localStorage");
+    logger.debug("Loaded", msgs.length, "messages from localStorage");
     return msgs;
   } catch {
-    log("Failed to load messages from localStorage, starting fresh");
+    logger.debug("Failed to load messages from localStorage, starting fresh");
     return [];
   }
 }
@@ -55,7 +55,7 @@ export function useNostrChat(agents: AgentConfig[]) {
     return map;
   }, [agents, agentPubkeys]);
 
-  log(
+  logger.debug(
     "useNostrChat render - connectionStatus:",
     connectionStatus,
     "ndk:",
@@ -85,7 +85,7 @@ export function useNostrChat(agents: AgentConfig[]) {
     let cancelled = false;
 
     async function fetchProfiles(authors: string[], attempt: number) {
-      log(`Fetching agent profiles (attempt ${attempt}) for:`, authors);
+      logger.info(`Fetching agent profiles (attempt ${attempt}) for:`, authors);
 
       const events = await ndk!.fetchEvents({
         kinds: [0],
@@ -102,7 +102,7 @@ export function useNostrChat(agents: AgentConfig[]) {
           const pubkey = event.pubkey;
           const config = agentConfigByPubkey.get(pubkey);
 
-          log(
+          logger.debug(
             "Agent profile:",
             pubkey.substring(0, 16) + "...",
             metadata.name,
@@ -123,7 +123,7 @@ export function useNostrChat(agents: AgentConfig[]) {
             return next;
           });
         } catch (err) {
-          logError("Failed to parse agent profile:", err);
+          logger.error("Failed to parse agent profile:", err);
         }
       }
 
@@ -146,7 +146,11 @@ export function useNostrChat(agents: AgentConfig[]) {
       if (attempt < 2) {
         const missing = authors.filter((pk) => !resolved.has(pk));
         if (missing.length > 0 && !cancelled) {
-          log("Retrying profile fetch for", missing.length, "agents without avatar");
+          logger.info(
+            "Retrying profile fetch for",
+            missing.length,
+            "agents without avatar",
+          );
           setTimeout(() => {
             if (!cancelled) fetchProfiles(missing, attempt + 1);
           }, 3000);
@@ -163,10 +167,10 @@ export function useNostrChat(agents: AgentConfig[]) {
 
   // Add message with dedup
   const addMessage = useCallback((msg: ChatMessage) => {
-    log("Adding message:", msg.id, msg.direction, msg.status);
+    logger.debug("Adding message:", msg.id, msg.direction, msg.status);
     setMessages((prev) => {
       if (prev.some((m) => m.id === msg.id)) {
-        log("Duplicate message, skipping:", msg.id);
+        logger.debug("Duplicate message, skipping:", msg.id);
         return prev;
       }
       return [...prev, msg].sort((a, b) => a.timestamp - b.timestamp);
@@ -176,7 +180,7 @@ export function useNostrChat(agents: AgentConfig[]) {
   // Subscribe to incoming gift wraps (NIP-17)
   useEffect(() => {
     if (!ndk || !user || connectionStatus !== "connected") {
-      log(
+      logger.debug(
         "Skipping NIP-17 subscription - ndk:",
         !!ndk,
         "user:",
@@ -187,7 +191,10 @@ export function useNostrChat(agents: AgentConfig[]) {
       return;
     }
 
-    log("Setting up NIP-17 gift wrap subscription for pubkey:", user.pubkey);
+    logger.info(
+      "Setting up NIP-17 gift wrap subscription for pubkey:",
+      user.pubkey,
+    );
     let cancelled = false;
 
     (async () => {
@@ -198,31 +205,31 @@ export function useNostrChat(agents: AgentConfig[]) {
         "#p": [user.pubkey],
         since: Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60,
       };
-      log("NIP-17 subscription filter:", JSON.stringify(filter));
+      logger.debug("NIP-17 subscription filter:", JSON.stringify(filter));
 
       const sub = ndk.subscribe(filter, { closeOnEose: false });
 
       sub.on("event", async (event: NDKEvent) => {
-        log("Received gift wrap event:", event.id);
+        logger.debug("Received gift wrap event:", event.id);
         if (cancelled) return;
         const result = await unwrap(event);
         if (!result) {
-          log("Failed to unwrap gift wrap event:", event.id);
+          logger.debug("Failed to unwrap gift wrap event:", event.id);
           return;
         }
 
         const { rumor, sealPubkey } = result;
-        log("Unwrapped rumor from:", sealPubkey);
+        logger.debug("Unwrapped rumor from:", sealPubkey);
 
         // Self-copy: seal was created by us → skip (already added optimistically)
         if (sealPubkey === user.pubkey) {
-          log("Ignoring self-copy gift wrap from our own pubkey");
+          logger.debug("Ignoring self-copy gift wrap from our own pubkey");
           return;
         }
 
         // Only accept messages from known agents
         if (!agentPubkeySet.has(sealPubkey)) {
-          log("Ignoring message from unknown pubkey:", sealPubkey);
+          logger.debug("Ignoring message from unknown pubkey:", sealPubkey);
           return;
         }
 
@@ -237,14 +244,14 @@ export function useNostrChat(agents: AgentConfig[]) {
       });
 
       sub.on("eose", () => {
-        log("NIP-17 subscription EOSE received");
+        logger.debug("NIP-17 subscription EOSE received");
       });
 
       subRef.current = { stop: () => sub.stop() };
     })();
 
     return () => {
-      log("Cleaning up NIP-17 subscription");
+      logger.debug("Cleaning up NIP-17 subscription");
       cancelled = true;
       subRef.current?.stop();
     };
@@ -253,7 +260,7 @@ export function useNostrChat(agents: AgentConfig[]) {
   const sendMessage = useCallback(
     async (content: string) => {
       if (!ndk || !user || !content.trim()) {
-        log(
+        logger.debug(
           "Cannot send - ndk:",
           !!ndk,
           "user:",
@@ -267,7 +274,7 @@ export function useNostrChat(agents: AgentConfig[]) {
       const tempId = crypto.randomUUID();
       const now = Date.now();
 
-      log(
+      logger.debug(
         "Sending message to",
         agentPubkeys.length,
         "agents:",
@@ -287,9 +294,9 @@ export function useNostrChat(agents: AgentConfig[]) {
       try {
         const text = content.trim();
 
-        log("Sending NIP-17 group gift-wrapped DM...");
+        logger.debug("Sending NIP-17 group gift-wrapped DM...");
         const rumor = await sendNip17GroupDM(ndk, user, agentPubkeys, text);
-        log("NIP-17 group send successful, rumor id:", rumor.id);
+        logger.info("NIP-17 group send successful, rumor id:", rumor.id);
 
         setMessages((prev) =>
           prev.map((m) =>
@@ -299,7 +306,7 @@ export function useNostrChat(agents: AgentConfig[]) {
           ),
         );
       } catch (err) {
-        logError("Failed to send message:", err);
+        logger.error("Failed to send message:", err);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === tempId ? { ...m, status: "failed" as const } : m,
