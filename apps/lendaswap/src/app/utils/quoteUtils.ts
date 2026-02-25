@@ -97,9 +97,13 @@ export function deriveSourceAmount(params: DeriveAmountParams): number {
 }
 
 /** Extract fee parameters from a QuoteResponse. */
-export function extractFees(quote: QuoteResponse): QuoteFees {
+export function extractFees(
+  quote: QuoteResponse,
+  includeGasless = true,
+): QuoteFees {
+  const gasless = includeGasless ? Number(quote.gasless_network_fee) : 0;
   return {
-    fixedFees: Number(quote.network_fee) + Number(quote.gasless_network_fee),
+    fixedFees: Number(quote.network_fee) + gasless,
     protocolFeeRate: quote.protocol_fee_rate,
   };
 }
@@ -125,9 +129,10 @@ export function gaslessFeeBtc(quote: QuoteResponse): string {
 export function totalFeeBtc(
   btcAmountSats: number | undefined,
   quote: QuoteResponse,
+  includeGasless = true,
 ): string {
-  const networkSats =
-    Number(quote.network_fee) + Number(quote.gasless_network_fee);
+  const gasless = includeGasless ? Number(quote.gasless_network_fee) : 0;
+  const networkSats = Number(quote.network_fee) + gasless;
   const protocolSats =
     btcAmountSats != null
       ? btcAmountSats * quote.protocol_fee_rate

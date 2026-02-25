@@ -18,6 +18,7 @@ import { SupportErrorBanner } from "../components/SupportErrorBanner";
 import {
   DepositArkadeStep,
   DepositBitcoinStep,
+  DepositEvmGaslessStep,
   DepositEvmStep,
   RefundArkadeStep,
   RefundBitcoinStep,
@@ -402,17 +403,28 @@ export function SwapWizardPage() {
               )}
               {(swapDirectionValue === "evm_to_arkade" ||
                 swapDirectionValue === "evm_to_bitcoin" ||
-                swapDirectionValue === "evm_to_lightning") && (
-                <DepositEvmStep
-                  swapData={
-                    displaySwapData as
-                      | EvmToArkadeSwapResponse
-                      | EvmToBitcoinSwapResponse
-                      | EvmToLightningSwapResponse
-                  }
-                  swapId={displaySwapData.id}
-                />
-              )}
+                swapDirectionValue === "evm_to_lightning") &&
+                ((displaySwapData as EvmToArkadeSwapResponse | EvmToBitcoinSwapResponse | EvmToLightningSwapResponse).gasless ? (
+                  <DepositEvmGaslessStep
+                    swapData={
+                      displaySwapData as
+                        | EvmToArkadeSwapResponse
+                        | EvmToBitcoinSwapResponse
+                        | EvmToLightningSwapResponse
+                    }
+                    swapId={displaySwapData.id}
+                  />
+                ) : (
+                  <DepositEvmStep
+                    swapData={
+                      displaySwapData as
+                        | EvmToArkadeSwapResponse
+                        | EvmToBitcoinSwapResponse
+                        | EvmToLightningSwapResponse
+                    }
+                    swapId={displaySwapData.id}
+                  />
+                ))}
             </>
           )}
 

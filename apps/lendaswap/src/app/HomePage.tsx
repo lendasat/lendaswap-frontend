@@ -14,6 +14,7 @@ import { useAsync } from "react-use";
 import { useAccount, useSwitchChain } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
+import { Switch } from "#/components/ui/switch";
 import {
   isLightningAddress,
   resolveLightningAddress,
@@ -156,6 +157,7 @@ export function HomePage() {
   );
   const [isAddressValid, setIsAddressValid] = useState(true);
   const [swapError, setSwapError] = useState("");
+  const [gaslessEnabled, setGaslessEnabled] = useState(false);
 
   // Sync targetAddress from URL when search params change (e.g. user edits URL bar)
   const urlAddress = searchParams.get("address");
@@ -264,6 +266,13 @@ export function HomePage() {
   const sourceChain = sourceAsset?.chain;
   const sourceDecimals = sourceAsset?.decimals;
   const isSourceBtc = sourceAsset ? isBtc(sourceAsset) : false;
+  const isSourceEvm = sourceAsset ? isEvmToken(sourceAsset.chain) : false;
+
+  // Reset gasless toggle when source is not EVM
+  useEffect(() => {
+    if (!isSourceEvm) setGaslessEnabled(false);
+  }, [isSourceEvm]);
+
   const targetTokenId = targetAsset?.token_id;
   const targetChain = targetAsset?.chain;
   const targetDecimals = targetAsset?.decimals;
@@ -331,7 +340,7 @@ export function HomePage() {
         exchangeRate,
         evmDecimals,
         isSourceBtc,
-        fees: extractFees(quote),
+        fees: extractFees(quote, gaslessEnabled),
       }),
     );
   }, [
@@ -341,6 +350,7 @@ export function HomePage() {
     isSourceBtc,
     sourceDecimals,
     targetDecimals,
+    gaslessEnabled,
   ]);
 
   // Target edited → derive source (fees added to source side)
@@ -361,7 +371,7 @@ export function HomePage() {
         exchangeRate,
         evmDecimals,
         isSourceBtc,
-        fees: extractFees(quote),
+        fees: extractFees(quote, gaslessEnabled),
       }),
     );
   }, [
@@ -371,6 +381,7 @@ export function HomePage() {
     isSourceBtc,
     sourceDecimals,
     targetDecimals,
+    gaslessEnabled,
   ]);
 
   // Debounced sync of amounts + address to URL (avoids navigating on every keystroke)
@@ -441,6 +452,7 @@ export function HomePage() {
     : undefined;
 
   const isWrongChain =
+    !gaslessEnabled &&
     requiredChainId !== undefined &&
     web3WalletConnectedChain !== undefined &&
     web3WalletConnectedChain.id !== requiredChainId;
@@ -499,6 +511,7 @@ export function HomePage() {
         targetAmount: selectedTargetAmount,
         targetAddress: resolvedAddress,
         userAddress: connectedAddress,
+        gasless: gaslessEnabled,
       });
       navigate(`/swap/${swap.id}/wizard`);
     } catch (e) {
@@ -509,7 +522,8 @@ export function HomePage() {
     }
   };
 
-  const isWeb3WalletNeeded = sourceAsset && isEvmToken(sourceAsset.chain);
+  const isWeb3WalletNeeded =
+    sourceAsset && isEvmToken(sourceAsset.chain) && !gaslessEnabled;
   const isConnectionStillNeeded = isWeb3WalletNeeded && !isWeb3WalletConnected;
 
   // Compute the BTC-equivalent amount in sats for limit validation
@@ -587,7 +601,7 @@ export function HomePage() {
 
   const gaslessFeeEstimate =
     quote && quote.gasless_network_fee > 0 && gaslessFeeBtc(quote);
-  const totalFee = quote && totalFeeBtc(btcAmountSats, quote);
+  const totalFee = quote && totalFeeBtc(btcAmountSats, quote, gaslessEnabled);
   const networkFee = quote && serverNetworkFeeBtc(quote);
   const protocolFee = quote && protocolFeeBtc(btcAmountSats, quote);
 
@@ -757,8 +771,19 @@ export function HomePage() {
                   ) : (
                     <>
                       <div>Network Fee: {networkFee} BTC</div>
-                      {gaslessFeeEstimate && (
-                        <div>Gasless Fee: {gaslessFeeEstimate} BTC</div>
+                      {isSourceEvm && gaslessFeeEstimate && (
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <span>
+                            Gasless Fee:{" "}
+                            {gaslessEnabled ? gaslessFeeEstimate : "0.00000000"}{" "}
+                            BTC
+                          </span>
+                          <Switch
+                            checked={gaslessEnabled}
+                            onCheckedChange={setGaslessEnabled}
+                            className="scale-75"
+                          />
+                        </div>
                       )}
                       {quote && (
                         <div>

@@ -74,6 +74,8 @@ export function SupportErrorBanner({
   const [xpub, setXpub] = useState<string>();
   const knownAction = getKnownAction(error);
 
+  console.error(`Error: ${error}`);
+
   useEffect(() => {
     if (!knownAction) {
       api

@@ -192,6 +192,7 @@ export const api = {
     targetAmount?: number;
     targetAddress: string;
     userAddress?: string;
+    gasless?: boolean;
   }): Promise<GetSwapResponse> {
     const referralCode = getReferralCode();
     const client = await getClients();
@@ -203,6 +204,7 @@ export const api = {
       targetAddress: request.targetAddress,
       userAddress: request.userAddress,
       referralCode: referralCode || undefined,
+      gasless: request.gasless,
     });
     return result.response as GetSwapResponse;
   },
@@ -266,6 +268,14 @@ export const api = {
     return await client.getCoordinatorFundingCallData(swapId);
   },
 
+  async getCoordinatorFundingCallDataPermit2(
+    swapId: string,
+    chainId: number,
+  ): Promise<CoordinatorFundingCallData> {
+    const client = await getClients();
+    return await client.getCoordinatorFundingCallDataPermit2(swapId, chainId);
+  },
+
   async refundEvmSwap(
     swapId: string,
     mode: "swap-back" | "direct" = "swap-back",
@@ -318,5 +328,10 @@ export const api = {
   async deleteSwap(id: string): Promise<void> {
     const client = await getClients();
     await client.deleteSwap(id);
+  },
+
+  async fundSwapGasless(swapId: string): Promise<{ txHash: string }> {
+    const client = await getClients();
+    return await client.fundSwapGasless(swapId);
   },
 };

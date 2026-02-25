@@ -33,6 +33,14 @@ interface StepState {
   error?: string;
 }
 
+type StepKey = "switchChain" | "approve" | "fund";
+
+interface StepDef {
+  key: StepKey;
+  label: string;
+  action: string;
+}
+
 interface EvmDepositStepProps {
   swapData:
     | EvmToArkadeSwapResponse
@@ -106,6 +114,12 @@ async function getRevertReason(
   }
 }
 
+const INITIAL_STEPS: Record<string, StepState> = {
+  switchChain: { status: "pending" },
+  approve: { status: "pending" },
+  fund: { status: "pending" },
+};
+
 export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   const navigate = useNavigate();
   const chain = getViemChain(swapData.source_token.chain);
@@ -155,14 +169,13 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   }, [now, refundLocktime, isExpired]);
 
   const [steps, setSteps] = useState<Record<string, StepState>>({
-    switchChain: { status: "pending" },
-    approve: { status: "pending" },
-    fund: { status: "pending" },
+    ...INITIAL_STEPS,
   });
+
   const [isRunning, setIsRunning] = useState(false);
   const [userRejected, setUserRejected] = useState<string | null>(null);
 
-  // Open wallet connect dialog when landing on page if not connected
+  // Open wallet connect dialog if not connected
   useEffect(() => {
     if (!address) {
       setOpen(true);
@@ -176,7 +189,8 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
   const fetchFunding = useCallback(async () => {
     if (!fundingRef.current) {
-      fundingRef.current = await api.getCoordinatorFundingCallData(swapId);
+      fundingRef.current =
+        await api.getCoordinatorFundingCallData(swapId);
     }
     return fundingRef.current;
   }, [swapId]);
@@ -251,11 +265,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       ? "You Receive"
       : "You Receive";
 
-  const updateStep = (key: string, state: StepState) => {
-    setSteps((prev) => ({ ...prev, [key]: state }));
-  };
-
-  const runFromStep = async (startFrom: "switchChain" | "approve" | "fund") => {
+  const runFromStep = async (startFrom: StepKey) => {
     if (!address) {
       setOpen(true);
       return;
@@ -268,14 +278,14 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       return;
     }
 
+    const updateStep = (key: string, state: StepState) => {
+      setSteps((prev) => ({ ...prev, [key]: state }));
+    };
+
     setIsRunning(true);
     setUserRejected(null);
 
-    const stepOrder: Array<"switchChain" | "approve" | "fund"> = [
-      "switchChain",
-      "approve",
-      "fund",
-    ];
+    const stepOrder: StepKey[] = ["switchChain", "approve", "fund"];
     const startIndex = stepOrder.indexOf(startFrom);
 
     try {
@@ -294,7 +304,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           const tokenAddress = funding.approve.to as `0x${string}`;
           const spender = funding.executeAndCreate.to as `0x${string}`;
           console.log(
-            "[approve] tokenAddress:",
+            `[approve] tokenAddress:`,
             tokenAddress,
             "spender:",
             spender,
@@ -308,7 +318,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
             args: [address, spender],
           });
           console.log(
-            "[approve] current allowance:",
+            `[approve] current allowance:`,
             allowance.toString(),
             "required:",
             swapData.source_amount,
@@ -318,7 +328,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
             updateStep(step, { status: "completed" });
           } else {
             console.log(
-              "[approve] sending approve tx…",
+              `[approve] sending approve tx…`,
               "walletClient chain:",
               walletClient.chain?.id,
               "expected:",
@@ -328,21 +338,24 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
               to: tokenAddress,
               data: funding.approve.data as `0x${string}`,
               chain,
-              gas: 100_000n, // Anvil fork needs extra gas for proxy reentrancy guards
+              gas: 100_000n,
             });
-            console.log("[approve] tx hash:", approveTxHash);
+            console.log(`[approve] tx hash:`, approveTxHash);
             const approveReceipt = await pollForReceipt(
               rpcClient,
               approveTxHash,
             );
-            console.log("[approve] receipt status:", approveReceipt.status);
+            console.log(
+              `[approve] receipt status:`,
+              approveReceipt.status,
+            );
             if (approveReceipt.status !== "success") {
               const reason = await getRevertReason(
                 rpcClient,
                 approveTxHash,
                 approveReceipt.blockNumber,
               );
-              console.log("[approve] revert reason:", reason);
+              console.log(`[approve] revert reason:`, reason);
               updateStep(step, { status: "error", error: reason });
               return;
             }
@@ -358,7 +371,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
             to: freshFunding.executeAndCreate.to as `0x${string}`,
             data: freshFunding.executeAndCreate.data as `0x${string}`,
             chain,
-            gas: 500_000n, // Anvil fork needs extra gas for proxy reentrancy guards
+            gas: 500_000n,
           });
           const executeReceipt = await pollForReceipt(rpcClient, executeTxHash);
           if (executeReceipt.status !== "success") {
@@ -398,18 +411,16 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     }
   };
 
-  const stepDefs = [
+  const chainLabel = chain?.name ?? toChainName(swapData.source_token.chain);
+
+  const stepDefs: StepDef[] = [
+    { key: "switchChain", label: `Switch to ${chainLabel}`, action: "Switch" },
     {
-      key: "switchChain" as const,
-      label: `Switch to ${chain?.name ?? toChainName(swapData.source_token.chain)}`,
-      action: "Switch",
-    },
-    {
-      key: "approve" as const,
+      key: "approve",
       label: `Approve ${tokenSymbol} spend`,
       action: "Approve",
     },
-    { key: "fund" as const, label: "Fund swap", action: "Fund" },
+    { key: "fund", label: "Fund swap", action: "Fund" },
   ];
 
   // The current step is the first non-completed step
@@ -455,79 +466,84 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         </div>
       ) : null}
 
-      {/* Step Checklist */}
-      <div className="space-y-2">
-        {stepDefs.map(({ key, label, action }) => {
-          const step = steps[key];
-          return (
-            <div key={key} className="flex items-center gap-3">
-              <StepIcon status={step.status} />
-              <span
-                className={`text-sm flex-1 ${
-                  step.status === "completed"
-                    ? "text-muted-foreground line-through"
-                    : step.status === "error"
-                      ? "text-red-500"
-                      : step.status === "active"
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground"
-                }`}
-              >
-                {label}
-              </span>
-              {step.status === "error" && !isExpired && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => runFromStep(key)}
-                  disabled={isRunning}
+      {/* Step checklist */}
+      <div className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Your wallet approves and submits all transactions directly.
+        </p>
+        <div className="space-y-2">
+          {stepDefs.map(({ key, label, action }) => {
+            const step = steps[key];
+            return (
+              <div key={key} className="flex items-center gap-3">
+                <StepIcon status={step.status} />
+                <span
+                  className={`text-sm flex-1 ${
+                    step.status === "completed"
+                      ? "text-muted-foreground line-through"
+                      : step.status === "error"
+                        ? "text-red-500"
+                        : step.status === "active"
+                          ? "text-foreground font-medium"
+                          : "text-muted-foreground"
+                  }`}
                 >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Retry
-                </Button>
-              )}
-              {key === currentStepKey &&
-                step.status === "pending" &&
-                !isExpired && (
+                  {label}
+                </span>
+                {step.status === "error" && !isExpired && (
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-7 px-3 text-xs"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs"
                     onClick={() => runFromStep(key)}
                     disabled={isRunning}
                   >
-                    {action}
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Retry
                   </Button>
                 )}
+                {key === currentStepKey &&
+                  step.status === "pending" &&
+                  !isExpired && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-3 text-xs"
+                      onClick={() => runFromStep(key)}
+                      disabled={isRunning}
+                    >
+                      {action}
+                    </Button>
+                  )}
+              </div>
+            );
+          })}
+          {/* Show error message below the failed step */}
+          {stepDefs.map(({ key }) => {
+            const step = steps[key];
+            if (step.status !== "error" || !step.error) return null;
+            return (
+              <div key={`${key}-error`} className="ml-7">
+                <SupportErrorBanner
+                  message={`${key === "approve" ? "Token approval" : key === "fund" ? "Funding transaction" : "Transaction"} failed`}
+                  error={step.error}
+                  swapId={swapId}
+                />
+              </div>
+            );
+          })}
+          {userRejected && (
+            <div className="ml-7 rounded-lg border border-orange-500 bg-orange-50 p-2 text-xs text-orange-600 dark:bg-orange-950/20">
+              You rejected the{" "}
+              {userRejected === "approve"
+                ? "token approval"
+                : userRejected === "fund"
+                  ? "funding transaction"
+                  : "request"}{" "}
+              in your wallet. Click the button above to try again.
             </div>
-          );
-        })}
-        {/* Show error message below the failed step */}
-        {stepDefs.map(({ key }) => {
-          const step = steps[key];
-          if (step.status !== "error" || !step.error) return null;
-          return (
-            <div key={`${key}-error`} className="ml-7">
-              <SupportErrorBanner
-                message={`${key === "approve" ? "Token approval" : key === "fund" ? "Funding transaction" : "Transaction"} failed`}
-                error={step.error}
-                swapId={swapId}
-              />
-            </div>
-          );
-        })}
-        {userRejected && (
-          <div className="ml-7 rounded-lg border border-orange-500 bg-orange-50 p-2 text-xs text-orange-600 dark:bg-orange-950/20">
-            You rejected the{" "}
-            {userRejected === "approve"
-              ? "token approval"
-              : userRejected === "fund"
-                ? "funding transaction"
-                : "request"}{" "}
-            in your wallet. Click the button above to try again.
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Wallet Connection Warning */}

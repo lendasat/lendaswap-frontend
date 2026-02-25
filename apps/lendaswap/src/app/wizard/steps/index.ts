@@ -1,5 +1,6 @@
 export { DepositArkadeStep } from "./DepositArkadeStep";
 export { DepositBitcoinStep } from "./DepositBitcoinStep";
+export { DepositEvmGaslessStep } from "./DepositEvmGaslessStep";
 export { DepositEvmStep } from "./DepositEvmStep";
 export { RefundArkadeStep } from "./RefundArkadeStep";
 export { RefundBitcoinStep } from "./RefundBitcoinStep";
