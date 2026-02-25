@@ -8,7 +8,7 @@ import {
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import { ArrowDown, ChevronDown, Loader } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useAsync } from "react-use";
 import { useAccount, useSwitchChain } from "wagmi";
@@ -144,7 +144,13 @@ export function HomePage() {
 
   const [lastEditedField, setLastEditedField] = useState<
     "sourceAsset" | "targetAsset"
-  >("sourceAsset");
+  >(() => {
+    // If only targetAmount is provided via URL, treat it as the edited field
+    // so the "target edited → derive source" effect fires correctly
+    const hasSrc = searchParams.get("sourceAmount");
+    const hasTgt = searchParams.get("targetAmount");
+    return !hasSrc && hasTgt ? "targetAsset" : "sourceAsset";
+  });
   const [targetAddress, setTargetAddress] = useState<string>(
     () => searchParams.get("address") ?? "",
   );
@@ -204,9 +210,17 @@ export function HomePage() {
   const isEvmTarget = targetAsset ? isEvmToken(targetAsset.chain) : false;
   const targetChainKey = targetAsset?.chain;
 
+  const isInitialTargetChainSet = useRef(false);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: only re-run when target chain changes, not on every dep change
   useEffect(() => {
     if (!targetChainKey) return;
+
+    // On initial page load, preserve any address provided via URL params
+    if (!isInitialTargetChainSet.current) {
+      isInitialTargetChainSet.current = true;
+      if (urlAddress) return;
+    }
 
     if (isEvmTarget) {
       // Switching to an EVM target — auto-fill wallet address
