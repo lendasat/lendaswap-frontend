@@ -404,7 +404,12 @@ export function SwapWizardPage() {
               {(swapDirectionValue === "evm_to_arkade" ||
                 swapDirectionValue === "evm_to_bitcoin" ||
                 swapDirectionValue === "evm_to_lightning") &&
-                ((displaySwapData as EvmToArkadeSwapResponse | EvmToBitcoinSwapResponse | EvmToLightningSwapResponse).gasless ? (
+                ((
+                  displaySwapData as
+                    | EvmToArkadeSwapResponse
+                    | EvmToBitcoinSwapResponse
+                    | EvmToLightningSwapResponse
+                ).gasless ? (
                   <DepositEvmGaslessStep
                     swapData={
                       displaySwapData as

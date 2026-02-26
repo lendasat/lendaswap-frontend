@@ -3,7 +3,6 @@ import {
   type BtcToArkadeSwapResponse,
   type Chain,
   type ClaimResult,
-  type CoordinatorFundingCallData,
   type GetSwapResponse,
   IdbSwapStorage,
   IdbWalletStorage,
@@ -17,6 +16,7 @@ import {
   type TokenId,
   type TokenInfo,
   type TokenInfos,
+  type UnsignedPermit2FundingData,
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
@@ -24,7 +24,6 @@ import { getReferralCode } from "./utils/referralCode";
 // Re-export SDK types for use throughout the frontend
 export type {
   BtcToArkadeSwapResponse,
-  CoordinatorFundingCallData,
   GetSwapResponse,
   PureTokenInfo,
   QuoteResponse,
@@ -261,19 +260,12 @@ export const api = {
     throw new Error(`Unable to refund: ${swapId}. ${result.message}`);
   },
 
-  async getCoordinatorFundingCallData(
-    swapId: string,
-  ): Promise<CoordinatorFundingCallData> {
-    const client = await getClients();
-    return await client.getCoordinatorFundingCallData(swapId);
-  },
-
-  async getCoordinatorFundingCallDataPermit2(
+  async getPermit2FundingParamsUnsigned(
     swapId: string,
     chainId: number,
-  ): Promise<CoordinatorFundingCallData> {
+  ): Promise<UnsignedPermit2FundingData> {
     const client = await getClients();
-    return await client.getCoordinatorFundingCallDataPermit2(swapId, chainId);
+    return await client.getPermit2FundingParamsUnsigned(swapId, chainId);
   },
 
   async refundEvmSwap(

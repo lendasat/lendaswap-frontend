@@ -2,6 +2,9 @@ import {
   type EvmToArkadeSwapResponse,
   type EvmToBitcoinSwapResponse,
   type EvmToLightningSwapResponse,
+  type UnsignedPermit2FundingData,
+  encodeExecuteAndCreateWithPermit2,
+  PERMIT2_ADDRESS,
   isArkade,
   isBtcOnchain,
   isLightning,
@@ -182,18 +185,20 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     }
   }, [address, setOpen]);
 
-  // Cache funding calldata so we don't fetch it multiple times
-  const fundingRef = useRef<Awaited<
-    ReturnType<typeof api.getCoordinatorFundingCallData>
-  > | null>(null);
+  // Cache unsigned Permit2 funding params so we don't fetch multiple times
+  const fundingRef = useRef<UnsignedPermit2FundingData | null>(null);
 
+  const chainId = chain?.id;
   const fetchFunding = useCallback(async () => {
+    if (!chainId) throw new Error("Chain not resolved");
     if (!fundingRef.current) {
-      fundingRef.current =
-        await api.getCoordinatorFundingCallData(swapId);
+      fundingRef.current = await api.getPermit2FundingParamsUnsigned(
+        swapId,
+        chainId,
+      );
     }
     return fundingRef.current;
-  }, [swapId]);
+  }, [swapId, chainId]);
 
   // Auto-mark switchChain as completed if already on the correct chain
   useEffect(() => {
@@ -205,7 +210,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     }
   }, [currentChainId, chain]);
 
-  // Auto-mark approve as completed if allowance is already sufficient
+  // Auto-mark approve as completed if allowance to Permit2 is already sufficient
   useEffect(() => {
     if (!address || !rpcClient || !chain || currentChainId !== chain.id) return;
 
@@ -213,17 +218,16 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     (async () => {
       try {
         const funding = await fetchFunding();
-        const tokenAddress = funding.approve.to as `0x${string}`;
-        const spender = funding.executeAndCreate.to as `0x${string}`;
+        const tokenAddress = funding.sourceTokenAddress as `0x${string}`;
 
         const allowance = await rpcClient.readContract({
           address: tokenAddress,
           abi: erc20Abi,
           functionName: "allowance",
-          args: [address, spender],
+          args: [address, PERMIT2_ADDRESS as `0x${string}`],
         });
 
-        if (!cancelled && allowance >= BigInt(swapData.source_amount)) {
+        if (!cancelled && allowance >= funding.sourceAmount) {
           setSteps((prev) => ({
             ...prev,
             approve: { status: "completed" },
@@ -301,42 +305,47 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
         if (step === "approve") {
           const funding = await fetchFunding();
-          const tokenAddress = funding.approve.to as `0x${string}`;
-          const spender = funding.executeAndCreate.to as `0x${string}`;
+          const tokenAddress = funding.sourceTokenAddress as `0x${string}`;
+          const permit2 = PERMIT2_ADDRESS as `0x${string}`;
           console.log(
             `[approve] tokenAddress:`,
             tokenAddress,
-            "spender:",
-            spender,
+            "spender (Permit2):",
+            permit2,
           );
 
-          // Check if allowance is already sufficient
+          // Check if allowance to Permit2 is already sufficient
           const allowance = await rpcClient.readContract({
             address: tokenAddress,
             abi: erc20Abi,
             functionName: "allowance",
-            args: [address, spender],
+            args: [address, permit2],
           });
           console.log(
             `[approve] current allowance:`,
             allowance.toString(),
             "required:",
-            swapData.source_amount,
+            funding.sourceAmount.toString(),
           );
 
-          if (allowance >= BigInt(swapData.source_amount)) {
+          if (allowance >= funding.sourceAmount) {
             updateStep(step, { status: "completed" });
           } else {
             console.log(
-              `[approve] sending approve tx…`,
+              `[approve] sending approve tx (source token → Permit2)…`,
               "walletClient chain:",
               walletClient.chain?.id,
               "expected:",
               chain?.id,
             );
+            // Approve max uint256 to Permit2 (one-time)
+            const maxUint256 = BigInt(
+              "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            );
+            const approveData = `0x095ea7b3${permit2.slice(2).toLowerCase().padStart(64, "0")}${maxUint256.toString(16).padStart(64, "0")}`;
             const approveTxHash = await walletClient.sendTransaction({
               to: tokenAddress,
-              data: funding.approve.data as `0x${string}`,
+              data: approveData as `0x${string}`,
               chain,
               gas: 100_000n,
             });
@@ -345,10 +354,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
               rpcClient,
               approveTxHash,
             );
-            console.log(
-              `[approve] receipt status:`,
-              approveReceipt.status,
-            );
+            console.log(`[approve] receipt status:`, approveReceipt.status);
             if (approveReceipt.status !== "success") {
               const reason = await getRevertReason(
                 rpcClient,
@@ -367,9 +373,65 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           // Invalidate cache and fetch fresh calldata — 1inch quotes expire quickly
           fundingRef.current = null;
           const freshFunding = await fetchFunding();
+
+          // 1. Sign the Permit2 EIP-712 typed data with the user's wallet
+          console.log("[fund] signing Permit2 typed data…");
+          const typedData = freshFunding.typedData;
+          const signature = await walletClient.signTypedData({
+            domain: {
+              ...typedData.domain,
+              verifyingContract: typedData.domain
+                .verifyingContract as `0x${string}`,
+            },
+            types: typedData.types,
+            primaryType: typedData.primaryType,
+            message: {
+              permitted: {
+                token: typedData.message.permitted.token as `0x${string}`,
+                amount: typedData.message.permitted.amount,
+              },
+              spender: typedData.message.spender as `0x${string}`,
+              nonce: typedData.message.nonce,
+              deadline: typedData.message.deadline,
+              witness: {
+                preimageHash: typedData.message.witness
+                  .preimageHash as `0x${string}`,
+                token: typedData.message.witness.token as `0x${string}`,
+                claimAddress: typedData.message.witness
+                  .claimAddress as `0x${string}`,
+                refundAddress: typedData.message.witness
+                  .refundAddress as `0x${string}`,
+                timelock: typedData.message.witness.timelock,
+                callsHash: typedData.message.witness.callsHash as `0x${string}`,
+              },
+            },
+            account: walletClient.account!,
+          });
+          console.log("[fund] Permit2 signature:", signature);
+
+          // 2. Encode executeAndCreateWithPermit2 calldata
+          const encoded = encodeExecuteAndCreateWithPermit2(
+            freshFunding.coordinatorAddress,
+            {
+              calls: freshFunding.calls,
+              preimageHash: freshFunding.preimageHash,
+              token: freshFunding.lockTokenAddress,
+              claimAddress: freshFunding.claimAddress,
+              timelock: freshFunding.timelock,
+              depositor: address,
+              sourceToken: freshFunding.sourceTokenAddress,
+              sourceAmount: freshFunding.sourceAmount,
+              nonce: freshFunding.nonce,
+              deadline: freshFunding.deadline,
+              signature,
+            },
+          );
+          console.log("[fund] encoded calldata, sending tx…");
+
+          // 3. Send the transaction
           const executeTxHash = await walletClient.sendTransaction({
-            to: freshFunding.executeAndCreate.to as `0x${string}`,
-            data: freshFunding.executeAndCreate.data as `0x${string}`,
+            to: encoded.to as `0x${string}`,
+            data: encoded.data as `0x${string}`,
             chain,
             gas: 500_000n,
           });

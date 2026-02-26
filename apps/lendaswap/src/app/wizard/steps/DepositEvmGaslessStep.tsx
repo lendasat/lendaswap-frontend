@@ -62,8 +62,7 @@ export function DepositEvmGaslessStep({
   }, [chain]);
 
   const [balance, setBalance] = useState<bigint | null>(null);
-  const hasSufficientBalance =
-    balance !== null && balance >= requiredAmount;
+  const hasSufficientBalance = balance !== null && balance >= requiredAmount;
 
   useEffect(() => {
     if (!rpcClient || funded) return;
