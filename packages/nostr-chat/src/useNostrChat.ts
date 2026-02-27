@@ -35,12 +35,19 @@ export function useNostrChat(agents: AgentConfig[]) {
   const subRef = useRef<{ stop: () => void } | null>(null);
   const profileFetched = useRef(false);
 
-  // Decode all agent npubs to hex pubkeys
+  // Decode all agent npubs to hex pubkeys, filtering out malformed entries
   const agentPubkeys = useMemo(() => {
-    return agents.map((agent) => {
-      const decoded = nip19.decode(agent.npub);
-      return decoded.data as string;
-    });
+    return agents
+      .map((agent) => {
+        try {
+          const decoded = nip19.decode(agent.npub);
+          return decoded.data as string;
+        } catch {
+          console.warn(`Invalid agent npub, skipping: ${agent.npub}`);
+          return null;
+        }
+      })
+      .filter((pk): pk is string => pk !== null);
   }, [agents]);
 
   // Set of agent pubkeys for fast lookup
