@@ -2,13 +2,13 @@ import {
   type EvmToArkadeSwapResponse,
   type EvmToBitcoinSwapResponse,
   type EvmToLightningSwapResponse,
-  type UnsignedPermit2FundingData,
   encodeExecuteAndCreateWithPermit2,
-  PERMIT2_ADDRESS,
   isArkade,
   isBtcOnchain,
   isLightning,
+  PERMIT2_ADDRESS,
   toChainName,
+  type UnsignedPermit2FundingData,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useModal } from "connectkit";
 import {
@@ -241,14 +241,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     return () => {
       cancelled = true;
     };
-  }, [
-    address,
-    rpcClient,
-    chain,
-    currentChainId,
-    swapData.source_amount,
-    fetchFunding,
-  ]);
+  }, [address, rpcClient, chain, currentChainId, fetchFunding]);
 
   const tokenSymbol = swapData.source_token.symbol;
   const sourceDecimals = swapData.source_token.decimals;
@@ -405,7 +398,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
                 callsHash: typedData.message.witness.callsHash as `0x${string}`,
               },
             },
-            account: walletClient.account!,
+            account: walletClient.account,
           });
           console.log("[fund] Permit2 signature:", signature);
 
