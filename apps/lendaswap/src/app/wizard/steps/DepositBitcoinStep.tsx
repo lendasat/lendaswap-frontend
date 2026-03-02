@@ -61,12 +61,12 @@ export function DepositBitcoinStep({
   const bitcoinUri = `bitcoin:${swapData.btc_htlc_address}?amount=${btcAmountInBtc}`;
 
   const tokenAmount = (
-    swapData.target_amount /
+    Number(swapData.target_amount) /
     10 ** swapData.target_token.decimals
   ).toFixed(swapData.target_token.decimals);
 
   const receiveLabel = isArkade(swapData.target_token)
-    ? `${(swapData as BtcToArkadeSwapResponse).target_amount.toLocaleString()} sats on Arkade`
+    ? `${Number((swapData as BtcToArkadeSwapResponse).target_amount).toLocaleString()} sats on Arkade`
     : isEvmToken(swapData.target_token.chain)
       ? `${tokenAmount} ${swapData.target_token.symbol} on ${toChainName(swapData.target_token.chain)}`
       : undefined;
@@ -87,7 +87,7 @@ export function DepositBitcoinStep({
       <AmountSummary>
         <AmountRow
           label="You Send"
-          value={`${swapData.source_amount.toLocaleString()} sats`}
+          value={`${Number(swapData.source_amount).toLocaleString()} sats`}
           copiable
         />
         {receiveLabel && <AmountRow label="You Receive" value={receiveLabel} />}

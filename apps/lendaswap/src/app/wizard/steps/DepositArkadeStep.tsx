@@ -24,11 +24,11 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
   const arkadeAddress = swapData.btc_vhtlc_address;
   const tokenSymbol = swapData.target_token.symbol;
   const tokenAmount = (
-    swapData.target_amount /
+    Number(swapData.target_amount) /
     10 ** swapData.target_token.decimals
   ).toFixed(swapData.target_token.decimals);
 
-  const qrValue = `bitcoin:?ark=${arkadeAddress}&amount=${(swapData.source_amount / 100_000_000).toFixed(8)}`;
+  const qrValue = `bitcoin:?ark=${arkadeAddress}&amount=${(Number(swapData.source_amount) / 100_000_000).toFixed(8)}`;
 
   const handleSendFromWallet = async () => {
     if (!client || !arkadeAddress) return;
@@ -37,7 +37,7 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
       setSendError(null);
       await client.sendToAddress(
         arkadeAddress,
-        swapData.source_amount,
+        Number(swapData.source_amount),
         "bitcoin",
       );
     } catch (error) {
@@ -61,7 +61,7 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
       <AmountSummary>
         <AmountRow
           label="Required Sats"
-          value={`${swapData.source_amount.toLocaleString()} sats`}
+          value={`${Number(swapData.source_amount).toLocaleString()} sats`}
           copiable
         />
         <AmountRow

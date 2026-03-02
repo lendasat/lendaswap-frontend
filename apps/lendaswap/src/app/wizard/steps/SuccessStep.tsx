@@ -80,8 +80,8 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
     return `Swapped ${sent} ${sourceSymbol} → ${received} ${targetSymbol} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`;
   }
 
-  const formatAmount = (amount: number, decimals: number): string => {
-    const value = amount / 10 ** decimals;
+  const formatAmount = (amount: number | string, decimals: number): string => {
+    const value = Number(amount) / 10 ** decimals;
     return value.toLocaleString(undefined, {
       minimumFractionDigits: 0,
       maximumFractionDigits: decimals,

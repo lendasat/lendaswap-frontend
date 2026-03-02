@@ -200,7 +200,7 @@ export function RefundBitcoinStep({ swapData }: OnchainBtcRefundStepProps) {
           <div className="space-y-1">
             <p className="text-sm font-medium">Amount Sent</p>
             <p className="text-xs text-muted-foreground">
-              {swapData.source_amount.toLocaleString()} sats
+              {Number(swapData.source_amount).toLocaleString()} sats
             </p>
           </div>
 

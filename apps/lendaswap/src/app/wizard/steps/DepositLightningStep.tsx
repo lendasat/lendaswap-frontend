@@ -34,7 +34,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   const lightningInvoice = swapData.boltz_invoice;
   const lightningQrValue = `lightning:${lightningInvoice}`;
   const tokenAmount = (
-    swapData.target_amount /
+    Number(swapData.target_amount) /
     10 ** swapData.target_token.decimals
   ).toFixed(swapData.target_token.decimals);
 
@@ -49,7 +49,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
       setSendError(null);
       await client.sendToAddress(
         lightningInvoice,
-        swapData.source_amount,
+        Number(swapData.source_amount),
         "bitcoin",
       );
     } catch (error) {
@@ -69,7 +69,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
 
     const success = triggerSpeedWalletPayment(
       lightningInvoice,
-      swapData.source_amount,
+      Number(swapData.source_amount),
       `LendaSwap: ${tokenAmount} ${tokenSymbol} swap`,
     );
 
@@ -123,7 +123,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
             ) : (
               <>
                 <Zap className="mr-2 h-5 w-5" />
-                Pay {swapData.source_amount.toLocaleString()} sats
+                Pay {Number(swapData.source_amount).toLocaleString()} sats
               </>
             )}
           </Button>
@@ -153,7 +153,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
       <AmountSummary>
         <AmountRow
           label="Required Sats"
-          value={`${swapData.source_amount.toLocaleString()} sats`}
+          value={`${Number(swapData.source_amount).toLocaleString()} sats`}
           copiable
         />
         <AmountRow
