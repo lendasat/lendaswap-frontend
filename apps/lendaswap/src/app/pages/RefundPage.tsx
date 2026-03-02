@@ -68,7 +68,9 @@ export function RefundPage() {
   const isBitcoinSwap =
     swapDirection === "bitcoin_to_evm" || swapDirection === "btc_to_arkade";
   const isEvmSwap =
-    swapDirection === "evm_to_arkade" || swapDirection === "evm_to_bitcoin";
+    swapDirection === "evm_to_arkade" ||
+    swapDirection === "evm_to_bitcoin" ||
+    swapDirection === "evm_to_lightning";
 
   if (isLoading) {
     return (

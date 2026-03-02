@@ -289,6 +289,22 @@ export const api = {
     );
   },
 
+  async collabRefundEvmSwap(
+    swapId: string,
+    settlement: "swap-back" | "direct" = "direct",
+  ): Promise<{ id: string; txHash: string; message: string }> {
+    const client = await getClients();
+    return await client.collabRefundEvmSwap(swapId, settlement);
+  },
+
+  async buildCollabRefundEvmTypedData(
+    swapId: string,
+    settlement: "swap-back" | "direct" = "direct",
+  ) {
+    const client = await getClients();
+    return await client.buildCollabRefundEvmTypedData(swapId, settlement);
+  },
+
   async getVersion(): Promise<{ tag: string; commit_hash: string }> {
     const client = await getClients();
     return await client.getVersion();
