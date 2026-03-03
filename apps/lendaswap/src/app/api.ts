@@ -254,10 +254,12 @@ export const api = {
     const result = await client.refundSwap(swapId, {
       destinationAddress: refundAddress,
     });
-    if (result.success && result.txId) {
+    if (result.success && result.txId && result.broadcast) {
       return result.txId;
     }
-    throw new Error(`Unable to refund: ${swapId}. ${result.message}`);
+    throw new Error(
+      `Unable to refund: ${swapId}. ${result.message}. Raw TX '${result.txHex}'`,
+    );
   },
 
   async getPermit2FundingParamsUnsigned(
