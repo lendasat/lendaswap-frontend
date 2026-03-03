@@ -23,6 +23,7 @@ import {
   RefundArkadeStep,
   RefundBitcoinStep,
   RefundEvmStep,
+  RefundLightningStep,
   SuccessStep,
   SwapProcessingStep,
 } from "./steps";
@@ -509,6 +510,12 @@ export function SwapWizardPage() {
                       | EvmToArkadeSwapResponse
                       | EvmToLightningSwapResponse
                   }
+                />
+              )}
+
+              {swapDirectionValue === "lightning_to_evm" && (
+                <RefundLightningStep
+                  swapData={displaySwapData as LightningToEvmSwapResponse}
                 />
               )}
 
