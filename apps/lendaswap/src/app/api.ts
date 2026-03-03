@@ -210,8 +210,13 @@ export const api = {
 
   async getSwap(id: string): Promise<StoredSwap> {
     const client = await getClients();
-    // Fetch latest from API and update local storage
-    await client.getSwap(id, { updateStorage: true });
+
+    try {
+      // Try to fetch latest from API and update local storage
+      await client.getSwap(id, { updateStorage: true });
+    } catch (error) {
+      console.error(`Failed refreshing swap from server ${error}`);
+    }
     // Return the stored swap (includes preimage and keys)
     const stored = await client.getStoredSwap(id);
     if (!stored) {
