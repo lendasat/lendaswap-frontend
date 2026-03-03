@@ -371,16 +371,14 @@ export function SwapProcessingStep({
                       <Copy className="h-3 w-3" />
                     )}
                   </button>
-                  {config.step1IsEvm && (
-                    <a
-                      href={`${getBlockexplorerTxLink(swapData.source_token.chain, config.step1TxId)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
+                  <a
+                    href={`${getBlockexplorerTxLink(swapData.source_token.chain, config.step1TxId)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
               )}
               {isClientFundingSeen && (
