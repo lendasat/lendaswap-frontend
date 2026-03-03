@@ -24,6 +24,7 @@ import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { SupportErrorBanner } from "./components/SupportErrorBanner";
+import { useGaslessFeature } from "./hooks/useGaslessFeature";
 import {
   deriveSourceAmount,
   deriveTargetAmount,
@@ -36,7 +37,6 @@ import {
 } from "./utils/quoteUtils";
 import { setReferralCode, validateReferralCode } from "./utils/referralCode";
 import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
-import { useGaslessFeature } from "./hooks/useGaslessFeature";
 import { useWalletBridge } from "./WalletBridgeContext";
 
 // Build query string from amounts and target address

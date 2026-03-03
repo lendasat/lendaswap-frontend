@@ -33,10 +33,6 @@ const defaultCfg = getDefaultConfig({
   chains,
 });
 
-// Override Polygon's default RPC — viem's built-in endpoint is deprecated.
-(defaultCfg.transports as Record<number, ReturnType<typeof http>>)[polygon.id] =
-  http("https://polygon.drpc.org");
-
 if (rpcOverrideChainId && rpcOverrideUrl) {
   const overrideId = Number(rpcOverrideChainId);
   const original = defaultCfg.transports as Record<
