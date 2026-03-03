@@ -36,6 +36,7 @@ import {
 } from "./utils/quoteUtils";
 import { setReferralCode, validateReferralCode } from "./utils/referralCode";
 import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
+import { useGaslessFeature } from "./hooks/useGaslessFeature";
 import { useWalletBridge } from "./WalletBridgeContext";
 
 // Build query string from amounts and target address
@@ -157,6 +158,7 @@ export function HomePage() {
   );
   const [isAddressValid, setIsAddressValid] = useState(true);
   const [swapError, setSwapError] = useState("");
+  const gaslessFeatureEnabled = useGaslessFeature();
   const [gaslessEnabled, setGaslessEnabled] = useState(false);
 
   // Sync targetAddress from URL when search params change (e.g. user edits URL bar)
@@ -600,7 +602,10 @@ export function HomePage() {
     (!sourceAmount && !targetAmount);
 
   const gaslessFeeEstimate =
-    quote && quote.gasless_network_fee > 0 && gaslessFeeBtc(quote);
+    gaslessFeatureEnabled &&
+    quote &&
+    quote.gasless_network_fee > 0 &&
+    gaslessFeeBtc(quote);
   const totalFee = quote && totalFeeBtc(btcAmountSats, quote, gaslessEnabled);
   const networkFee = quote && serverNetworkFeeBtc(quote);
   const protocolFee = quote && protocolFeeBtc(btcAmountSats, quote);
