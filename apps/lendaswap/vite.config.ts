@@ -8,7 +8,7 @@ import svgr from "vite-plugin-svgr";
 export default defineConfig({
   envDir: "../../../",
   server: {
-    port: 4206,
+    port: 4205,
     host: "0.0.0.0",
     cors: true,
     fs: {
