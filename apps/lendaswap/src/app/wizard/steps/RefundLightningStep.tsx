@@ -1,6 +1,6 @@
 import type { LightningToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
-import { ArrowRight, Info, Zap } from "lucide-react";
 import { toChainName } from "@lendasat/lendaswap-sdk-pure";
+import { ArrowRight, Info, Zap } from "lucide-react";
 import { DepositCard } from "../components";
 
 interface RefundLightningStepProps {
