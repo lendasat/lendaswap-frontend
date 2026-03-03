@@ -3,12 +3,13 @@ import * as ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
+import { arbitrum, mainnet, polygon } from "@reown/appkit/networks";
+import { createAppKit } from "@reown/appkit/react";
+import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import { PostHogProvider } from "posthog-js/react";
 import { http } from "viem";
-import { arbitrum, mainnet, polygon } from "viem/chains";
-import { createConfig, WagmiProvider } from "wagmi";
+import { WagmiProvider } from "wagmi";
 import App from "./app/App";
 import { ThemeProvider } from "./app/utils/theme-provider";
 import { WalletBridgeProvider } from "./app/WalletBridgeContext";
@@ -22,27 +23,34 @@ getSpeedWalletParams();
 
 // Allow overriding the RPC URL for a specific chain via env variable.
 // e.g. VITE_RPC_OVERRIDE_CHAIN_ID=137 VITE_RPC_OVERRIDE_URL=http://localhost:8545
-const chains = [mainnet, polygon, arbitrum] as const;
+const networks = [mainnet, polygon, arbitrum];
+const projectId = "a15c535db177c184c98bdbdc5ff12590";
 const rpcOverrideChainId = import.meta.env.VITE_RPC_OVERRIDE_CHAIN_ID;
 const rpcOverrideUrl = import.meta.env.VITE_RPC_OVERRIDE_URL;
 
-const defaultCfg = getDefaultConfig({
-  appName: "LendaSwap",
-  appUrl: window.location.origin,
-  walletConnectProjectId: "a15c535db177c184c98bdbdc5ff12590",
-  chains,
-});
-
+const transports: Record<number, ReturnType<typeof http>> = {};
 if (rpcOverrideChainId && rpcOverrideUrl) {
-  const overrideId = Number(rpcOverrideChainId);
-  const original = defaultCfg.transports as Record<
-    number,
-    ReturnType<typeof http>
-  >;
-  original[overrideId] = http(rpcOverrideUrl);
+  transports[Number(rpcOverrideChainId)] = http(rpcOverrideUrl);
 }
 
-const config = createConfig(defaultCfg);
+const wagmiAdapter = new WagmiAdapter({
+  networks,
+  projectId,
+  ssr: false,
+  transports,
+});
+
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks: [networks[0], ...networks.slice(1)],
+  projectId,
+  metadata: {
+    name: "LendaSwap",
+    description: "Lightning-Fast Bitcoin Atomic Swaps",
+    url: window.location.origin,
+    icons: [],
+  },
+});
 
 const queryClient = new QueryClient();
 
@@ -75,24 +83,15 @@ root.render(
   <StrictMode>
     <Analytics>
       <BrowserRouter>
-        <WagmiProvider config={config}>
+        <WagmiProvider config={wagmiAdapter.wagmiConfig}>
           <QueryClientProvider client={queryClient}>
-            <ConnectKitProvider
-              mode="auto"
-              options={{
-                hideQuestionMarkCTA: true,
-                hideNoWalletCTA: false,
-                walletConnectCTA: "link",
-              }}
-            >
-              <Theme>
-                <ThemeProvider>
-                  <WalletBridgeProvider>
-                    <App />
-                  </WalletBridgeProvider>
-                </ThemeProvider>
-              </Theme>
-            </ConnectKitProvider>
+            <Theme>
+              <ThemeProvider>
+                <WalletBridgeProvider>
+                  <App />
+                </WalletBridgeProvider>
+              </ThemeProvider>
+            </Theme>
           </QueryClientProvider>
         </WagmiProvider>
       </BrowserRouter>

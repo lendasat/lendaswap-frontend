@@ -1,4 +1,4 @@
-import { ConnectKitButton } from "connectkit";
+import { useAppKit } from "@reown/appkit/react";
 import {
   ArrowLeftRight,
   Check,
@@ -12,6 +12,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,
@@ -42,6 +43,11 @@ export function AppHeader({
 }: AppHeaderProps) {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { open } = useAppKit();
+  const { isConnected, address } = useAccount();
+  const truncatedAddress = address
+    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+    : undefined;
 
   return (
     <header className="border-b">
@@ -146,18 +152,12 @@ export function AppHeader({
 
                   {/* Hide Connect button in Speed Wallet - not needed */}
                   {!isValidSpeedWalletContext() && (
-                    <ConnectKitButton.Custom>
-                      {({ isConnected, show, truncatedAddress, ensName }) => {
-                        return (
-                          <DropdownMenuItem onClick={show}>
-                            <Wallet className="w-4 h-4 mr-2" />
-                            {isConnected
-                              ? (ensName ?? truncatedAddress)
-                              : "Connect"}
-                          </DropdownMenuItem>
-                        );
-                      }}
-                    </ConnectKitButton.Custom>
+                    <DropdownMenuItem
+                      onClick={() => open().catch(console.error)}
+                    >
+                      <Wallet className="w-4 h-4 mr-2" />
+                      {isConnected ? truncatedAddress : "Connect"}
+                    </DropdownMenuItem>
                   )}
 
                   <DropdownMenuSeparator />
@@ -220,23 +220,15 @@ export function AppHeader({
               <ThemeToggle />
               {/* Hide Connect button in Speed Wallet - not needed */}
               {!isValidSpeedWalletContext() && (
-                <ConnectKitButton.Custom>
-                  {({ isConnected, show, truncatedAddress, ensName }) => {
-                    return (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={show}
-                        className="h-9"
-                      >
-                        <Wallet className="w-3.5 h-3.5 mr-1.5" />
-                        {isConnected
-                          ? (ensName ?? truncatedAddress)
-                          : "Connect"}
-                      </Button>
-                    );
-                  }}
-                </ConnectKitButton.Custom>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => open().catch(console.error)}
+                  className="h-9"
+                >
+                  <Wallet className="w-3.5 h-3.5 mr-1.5" />
+                  {isConnected ? truncatedAddress : "Connect"}
+                </Button>
               )}
             </div>
           </div>

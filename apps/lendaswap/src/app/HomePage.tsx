@@ -6,7 +6,7 @@ import {
   type TokenInfo,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
-import { useModal } from "connectkit";
+import { useAppKit } from "@reown/appkit/react";
 import { ArrowDown, ChevronDown, Loader } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
@@ -112,7 +112,7 @@ export function HomePage() {
   } = useAccount();
 
   const { switchChainAsync } = useSwitchChain();
-  const { setOpen: openConnectModal } = useModal();
+  const { open: openConnectModal } = useAppKit();
   const { arkAddress, isEmbedded } = useWalletBridge();
 
   useEffect(() => {
@@ -817,7 +817,7 @@ export function HomePage() {
         <div className="pt-2">
           {isConnectionStillNeeded ? (
             <Button
-              onClick={() => openConnectModal(true)}
+              onClick={() => openConnectModal().catch(console.error)}
               className="w-full h-12"
             >
               Connect Wallet

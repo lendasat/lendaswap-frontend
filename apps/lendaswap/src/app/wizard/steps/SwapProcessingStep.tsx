@@ -1,5 +1,5 @@
 import type { GetSwapResponse } from "@lendasat/lendaswap-sdk-pure";
-import { useModal } from "connectkit";
+import { useAppKit } from "@reown/appkit/react";
 import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -51,7 +51,7 @@ export function SwapProcessingStep({
 
   // Wallet client hooks for Ethereum claiming
   const { address } = useAccount();
-  const { setOpen } = useModal();
+  const { open } = useAppKit();
 
   // Helper function to sleep
   const sleep = useCallback(
@@ -524,7 +524,7 @@ export function SwapProcessingStep({
                           Connect your Ethereum wallet to claim your tokens.
                         </p>
                         <Button
-                          onClick={() => setOpen(true)}
+                          onClick={() => open().catch(console.error)}
                           size="sm"
                           className="w-full"
                         >

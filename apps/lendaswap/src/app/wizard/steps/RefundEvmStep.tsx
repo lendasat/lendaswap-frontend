@@ -4,7 +4,7 @@ import {
   type EvmToLightningSwapResponse,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
-import { useModal } from "connectkit";
+import { useAppKit } from "@reown/appkit/react";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { publicActions } from "viem";
@@ -31,7 +31,7 @@ function formatAmount(raw: number | string, decimals: number): string {
 
 export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
   const { address } = useAccount();
-  const { setOpen } = useModal();
+  const { open } = useAppKit();
 
   const swapId = swapData.id;
   const chain = getViemChain(swapData.source_token.chain);
@@ -124,11 +124,11 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
 
   const handleRefund = async (mode: RefundMode) => {
     if (!address) {
-      setOpen(true);
+      open().catch(console.error);
       return;
     }
     if (!walletClient || !walletPublicClient) {
-      setOpen(true);
+      open().catch(console.error);
       return;
     }
     if (!switchChainAsync || !chain) {

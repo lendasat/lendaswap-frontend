@@ -6,8 +6,8 @@ import {
   isLightning,
   type TokenInfo,
 } from "@lendasat/lendaswap-sdk-pure";
+import { useAppKit } from "@reown/appkit/react";
 import { validate as validateBtcAddress } from "bitcoin-address-validation";
-import { ConnectKitButton } from "connectkit";
 import { isAddress } from "ethers";
 import { Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -41,6 +41,7 @@ export function AddressInput({
 }: AddressInputProps) {
   const isEvmTarget = targetToken ? isEvmToken(targetToken.chain) : false;
   const { address, isConnected } = useAccount();
+  const { open } = useAppKit();
   const [validationError, setValidationError] = useState<string>("");
   const isSpeedWallet = isValidSpeedWalletContext();
 
@@ -162,20 +163,16 @@ export function AddressInput({
                 Use wallet
               </Button>
             ) : !isConnected ? (
-              <ConnectKitButton.Custom>
-                {({ show }) => (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={show}
-                    type="button"
-                    className="h-7 text-xs px-2"
-                  >
-                    <Wallet className="w-3 h-3 mr-1" />
-                    Connect
-                  </Button>
-                )}
-              </ConnectKitButton.Custom>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => open().catch(console.error)}
+                type="button"
+                className="h-7 text-xs px-2"
+              >
+                <Wallet className="w-3 h-3 mr-1" />
+                Connect
+              </Button>
             ) : null}
           </div>
         )}

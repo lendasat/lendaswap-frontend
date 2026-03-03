@@ -10,7 +10,7 @@ import {
   toChainName,
   type UnsignedPermit2FundingData,
 } from "@lendasat/lendaswap-sdk-pure";
-import { useModal } from "connectkit";
+import { useAppKit } from "@reown/appkit/react";
 import {
   AlertCircle,
   Check,
@@ -131,7 +131,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   const { address, chainId: currentChainId } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
-  const { setOpen } = useModal();
+  const { open } = useAppKit();
 
   // Direct public client for reliable reads — bypasses wallet transport
   // which returns raw JSON-RPC envelopes instead of parsed responses.
@@ -180,9 +180,10 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   // Open wallet connect dialog if not connected
   useEffect(() => {
     if (!address) {
-      setOpen(true);
+      open().catch(console.error);
     }
-  }, [address, setOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open may not be referentially stable
+  }, [address, open]);
 
   // Cache unsigned Permit2 funding params so we don't fetch multiple times
   const fundingRef = useRef<UnsignedPermit2FundingData | null>(null);
@@ -278,11 +279,11 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
   const runFromStep = async (startFrom: StepKey) => {
     if (!address) {
-      setOpen(true);
+      open().catch(console.error);
       return;
     }
     if (!walletClient || !rpcClient) {
-      setOpen(true);
+      open().catch(console.error);
       return;
     }
     if (!switchChainAsync || !chain) {
@@ -626,7 +627,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
       <div className="flex flex-col gap-3">
         {!address ? (
           <Button
-            onClick={() => setOpen(true)}
+            onClick={() => open().catch(console.error)}
             className="h-12 w-full text-base font-semibold"
           >
             Connect Wallet
