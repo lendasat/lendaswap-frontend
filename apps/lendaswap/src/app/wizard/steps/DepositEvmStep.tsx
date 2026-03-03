@@ -29,7 +29,7 @@ import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { getViemChain } from "../../utils/tokenUtils";
 import { AmountRow, AmountSummary, DepositCard } from "../components";
 
-type StepStatus = "pending" | "active" | "completed" | "error";
+type StepStatus = "pending" | "checking" | "active" | "completed" | "error";
 
 interface StepState {
   status: StepStatus;
@@ -57,6 +57,7 @@ function StepIcon({ status }: { status: StepStatus }) {
     case "completed":
       return <Check className="h-4 w-4 text-green-500" />;
     case "active":
+    case "checking":
       return <Loader className="h-4 w-4 animate-spin text-primary" />;
     case "error":
       return <AlertCircle className="h-4 w-4 text-red-500" />;
@@ -215,6 +216,12 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     if (!address || !rpcClient || !chain || currentChainId !== chain.id) return;
 
     let cancelled = false;
+
+    setSteps((prev) => ({
+      ...prev,
+      approve: { status: "checking" },
+    }));
+
     (async () => {
       try {
         const funding = await fetchFunding();
@@ -227,14 +234,23 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           args: [address, PERMIT2_ADDRESS as `0x${string}`],
         });
 
-        if (!cancelled && allowance >= funding.sourceAmount) {
+        if (!cancelled) {
           setSteps((prev) => ({
             ...prev,
-            approve: { status: "completed" },
+            approve: {
+              status:
+                allowance >= funding.sourceAmount ? "completed" : "pending",
+            },
           }));
         }
       } catch (err) {
         console.error("Failed to check allowance:", err);
+        if (!cancelled) {
+          setSteps((prev) => ({
+            ...prev,
+            approve: { status: "pending" },
+          }));
+        }
       }
     })();
 
