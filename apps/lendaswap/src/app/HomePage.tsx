@@ -496,6 +496,16 @@ export function HomePage() {
         selectedTargetAmount = targetAmount;
       }
 
+      // BTC → Arkade backend requires targetAmount (sats_receive).
+      // The quote already computed it, so always pass it through.
+      if (
+        isBtcOnchain(sourceAsset) &&
+        isArkade(targetAsset) &&
+        selectedTargetAmount == null
+      ) {
+        selectedTargetAmount = targetAmount;
+      }
+
       // Resolve Lightning address (user@domain) to BOLT11 invoice via LNURL-pay
       let resolvedAddress = targetAddress;
       if (isLightning(targetAsset) && isLightningAddress(targetAddress)) {
