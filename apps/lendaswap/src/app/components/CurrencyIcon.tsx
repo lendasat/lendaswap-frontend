@@ -1,5 +1,6 @@
 import { Bitcoin, DollarSign } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
+import { isBtcToken } from "./useSatsBtcMode";
 
 // ── Custom SVG icons ─────────────────────────────────────────────────
 
@@ -25,7 +26,6 @@ function GoldBar(props: SVGProps<SVGSVGElement>) {
 
 /**
  * Satoshi symbol – three parallel diagonal lines with two short vertical strokes.
- * Coordinates taken from the Bitcoin Design community Biticon set (MIT).
  * @see https://bitcoin.design/guide/designing-products/units-and-symbols/
  */
 function SatoshiIcon(props: SVGProps<SVGSVGElement>) {
@@ -40,11 +40,9 @@ function SatoshiIcon(props: SVGProps<SVGSVGElement>) {
       aria-hidden="true"
       {...props}
     >
-      {/* Three parallel diagonal lines — official Bitcoin Design coordinates */}
       <path d="M8.86 8.01L16.5 10.07" />
       <path d="M8.18 10.97L15.82 13.04" />
       <path d="M7.5 13.92L15.14 15.99" />
-      {/* Short vertical strokes above / below the outer lines */}
       <path d="M13.09 7.27L13.5 5.5" />
       <path d="M10.5 18.5L10.91 16.73" />
     </svg>
@@ -52,10 +50,8 @@ function SatoshiIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 // ── Icon mapping ─────────────────────────────────────────────────────
-// Maps token symbols → category → icon component. Add new tokens in
-// SYMBOL_CATEGORY; add new categories in CATEGORY_ICON.
 
-type CurrencyCategory = "stablecoin" | "bitcoin" | "sats" | "gold";
+type CurrencyCategory = "stablecoin" | "bitcoin" | "gold";
 type IconComponent = ComponentType<{ className?: string }>;
 
 const SYMBOL_CATEGORY: Record<string, CurrencyCategory> = {
@@ -66,38 +62,50 @@ const SYMBOL_CATEGORY: Record<string, CurrencyCategory> = {
   busd: "stablecoin",
   btc: "bitcoin",
   wbtc: "bitcoin",
+  tbtc: "bitcoin",
   xaut: "gold",
 };
 
 const CATEGORY_ICON: Record<CurrencyCategory, IconComponent> = {
   stablecoin: DollarSign,
   bitcoin: Bitcoin,
-  sats: SatoshiIcon,
   gold: GoldBar,
 };
 
 const ICON_CLASS = "h-6 w-6 md:h-8 md:w-8 text-muted-foreground/70 shrink-0";
-const SATS_ICON_CLASS =
-  "h-7 w-7 md:h-9 md:w-9 text-muted-foreground/70 shrink-0";
+const CLICKABLE_ICON_CLASS =
+  "h-6 w-6 md:h-8 md:w-8 text-muted-foreground/70 shrink-0 cursor-pointer hover:text-muted-foreground transition-colors";
 
 // ── Exported component ───────────────────────────────────────────────
 
 export function CurrencyIcon({
   symbol,
-  isSatsMode,
+  satsMode,
+  onToggle,
 }: {
   symbol: string | undefined;
-  isSatsMode: boolean;
+  satsMode?: boolean;
+  onToggle?: () => void;
 }) {
   if (!symbol) return null;
   const category = SYMBOL_CATEGORY[symbol.toLowerCase()];
   if (!category) return null;
-  const effectiveCategory =
-    isSatsMode && category === "bitcoin" ? "sats" : category;
-  const Icon = CATEGORY_ICON[effectiveCategory];
-  return (
-    <Icon
-      className={effectiveCategory === "sats" ? SATS_ICON_CLASS : ICON_CLASS}
-    />
-  );
+
+  const clickable = isBtcToken(symbol) && onToggle;
+  const Icon =
+    satsMode && category === "bitcoin" ? SatoshiIcon : CATEGORY_ICON[category];
+
+  if (clickable) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        title={satsMode ? "Switch to BTC" : "Switch to sats"}
+      >
+        <Icon className={CLICKABLE_ICON_CLASS} />
+      </button>
+    );
+  }
+
+  return <Icon className={ICON_CLASS} />;
 }

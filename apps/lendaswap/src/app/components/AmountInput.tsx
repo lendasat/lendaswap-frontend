@@ -22,12 +22,13 @@ export function AmountInput({
   isLoading = false,
   symbol,
 }: AmountInputProps) {
-  const { inputValue, satsMode, isBtc, handleChange } = useSatsBtcMode({
-    value,
-    onChange,
-    decimals,
-    symbol,
-  });
+  const { inputValue, isBtc, satsMode, toggleSatsMode, handleChange } =
+    useSatsBtcMode({
+      value,
+      onChange,
+      decimals,
+      symbol,
+    });
 
   if (isLoading) {
     return (
@@ -41,7 +42,11 @@ export function AmountInput({
 
   return (
     <div className="flex-1 min-w-0 overflow-hidden flex items-center gap-1">
-      <CurrencyIcon symbol={symbol} isSatsMode={satsMode} />
+      <CurrencyIcon
+        symbol={symbol}
+        satsMode={satsMode}
+        onToggle={isBtc ? toggleSatsMode : undefined}
+      />
       <input
         type="text"
         inputMode="decimal"
@@ -58,11 +63,6 @@ export function AmountInput({
         data-lpignore="true"
         autoComplete="off"
       />
-      {satsMode && isBtc && (
-        <span className="text-sm md:text-base text-muted-foreground/60 shrink-0 self-end mb-0.5 md:mb-1">
-          sats
-        </span>
-      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { SupportErrorBanner } from "./components/SupportErrorBanner";
 import { useGaslessFeature } from "./hooks/useGaslessFeature";
+import { useTokenBalance } from "./hooks/useTokenBalance";
 import {
   deriveSourceAmount,
   deriveTargetAmount,
@@ -435,6 +436,15 @@ export function HomePage() {
     );
   }
 
+  const { balance: sourceBalance } = useTokenBalance(sourceAsset);
+  const { balance: targetBalance } = useTokenBalance(targetAsset);
+
+  const formatBalance = (balance: bigint | undefined, token: TokenInfo) => {
+    if (balance === undefined) return undefined;
+    const value = Number(balance) / 10 ** token.decimals;
+    return value.toLocaleString(undefined, { maximumFractionDigits: 5 });
+  };
+
   const isInitialLoading = tokensLoading;
 
   // ── EVM chain switching ──────────────────────────────────────────────
@@ -625,9 +635,29 @@ export function HomePage() {
       {/* Sell/Buy container with arrow */}
       <div className="relative">
         {/* Sell */}
-        <div className="rounded-2xl bg-muted p-4 pb-5 overflow-hidden">
-          <div className="text-sm text-muted-foreground mb-2">Sell</div>
-          <div className="flex items-start justify-between gap-4">
+        <div className="rounded-2xl bg-muted p-4 pb-5 overflow-hidden group/sell">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm text-muted-foreground">Sell</div>
+            {sourceBalance !== undefined && sourceAsset && (
+              <div className="flex gap-1 opacity-0 group-hover/sell:opacity-100 transition-opacity">
+                {([25, 50, 75, 100] as const).map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => {
+                      setLastEditedField("sourceAsset");
+                      const raw = Number(sourceBalance) * (pct / 100);
+                      setSourceAmountState(Math.floor(raw));
+                    }}
+                    className="px-2 py-0.5 text-xs rounded-full bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 transition-colors"
+                  >
+                    {pct === 100 ? "Max" : `${pct}%`}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between gap-4">
             <AmountInput
               value={sourceAmount}
               onChange={(value) => {
@@ -638,7 +668,7 @@ export function HomePage() {
               isLoading={isLoadingQuote && lastEditedField !== "sourceAsset"}
               symbol={sourceAsset?.symbol}
             />
-            <div className="shrink-0 pt-1">
+            <div className="shrink-0">
               <AssetDropDown
                 value={sourceAsset}
                 availableAssets={allAvailableTokens}
@@ -658,6 +688,13 @@ export function HomePage() {
                 }}
               />
             </div>
+          </div>
+          <div className="flex justify-end mt-1.5">
+            <span className="text-xs text-muted-foreground">
+              {sourceAsset && sourceBalance !== undefined
+                ? `${formatBalance(sourceBalance, sourceAsset)} ${sourceAsset.symbol}`
+                : "\u00A0"}
+            </span>
           </div>
         </div>
 
@@ -694,7 +731,7 @@ export function HomePage() {
         {/* Buy */}
         <div className="rounded-2xl bg-muted p-4 pt-5 mt-1 overflow-hidden">
           <div className="text-sm text-muted-foreground mb-2">Buy</div>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <AmountInput
               value={targetAmount}
               onChange={(value) => {
@@ -705,7 +742,7 @@ export function HomePage() {
               isLoading={isLoadingQuote && lastEditedField !== "targetAsset"}
               symbol={targetAsset?.symbol}
             />
-            <div className="shrink-0 pt-1">
+            <div className="shrink-0">
               <AssetDropDown
                 availableAssets={availableTargetTokens}
                 value={targetAsset}
@@ -725,6 +762,13 @@ export function HomePage() {
                 label="buy"
               />
             </div>
+          </div>
+          <div className="flex justify-end mt-1.5">
+            <span className="text-xs text-muted-foreground">
+              {targetAsset && targetBalance !== undefined
+                ? `${formatBalance(targetBalance, targetAsset)} ${targetAsset.symbol}`
+                : "\u00A0"}
+            </span>
           </div>
         </div>
       </div>

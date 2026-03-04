@@ -2,21 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 
 // ── Constants ────────────────────────────────────────────────────────
 
-const BTC_SYMBOLS = new Set(["btc", "wbtc"]);
-
-/** Once the user types this many sats, auto-switch to BTC display. */
-const SATS_TO_BTC_THRESHOLD = 100_000; // 0.001 BTC
-
-// ── Helpers ──────────────────────────────────────────────────────────
+const BTC_SYMBOLS = new Set(["btc", "wbtc", "tbtc"]);
 
 export function isBtcToken(symbol: string | undefined): boolean {
   return symbol !== undefined && BTC_SYMBOLS.has(symbol.toLowerCase());
 }
 
-/** Detect whether an input string represents BTC mode (has a decimal). */
-function inputUsesBtcMode(input: string): boolean {
-  return input.includes(".");
-}
+// ── Helpers ──────────────────────────────────────────────────────────
 
 /** Format a number without scientific notation, preserving precision. */
 function formatNumber(val: number, maxDecimals = 8): string {
@@ -26,24 +18,26 @@ function formatNumber(val: number, maxDecimals = 8): string {
 
 // ── Hook ─────────────────────────────────────────────────────────────
 
-interface UseSatsBtcModeOptions {
-  /** External value in smallest unit (sats) — set by parent or quote. */
+interface UseAmountInputOptions {
+  /** External value in smallest unit (sats for BTC, 10^-6 for USDC, etc.) — set by parent or quote. */
   value: number | undefined;
   /** Called with the amount in smallest unit when the user edits the input. */
   onChange: (value: number | undefined) => void;
-  /** Number of decimal places for this token (8 for BTC). */
+  /** Number of decimal places for this token (8 for BTC, 6 for USDC, etc.). */
   decimals: number | undefined;
   /** Token symbol, e.g. "BTC", "WBTC". */
   symbol: string | undefined;
 }
 
-interface SatsBtcMode {
+interface AmountInputMode {
   /** The string shown inside the <input>. */
   inputValue: string;
-  /** Whether the input is currently in sats mode (integers). */
-  satsMode: boolean;
-  /** Whether this token is a BTC-family token at all. */
+  /** Whether this is a BTC-family token. */
   isBtc: boolean;
+  /** Whether displaying in sats (true) or BTC (false). */
+  satsMode: boolean;
+  /** Toggle between sats and BTC display. */
+  toggleSatsMode: () => void;
   /** Pass this to the <input onChange>. */
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -53,19 +47,36 @@ export function useSatsBtcMode({
   onChange,
   decimals,
   symbol,
-}: UseSatsBtcModeOptions): SatsBtcMode {
+}: UseAmountInputOptions): AmountInputMode {
   const [inputValue, setInputValue] = useState<string>("");
+  const [satsMode, setSatsMode] = useState(false);
 
   const isBtc = isBtcToken(symbol);
-  const satsMode = isBtc && !inputUsesBtcMode(inputValue);
 
-  // Divisor: 1 in sats mode (input = sats directly), 10^8 in BTC mode.
+  // In sats mode for BTC tokens, divisor is 1 (value is already in sats).
+  // Otherwise, convert from smallest unit to display unit.
   const divisor = useMemo(() => {
     if (isBtc && satsMode) return 1;
     return 10 ** (decimals ?? 0);
   }, [isBtc, satsMode, decimals]);
 
   const displayValue = value !== undefined ? value / divisor : undefined;
+
+  const toggleSatsMode = () => {
+    if (!isBtc) return;
+    const newSatsMode = !satsMode;
+    setSatsMode(newSatsMode);
+    // Re-format current value for the new mode
+    if (value !== undefined) {
+      const newDivisor = newSatsMode ? 1 : 10 ** (decimals ?? 0);
+      const newDisplay = value / newDivisor;
+      setInputValue(
+        newSatsMode
+          ? String(Math.round(newDisplay))
+          : formatNumber(newDisplay, decimals ?? 8),
+      );
+    }
+  };
 
   // Sync internal input string when external value changes (e.g. quote)
   useEffect(() => {
@@ -81,7 +92,7 @@ export function useSatsBtcMode({
           Number.isNaN(currentNum) ||
           Math.abs(currentNum - displayValue) > 1e-10
         ) {
-          if (isBtc && !inputUsesBtcMode(prev)) {
+          if (isBtc && satsMode) {
             return String(Math.round(displayValue));
           }
           return formatNumber(displayValue, decimals ?? 8);
@@ -89,7 +100,7 @@ export function useSatsBtcMode({
         return prev;
       });
     }
-  }, [displayValue, decimals, isBtc]);
+  }, [displayValue, decimals, isBtc, satsMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value.replace(/[^0-9.]/g, "");
@@ -100,36 +111,20 @@ export function useSatsBtcMode({
       return;
     }
 
-    const isSatsInput = isBtc && !input.includes(".");
-    const effectiveDecimals = isSatsInput ? 0 : (decimals ?? 0);
-
+    const effectiveDecimals = isBtc && satsMode ? 0 : (decimals ?? 0);
     const regex =
       effectiveDecimals > 0
         ? new RegExp(`^\\d*\\.?\\d{0,${effectiveDecimals}}$`)
-        : /^\d*\.?$/;
+        : /^\d*$/;
 
     if (regex.test(input)) {
-      const parsed = Number.parseFloat(input);
-
-      // Auto-convert sats → BTC when threshold is reached
-      if (
-        isSatsInput &&
-        !Number.isNaN(parsed) &&
-        parsed >= SATS_TO_BTC_THRESHOLD
-      ) {
-        const btcValue = parsed / 10 ** (decimals ?? 8);
-        setInputValue(formatNumber(btcValue, decimals ?? 8));
-        onChange(Math.round(parsed));
-        return;
-      }
-
       setInputValue(input);
+      const parsed = Number.parseFloat(input);
       if (!Number.isNaN(parsed)) {
-        const effectiveDivisor = isSatsInput ? 1 : 10 ** (decimals ?? 0);
-        onChange(Math.round(parsed * effectiveDivisor));
+        onChange(Math.round(parsed * divisor));
       }
     }
   };
 
-  return { inputValue, satsMode, isBtc, handleChange };
+  return { inputValue, isBtc, satsMode, toggleSatsMode, handleChange };
 }
