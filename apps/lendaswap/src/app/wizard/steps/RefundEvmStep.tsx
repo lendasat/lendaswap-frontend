@@ -5,13 +5,18 @@ import {
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useAppKit } from "@reown/appkit/react";
-import { ArrowRight, Clock, Loader2, Unlock, Zap } from "lucide-react";
+import { ArrowRight, ChevronDown, Clock, Loader2, Zap } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { publicActions } from "viem";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "#/components/ui/collapsible";
 import { api } from "../../api";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { getViemChain } from "../../utils/tokenUtils";
@@ -25,6 +30,14 @@ interface RefundEvmStepProps {
 }
 
 type RefundMode = "swap-back" | "direct";
+
+const COLLAB_REFUND_STATUSES = new Set([
+  "pending",
+  "clientfundedserverrefunded",
+  "expired",
+  "clientinvalidfunded",
+  "clientfundedtoolate",
+]);
 
 function formatAmount(raw: number | string, decimals: number): string {
   return (Number(raw) / 10 ** decimals).toFixed(decimals);
@@ -62,8 +75,9 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
 
   const isWbtcSource = sourceSymbol.toLowerCase() === "wbtc";
 
-  // WBTC amount locked in the HTLC for this specific swap (8 decimals)
   const lockedWbtcFormatted = formatAmount(swapData.evm_expected_sats, 8);
+
+  const collabAvailable = COLLAB_REFUND_STATUSES.has(swapData.status);
 
   // Countdown timer
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
@@ -97,6 +111,9 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
     }
   }, [now, refundLocktime, isLocktimePassed]);
 
+  // Whether any refund action is possible right now
+  const canRefund = collabAvailable || isLocktimePassed;
+
   const fetchRefundCallData = useCallback(
     async (mode: RefundMode) => {
       setIsLoadingCallData(true);
@@ -121,11 +138,16 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
   // Fetch default calldata on mount
   useEffect(() => {
     if (!swapId || refundCallData) return;
-    // For WBTC source, only direct mode makes sense (no swap needed)
     fetchRefundCallData(isWbtcSource ? "direct" : "swap-back");
   }, [swapId, isWbtcSource, refundCallData, fetchRefundCallData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefund = async (mode: RefundMode) => {
+    // If collab is available, use it (gasless, no wallet needed)
+    if (collabAvailable) {
+      return handleCollabRefund(mode === "swap-back" ? "swap-back" : "direct");
+    }
+
+    // Otherwise fall through to manual wallet-based refund
     if (!address) {
       open().catch(console.error);
       return;
@@ -150,10 +172,8 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
     setRefundSuccess(null);
 
     try {
-      // Switch to the correct chain
       await switchChainAsync({ chainId: chain.id });
 
-      // Fetch fresh calldata for the chosen mode
       const callData = await fetchRefundCallData(mode);
       if (!callData) return;
 
@@ -200,7 +220,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
       const result = await api.collabRefundEvmSwap(swapId, settlement);
       const label = settlement === "swap-back" ? sourceSymbol : "WBTC";
       setRefundSuccess(
-        `Instant refund as ${label} successful! Transaction: ${result.txHash}`,
+        `Refund as ${label} successful! Transaction: ${result.txHash}`,
       );
 
       posthog?.capture("swap_refunded", {
@@ -230,90 +250,111 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
       title={`Refund ${swapData.source_token.symbol} → ${swapData.target_token.symbol}`}
     >
       <div className="space-y-6">
-        {/* Instant Refund Banner — always available (no timelock needed) */}
+        {/* Status line */}
         {!refundSuccess && (
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-500 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                Instant Refund Available
-              </h3>
-            </div>
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              Get your tokens back instantly — no waiting for the timelock. The
-              server cosigns the refund and submits it on-chain (gasless for
-              you).
-            </p>
-            <div className="flex flex-col gap-2">
-              {!isWbtcSource && (
-                <Button
-                  onClick={() => handleCollabRefund("swap-back")}
-                  disabled={anyRefundInProgress}
-                  className="w-full h-12 text-base font-semibold bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  {isCollabRefunding ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing Instant Refund...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="mr-2 h-4 w-4" />
-                      Instant Refund as {sourceSymbol}
-                    </>
-                  )}
-                </Button>
-              )}
-              <Button
-                onClick={() => handleCollabRefund("direct")}
-                disabled={anyRefundInProgress}
-                variant={isWbtcSource ? "default" : "outline"}
-                className={
-                  isWbtcSource
-                    ? "w-full h-12 text-base font-semibold bg-blue-600 text-white hover:bg-blue-700"
-                    : "w-full h-12 text-base font-semibold"
-                }
-              >
-                {isCollabRefunding ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing Instant Refund...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="mr-2 h-4 w-4" />
-                    Instant Refund as WBTC
-                  </>
-                )}
-              </Button>
-            </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {collabAvailable ? (
+              <>
+                <Zap className="h-4 w-4 text-blue-500" />
+                <span>
+                  Instant refund available · gasless, no wallet needed
+                </span>
+              </>
+            ) : isLocktimePassed ? (
+              <>
+                <Clock className="h-4 w-4 text-green-500" />
+                <span>Refund available via wallet transaction</span>
+              </>
+            ) : (
+              <>
+                <Clock className="h-4 w-4 text-orange-500" />
+                <span>Refund available in {timeRemaining}</span>
+              </>
+            )}
           </div>
         )}
 
-        {/* Timelock Status Banner */}
-        {isLocktimePassed ? (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <h3 className="text-sm font-semibold text-green-900 dark:text-green-100">
-                Manual Refund Also Available
-              </h3>
-            </div>
-            <p className="text-sm text-green-800 dark:text-green-200">
-              The refund locktime has passed. You can also refund manually using
-              your connected wallet.
-            </p>
+        {/* Primary refund buttons */}
+        {!refundSuccess && canRefund && (
+          <div className="flex flex-col gap-2">
+            {!isWbtcSource && (
+              <>
+                <Button
+                  onClick={() => handleRefund("swap-back")}
+                  disabled={
+                    anyRefundInProgress ||
+                    (!collabAvailable && !address) ||
+                    isLoadingCallData
+                  }
+                  className="w-full h-12 text-base font-semibold"
+                >
+                  {anyRefundInProgress ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    `Refund as ${sourceSymbol}`
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleRefund("direct")}
+                  disabled={
+                    anyRefundInProgress ||
+                    (!collabAvailable && !address) ||
+                    isLoadingCallData
+                  }
+                  variant="outline"
+                  className="w-full h-12 text-base font-semibold"
+                >
+                  {anyRefundInProgress ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Refund as WBTC"
+                  )}
+                </Button>
+              </>
+            )}
+
+            {isWbtcSource && (
+              <Button
+                onClick={() => handleRefund("direct")}
+                disabled={
+                  anyRefundInProgress ||
+                  (!collabAvailable && !address) ||
+                  isLoadingCallData
+                }
+                className="w-full h-12 text-base font-semibold"
+              >
+                {anyRefundInProgress ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Refund as WBTC"
+                )}
+              </Button>
+            )}
+
+            {!isWbtcSource && (
+              <p className="text-xs text-muted-foreground">
+                Refunding as {sourceSymbol} swaps WBTC back via a DEX — amount
+                may vary slightly due to exchange rate.
+              </p>
+            )}
           </div>
-        ) : (
-          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-500 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              <h3 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
-                Manual Refund Locked
-              </h3>
-            </div>
+        )}
+
+        {/* No refund path available — collab unavailable and timelock not passed */}
+        {!refundSuccess && !canRefund && (
+          <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-500/30 rounded-lg p-4 space-y-2">
             <p className="text-sm text-orange-800 dark:text-orange-200">
-              Manual refund (via wallet transaction) will be available in:
+              Instant refund is not available for this swap. Manual refund will
+              unlock in:
             </p>
             <div className="text-2xl font-bold text-orange-900 dark:text-orange-100 font-mono">
               {timeRemaining}
@@ -321,118 +362,86 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
           </div>
         )}
 
-        {/* Refund Details */}
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Swap</p>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium">{sourceSymbol}</span>
-              <ArrowRight className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium">{targetSymbol}</span>
-              <span className="text-xs text-muted-foreground ml-2">
-                ({sourceAmount} {sourceSymbol} on{" "}
-                {toChainName(swapData.source_token.chain)})
-              </span>
+        {/* Swap details */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-medium">{sourceSymbol}</span>
+            <ArrowRight className="h-3 w-3 text-muted-foreground" />
+            <span className="font-medium">{targetSymbol}</span>
+            <span className="text-muted-foreground ml-1">
+              ({sourceAmount} {sourceSymbol} on{" "}
+              {toChainName(swapData.source_token.chain)})
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <p className="text-muted-foreground">Locked in HTLC</p>
+              <p className="font-mono">{lockedWbtcFormatted} WBTC</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Refund Locktime</p>
+              <p className="font-mono">
+                {refundLocktimeDate.toLocaleString()}
+                <span
+                  className={`ml-1 ${isLocktimePassed ? "text-green-600" : "text-orange-600"}`}
+                >
+                  ({isLocktimePassed ? "Passed" : "Locked"})
+                </span>
+              </p>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <p className="text-sm font-medium">HTLC Address</p>
-            <p className="text-xs text-muted-foreground font-mono break-all">
+          <div className="text-xs">
+            <p className="text-muted-foreground">HTLC Address</p>
+            <p className="font-mono break-all text-muted-foreground">
               {swapData.evm_htlc_address}
             </p>
           </div>
-
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Locked in HTLC</p>
-            <p className="text-xs text-muted-foreground">
-              {lockedWbtcFormatted} WBTC
-            </p>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Refund Locktime</p>
-            <p className="text-xs text-muted-foreground">
-              {refundLocktimeDate.toLocaleString()}
-              <span
-                className={`ml-2 ${isLocktimePassed ? "text-green-600" : "text-orange-600"}`}
-              >
-                ({isLocktimePassed ? "Passed" : "Not yet reached"})
-              </span>
-            </p>
-          </div>
-
-          {isLoadingCallData && (
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <p className="text-xs text-muted-foreground">
-                Loading refund data...
-              </p>
-            </div>
-          )}
         </div>
 
-        {/* Wallet Connection Warning (for manual refund only) */}
-        {!address && isLocktimePassed && (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Connect your wallet for manual refund, or use the instant refund
-              above (no wallet needed)
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Manual refund disclosure — only shown when collab is available and timelock has also passed */}
+        {collabAvailable && isLocktimePassed && !refundSuccess && (
+          <Collapsible>
+            <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronDown className="h-3 w-3" />
+              Advanced: refund manually via wallet
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3 space-y-3">
+              {!address && (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    Connect your wallet to use manual refund
+                  </AlertDescription>
+                </Alert>
+              )}
 
-        {/* Manual Refund Buttons (timelock-based) */}
-        {isLocktimePassed && !refundSuccess && (
-          <div className="flex flex-col gap-3">
-            <p className="text-xs text-muted-foreground font-medium">
-              Manual refund (requires connected wallet):
-            </p>
-
-            {!isWbtcSource && (
-              <p className="text-xs text-muted-foreground">
-                Your {sourceSymbol} was swapped to WBTC before locking in the
-                HTLC. Refunding as {sourceSymbol} involves swapping WBTC back
-                via a DEX and is subject to the current exchange rate. You may
-                receive slightly more or less than your original amount.
-                Alternatively, you can refund as WBTC directly.
-              </p>
-            )}
-
-            {!isWbtcSource && (
+              {!isWbtcSource && (
+                <Button
+                  onClick={() => handleManualRefund("swap-back")}
+                  disabled={
+                    anyRefundInProgress || !address || isLoadingCallData
+                  }
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Manual Refund as {sourceSymbol}
+                </Button>
+              )}
               <Button
-                onClick={() => handleRefund("swap-back")}
+                onClick={() => {
+                  handleManualRefund("direct");
+                }}
                 disabled={anyRefundInProgress || !address || isLoadingCallData}
                 variant="outline"
-                className="w-full h-12 text-base font-semibold"
+                size="sm"
+                className="w-full"
               >
-                {isRefunding ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing Refund...
-                  </>
-                ) : (
-                  `Manual Refund as ${sourceSymbol}`
-                )}
+                Manual Refund as WBTC
               </Button>
-            )}
-
-            <Button
-              onClick={() => handleRefund("direct")}
-              disabled={anyRefundInProgress || !address || isLoadingCallData}
-              variant="outline"
-              className="w-full h-12 text-base font-semibold"
-            >
-              {isRefunding ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Refund...
-                </>
-              ) : (
-                "Manual Refund as WBTC"
-              )}
-            </Button>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
         {/* Error Display */}
@@ -450,7 +459,75 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
             <AlertDescription>{refundSuccess}</AlertDescription>
           </Alert>
         )}
+
+        {isLoadingCallData && (
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <p className="text-xs text-muted-foreground">
+              Loading refund data...
+            </p>
+          </div>
+        )}
       </div>
     </DepositCard>
   );
+
+  // Manual wallet-based refund (bypasses collab, always uses wallet)
+  async function handleManualRefund(mode: RefundMode) {
+    if (!address) {
+      open().catch(console.error);
+      return;
+    }
+    if (!walletClient || !walletPublicClient) {
+      open().catch(console.error);
+      return;
+    }
+    if (!switchChainAsync || !chain) {
+      setRefundError(
+        "Chain switching not available. Please refresh and try again.",
+      );
+      return;
+    }
+
+    setIsRefunding(true);
+    setRefundError(null);
+    setRefundSuccess(null);
+
+    try {
+      await switchChainAsync({ chainId: chain.id });
+
+      const callData = await fetchRefundCallData(mode);
+      if (!callData) return;
+
+      const refundTxHash = await walletClient.sendTransaction({
+        to: callData.to as `0x${string}`,
+        data: callData.data as `0x${string}`,
+        chain,
+        gas: 500_000n,
+      });
+
+      const refundReceipt = await walletPublicClient.waitForTransactionReceipt({
+        hash: refundTxHash,
+      });
+
+      if (refundReceipt.status !== "success") {
+        throw new Error("Refund transaction reverted");
+      }
+
+      setRefundSuccess(`Refund successful! Transaction: ${refundTxHash}`);
+
+      posthog?.capture("swap_refunded", {
+        swap_id: swapId,
+        refund_mode: `manual-${mode}`,
+        refund_txid: refundTxHash,
+      });
+    } catch (err) {
+      console.error("Manual refund error:", err);
+      setRefundError(
+        err instanceof Error ? err.message : "Failed to execute refund",
+      );
+    } finally {
+      setIsRefunding(false);
+    }
+  }
 }
