@@ -15,10 +15,7 @@ import { useAccount, useSwitchChain } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Switch } from "#/components/ui/switch";
-import {
-  isLightningAddress,
-  resolveLightningAddress,
-} from "../utils/lightningAddress";
+import { isLightningAddress } from "../utils/lightningAddress";
 import { api, type QuoteResponse } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
@@ -516,14 +513,15 @@ export function HomePage() {
         selectedTargetAmount = targetAmount;
       }
 
-      // Resolve Lightning address (user@domain) to BOLT11 invoice via LNURL-pay
-      let resolvedAddress = targetAddress;
-      if (isLightning(targetAsset) && isLightningAddress(targetAddress)) {
-        const amountSats = targetAmount ?? 0;
-        resolvedAddress = await resolveLightningAddress(
-          targetAddress,
-          amountSats,
-        );
+      // Lightning addresses (user@domain) are resolved server-side via LNURL-pay
+      // and require targetAmount (sats). The quote already computed it, so
+      // always pass it through — same pattern as BTC→Arkade above.
+      if (
+        isLightning(targetAsset) &&
+        isLightningAddress(targetAddress) &&
+        selectedTargetAmount == null
+      ) {
+        selectedTargetAmount = targetAmount;
       }
 
       const swap = await api.createSwap({
@@ -531,7 +529,7 @@ export function HomePage() {
         targetAsset,
         sourceAmount: selectedSourceAmount,
         targetAmount: selectedTargetAmount,
-        targetAddress: resolvedAddress,
+        targetAddress,
         userAddress: connectedAddress,
         gasless: gaslessEnabled,
       });
