@@ -176,6 +176,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
   const [isRunning, setIsRunning] = useState(false);
   const [userRejected, setUserRejected] = useState<string | null>(null);
+  const [insufficientBalance, setInsufficientBalance] = useState(false);
 
   // Open wallet connect dialog if not connected
   useEffect(() => {
@@ -226,14 +227,23 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         const funding = await fetchFunding();
         const tokenAddress = funding.sourceTokenAddress as `0x${string}`;
 
-        const allowance = await rpcClient.readContract({
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: "allowance",
-          args: [address, PERMIT2_ADDRESS as `0x${string}`],
-        });
+        const [allowance, balance] = await Promise.all([
+          rpcClient.readContract({
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "allowance",
+            args: [address, PERMIT2_ADDRESS as `0x${string}`],
+          }),
+          rpcClient.readContract({
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: "balanceOf",
+            args: [address],
+          }),
+        ]);
 
         if (!cancelled) {
+          setInsufficientBalance(balance < funding.sourceAmount);
           setSteps((prev) => ({
             ...prev,
             approve: {
@@ -536,6 +546,15 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         </div>
       ) : null}
 
+      {/* Insufficient balance warning */}
+      {insufficientBalance && !isExpired && (
+        <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          Insufficient {tokenSymbol} balance. You need at least {sourceAmount}{" "}
+          {tokenSymbol} to fund this swap.
+        </div>
+      )}
+
       {/* Step checklist */}
       <div className="space-y-4">
         <p className="text-xs text-muted-foreground">
@@ -566,7 +585,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
                     variant="ghost"
                     className="h-7 px-2 text-xs"
                     onClick={() => runFromStep(key)}
-                    disabled={isRunning}
+                    disabled={isRunning || insufficientBalance}
                   >
                     <RefreshCw className="h-3 w-3 mr-1" />
                     Retry
@@ -580,7 +599,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
                       variant="outline"
                       className="h-7 px-3 text-xs"
                       onClick={() => runFromStep(key)}
-                      disabled={isRunning}
+                      disabled={isRunning || insufficientBalance}
                     >
                       {action}
                     </Button>
@@ -635,7 +654,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         ) : currentStepKey && !isExpired ? (
           <Button
             onClick={() => runFromStep(currentStepKey)}
-            disabled={isRunning}
+            disabled={isRunning || insufficientBalance}
             className="h-12 w-full text-base font-semibold bg-black text-white hover:bg-black/90"
           >
             {isRunning ? (
