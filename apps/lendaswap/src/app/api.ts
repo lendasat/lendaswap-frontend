@@ -305,6 +305,38 @@ export const api = {
     return await client.buildCollabRefundEvmTypedData(swapId, settlement);
   },
 
+  /** POST a pre-signed collab refund (for wallet-funded swaps where the wallet signs the EIP-712 digest). */
+  async submitCollabRefundEvm(
+    swapId: string,
+    body: {
+      v: number;
+      r: string;
+      s: string;
+      depositor_address: string;
+      mode: string;
+      sweep_token?: string;
+      min_amount_out: string;
+      dex_calldata?: { to: string; data: string; value: string };
+    },
+  ): Promise<{ id: string; txHash: string; message: string }> {
+    const resp = await fetch(
+      `${API_BASE_URL}/api/swap/${swapId}/collab-refund-evm`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(
+        `Collaborative EVM refund failed: ${text || resp.statusText}`,
+      );
+    }
+    const data = await resp.json();
+    return { id: data.id, txHash: data.tx_hash, message: data.message };
+  },
+
   async getVersion(): Promise<{ tag: string; commit_hash: string }> {
     const client = await getClients();
     return await client.getVersion();

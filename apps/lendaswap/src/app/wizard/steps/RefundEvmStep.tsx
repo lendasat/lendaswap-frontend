@@ -141,8 +141,11 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
     fetchRefundCallData(isWbtcSource ? "direct" : "swap-back");
   }, [swapId, isWbtcSource, refundCallData, fetchRefundCallData]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Collab refund for wallet-funded swaps needs a wallet connection (for signing, not gas)
+  const collabNeedsWallet = collabAvailable && !swapData.gasless;
+
   const handleRefund = async (mode: RefundMode) => {
-    // If collab is available, use it (gasless, no wallet needed)
+    // If collab is available, use it (gasless submission by server)
     if (collabAvailable) {
       return handleCollabRefund(mode === "swap-back" ? "swap-back" : "direct");
     }
@@ -217,7 +220,62 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
     setRefundSuccess(null);
 
     try {
-      const result = await api.collabRefundEvmSwap(swapId, settlement);
+      let result: { txHash: string };
+
+      if (swapData.gasless) {
+        // Gasless (Permit2) swap — SDK-derived key is the depositor, sign internally
+        result = await api.collabRefundEvmSwap(swapId, settlement);
+      } else {
+        // Wallet-funded swap — user's wallet is the depositor, sign via wallet
+        if (!walletClient || !address) {
+          open().catch(console.error);
+          return;
+        }
+
+        const { typedData, params } = await api.buildCollabRefundEvmTypedData(
+          swapId,
+          settlement,
+        );
+
+        const signature = await walletClient.signTypedData({
+          domain: {
+            ...typedData.domain,
+            verifyingContract: typedData.domain
+              .verifyingContract as `0x${string}`,
+          },
+          types: typedData.types,
+          primaryType: typedData.primaryType,
+          message: {
+            preimageHash: typedData.message.preimageHash as `0x${string}`,
+            amount: typedData.message.amount,
+            token: typedData.message.token as `0x${string}`,
+            claimAddress: typedData.message.claimAddress as `0x${string}`,
+            timelock: typedData.message.timelock,
+            caller: typedData.message.caller as `0x${string}`,
+            sweepToken: typedData.message.sweepToken as `0x${string}`,
+            minAmountOut: typedData.message.minAmountOut,
+          },
+          account: walletClient.account,
+        });
+
+        // Parse v, r, s from the 65-byte signature
+        const sigHex = signature.replace(/^0x/, "");
+        const r = `0x${sigHex.slice(0, 64)}`;
+        const s = `0x${sigHex.slice(64, 128)}`;
+        const v = Number.parseInt(sigHex.slice(128, 130), 16);
+
+        result = await api.submitCollabRefundEvm(swapId, {
+          v,
+          r,
+          s,
+          depositor_address: address,
+          mode: settlement === "swap-back" ? "swap" : "direct",
+          sweep_token: params.sweepToken,
+          min_amount_out: params.minAmountOut,
+          dex_calldata: params.dexCalldata ?? undefined,
+        });
+      }
+
       const label = settlement === "swap-back" ? sourceSymbol : "WBTC";
       setRefundSuccess(
         `Refund as ${label} successful! Transaction: ${result.txHash}`,
@@ -257,7 +315,8 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
               <>
                 <Zap className="h-4 w-4 text-blue-500" />
                 <span>
-                  Instant refund available · gasless, no wallet needed
+                  Instant refund available · gasless
+                  {!swapData.gasless && ", wallet signature required"}
                 </span>
               </>
             ) : isLocktimePassed ? (
@@ -283,7 +342,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
                   onClick={() => handleRefund("swap-back")}
                   disabled={
                     anyRefundInProgress ||
-                    (!collabAvailable && !address) ||
+                    ((collabNeedsWallet || !collabAvailable) && !address) ||
                     isLoadingCallData
                   }
                   className="w-full h-12 text-base font-semibold"
@@ -301,7 +360,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
                   onClick={() => handleRefund("direct")}
                   disabled={
                     anyRefundInProgress ||
-                    (!collabAvailable && !address) ||
+                    ((collabNeedsWallet || !collabAvailable) && !address) ||
                     isLoadingCallData
                   }
                   variant="outline"
@@ -324,7 +383,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
                 onClick={() => handleRefund("direct")}
                 disabled={
                   anyRefundInProgress ||
-                  (!collabAvailable && !address) ||
+                  ((collabNeedsWallet || !collabAvailable) && !address) ||
                   isLoadingCallData
                 }
                 className="w-full h-12 text-base font-semibold"
