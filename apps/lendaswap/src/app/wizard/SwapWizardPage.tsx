@@ -23,6 +23,7 @@ import {
   RefundArkadeStep,
   RefundBitcoinStep,
   RefundEvmStep,
+  RefundedStep,
   RefundLightningStep,
   SuccessStep,
   SwapProcessingStep,
@@ -537,24 +538,7 @@ export function SwapWizardPage() {
           )}
 
           {currentStep === "refunded" && (
-            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-              <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Swap ID:
-                </p>
-                <code className="text-xs font-mono text-foreground flex-1">
-                  {displaySwapData.id}
-                </code>
-                <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
-              </div>
-
-              <div className="space-y-4 p-6">
-                <h3 className="text-xl font-semibold">Swap Refunded</h3>
-                <p className="text-muted-foreground">
-                  Your funds have been refunded successfully.
-                </p>
-              </div>
-            </div>
+            <RefundedStep swapData={displaySwapData} />
           )}
         </>
       )}
