@@ -646,8 +646,8 @@ export function HomePage() {
                     type="button"
                     onClick={() => {
                       setLastEditedField("sourceAsset");
-                      const raw = Number(sourceBalance) * (pct / 100);
-                      setSourceAmountState(Math.floor(raw));
+                      const amt = (sourceBalance * BigInt(pct)) / 100n;
+                      setSourceAmountState(Number(amt));
                     }}
                     className="px-2 py-0.5 text-xs rounded-full bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 transition-colors"
                   >
