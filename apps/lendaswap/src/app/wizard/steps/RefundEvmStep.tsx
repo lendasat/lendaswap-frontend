@@ -254,6 +254,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
             caller: typedData.message.caller as `0x${string}`,
             sweepToken: typedData.message.sweepToken as `0x${string}`,
             minAmountOut: typedData.message.minAmountOut,
+            callsHash: typedData.message.callsHash as `0x${string}`,
           },
           account: walletClient.account,
         });
