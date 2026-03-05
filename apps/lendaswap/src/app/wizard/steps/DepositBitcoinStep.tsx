@@ -88,6 +88,7 @@ export function DepositBitcoinStep({
         <AmountRow
           label="You Send"
           value={`${Number(swapData.source_amount).toLocaleString()} sats`}
+          copyValue={String(swapData.source_amount)}
           copiable
         />
         {receiveLabel && <AmountRow label="You Receive" value={receiveLabel} />}

@@ -6,11 +6,18 @@ import { useCopyToClipboard } from "./useCopyToClipboard";
 interface AmountRowProps {
   label: string;
   value: string;
+  copyValue?: string;
   copiable?: boolean;
 }
 
-export function AmountRow({ label, value, copiable }: AmountRowProps) {
+export function AmountRow({
+  label,
+  value,
+  copyValue,
+  copiable,
+}: AmountRowProps) {
   const { copiedValue, handleCopy } = useCopyToClipboard();
+  const textToCopy = copyValue ?? value;
 
   return (
     <div className="flex justify-between text-sm">
@@ -21,10 +28,10 @@ export function AmountRow({ label, value, copiable }: AmountRowProps) {
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => handleCopy(value)}
+            onClick={() => handleCopy(textToCopy)}
             className="h-6 w-6"
           >
-            {copiedValue === value ? (
+            {copiedValue === textToCopy ? (
               <CheckCheck className="h-3 w-3" />
             ) : (
               <Copy className="h-3 w-3" />

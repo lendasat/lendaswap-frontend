@@ -62,6 +62,7 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
         <AmountRow
           label="Required Sats"
           value={`${Number(swapData.source_amount).toLocaleString()} sats`}
+          copyValue={String(swapData.source_amount)}
           copiable
         />
         <AmountRow

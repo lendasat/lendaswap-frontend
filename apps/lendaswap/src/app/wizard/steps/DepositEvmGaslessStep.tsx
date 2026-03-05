@@ -182,6 +182,7 @@ export function DepositEvmGaslessStep({
         <AmountRow
           label="You Send"
           value={`${sourceAmount} ${tokenSymbol} on ${chainName}`}
+          copyValue={sourceAmount}
           copiable
         />
         <div className="flex justify-between items-center text-sm">
