@@ -1,7 +1,8 @@
 import type { TokenInfo } from "@lendasat/lendaswap-sdk-pure";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCheck, Copy } from "lucide-react";
 import type { ReactNode } from "react";
 import { getTokenIcon, getTokenNetworkIcon } from "../../utils/tokenUtils";
+import { useCopyToClipboard } from "./useCopyToClipboard";
 
 function TokenBadge({ token }: { token: TokenInfo }) {
   return (
@@ -35,6 +36,9 @@ export function DepositCard({
   title = "Send BTC",
   children,
 }: DepositCardProps) {
+  const { copiedValue, handleCopy } = useCopyToClipboard();
+  const isCopied = copiedValue === swapId;
+
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
       {/* Header */}
@@ -50,9 +54,19 @@ export function DepositCard({
           <h3 className="text-sm font-semibold">{title}</h3>
         </div>
         <div className="flex items-center gap-2">
-          <code className="text-[10px] font-mono text-muted-foreground">
-            {swapId.slice(0, 8)}…
-          </code>
+          <button
+            type="button"
+            onClick={() => handleCopy(swapId)}
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            title="Copy Swap ID"
+          >
+            <code className="text-[10px] font-mono">{swapId.slice(0, 8)}…</code>
+            {isCopied ? (
+              <CheckCheck className="h-3 w-3 text-green-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
           <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
         </div>
       </div>

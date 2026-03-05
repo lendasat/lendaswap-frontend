@@ -229,9 +229,19 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <code className="text-[10px] font-mono text-muted-foreground">
-            {swapId.slice(0, 8)}…
-          </code>
+          <button
+            type="button"
+            onClick={() => handleCopyAddress(swapId)}
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            title="Copy Swap ID"
+          >
+            <code className="text-[10px] font-mono">{swapId.slice(0, 8)}…</code>
+            {copiedAddress === swapId ? (
+              <CheckCheck className="h-3 w-3 text-green-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
           <div className="h-2 w-2 rounded-full bg-green-500" />
         </div>
       </div>

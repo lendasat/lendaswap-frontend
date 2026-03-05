@@ -1,6 +1,13 @@
 import type { GetSwapResponse } from "@lendasat/lendaswap-sdk-pure";
 import { useAppKit } from "@reown/appkit/react";
-import { Check, Circle, Copy, ExternalLink, Loader2 } from "lucide-react";
+import {
+  Check,
+  CheckCheck,
+  Circle,
+  Copy,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount } from "wagmi";
@@ -326,9 +333,19 @@ export function SwapProcessingStep({
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <code className="text-[10px] font-mono text-muted-foreground">
-            {swapId.slice(0, 8)}…
-          </code>
+          <button
+            type="button"
+            onClick={() => handleCopyTxId(swapId)}
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            title="Copy Swap ID"
+          >
+            <code className="text-[10px] font-mono">{swapId.slice(0, 8)}…</code>
+            {copiedTxId === swapId ? (
+              <CheckCheck className="h-3 w-3 text-green-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
           <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
         </div>
       </div>
