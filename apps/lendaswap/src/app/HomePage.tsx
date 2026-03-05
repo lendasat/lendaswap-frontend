@@ -577,6 +577,13 @@ export function HomePage() {
     quote != null && btcAmountSats != null && btcAmountSats > quote.max_amount;
   const isOutOfLimits = isBelowMin || isAboveMax;
 
+  // Check if the user has insufficient balance for the source token (EVM only)
+  const insufficientBalance =
+    sourceBalance !== undefined &&
+    sourceAmount != null &&
+    sourceAmount > 0 &&
+    sourceBalance < BigInt(Math.round(sourceAmount));
+
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
     return (
@@ -619,6 +626,7 @@ export function HomePage() {
     !isAddressValid ||
     isCreatingSwap ||
     isOutOfLimits ||
+    insufficientBalance ||
     (!sourceAmount && !targetAmount);
 
   const gaslessFeeEstimate =
@@ -667,6 +675,7 @@ export function HomePage() {
               decimals={sourceAsset?.decimals}
               isLoading={isLoadingQuote && lastEditedField !== "sourceAsset"}
               symbol={sourceAsset?.symbol}
+              error={insufficientBalance}
             />
             <div className="shrink-0">
               <AssetDropDown
@@ -690,7 +699,9 @@ export function HomePage() {
             </div>
           </div>
           <div className="flex justify-end mt-1.5">
-            <span className="text-xs text-muted-foreground">
+            <span
+              className={`text-xs ${insufficientBalance ? "text-destructive" : "text-muted-foreground"}`}
+            >
               {sourceAsset && sourceBalance !== undefined
                 ? `${formatBalance(sourceBalance, sourceAsset)} ${sourceAsset.symbol}`
                 : "\u00A0"}
@@ -886,6 +897,8 @@ export function HomePage() {
                   <Loader className="animate-spin h-4 w-4" />
                   Please Wait
                 </>
+              ) : insufficientBalance && sourceAsset ? (
+                <>Insufficient {sourceAsset.symbol}</>
               ) : (
                 <>Continue</>
               )}

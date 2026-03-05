@@ -13,6 +13,8 @@ interface AmountInputProps {
   isLoading?: boolean;
   /** Token symbol used to determine the currency icon (e.g. "BTC", "USDC", "XAUt") */
   symbol?: string;
+  /** Whether to show the input in an error state (red text) */
+  error?: boolean;
 }
 
 export function AmountInput({
@@ -21,6 +23,7 @@ export function AmountInput({
   decimals,
   isLoading = false,
   symbol,
+  error = false,
 }: AmountInputProps) {
   const { inputValue, isBtc, satsMode, toggleSatsMode, handleChange } =
     useSatsBtcMode({
@@ -58,7 +61,7 @@ export function AmountInput({
           overflowY: "hidden",
           overscrollBehavior: "none",
         }}
-        className="w-full p-0 m-0 border-0 bg-transparent text-2xl md:text-4xl !leading-[1] !h-[1em] font-sans font-medium outline-none appearance-none placeholder:text-muted-foreground/50"
+        className={`w-full p-0 m-0 border-0 bg-transparent text-2xl md:text-4xl !leading-[1] !h-[1em] font-sans font-medium outline-none appearance-none placeholder:text-muted-foreground/50 ${error ? "text-destructive" : ""}`}
         data-1p-ignore
         data-lpignore="true"
         autoComplete="off"
