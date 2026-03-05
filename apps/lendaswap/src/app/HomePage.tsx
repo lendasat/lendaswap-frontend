@@ -907,10 +907,12 @@ export function HomePage() {
         </div>
         {/*Swap Error Display*/}
         {swapError && (
-          <SupportErrorBanner
-            message="Failed to create swap"
-            error={swapError}
-          />
+          <div className="pt-2">
+            <SupportErrorBanner
+              message="Failed to create swap"
+              error={swapError}
+            />
+          </div>
         )}
       </div>
     </div>

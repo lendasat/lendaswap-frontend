@@ -12,9 +12,17 @@ interface ChatWidgetInnerProps {
   isOpen: boolean;
   onToggle: () => void;
   agents: AgentConfig[];
+  draftMessage?: string;
+  onDraftConsumed?: () => void;
 }
 
-function ChatWidgetInner({ isOpen, onToggle, agents }: ChatWidgetInnerProps) {
+function ChatWidgetInner({
+  isOpen,
+  onToggle,
+  agents,
+  draftMessage,
+  onDraftConsumed,
+}: ChatWidgetInnerProps) {
   const {
     messages,
     sendMessage,
@@ -63,6 +71,8 @@ function ChatWidgetInner({ isOpen, onToggle, agents }: ChatWidgetInnerProps) {
         onSend={sendMessage}
         onClose={handleToggle}
         agentProfiles={agentProfiles}
+        draftMessage={draftMessage}
+        onDraftConsumed={onDraftConsumed}
       />
     );
   }
@@ -79,11 +89,36 @@ export interface ChatWidgetProps {
 
 export function ChatWidget({ privateKeyHex, relays, agents }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [draftMessage, setDraftMessage] = useState<string>();
   const toggle = useCallback(() => setIsOpen((o) => !o), []);
+
+  // Allow external code to open the chat via a custom DOM event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ message?: string }>).detail;
+      if (detail?.message) setDraftMessage(detail.message);
+      setIsOpen(true);
+    };
+    window.addEventListener("open-support-chat", handler);
+    return () => window.removeEventListener("open-support-chat", handler);
+  }, []);
 
   return (
     <NostrProvider privateKeyHex={privateKeyHex} relays={relays}>
-      <ChatWidgetInner isOpen={isOpen} onToggle={toggle} agents={agents} />
+      <ChatWidgetInner
+        isOpen={isOpen}
+        onToggle={toggle}
+        agents={agents}
+        draftMessage={draftMessage}
+        onDraftConsumed={() => setDraftMessage(undefined)}
+      />
     </NostrProvider>
+  );
+}
+
+/** Programmatically open the support chat widget, optionally pre-filling a message. */
+export function openSupportChat(message?: string) {
+  window.dispatchEvent(
+    new CustomEvent("open-support-chat", { detail: { message } }),
   );
 }

@@ -1,6 +1,18 @@
-import { AlertCircle, Mail } from "lucide-react";
+import { openSupportChat } from "@frontend/nostr-chat";
+import { AlertCircle, ChevronDown, Mail, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "#/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "#/components/ui/dialog";
 import { api } from "../api";
 
 const SUPPORT_EMAIL = "support@lendasat.com";
@@ -72,6 +84,7 @@ export function SupportErrorBanner({
   swapId,
 }: SupportErrorBannerProps) {
   const [xpub, setXpub] = useState<string>();
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const knownAction = getKnownAction(error);
 
   console.error(`Error: ${error}`);
@@ -95,16 +108,68 @@ export function SupportErrorBanner({
     );
   }
 
-  // Unknown error — show support button
+  // Unknown error — show expandable details + support dialog
   return (
-    <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 flex items-center justify-between gap-3">
-      <span className="text-sm font-medium">{message}</span>
-      <a href={buildMailtoUrl(error, swapId, xpub)} className="shrink-0">
-        <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-          <Mail className="h-3.5 w-3.5" />
-          Get Support
-        </Button>
-      </a>
-    </div>
+    <>
+      <Collapsible>
+        <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl border p-3 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <CollapsibleTrigger className="flex items-center gap-1.5 text-sm font-medium hover:underline">
+              {message}
+              <ChevronDown className="h-3.5 w-3.5 transition-transform [[data-state=open]_&]:rotate-180" />
+            </CollapsibleTrigger>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs shrink-0"
+              onClick={() => setSupportDialogOpen(true)}
+            >
+              Get Support
+            </Button>
+          </div>
+          <CollapsibleContent>
+            <pre className="text-xs text-destructive/70 bg-destructive/5 rounded-lg p-2 mt-1 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+              {error}
+            </pre>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+
+      <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Get Support</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-2">
+            <a
+              href={buildMailtoUrl(error, swapId, xpub)}
+              onClick={() => setSupportDialogOpen(false)}
+            >
+              <Button variant="outline" className="w-full gap-2">
+                <Mail className="h-4 w-4" />
+                Send Email
+              </Button>
+            </a>
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => {
+                setSupportDialogOpen(false);
+                const chatMessage = [
+                  swapId && `Swap ID: ${swapId}`,
+                  `Error: ${error}`,
+                ]
+                  .filter(Boolean)
+                  .join("\n");
+                openSupportChat(chatMessage);
+              }}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Chat with Support
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

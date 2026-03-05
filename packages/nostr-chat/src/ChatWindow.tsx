@@ -23,6 +23,8 @@ interface ChatWindowProps {
   onSend: (content: string) => void;
   onClose: () => void;
   agentProfiles: Map<string, AgentProfile>;
+  draftMessage?: string;
+  onDraftConsumed?: () => void;
 }
 
 export function ChatWindow({
@@ -32,10 +34,29 @@ export function ChatWindow({
   onSend,
   onClose,
   agentProfiles,
+  draftMessage,
+  onDraftConsumed,
 }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Pre-fill input from draft message
+  useEffect(() => {
+    if (draftMessage) {
+      setInput(draftMessage);
+      onDraftConsumed?.();
+      // Resize textarea to fit content
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        if (el) {
+          el.style.height = "auto";
+          el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+          el.focus();
+        }
+      });
+    }
+  }, [draftMessage, onDraftConsumed]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
