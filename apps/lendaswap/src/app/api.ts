@@ -115,10 +115,7 @@ export interface OnchainToEvmSwapRequest {
 }
 
 // Token utility functions
-export {
-  getTokenDisplayName,
-  getTokenIcon,
-} from "./utils/tokenUtils";
+export { getTokenDisplayName, getTokenIcon } from "./utils/tokenUtils";
 
 // API client for Lendaswap backend
 const API_BASE_URL =
@@ -319,22 +316,8 @@ export const api = {
       dex_calldata?: { to: string; data: string; value: string };
     },
   ): Promise<{ id: string; txHash: string; message: string }> {
-    const resp = await fetch(
-      `${API_BASE_URL}/api/swap/${swapId}/collab-refund-evm`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    if (!resp.ok) {
-      const text = await resp.text();
-      throw new Error(
-        `Collaborative EVM refund failed: ${text || resp.statusText}`,
-      );
-    }
-    const data = await resp.json();
-    return { id: data.id, txHash: data.tx_hash, message: data.message };
+    const client = await getClients();
+    return await client.submitCollabRefundEvm(swapId, body);
   },
 
   async getVersion(): Promise<{ tag: string; commit_hash: string }> {
