@@ -310,10 +310,9 @@ export const api = {
       r: string;
       s: string;
       depositor_address: string;
-      mode: string;
+      mode: "direct" | "swap-back";
       sweep_token?: string;
       min_amount_out: string;
-      dex_calldata?: { to: string; data: string; value: string };
     },
   ): Promise<{ id: string; txHash: string; message: string }> {
     const client = await getClients();
