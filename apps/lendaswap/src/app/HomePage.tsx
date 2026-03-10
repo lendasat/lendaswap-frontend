@@ -58,9 +58,9 @@ const DEFAULT_BTC_LIGHTNING = "lightning:BTC";
 function isValidPair(source: TokenInfo, target: TokenInfo): boolean {
   // EVM → EVM: not allowed
   if (isEvmToken(source.chain) && isEvmToken(target.chain)) return false;
-  // BTC → BTC: only onchain → arkade is allowed
+  // BTC → BTC: onchain → arkade and lightning → arkade
   if (isBtc(source) && isBtc(target)) {
-    return isBtcOnchain(source) && isArkade(target);
+    return (isBtcOnchain(source) || isLightning(source)) && isArkade(target);
   }
   return true;
 }
@@ -82,14 +82,14 @@ function getAvailableTargetAssets(
     return sort([...allTokens]);
   }
 
-  if (isBtcOnchain(sourceAsset)) {
-    // Onchain BTC → EVM tokens + Arkade
+  if (isBtcOnchain(sourceAsset) || isLightning(sourceAsset)) {
+    // Onchain BTC / Lightning → EVM tokens + Arkade
     const arkadeTokens = btcTokens.filter((t) => isArkade(t));
     return sort([...evmTokens, ...arkadeTokens]);
   }
 
   if (isBtc(sourceAsset)) {
-    // Other BTC (lightning, arkade) → EVM tokens only
+    // Other BTC (arkade) → EVM tokens only
     return sort([...evmTokens]);
   }
 
@@ -506,7 +506,7 @@ export function HomePage() {
       // BTC → Arkade backend requires targetAmount (sats_receive).
       // The quote already computed it, so always pass it through.
       if (
-        isBtcOnchain(sourceAsset) &&
+        (isBtcOnchain(sourceAsset) || isLightning(sourceAsset)) &&
         isArkade(targetAsset) &&
         selectedTargetAmount == null
       ) {
