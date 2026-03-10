@@ -273,6 +273,22 @@ export function SwapProcessingStep({
           step4TxId: null,
           step4IsEvm: false,
         };
+      case "lightning_to_arkade":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.btc_claim_txid,
+          step1IsEvm: false,
+          step2LabelActive: "Server Funding",
+          step2LabelComplete: "Server Funded",
+          step2TxId: swapData.arkade_fund_txid,
+          step2IsEvm: false,
+          step3Label: "Client Redeeming",
+          step3TxId: swapData.arkade_claim_txid,
+          step3IsEvm: false,
+          step4Label: "Server Redeemed",
+          step4TxId: null,
+          step4IsEvm: false,
+        };
       case "evm_to_lightning":
         return {
           step1Label: "User Funded",

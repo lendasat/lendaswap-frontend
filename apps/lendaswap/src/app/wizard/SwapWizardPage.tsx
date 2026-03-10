@@ -6,6 +6,7 @@ import type {
   EvmToBitcoinSwapResponse,
   EvmToLightningSwapResponse,
   GetSwapResponse,
+  LightningToArkadeSwapResponse,
   LightningToEvmSwapResponse,
   SwapStatus,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -71,6 +72,8 @@ function determineStepFromStatus(
       case "evm_to_bitcoin":
         return swapData.evm_refund_locktime;
       case "lightning_to_evm":
+        return swapData.vhtlc_refund_locktime;
+      case "lightning_to_arkade":
         return swapData.vhtlc_refund_locktime;
       case "evm_to_lightning":
         return swapData.evm_refund_locktime;
@@ -387,9 +390,14 @@ export function SwapWizardPage() {
                   swapData={displaySwapData as ArkadeToEvmSwapResponse}
                 />
               )}
-              {swapDirectionValue === "lightning_to_evm" && (
+              {(swapDirectionValue === "lightning_to_evm" ||
+                swapDirectionValue === "lightning_to_arkade") && (
                 <DepositLightningStep
-                  swapData={displaySwapData as LightningToEvmSwapResponse}
+                  swapData={
+                    displaySwapData as
+                      | LightningToEvmSwapResponse
+                      | LightningToArkadeSwapResponse
+                  }
                 />
               )}
               {(swapDirectionValue === "bitcoin_to_evm" ||
@@ -514,9 +522,14 @@ export function SwapWizardPage() {
                 />
               )}
 
-              {swapDirectionValue === "lightning_to_evm" && (
+              {(swapDirectionValue === "lightning_to_evm" ||
+                swapDirectionValue === "lightning_to_arkade") && (
                 <RefundLightningStep
-                  swapData={displaySwapData as LightningToEvmSwapResponse}
+                  swapData={
+                    displaySwapData as
+                      | LightningToEvmSwapResponse
+                      | LightningToArkadeSwapResponse
+                  }
                 />
               )}
 

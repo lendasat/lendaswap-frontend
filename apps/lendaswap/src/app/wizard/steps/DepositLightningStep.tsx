@@ -1,4 +1,5 @@
 import {
+  type LightningToArkadeSwapResponse,
   type LightningToEvmSwapResponse,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -21,7 +22,7 @@ import {
 } from "../components";
 
 interface SendLightningStepProps {
-  swapData: LightningToEvmSwapResponse;
+  swapData: LightningToEvmSwapResponse | LightningToArkadeSwapResponse;
 }
 
 export function DepositLightningStep({ swapData }: SendLightningStepProps) {
@@ -38,9 +39,18 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
     10 ** swapData.target_token.decimals
   ).toFixed(swapData.target_token.decimals);
 
+  console.log(`Decimals amount: ${swapData.target_token.decimals}`);
+  console.log(`Token amount: ${tokenAmount}`);
+  console.log(`Target amount: ${swapData.target_amount}`);
+
   const tokenSymbol = swapData.target_token.symbol;
 
   const isSpeedWallet = isValidSpeedWalletContext();
+
+  const sourceAmountBtc = (Number(swapData.source_amount) / 100000000).toFixed(
+    8,
+  );
+  const feeBtc = (Number(swapData.fee_sats) / 100000000).toFixed(8);
 
   const handleSendFromWallet = async () => {
     if (!client) return;
@@ -90,7 +100,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
         swapId={swapData.id}
         title="Pay with Speed Wallet"
       >
-        <p className="text-sm text-muted-foreground text-center">
+        <p className="text-muted-foreground text-center text-sm">
           Tap the button below to complete your payment
         </p>
 
@@ -123,7 +133,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
             ) : (
               <>
                 <Zap className="mr-2 h-5 w-5" />
-                Pay {Number(swapData.source_amount).toLocaleString()} sats
+                Pay {sourceAmountBtc} BTC
               </>
             )}
           </Button>
@@ -141,6 +151,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   }
 
   // Standard mode: QR code + invoice + wallet bridge
+
   return (
     <DepositCard
       sourceToken={swapData.source_token}
@@ -152,8 +163,8 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
       <AddressDisplay label="Lightning Invoice" value={lightningInvoice} />
       <AmountSummary>
         <AmountRow
-          label="Required Sats"
-          value={`${Number(swapData.source_amount).toLocaleString()} sats`}
+          label="Required BTC"
+          value={`${sourceAmountBtc} BTC`}
           copyValue={String(swapData.source_amount)}
           copiable
         />
@@ -161,10 +172,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
           label="You Receive"
           value={`~${tokenAmount} ${tokenSymbol} on ${toChainName(swapData.target_token.chain)}`}
         />
-        <AmountRow
-          label="Fee"
-          value={`${swapData.fee_sats.toLocaleString()} sats`}
-        />
+        <AmountRow label="Fee" value={`${feeBtc} BTC`} />
       </AmountSummary>
       <DepositActions
         onSendFromWallet={
