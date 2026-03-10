@@ -270,10 +270,9 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
           r,
           s,
           depositor_address: address,
-          mode: settlement === "swap-back" ? "swap" : "direct",
+          mode: settlement,
           sweep_token: params.sweepToken,
           min_amount_out: params.minAmountOut,
-          dex_calldata: params.dexCalldata ?? undefined,
         });
       }
 
