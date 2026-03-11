@@ -111,9 +111,31 @@ export function SwapProcessingStep({
         });
 
         const claimResponse = await api.claim(swapId);
-        console.log(
-          `Claim request sent successfully ${JSON.stringify(claimResponse)}`,
-        );
+        if (!claimResponse.success) {
+          console.error("Auto-claim returned an unsuccessful response:", {
+            swapId: swapData.id,
+            retryCount,
+            claimResponse,
+          });
+
+          setRetryCount(maxRetries);
+          setClaimError(claimResponse.message);
+
+          posthog?.capture("swap_failed", {
+            failure_type: "claim",
+            swap_id: swapData.id,
+            swap_direction: swapData.direction,
+            error_message: claimResponse.message,
+            retry_count: retryCount,
+          });
+
+          return;
+        }
+
+        console.log("Claim request completed successfully", {
+          swapId: swapData.id,
+          claimResponse,
+        });
 
         // Success! Reset retry count
         setRetryCount(0);
@@ -572,25 +594,6 @@ export function SwapProcessingStep({
                         : "Gas fees fully sponsored via Gelato Relay - no fees for you!"}
                     </p>
                   )}
-                  {claimError && (
-                    <div className="space-y-2">
-                      <SupportErrorBanner
-                        message="Claim failed"
-                        error={claimError}
-                        swapId={swapId}
-                      />
-                      {retryCount >= maxRetries && (
-                        <Button
-                          onClick={handleManualRetry}
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                        >
-                          Retry Manually
-                        </Button>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -644,6 +647,26 @@ export function SwapProcessingStep({
             </div>
           </div>
         </div>
+
+        {claimError && (
+          <div className="space-y-2 border-t border-border/50 pt-2">
+            <SupportErrorBanner
+              message="Claim failed"
+              error={claimError}
+              swapId={swapId}
+            />
+            {retryCount >= maxRetries && (
+              <Button
+                onClick={handleManualRetry}
+                size="sm"
+                variant="outline"
+                className="w-full"
+              >
+                Retry Manually
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
