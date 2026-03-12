@@ -185,6 +185,16 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
           tweetText: makeTweet(sent, received),
         };
       }
+      case "lightning_to_arkade": {
+        return {
+          sourceAmount: sent,
+          targetAmount: received,
+          targetAddress: swapData.target_arkade_address,
+          isLightning: false,
+          swapTxId: swapData.arkade_claim_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
     }
   };
 
