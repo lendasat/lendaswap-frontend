@@ -1,5 +1,6 @@
 import type {
   ArkadeToEvmSwapResponse,
+  ArkadeToLightningSwapResponse,
   BitcoinToEvmSwapResponse,
   BtcToArkadeSwapResponse,
   EvmToArkadeSwapResponse,
@@ -77,6 +78,8 @@ function determineStepFromStatus(
         return swapData.vhtlc_refund_locktime;
       case "evm_to_lightning":
         return swapData.evm_refund_locktime;
+      case "arkade_to_lightning":
+        return swapData.vhtlc_refund_locktime;
     }
   };
   const refundLocktime = getRefundLocktime();
@@ -98,7 +101,9 @@ function determineStepFromStatus(
   // "having trouble? refund now" link after N seconds on the processing screen.
   // For now, if the server truly fails the swap will transition to
   // `clientfundedtoolate` / `expired` and collab refund kicks in then.
-  const isArkadeToEvm = swapData.direction === "arkade_to_evm";
+  const isArkadeToEvm =
+    swapData.direction === "arkade_to_evm" ||
+    swapData.direction === "arkade_to_lightning";
   const failedForCollabRefund =
     status === "clientfundedserverrefunded" ||
     status === "clientinvalidfunded" ||
@@ -385,9 +390,14 @@ export function SwapWizardPage() {
         <>
           {currentStep === "user-deposit" && (
             <>
-              {swapDirectionValue === "arkade_to_evm" && (
+              {(swapDirectionValue === "arkade_to_evm" ||
+                swapDirectionValue === "arkade_to_lightning") && (
                 <DepositArkadeStep
-                  swapData={displaySwapData as ArkadeToEvmSwapResponse}
+                  swapData={
+                    displaySwapData as
+                      | ArkadeToEvmSwapResponse
+                      | ArkadeToLightningSwapResponse
+                  }
                 />
               )}
               {(swapDirectionValue === "lightning_to_evm" ||
@@ -503,9 +513,14 @@ export function SwapWizardPage() {
 
           {currentStep === "refundable" && (
             <>
-              {swapDirectionValue === "arkade_to_evm" && (
+              {(swapDirectionValue === "arkade_to_evm" ||
+                swapDirectionValue === "arkade_to_lightning") && (
                 <RefundArkadeStep
-                  swapData={displaySwapData as ArkadeToEvmSwapResponse}
+                  swapData={
+                    displaySwapData as
+                      | ArkadeToEvmSwapResponse
+                      | ArkadeToLightningSwapResponse
+                  }
                 />
               )}
 

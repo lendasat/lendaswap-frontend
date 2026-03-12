@@ -1,4 +1,7 @@
-import type { ArkadeToEvmSwapResponse } from "@lendasat/lendaswap-sdk-pure";
+import type {
+  ArkadeToEvmSwapResponse,
+  ArkadeToLightningSwapResponse,
+} from "@lendasat/lendaswap-sdk-pure";
 import { ArrowRight, Clock, Loader2, Unlock } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
@@ -12,7 +15,7 @@ import { useWalletBridge } from "../../WalletBridgeContext";
 import { DepositCard } from "../components";
 
 interface RefundArkadeStepProps {
-  swapData: ArkadeToEvmSwapResponse;
+  swapData: ArkadeToEvmSwapResponse | ArkadeToLightningSwapResponse;
 }
 
 export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
@@ -183,7 +186,9 @@ export function RefundArkadeStep({ swapData }: RefundArkadeStepProps) {
           <div className="space-y-1">
             <p className="text-sm font-medium">VHTLC Address</p>
             <p className="text-muted-foreground break-all font-mono text-xs">
-              {swapData.btc_vhtlc_address}
+              {"btc_vhtlc_address" in swapData
+                ? swapData.btc_vhtlc_address
+                : swapData.arkade_vhtlc_address}
             </p>
           </div>
 
