@@ -29,6 +29,7 @@ interface DirectionConfig {
   targetAmount: string;
   targetAddress?: string | null;
   isLightning: boolean;
+  noAddressLink?: boolean;
   swapTxId?: string | null;
   tweetText: string;
 }
