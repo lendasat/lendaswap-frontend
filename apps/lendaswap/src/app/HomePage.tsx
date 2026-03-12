@@ -58,16 +58,19 @@ const DEFAULT_BTC_LIGHTNING = "lightning:BTC";
 function isValidPair(source: TokenInfo, target: TokenInfo): boolean {
   // EVM → EVM: not allowed
   if (isEvmToken(source.chain) && isEvmToken(target.chain)) return false;
-  // BTC → BTC: onchain → arkade and lightning → arkade
+  // BTC → BTC: onchain/lightning → arkade, arkade → lightning
   if (isBtc(source) && isBtc(target)) {
-    return (isBtcOnchain(source) || isLightning(source)) && isArkade(target);
+    if ((isBtcOnchain(source) || isLightning(source)) && isArkade(target))
+      return true;
+    if (isArkade(source) && isLightning(target)) return true;
+    return false;
   }
   return true;
 }
 
 // Valid targets for a given source:
-//  - BTC onchain → Arkade + all EVM tokens
-//  - BTC (arkade/lightning) → all EVM tokens
+//  - BTC onchain / Lightning → Arkade + all EVM tokens
+//  - Arkade → Lightning + all EVM tokens
 //  - EVM token → all BTC tokens
 function getAvailableTargetAssets(
   btcTokens: TokenInfo[],
@@ -88,9 +91,10 @@ function getAvailableTargetAssets(
     return sort([...evmTokens, ...arkadeTokens]);
   }
 
-  if (isBtc(sourceAsset)) {
-    // Other BTC (arkade) → EVM tokens only
-    return sort([...evmTokens]);
+  if (isArkade(sourceAsset)) {
+    // Arkade → EVM tokens + Lightning
+    const lightningTokens = btcTokens.filter((t) => isLightning(t));
+    return sort([...evmTokens, ...lightningTokens]);
   }
 
   if (isEvmToken(sourceAsset.chain)) {

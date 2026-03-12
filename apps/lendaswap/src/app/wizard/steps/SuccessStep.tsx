@@ -195,6 +195,17 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
           tweetText: makeTweet(sent, received),
         };
       }
+      case "arkade_to_lightning": {
+        return {
+          sourceAmount: sent,
+          targetAmount: received,
+          targetAddress: swapData.client_lightning_invoice,
+          isLightning: true,
+          noAddressLink: true,
+          swapTxId: swapData.arkade_fund_txid,
+          tweetText: makeTweet(sent, received),
+        };
+      }
     }
   };
 
@@ -304,14 +315,20 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
                     : "Sent to Address"}
                 </span>
                 <div className="flex items-center gap-2">
-                  <a
-                    href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.targetAddress)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 break-all font-mono text-xs hover:underline"
-                  >
-                    {config.targetAddress}
-                  </a>
+                  {config.noAddressLink ? (
+                    <span className="flex-1 break-all font-mono text-xs">
+                      {config.targetAddress}
+                    </span>
+                  ) : (
+                    <a
+                      href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.targetAddress)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 break-all font-mono text-xs hover:underline"
+                    >
+                      {config.targetAddress}
+                    </a>
+                  )}
                   <div className="flex shrink-0 gap-1">
                     <Button
                       size="icon"
@@ -327,27 +344,29 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
                         <Copy className="h-3 w-3" />
                       )}
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      asChild
-                      className="h-8 w-8"
-                    >
-                      <a
-                        href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.targetAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    {!config.noAddressLink && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        asChild
+                        className="h-8 w-8"
                       >
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </Button>
+                        <a
+                          href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.targetAddress)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
             )}
-            <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
-              <span className="text-muted-foreground">Transaction Hash</span>
-              {config.swapTxId ? (
+            {config.swapTxId && (
+              <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
+                <span className="text-muted-foreground">Transaction Hash</span>
                 <div className="flex items-center gap-2">
                   <a
                     href={`${getBlockexplorerTxLink(swapData.target_token.chain, config.swapTxId)}`}
@@ -386,12 +405,8 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
                     </Button>
                   </div>
                 </div>
-              ) : (
-                <span className="text-muted-foreground font-mono text-xs">
-                  N/A
-                </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Action Button */}

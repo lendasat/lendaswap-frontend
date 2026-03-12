@@ -327,6 +327,22 @@ export function SwapProcessingStep({
           step4TxId: swapData.lightning_paid ? "paid" : null,
           step4IsEvm: false,
         };
+      case "arkade_to_lightning":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.arkade_fund_txid,
+          step1IsEvm: false,
+          step2LabelActive: "Paying Invoice",
+          step2LabelComplete: "Invoice Paid",
+          step2TxId: swapData.arkade_claim_txid,
+          step2IsEvm: false,
+          step3Label: "Completing",
+          step3TxId: swapData.status === "serverredeemed" ? "complete" : null,
+          step3IsEvm: false,
+          step4Label: "Complete",
+          step4TxId: swapData.status === "serverredeemed" ? "complete" : null,
+          step4IsEvm: false,
+        };
     }
   };
 
