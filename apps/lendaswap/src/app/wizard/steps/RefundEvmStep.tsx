@@ -37,6 +37,7 @@ const COLLAB_REFUND_STATUSES = new Set([
   "expired",
   "clientinvalidfunded",
   "clientfundedtoolate",
+  "serverpaymenterror",
 ]);
 
 function formatAmount(raw: number | string, decimals: number): string {
