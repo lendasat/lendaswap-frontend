@@ -87,16 +87,15 @@ export function SupportErrorBanner({
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
   const knownAction = getKnownAction(error);
 
-  console.error(`Error: ${error}`);
-
   useEffect(() => {
+    console.error(`Error: ${error}`);
     if (!knownAction) {
       api
         .getUserIdXpub()
         .then(setXpub)
         .catch(() => {});
     }
-  }, [knownAction]);
+  }, [knownAction, error]);
 
   // Known/actionable error — show instruction, no support button
   if (knownAction) {
