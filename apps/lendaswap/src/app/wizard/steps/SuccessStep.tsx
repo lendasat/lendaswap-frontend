@@ -1,5 +1,6 @@
 import { toChainName } from "@lendasat/lendaswap-sdk-pure";
 import {
+  AlertCircle,
   ArrowRight,
   Check,
   CheckCheck,
@@ -12,7 +13,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "#/components/ui/button";
 import isValidSpeedWalletContext from "../../../utils/speedWallet";
-import type { GetSwapResponse } from "../../api";
+import { api, type GetSwapResponse } from "../../api";
 import {
   getBlockexplorerAddressLink,
   getBlockexplorerTxLink,
@@ -46,6 +47,30 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
     : null;
 
   const swapId = swapData.id;
+  const isArkadeTarget =
+    swapData.direction === "evm_to_arkade" ||
+    swapData.direction === "btc_to_arkade" ||
+    swapData.direction === "lightning_to_arkade";
+
+  const [hasVtxo, setHasVtxo] = useState(false);
+  useEffect(() => {
+    if (!isArkadeTarget) return;
+    let cancelled = false;
+
+    api
+      .hasReceivedVtxo(swapId)
+      .then((result) => {
+        if (!cancelled) setHasVtxo(result);
+      })
+      .catch((err) => {
+        console.error("hasReceivedVtxo error:", err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [swapId, isArkadeTarget]);
+
   // Track swap completion event
   useEffect(() => {
     posthog?.capture("swap_completed", {
@@ -410,13 +435,49 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
             )}
           </div>
 
-          {/* Action Button */}
-          <Button
-            className="h-12 w-full max-w-md text-base font-semibold"
-            onClick={handleStartNewSwap}
-          >
-            Start New Swap
-          </Button>
+          {/* Recovery warning for Arkade swaps */}
+          {isArkadeTarget && !hasVtxo && (
+            <div className="w-full max-w-md space-y-3">
+              <div className="rounded-lg border border-amber-500 bg-amber-50 p-4 dark:bg-amber-950/20">
+                <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300 mb-1">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  Funds not yet received on Arkade
+                </div>
+                <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                  Your swap completed but the funds haven't arrived in your
+                  Arkade wallet yet. This can happen if the claim wasn't fully
+                  finalized. Click below to recover your funds.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="h-12 w-full border-amber-500 text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-950/20"
+                onClick={async () => {
+                  try {
+                    const result = await api.continueArkadeClaimSwap(swapId);
+                    if (result.success) {
+                      setHasVtxo(true);
+                    }
+                    console.log(`continueArkadeClaim(${swapId}):`, result);
+                  } catch (err) {
+                    console.error("continueArkadeClaim error:", err);
+                  }
+                }}
+              >
+                Recover Funds
+              </Button>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3 w-full max-w-md">
+            <Button
+              className="h-12 w-full text-base font-semibold"
+              onClick={handleStartNewSwap}
+            >
+              Start New Swap
+            </Button>
+          </div>
         </div>
       </div>
     </div>

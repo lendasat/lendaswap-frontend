@@ -363,4 +363,19 @@ export const api = {
     const client = await getClients();
     return await client.fundSwapGasless(swapId);
   },
+
+  async hasReceivedVtxo(swapId: string): Promise<boolean> {
+    const client = await getClients();
+    return await client.hasReceivedVtxo(swapId);
+  },
+
+  async continueArkadeClaimSwap(swapId: string): Promise<{
+    success: boolean;
+    message: string;
+    txId?: string;
+    claimAmount?: bigint;
+  }> {
+    const client = await getClients();
+    return await client.continueArkadeClaimSwap(swapId);
+  },
 };
