@@ -11,6 +11,7 @@ import isValidSpeedWalletContext, {
   triggerSpeedWalletPayment,
 } from "../../../utils/speedWallet";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
+import { useNwc } from "../../NwcContext";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import {
   AddressDisplay,
@@ -28,11 +29,7 @@ interface SendLightningStepProps {
 export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   const navigate = useNavigate();
   const { client, isEmbedded, isReady } = useWalletBridge();
-  const {
-    isConnected: isNwcConnected,
-    payInvoice: nwcPayInvoice,
-    balanceSats,
-  } = useNwc();
+  const { isConnected: isNwcConnected, payInvoice: nwcPayInvoice } = useNwc();
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [speedPaymentTriggered, setSpeedPaymentTriggered] = useState(false);

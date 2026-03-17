@@ -210,37 +210,37 @@ export function AddressInput({
         )}
 
         {/* Generate Invoice Button - Lightning target with NWC connected */}
-        {showNwcGenerate && !value && (
-          <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleGenerateInvoice}
-              disabled={
-                isGeneratingInvoice || !targetAmountSats || targetAmountSats <= 0
-              }
-              type="button"
-              className="h-7 text-xs px-2"
-            >
-              {isGeneratingInvoice ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-3 h-3 mr-1" />
-                  Generate invoice
-                </>
-              )}
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Address Error Display */}
       {validationError && (
         <p className="text-destructive text-xs mt-2">{validationError}</p>
+      )}
+
+      {/* Generate Invoice via NWC */}
+      {showNwcGenerate && !value && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleGenerateInvoice}
+          disabled={
+            isGeneratingInvoice || !targetAmountSats || targetAmountSats <= 0
+          }
+          type="button"
+          className="mt-2 h-8 text-xs px-3 text-muted-foreground hover:text-foreground"
+        >
+          {isGeneratingInvoice ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+              Generating invoice...
+            </>
+          ) : (
+            <>
+              <Zap className="w-3 h-3 mr-1.5" />
+              Generate invoice from wallet
+            </>
+          )}
+        </Button>
       )}
     </div>
   );
