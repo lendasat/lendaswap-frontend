@@ -219,22 +219,17 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
               {nwcPaymentSent ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Payment sent — confirming...
+                  Confirming...
                 </>
               ) : isNwcPaying ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Paying via wallet...
+                  Paying...
                 </>
               ) : (
                 <>
                   <Zap className="mr-2 h-5 w-5" />
-                  Pay {sourceAmountBtc} BTC with Lightning Wallet
-                  {balanceSats !== null && (
-                    <span className="ml-1.5 text-xs opacity-70">
-                      ({balanceSats.toLocaleString()} sats)
-                    </span>
-                  )}
+                  Pay with Lightning Wallet
                 </>
               )}
             </Button>
