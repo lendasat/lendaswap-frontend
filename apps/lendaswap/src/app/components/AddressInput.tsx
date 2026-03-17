@@ -9,7 +9,7 @@ import {
 import { useAppKit } from "@reown/appkit/react";
 import { validate as validateBtcAddress } from "bitcoin-address-validation";
 import { isAddress } from "ethers";
-import { Wallet } from "lucide-react";
+import { Loader2, Wallet, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
@@ -19,6 +19,8 @@ import {
   isLightningAddress,
 } from "../../utils/lightningAddress";
 import isValidSpeedWalletContext from "../../utils/speedWallet";
+import { useNwc } from "../NwcContext";
+import { useWalletBridge } from "../WalletBridgeContext";
 
 interface AddressInputProps {
   value: string;
@@ -28,6 +30,8 @@ interface AddressInputProps {
   setAddressIsValid: (valid: boolean) => void;
   setBitcoinAmount: (amount: number) => void;
   disabled?: boolean;
+  /** Current target amount in sats — needed for NWC makeInvoice */
+  targetAmountSats?: number;
 }
 
 export function AddressInput({
@@ -38,12 +42,40 @@ export function AddressInput({
   setAddressIsValid,
   setBitcoinAmount,
   disabled = false,
+  targetAmountSats,
 }: AddressInputProps) {
   const isEvmTarget = targetToken ? isEvmToken(targetToken.chain) : false;
   const { address, isConnected } = useAccount();
   const { open } = useAppKit();
   const [validationError, setValidationError] = useState<string>("");
   const isSpeedWallet = isValidSpeedWalletContext();
+  const { isEmbedded } = useWalletBridge();
+  const { isConnected: isNwcConnected, makeInvoice } = useNwc();
+  const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
+
+  const isLightningTarget = targetToken ? isLightning(targetToken) : false;
+  const showNwcGenerate =
+    !isEmbedded &&
+    !isSpeedWallet &&
+    isNwcConnected &&
+    isLightningTarget &&
+    !disabled;
+
+  const handleGenerateInvoice = async () => {
+    if (!targetAmountSats || targetAmountSats <= 0) return;
+    setIsGeneratingInvoice(true);
+    setValidationError("");
+    try {
+      const bolt11 = await makeInvoice(targetAmountSats);
+      onChange(bolt11);
+    } catch (err) {
+      setValidationError(
+        err instanceof Error ? err.message : "Failed to generate invoice",
+      );
+    } finally {
+      setIsGeneratingInvoice(false);
+    }
+  };
 
   useEffect(() => {
     if (!value || !targetToken) {
@@ -174,6 +206,34 @@ export function AddressInput({
                 Connect
               </Button>
             ) : null}
+          </div>
+        )}
+
+        {/* Generate Invoice Button - Lightning target with NWC connected */}
+        {showNwcGenerate && !value && (
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleGenerateInvoice}
+              disabled={
+                isGeneratingInvoice || !targetAmountSats || targetAmountSats <= 0
+              }
+              type="button"
+              className="h-7 text-xs px-2"
+            >
+              {isGeneratingInvoice ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3 h-3 mr-1" />
+                  Generate invoice
+                </>
+              )}
+            </Button>
           </div>
         )}
       </div>

@@ -801,6 +801,9 @@ export function HomePage() {
           disabled={
             isEmbedded && !!arkAddress && !!targetAsset && isArkade(targetAsset)
           }
+          targetAmountSats={
+            targetAsset && isBtc(targetAsset) ? targetAmount : undefined
+          }
         />
         {/*Fees - below inputs, above Continue button*/}
         {(isLoadingQuote || quote) && (
