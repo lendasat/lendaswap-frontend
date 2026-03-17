@@ -27,6 +27,8 @@ import { ReactComponent as XLogo } from "../../assets/x-com-logo.svg";
 import isValidSpeedWalletContext from "../../utils/speedWallet";
 import { useTheme } from "../utils/theme-provider";
 import { ThemeToggle } from "../utils/theme-toggle";
+import { useWalletBridge } from "../WalletBridgeContext";
+import { NwcConnectDialog } from "./NwcConnectDialog";
 
 interface AppHeaderProps {
   hasCode: boolean;
@@ -45,6 +47,9 @@ export function AppHeader({
   const { theme } = useTheme();
   const { open } = useAppKit();
   const { isConnected, address } = useAccount();
+  const { isEmbedded } = useWalletBridge();
+  const isSpeedWallet = isValidSpeedWalletContext();
+  const showNwc = !isEmbedded && !isSpeedWallet;
   const truncatedAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : undefined;
@@ -150,8 +155,15 @@ export function AppHeader({
 
                   <DropdownMenuSeparator />
 
+                  {/* NWC Lightning Wallet - only in standalone mode */}
+                  {showNwc && (
+                    <DropdownMenuItem asChild>
+                      <NwcConnectDialog />
+                    </DropdownMenuItem>
+                  )}
+
                   {/* Hide Connect button in Speed Wallet - not needed */}
-                  {!isValidSpeedWalletContext() && (
+                  {!isSpeedWallet && (
                     <DropdownMenuItem
                       onClick={() => open().catch(console.error)}
                     >
@@ -217,9 +229,11 @@ export function AppHeader({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {/* NWC Lightning Wallet - only in standalone mode */}
+              {showNwc && <NwcConnectDialog />}
               <ThemeToggle />
               {/* Hide Connect button in Speed Wallet - not needed */}
-              {!isValidSpeedWalletContext() && (
+              {!isSpeedWallet && (
                 <Button
                   variant="outline"
                   size="sm"

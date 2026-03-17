@@ -11,6 +11,7 @@ import { PostHogProvider } from "posthog-js/react";
 import { http } from "viem";
 import { WagmiProvider } from "wagmi";
 import App from "./app/App";
+import { NwcProvider } from "./app/NwcContext";
 import { ThemeProvider } from "./app/utils/theme-provider";
 import { WalletBridgeProvider } from "./app/WalletBridgeContext";
 import { PostHogSuperProperties } from "./components/PostHogSuperProperties";
@@ -88,7 +89,9 @@ root.render(
             <Theme>
               <ThemeProvider>
                 <WalletBridgeProvider>
-                  <App />
+                  <NwcProvider>
+                    <App />
+                  </NwcProvider>
                 </WalletBridgeProvider>
               </ThemeProvider>
             </Theme>

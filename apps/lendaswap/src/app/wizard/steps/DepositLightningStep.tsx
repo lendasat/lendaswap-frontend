@@ -28,9 +28,16 @@ interface SendLightningStepProps {
 export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   const navigate = useNavigate();
   const { client, isEmbedded, isReady } = useWalletBridge();
+  const {
+    isConnected: isNwcConnected,
+    payInvoice: nwcPayInvoice,
+    balanceSats,
+  } = useNwc();
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [speedPaymentTriggered, setSpeedPaymentTriggered] = useState(false);
+  const [isNwcPaying, setIsNwcPaying] = useState(false);
+  const [nwcPaymentSent, setNwcPaymentSent] = useState(false);
 
   const lightningInvoice = swapData.boltz_invoice;
   const lightningQrValue = `lightning:${lightningInvoice}`;
@@ -46,6 +53,26 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   const tokenSymbol = swapData.target_token.symbol;
 
   const isSpeedWallet = isValidSpeedWalletContext();
+  const showNwc = !isEmbedded && !isSpeedWallet && isNwcConnected;
+
+  const handleNwcPayment = async () => {
+    try {
+      setIsNwcPaying(true);
+      setSendError(null);
+      await nwcPayInvoice(lightningInvoice);
+      setNwcPaymentSent(true);
+      // Swap wizard polling will detect the payment and advance
+    } catch (error) {
+      console.error("NWC payment failed:", error);
+      setSendError(
+        error instanceof Error
+          ? error.message
+          : "Lightning wallet payment failed",
+      );
+    } finally {
+      setIsNwcPaying(false);
+    }
+  };
 
   const sourceAmountBtc = (Number(swapData.source_amount) / 100000000).toFixed(
     8,
@@ -182,6 +209,37 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
         isSending={isSending}
         sendError={sendError}
         swapId={swapData.id}
+        extraButtons={
+          showNwc ? (
+            <Button
+              className="h-12 w-full text-base font-semibold"
+              onClick={handleNwcPayment}
+              disabled={isNwcPaying || nwcPaymentSent}
+            >
+              {nwcPaymentSent ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Payment sent — confirming...
+                </>
+              ) : isNwcPaying ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Paying via wallet...
+                </>
+              ) : (
+                <>
+                  <Zap className="mr-2 h-5 w-5" />
+                  Pay {sourceAmountBtc} BTC with Lightning Wallet
+                  {balanceSats !== null && (
+                    <span className="ml-1.5 text-xs opacity-70">
+                      ({balanceSats.toLocaleString()} sats)
+                    </span>
+                  )}
+                </>
+              )}
+            </Button>
+          ) : undefined
+        }
       />
     </DepositCard>
   );
