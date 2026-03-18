@@ -10,6 +10,7 @@ import {
   Menu,
   Upload,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAccount } from "wagmi";
@@ -25,6 +26,7 @@ import lendasatLogoBlack from "../../assets/lendasat_black.svg?url";
 import lendasatLogoWhite from "../../assets/lendasat_grey.svg?url";
 import { ReactComponent as XLogo } from "../../assets/x-com-logo.svg";
 import isValidSpeedWalletContext from "../../utils/speedWallet";
+import { useNwc } from "../NwcContext";
 import { useTheme } from "../utils/theme-provider";
 import { ThemeToggle } from "../utils/theme-toggle";
 import { useWalletBridge } from "../WalletBridgeContext";
@@ -50,6 +52,7 @@ export function AppHeader({
   const { isEmbedded } = useWalletBridge();
   const isSpeedWallet = isValidSpeedWalletContext();
   const showNwc = !isEmbedded && !isSpeedWallet;
+  const { isConnected: isNwcConnected, balanceSats } = useNwc();
   const truncatedAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : undefined;
@@ -157,9 +160,23 @@ export function AppHeader({
 
                   {/* NWC Lightning Wallet - only in standalone mode */}
                   {showNwc && (
-                    <DropdownMenuItem asChild>
-                      <NwcConnectDialog />
-                    </DropdownMenuItem>
+                    <NwcConnectDialog
+                      trigger={
+                        <button
+                          type="button"
+                          className="hover:bg-gray-200 focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-lg px-2 py-1.5 text-sm outline-hidden select-none"
+                        >
+                          <Zap
+                            className={`h-4 w-4 shrink-0 ${isNwcConnected ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"}`}
+                          />
+                          {isNwcConnected
+                            ? balanceSats !== null
+                              ? `${balanceSats.toLocaleString()} sats`
+                              : "Connected"
+                            : "Lightning"}
+                        </button>
+                      }
+                    />
                   )}
 
                   {/* Hide Connect button in Speed Wallet - not needed */}
