@@ -184,7 +184,7 @@ export function AppHeader({
                     <DropdownMenuItem
                       onClick={() => open().catch(console.error)}
                     >
-                      <Wallet className="w-4 h-4 mr-2" />
+                      <Wallet className="w-4 h-4" />
                       {isConnected ? truncatedAddress : "Connect"}
                     </DropdownMenuItem>
                   )}
