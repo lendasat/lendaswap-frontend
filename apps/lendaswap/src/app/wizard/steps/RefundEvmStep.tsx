@@ -2,6 +2,7 @@ import {
   type EvmToArkadeSwapResponse,
   type EvmToBitcoinSwapResponse,
   type EvmToLightningSwapResponse,
+  isEvmToken,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useAppKit } from "@reown/appkit/react";
@@ -76,7 +77,13 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
 
   const isWbtcSource = sourceSymbol.toLowerCase() === "wbtc";
 
-  const lockedWbtcFormatted = formatAmount(swapData.evm_expected_sats, 8);
+  // Determine the BTC-pegged token used in the HTLC (WBTC on Polygon, tBTC on Ethereum/Arbitrum)
+  const evmChain = isEvmToken(swapData.source_token.chain)
+    ? swapData.source_token.chain
+    : swapData.target_token.chain;
+  const htlcTokenDecimals = evmChain === "137" ? 8 : 18;
+  const htlcTokenSymbol = evmChain === "137" ? "WBTC" : "tBTC";
+  const lockedWbtcFormatted = formatAmount(swapData.evm_expected_sats, htlcTokenDecimals);
 
   const collabAvailable = COLLAB_REFUND_STATUSES.has(swapData.status);
 
@@ -437,7 +444,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
               <p className="text-muted-foreground">Locked in HTLC</p>
-              <p className="font-mono">{lockedWbtcFormatted} WBTC</p>
+              <p className="font-mono">{lockedWbtcFormatted} {htlcTokenSymbol}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Refund Locktime</p>
