@@ -4,6 +4,7 @@ import type {
 } from "@lendasat/lendaswap-sdk-pure";
 import { toChainName } from "@lendasat/lendaswap-sdk-pure";
 import { ArrowRight, Info, Zap } from "lucide-react";
+import { getTargetChainDisplayName } from "../../utils/tokenUtils";
 import { DepositCard } from "../components";
 
 interface RefundLightningStepProps {
@@ -56,7 +57,7 @@ export function RefundLightningStep({ swapData }: RefundLightningStepProps) {
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs font-medium">
                 {swapData.target_token.symbol} on{" "}
-                {toChainName(swapData.target_token.chain)}
+                {getTargetChainDisplayName(swapData)}
               </span>
             </div>
           </div>

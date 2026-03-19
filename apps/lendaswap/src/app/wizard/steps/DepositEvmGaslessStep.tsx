@@ -16,6 +16,7 @@ import { api } from "../../api";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import {
   getBlockexplorerAddressLink,
+  getTargetChainDisplayName,
   getViemChain,
 } from "../../utils/tokenUtils";
 import {
@@ -201,7 +202,7 @@ export function DepositEvmGaslessStep({
         </div>
         <AmountRow
           label={receiveLabel}
-          value={`~${targetAmount} ${swapData.target_token.symbol} on ${toChainName(swapData.target_token.chain)}`}
+          value={`~${targetAmount} ${swapData.target_token.symbol} on ${getTargetChainDisplayName(swapData)}`}
         />
         <AmountRow
           label="Fee"

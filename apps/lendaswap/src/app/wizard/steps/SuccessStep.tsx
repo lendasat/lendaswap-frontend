@@ -17,6 +17,7 @@ import { api, type GetSwapResponse } from "../../api";
 import {
   getBlockexplorerAddressLink,
   getBlockexplorerTxLink,
+  getTargetChainDisplayName,
   getTokenIcon,
   getTokenNetworkIcon,
 } from "../../utils/tokenUtils";
@@ -99,7 +100,7 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
   const sourceSymbol = swapData.source_token.symbol;
   const targetSymbol = swapData.target_token.symbol;
   const sourceNetwork = toChainName(swapData.source_token.chain);
-  const targetNetwork = toChainName(swapData.target_token.chain);
+  const targetNetwork = getTargetChainDisplayName(swapData);
 
   function makeTweet(sent: string, received: string): string {
     return `Swapped ${sent} ${sourceSymbol} → ${received} ${targetSymbol} in ${swapDurationSeconds}s on @lendasat\n\nTrustless atomic swap via @arkade_os`;

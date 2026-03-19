@@ -1,10 +1,14 @@
 import {
+  getBridgeTargetChain,
+  getCctpBridgeTokens,
   isArkade,
+  isBridgeOnlyChain,
   isBtc,
   isBtcOnchain,
   isLightning,
   type TokenInfo,
   toChainName,
+  USDC_ADDRESSES,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useAppKit } from "@reown/appkit/react";
 import { ArrowDown, ChevronDown, Loader } from "lucide-react";
@@ -81,20 +85,23 @@ function getAvailableTargetAssets(
   const sort = (list: TokenInfo[]) =>
     list.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
+  // Bridge-only tokens (USDC on Base, Optimism, etc.)
+  const bridgeTokens = allTokens.filter((t) => isBridgeOnlyChain(t.chain));
+
   if (!sourceAsset) {
     return sort([...allTokens]);
   }
 
   if (isBtcOnchain(sourceAsset) || isLightning(sourceAsset)) {
-    // Onchain BTC / Lightning → EVM tokens + Arkade
+    // Onchain BTC / Lightning → EVM tokens + Arkade + CCTP bridge tokens
     const arkadeTokens = btcTokens.filter((t) => isArkade(t));
-    return sort([...evmTokens, ...arkadeTokens]);
+    return sort([...evmTokens, ...arkadeTokens, ...bridgeTokens]);
   }
 
   if (isArkade(sourceAsset)) {
-    // Arkade → EVM tokens + Lightning
+    // Arkade → EVM tokens + Lightning + CCTP bridge tokens
     const lightningTokens = btcTokens.filter((t) => isLightning(t));
-    return sort([...evmTokens, ...lightningTokens]);
+    return sort([...evmTokens, ...lightningTokens, ...bridgeTokens]);
   }
 
   if (isEvmToken(sourceAsset.chain)) {
@@ -194,7 +201,9 @@ export function HomePage() {
   const allAvailableTokens = useMemo(() => {
     const btc = maybeAvailableTokens?.btc_tokens || [];
     const evm = maybeAvailableTokens?.evm_tokens || [];
-    return [...btc, ...evm];
+    // Add USDC on all CCTP bridge destination chains (Base, Optimism, etc.)
+    const bridgeTokens = getCctpBridgeTokens();
+    return [...btc, ...evm, ...bridgeTokens];
   }, [maybeAvailableTokens]);
 
   const sourceAsset = allAvailableTokens.find(
@@ -453,10 +462,17 @@ export function HomePage() {
   // auto-switch the wallet. If the switch fails (user rejects, wallet
   // doesn't support it, etc.) we surface a manual fallback button.
 
+  // Only require a chain switch for source EVM chains or target chains that
+  // are NOT bridge-only (bridge targets don't need the wallet on that chain —
+  // CCTP handles delivery automatically).
   const requiredEvmChain =
-    sourceAsset && isEvmToken(sourceAsset.chain)
+    sourceAsset &&
+    isEvmToken(sourceAsset.chain) &&
+    !isBridgeOnlyChain(sourceAsset.chain)
       ? sourceAsset.chain
-      : targetAsset && isEvmToken(targetAsset.chain)
+      : targetAsset &&
+          isEvmToken(targetAsset.chain) &&
+          !isBridgeOnlyChain(targetAsset.chain)
         ? targetAsset.chain
         : undefined;
 
@@ -528,14 +544,38 @@ export function HomePage() {
         selectedTargetAmount = targetAmount;
       }
 
+      // If target is USDC on a bridge-only chain, determine bridge params.
+      // The swap executes on a source chain (e.g. Arbitrum) and CCTP bridges
+      // the USDC to the destination chain (e.g. Base).
+      const bridgeTargetChain = getBridgeTargetChain(targetAsset);
+      const bridgeTargetTokenAddress = bridgeTargetChain
+        ? USDC_ADDRESSES[bridgeTargetChain]
+        : undefined;
+
+      // For bridge swaps, remap targetAsset to USDC on Arbitrum (the source chain
+      // where the DEX swap will run). The backend needs a real token + chain it
+      // knows about. The bridge_target_chain field tells it to bridge after.
+      let effectiveTargetAsset = targetAsset;
+      if (bridgeTargetChain) {
+        const sourceEvmTokens = maybeAvailableTokens?.evm_tokens || [];
+        const sourceUsdc = sourceEvmTokens.find(
+          (t) => t.symbol === "USDC" && t.chain === "42161",
+        );
+        if (sourceUsdc) {
+          effectiveTargetAsset = sourceUsdc;
+        }
+      }
+
       const swap = await api.createSwap({
         sourceAsset,
-        targetAsset,
+        targetAsset: effectiveTargetAsset,
         sourceAmount: selectedSourceAmount,
         targetAmount: selectedTargetAmount,
         targetAddress,
         userAddress: connectedAddress,
         gasless: gaslessEnabled,
+        bridgeTargetChain,
+        bridgeTargetTokenAddress,
       });
       navigate(`/swap/${swap.id}/wizard`);
     } catch (e) {
@@ -682,7 +722,9 @@ export function HomePage() {
             <div className="shrink-0">
               <AssetDropDown
                 value={sourceAsset}
-                availableAssets={allAvailableTokens}
+                availableAssets={allAvailableTokens.filter(
+                  (t) => !isBridgeOnlyChain(t.chain),
+                )}
                 label="sell"
                 onChange={(asset) => {
                   setSwapError("");
@@ -867,6 +909,15 @@ export function HomePage() {
                           %): {protocolFee} BTC
                         </div>
                       )}
+                      {quote?.bridge_fee != null &&
+                        targetAmount != null &&
+                        targetAmount > 0 && (
+                          <div>
+                            Bridge Fee (est.): ~
+                            {((targetAmount * 0.00005 + 1000) / 1e6).toFixed(4)}{" "}
+                            USDC
+                          </div>
+                        )}
                     </>
                   )}
                 </div>

@@ -2,12 +2,12 @@ import {
   type BitcoinToEvmSwapResponse,
   isArkade,
   isEvmToken,
-  toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { Clock } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { BtcToArkadeSwapResponse } from "../../api";
+import { getTargetChainDisplayName } from "../../utils/tokenUtils";
 import {
   AddressDisplay,
   AmountRow,
@@ -68,7 +68,7 @@ export function DepositBitcoinStep({
   const receiveLabel = isArkade(swapData.target_token)
     ? `${Number((swapData as BtcToArkadeSwapResponse).target_amount).toLocaleString()} sats on Arkade`
     : isEvmToken(swapData.target_token.chain)
-      ? `${tokenAmount} ${swapData.target_token.symbol} on ${toChainName(swapData.target_token.chain)}`
+      ? `${tokenAmount} ${swapData.target_token.symbol} on ${getTargetChainDisplayName(swapData)}`
       : undefined;
 
   return (

@@ -193,6 +193,8 @@ export const api = {
     targetAddress: string;
     userAddress?: string;
     gasless?: boolean;
+    bridgeTargetChain?: string;
+    bridgeTargetTokenAddress?: string;
   }): Promise<GetSwapResponse> {
     const referralCode = getReferralCode();
     const client = await getClients();
@@ -207,6 +209,8 @@ export const api = {
       userAddress: request.userAddress,
       referralCode: referralCode || undefined,
       gasless: request.gasless,
+      bridgeTargetChain: request.bridgeTargetChain,
+      bridgeTargetTokenAddress: request.bridgeTargetTokenAddress,
     });
     return result.response as GetSwapResponse;
   },

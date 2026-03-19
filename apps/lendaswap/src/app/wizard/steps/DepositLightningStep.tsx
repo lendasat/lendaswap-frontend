@@ -1,7 +1,6 @@
-import {
-  type LightningToArkadeSwapResponse,
-  type LightningToEvmSwapResponse,
-  toChainName,
+import type {
+  LightningToArkadeSwapResponse,
+  LightningToEvmSwapResponse,
 } from "@lendasat/lendaswap-sdk-pure";
 import { Loader2, Zap } from "lucide-react";
 import { useState } from "react";
@@ -12,6 +11,7 @@ import isValidSpeedWalletContext, {
 } from "../../../utils/speedWallet";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { useNwc } from "../../NwcContext";
+import { getTargetChainDisplayName } from "../../utils/tokenUtils";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import {
   AddressDisplay,
@@ -131,7 +131,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
         <AmountSummary>
           <AmountRow
             label="You Receive"
-            value={`${tokenAmount} ${tokenSymbol} on ${toChainName(swapData.target_token.chain)}`}
+            value={`${tokenAmount} ${tokenSymbol} on ${getTargetChainDisplayName(swapData)}`}
           />
         </AmountSummary>
 
@@ -194,7 +194,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
         />
         <AmountRow
           label="You Receive"
-          value={`~${tokenAmount} ${tokenSymbol} on ${toChainName(swapData.target_token.chain)}`}
+          value={`~${tokenAmount} ${tokenSymbol} on ${getTargetChainDisplayName(swapData)}`}
         />
         <AmountRow label="Fee" value={`${feeBtc} BTC`} />
       </AmountSummary>

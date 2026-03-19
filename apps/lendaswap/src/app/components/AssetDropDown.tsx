@@ -1,11 +1,19 @@
 import {
   isArbitrumToken,
+  isAvalancheToken,
+  isBaseToken,
+  isBridgeOnlyChain,
   isBtc,
   isEthereumToken,
+  isLineaToken,
+  isOptimismToken,
   isPolygonToken,
   type TokenInfo,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
+import NetworkAvalanche from "@web3icons/react/icons/networks/NetworkAvalanche";
+import NetworkBase from "@web3icons/react/icons/networks/NetworkBase";
+import NetworkOptimism from "@web3icons/react/icons/networks/NetworkOptimism";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -43,7 +51,16 @@ function useIsMobile() {
   return isMobile;
 }
 
-type NetworkTabId = "all" | "bitcoin" | "ethereum" | "arbitrum" | "polygon";
+type NetworkTabId =
+  | "all"
+  | "bitcoin"
+  | "ethereum"
+  | "arbitrum"
+  | "polygon"
+  | "base"
+  | "optimism"
+  | "avalanche"
+  | "other";
 
 const networkTabs: {
   id: NetworkTabId;
@@ -75,6 +92,35 @@ const networkTabs: {
     label: "Polygon",
     icon: <PolygonIcon width={14} height={14} />,
     filter: (a) => isPolygonToken(a.chain),
+  },
+  {
+    id: "base",
+    label: "Base",
+    icon: <NetworkBase variant="branded" size={14} />,
+    filter: (a) => isBaseToken(a.chain),
+  },
+  {
+    id: "optimism",
+    label: "Optimism",
+    icon: <NetworkOptimism variant="branded" size={14} />,
+    filter: (a) => isOptimismToken(a.chain),
+  },
+  {
+    id: "avalanche",
+    label: "Avalanche",
+    icon: <NetworkAvalanche variant="branded" size={14} />,
+    filter: (a) => isAvalancheToken(a.chain),
+  },
+  {
+    id: "other",
+    label: "Other",
+    icon: null,
+    filter: (a) =>
+      isBridgeOnlyChain(a.chain) &&
+      !isBaseToken(a.chain) &&
+      !isOptimismToken(a.chain) &&
+      !isAvalancheToken(a.chain) &&
+      !isLineaToken(a.chain),
   },
 ];
 

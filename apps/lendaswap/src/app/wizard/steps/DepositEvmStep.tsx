@@ -29,7 +29,10 @@ import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { buildEvmSigner } from "../../utils/evmSigner";
-import { getViemChain } from "../../utils/tokenUtils";
+import {
+  getTargetChainDisplayName,
+  getViemChain,
+} from "../../utils/tokenUtils";
 import { AmountRow, AmountSummary, DepositCard } from "../components";
 
 type StepStatus = "pending" | "active" | "completed" | "error";
@@ -52,11 +55,11 @@ function StepIcon({ status }: { status: StepStatus }) {
     case "completed":
       return <Check className="h-4 w-4 text-green-500" />;
     case "active":
-      return <Loader className="h-4 w-4 animate-spin text-primary" />;
+      return <Loader className="text-primary h-4 w-4 animate-spin" />;
     case "error":
       return <AlertCircle className="h-4 w-4 text-red-500" />;
     default:
-      return <Circle className="h-4 w-4 text-muted-foreground/40" />;
+      return <Circle className="text-muted-foreground/40 h-4 w-4" />;
   }
 }
 
@@ -226,7 +229,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         />
         <AmountRow
           label={receiveLabel}
-          value={`~${targetAmount} ${swapData.target_token.symbol} on ${toChainName(swapData.target_token.chain)}`}
+          value={`~${targetAmount} ${swapData.target_token.symbol} on ${getTargetChainDisplayName(swapData)}`}
         />
         <AmountRow
           label="Fee"
@@ -236,12 +239,12 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
       {/* Expiry warning */}
       {isExpired ? (
-        <div className="rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20 flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-lg border border-red-500 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/20">
           <AlertCircle className="h-4 w-4 shrink-0" />
           This swap has expired. Funding is no longer possible.
         </div>
       ) : timeRemaining ? (
-        <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm text-muted-foreground flex items-center gap-2">
+        <div className="border-border bg-muted/50 text-muted-foreground flex items-center gap-2 rounded-lg border p-3 text-sm">
           <Clock className="h-4 w-4 shrink-0" />
           <span>
             Time remaining to fund:{" "}
@@ -252,7 +255,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
       {/* Step checklist */}
       <div className="space-y-4">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Your wallet approves and submits all transactions directly.
         </p>
         <div className="space-y-2">
@@ -262,7 +265,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
               <div key={key} className="flex items-center gap-3">
                 <StepIcon status={step.status} />
                 <span
-                  className={`text-sm flex-1 ${
+                  className={`flex-1 text-sm ${
                     step.status === "completed"
                       ? "text-muted-foreground line-through"
                       : step.status === "error"
@@ -282,7 +285,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
                     onClick={handleFund}
                     disabled={isRunning}
                   >
-                    <RefreshCw className="h-3 w-3 mr-1" />
+                    <RefreshCw className="mr-1 h-3 w-3" />
                     Retry
                   </Button>
                 )}
@@ -328,11 +331,11 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           <Button
             onClick={handleFund}
             disabled={isRunning}
-            className="h-12 w-full text-base font-semibold bg-black text-white hover:bg-black/90"
+            className="h-12 w-full bg-black text-base font-semibold text-white hover:bg-black/90"
           >
             {isRunning ? (
               <>
-                <Loader className="animate-spin h-4 w-4 mr-2" />
+                <Loader className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
               </>
             ) : hasError ? (

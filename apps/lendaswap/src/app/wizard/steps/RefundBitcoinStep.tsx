@@ -12,6 +12,7 @@ import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { api, type BtcToArkadeSwapResponse } from "../../api";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
+import { getTargetChainDisplayName } from "../../utils/tokenUtils";
 import { DepositCard } from "../components";
 
 interface OnchainBtcRefundStepProps {
@@ -168,7 +169,7 @@ export function RefundBitcoinStep({ swapData }: OnchainBtcRefundStepProps) {
               <ArrowRight className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs font-medium">
                 {swapData.target_token.symbol} on{" "}
-                {toChainName(swapData.target_token.chain)}
+                {getTargetChainDisplayName(swapData)}
               </span>
             </div>
           </div>

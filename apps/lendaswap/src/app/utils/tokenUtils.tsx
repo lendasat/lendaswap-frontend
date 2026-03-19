@@ -2,9 +2,21 @@ import {
   type Chain,
   type TokenInfo,
   toChain,
+  toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import { TokenBTC } from "@web3icons/react";
 import { NetworkIcon, TokenIcon } from "@web3icons/react/dynamic";
+import NetworkAvalanche from "@web3icons/react/icons/networks/NetworkAvalanche";
+import NetworkBase from "@web3icons/react/icons/networks/NetworkBase";
+import NetworkHyperEvm from "@web3icons/react/icons/networks/NetworkHyperEvm";
+import NetworkInk from "@web3icons/react/icons/networks/NetworkInk";
+import NetworkLinea from "@web3icons/react/icons/networks/NetworkLinea";
+import NetworkMonad from "@web3icons/react/icons/networks/NetworkMonad";
+import NetworkOptimism from "@web3icons/react/icons/networks/NetworkOptimism";
+import NetworkSeiNetwork from "@web3icons/react/icons/networks/NetworkSeiNetwork";
+import NetworkSonic from "@web3icons/react/icons/networks/NetworkSonic";
+import NetworkUnichain from "@web3icons/react/icons/networks/NetworkUnichain";
+import NetworkWorld from "@web3icons/react/icons/networks/NetworkWorld";
 import type { ReactElement } from "react";
 import {
   arbitrum,
@@ -90,14 +102,25 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
     return <span>?</span>;
   }
 
-  if (tokenId.chain === "1") {
-    return <Ethereum width={8} height={8} />;
-  }
-  if (tokenId.chain === "137") {
-    return <Polygon width={8} height={8} />;
-  }
-  if (tokenId.chain === "42161") {
-    return <Arbitrum width={8} height={8} />;
+  const chainIcons: Record<string, ReactElement> = {
+    "1": <Ethereum width={8} height={8} />,
+    "137": <Polygon width={8} height={8} />,
+    "42161": <Arbitrum width={8} height={8} />,
+    "8453": <NetworkBase variant="branded" size={16} />,
+    "10": <NetworkOptimism variant="branded" size={16} />,
+    "43114": <NetworkAvalanche variant="branded" size={16} />,
+    "59144": <NetworkLinea variant="branded" size={16} />,
+    "130": <NetworkUnichain variant="branded" size={16} />,
+    "146": <NetworkSonic variant="branded" size={16} />,
+    "480": <NetworkWorld variant="branded" size={16} />,
+    "57073": <NetworkInk variant="branded" size={16} />,
+    "1329": <NetworkSeiNetwork variant="branded" size={16} />,
+    "999": <NetworkHyperEvm variant="branded" size={16} />,
+    "10143": <NetworkMonad variant="branded" size={16} />,
+  };
+
+  if (chainIcons[tokenId.chain]) {
+    return chainIcons[tokenId.chain];
   }
 
   return <NetworkIcon chainId={tokenId.chain} />;
@@ -145,6 +168,21 @@ export {
   isEvmToken,
   isPolygonToken,
 } from "@lendasat/lendaswap-sdk-pure";
+
+/**
+ * Get the display chain name for a swap's target token.
+ * When CCTP bridging is active, returns the bridge destination chain name
+ * instead of the intermediate source chain where the DEX swap runs.
+ */
+export function getTargetChainDisplayName(swapData: {
+  target_token: { chain: Chain };
+  bridge_target_chain?: string | null;
+}): string {
+  if (swapData.bridge_target_chain) {
+    return swapData.bridge_target_chain;
+  }
+  return toChainName(swapData.target_token.chain);
+}
 
 export function getBlockexplorerTxLink(
   chaub: Chain,

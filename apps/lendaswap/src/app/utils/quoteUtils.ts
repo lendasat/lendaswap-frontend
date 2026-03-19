@@ -20,6 +20,8 @@ export interface DeriveAmountParams {
   isSourceBtc: boolean;
   /** Fee parameters */
   fees: QuoteFees;
+  /** CCTP bridge fee in target token smallest units (e.g. USDC). 0 if no bridge. */
+  bridgeFee?: number;
 }
 
 /**
@@ -55,16 +57,23 @@ export function evmSmallestToSats(
  * the user actually receives after all fees.
  */
 export function deriveTargetAmount(params: DeriveAmountParams): number {
-  const { amount, exchangeRate, evmDecimals, isSourceBtc, fees } = params;
+  const {
+    amount,
+    exchangeRate,
+    evmDecimals,
+    isSourceBtc,
+    fees,
+    bridgeFee = 0,
+  } = params;
   const { fixedFees, protocolFeeRate } = fees;
 
   if (isSourceBtc) {
-    // BTC→EVM: deduct fees from BTC, convert remainder to EVM
+    // BTC→EVM: deduct fees from BTC, convert remainder to EVM, then subtract bridge fee
     const effectiveSats = amount * (1 - protocolFeeRate) - fixedFees;
-    return Math.max(
-      0,
-      Math.round(satsToEvmSmallest(effectiveSats, exchangeRate, evmDecimals)),
+    const evmAmount = Math.round(
+      satsToEvmSmallest(effectiveSats, exchangeRate, evmDecimals),
     );
+    return Math.max(0, evmAmount - bridgeFee);
   } else {
     // EVM→BTC: convert EVM to raw BTC, then deduct fees
     const rawBtc = evmSmallestToSats(amount, exchangeRate, evmDecimals);
@@ -80,12 +89,25 @@ export function deriveTargetAmount(params: DeriveAmountParams): number {
  * the user must pay to receive the desired target after all fees.
  */
 export function deriveSourceAmount(params: DeriveAmountParams): number {
-  const { amount, exchangeRate, evmDecimals, isSourceBtc, fees } = params;
+  const {
+    amount,
+    exchangeRate,
+    evmDecimals,
+    isSourceBtc,
+    fees,
+    bridgeFee = 0,
+  } = params;
   const { fixedFees, protocolFeeRate } = fees;
 
   if (isSourceBtc) {
-    // BTC→EVM: user wants T EVM tokens — calculate BTC needed including fees
-    const btcForExchange = evmSmallestToSats(amount, exchangeRate, evmDecimals);
+    // BTC→EVM: user wants T EVM tokens — calculate BTC needed including fees.
+    // If bridging, the DEX must output T + bridgeFee so the user receives T after fee.
+    const targetPlusBridgeFee = amount + bridgeFee;
+    const btcForExchange = evmSmallestToSats(
+      targetPlusBridgeFee,
+      exchangeRate,
+      evmDecimals,
+    );
     const source = (btcForExchange + fixedFees) / (1 - protocolFeeRate);
     return Math.max(0, Math.round(source));
   } else {
