@@ -84,7 +84,10 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
     : swapData.target_token.chain;
   const htlcTokenDecimals = evmChain === "137" ? 8 : 18;
   const htlcTokenSymbol = evmChain === "137" ? "WBTC" : "tBTC";
-  const lockedWbtcFormatted = formatAmount(swapData.evm_expected_sats, htlcTokenDecimals);
+  const lockedWbtcFormatted = formatAmount(
+    swapData.evm_expected_sats,
+    htlcTokenDecimals,
+  );
 
   const collabAvailable = COLLAB_REFUND_STATUSES.has(swapData.status);
 
@@ -410,8 +413,8 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
 
             {!isWbtcSource && (
               <p className="text-xs text-muted-foreground">
-                Refunding as {sourceSymbol} swaps {htlcTokenSymbol} back via a DEX — amount
-                may vary slightly due to exchange rate.
+                Refunding as {sourceSymbol} swaps {htlcTokenSymbol} back via a
+                DEX — amount may vary slightly due to exchange rate.
               </p>
             )}
           </div>
@@ -445,7 +448,9 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
               <p className="text-muted-foreground">Locked in HTLC</p>
-              <p className="font-mono">{lockedWbtcFormatted} {htlcTokenSymbol}</p>
+              <p className="font-mono">
+                {lockedWbtcFormatted} {htlcTokenSymbol}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground">Refund Locktime</p>
