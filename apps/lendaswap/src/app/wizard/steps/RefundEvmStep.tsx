@@ -2,6 +2,7 @@ import {
   type EvmToArkadeSwapResponse,
   type EvmToBitcoinSwapResponse,
   type EvmToLightningSwapResponse,
+  isBtcPegged,
   isEvmToken,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -75,7 +76,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
 
   const targetSymbol = swapData.target_token.symbol;
 
-  const isWbtcSource = sourceSymbol.toLowerCase() === "wbtc";
+  const isWbtcSource = isBtcPegged(swapData.source_token);
 
   // Determine the BTC-pegged token used in the HTLC (WBTC on Polygon, tBTC on Ethereum/Arbitrum)
   const evmChain = isEvmToken(swapData.source_token.chain)
@@ -409,7 +410,7 @@ export function RefundEvmStep({ swapData }: RefundEvmStepProps) {
 
             {!isWbtcSource && (
               <p className="text-xs text-muted-foreground">
-                Refunding as {sourceSymbol} swaps WBTC back via a DEX — amount
+                Refunding as {sourceSymbol} swaps {htlcTokenSymbol} back via a DEX — amount
                 may vary slightly due to exchange rate.
               </p>
             )}
