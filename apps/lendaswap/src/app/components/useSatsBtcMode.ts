@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 // ── Constants ────────────────────────────────────────────────────────
 
-const BTC_SYMBOLS = new Set(["btc", "wbtc"]);
+const BTC_SYMBOLS = new Set(["btc", "wbtc", "tbtc"]);
 
 export function isBtcToken(symbol: string | undefined): boolean {
   return symbol !== undefined && BTC_SYMBOLS.has(symbol.toLowerCase());
@@ -53,10 +53,19 @@ export function useSatsBtcMode({
 
   const isBtc = isBtcToken(symbol);
 
-  // In sats mode for BTC tokens, divisor is 1 (value is already in sats).
-  // Otherwise, convert from smallest unit to display unit.
+  // Display decimals: BTC-family tokens always show 8 decimals (even tBTC with 18 on-chain decimals).
+  const displayDecimals = isBtc ? 8 : (decimals ?? 0);
+
+  // In sats mode for BTC tokens, divisor converts from token smallest units to sats.
+  // - BTC/WBTC (8 decimals): divisor = 1 (already in sats)
+  // - tBTC (18 decimals): divisor = 10^10 (convert 18-dec to 8-dec sats)
+  // Otherwise, convert from smallest unit to display unit using display decimals.
   const divisor = useMemo(() => {
-    if (isBtc && satsMode) return 1;
+    if (isBtc && satsMode) {
+      // Convert from token's smallest units to sats (8 decimals)
+      return 10 ** ((decimals ?? 8) - 8);
+    }
+    // BTC mode: show human-readable BTC (divide by 10^decimals)
     return 10 ** (decimals ?? 0);
   }, [isBtc, satsMode, decimals]);
 
@@ -68,12 +77,14 @@ export function useSatsBtcMode({
     setSatsMode(newSatsMode);
     // Re-format current value for the new mode
     if (value !== undefined) {
-      const newDivisor = newSatsMode ? 1 : 10 ** (decimals ?? 0);
+      const newDivisor = newSatsMode
+        ? 10 ** ((decimals ?? 8) - 8)
+        : 10 ** (decimals ?? 0);
       const newDisplay = value / newDivisor;
       setInputValue(
         newSatsMode
           ? String(Math.round(newDisplay))
-          : formatNumber(newDisplay, decimals ?? 8),
+          : formatNumber(newDisplay, displayDecimals),
       );
     }
   };
@@ -95,12 +106,12 @@ export function useSatsBtcMode({
           if (isBtc && satsMode) {
             return String(Math.round(displayValue));
           }
-          return formatNumber(displayValue, decimals ?? 8);
+          return formatNumber(displayValue, displayDecimals);
         }
         return prev;
       });
     }
-  }, [displayValue, decimals, isBtc, satsMode]);
+  }, [displayValue, isBtc, satsMode, displayDecimals]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value.replace(/[^0-9.]/g, "");
@@ -111,7 +122,7 @@ export function useSatsBtcMode({
       return;
     }
 
-    const effectiveDecimals = isBtc && satsMode ? 0 : (decimals ?? 0);
+    const effectiveDecimals = isBtc && satsMode ? 0 : displayDecimals;
     const regex =
       effectiveDecimals > 0
         ? new RegExp(`^\\d*\\.?\\d{0,${effectiveDecimals}}$`)
