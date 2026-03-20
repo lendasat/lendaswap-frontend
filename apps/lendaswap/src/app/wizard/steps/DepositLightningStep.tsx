@@ -36,7 +36,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   const [isNwcPaying, setIsNwcPaying] = useState(false);
   const [nwcPaymentSent, setNwcPaymentSent] = useState(false);
 
-  const lightningInvoice = swapData.boltz_invoice;
+  const lightningInvoice = swapData.bolt11_invoice;
   const lightningQrValue = `lightning:${lightningInvoice}`;
   const tokenAmount = (
     Number(swapData.target_amount) /
