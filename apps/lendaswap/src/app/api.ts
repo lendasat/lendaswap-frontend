@@ -3,6 +3,7 @@ import {
   type BtcToArkadeSwapResponse,
   type Chain,
   type ClaimResult,
+  type EvmSigner,
   type GetSwapResponse,
   IdbSwapStorage,
   IdbWalletStorage,
@@ -270,6 +271,14 @@ export const api = {
   ): Promise<UnsignedPermit2FundingData> {
     const client = await getClients();
     return await client.getPermit2FundingParamsUnsigned(swapId, chainId);
+  },
+
+  async fundSwap(
+    swapId: string,
+    signer: EvmSigner,
+  ): Promise<{ txHash: string }> {
+    const client = await getClients();
+    return await client.fundSwap(swapId, signer);
   },
 
   async refundEvmSwap(
