@@ -885,15 +885,12 @@ export function HomePage() {
                           %): {protocolFee} BTC
                         </div>
                       )}
-                      {quote?.bridge_fee != null &&
-                        targetAmount != null &&
-                        targetAmount > 0 && (
-                          <div>
-                            Bridge Fee (est.): ~
-                            {((targetAmount * 0.00005 + 1000) / 1e6).toFixed(4)}{" "}
-                            USDC
-                          </div>
-                        )}
+                      {quote?.bridge_fee != null && (
+                        <div>
+                          Bridge Fee (est.): ~
+                          {(quote.bridge_fee / 1e6).toFixed(4)} USDC
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
