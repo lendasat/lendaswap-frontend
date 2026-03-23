@@ -19,6 +19,7 @@ import {
   type TokenInfo,
   type TokenInfos,
   type UnsignedPermit2FundingData,
+  type UsdcBridgeParams,
   type VhtlcAmounts,
 } from "@lendasat/lendaswap-sdk-pure";
 import { getReferralCode } from "./utils/referralCode";
@@ -193,8 +194,7 @@ export const api = {
     targetAddress: string;
     userAddress?: string;
     gasless?: boolean;
-    bridgeTargetChain?: string;
-    bridgeTargetTokenAddress?: string;
+    bridgeParams?: UsdcBridgeParams;
   }): Promise<GetSwapResponse> {
     const referralCode = getReferralCode();
     const client = await getClients();
@@ -209,8 +209,7 @@ export const api = {
       userAddress: request.userAddress,
       referralCode: referralCode || undefined,
       gasless: request.gasless,
-      bridgeTargetChain: request.bridgeTargetChain,
-      bridgeTargetTokenAddress: request.bridgeTargetTokenAddress,
+      bridgeParams: request.bridgeParams,
     });
     return result.response as GetSwapResponse;
   },

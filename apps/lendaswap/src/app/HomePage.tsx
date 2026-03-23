@@ -548,15 +548,18 @@ export function HomePage() {
       // The swap executes on a source chain (e.g. Arbitrum) and CCTP bridges
       // the USDC to the destination chain (e.g. Base).
       const bridgeTargetChain = getBridgeTargetChain(targetAsset);
-      const bridgeTargetTokenAddress = bridgeTargetChain
-        ? USDC_ADDRESSES[bridgeTargetChain]
+      const bridgeParams = bridgeTargetChain
+        ? {
+            targetChain: bridgeTargetChain,
+            targetTokenAddress: USDC_ADDRESSES[bridgeTargetChain],
+          }
         : undefined;
 
       // For bridge swaps, remap targetAsset to USDC on Arbitrum (the source chain
       // where the DEX swap will run). The backend needs a real token + chain it
       // knows about. The bridge_target_chain field tells it to bridge after.
       let effectiveTargetAsset = targetAsset;
-      if (bridgeTargetChain) {
+      if (bridgeParams) {
         const sourceEvmTokens = maybeAvailableTokens?.evm_tokens || [];
         const sourceUsdc = sourceEvmTokens.find(
           (t) => t.symbol === "USDC" && t.chain === "42161",
@@ -574,8 +577,7 @@ export function HomePage() {
         targetAddress,
         userAddress: connectedAddress,
         gasless: gaslessEnabled,
-        bridgeTargetChain,
-        bridgeTargetTokenAddress,
+        bridgeParams,
       });
       navigate(`/swap/${swap.id}/wizard`);
     } catch (e) {
