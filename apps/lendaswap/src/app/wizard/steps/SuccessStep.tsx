@@ -39,7 +39,6 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
   const navigate = useNavigate();
   const posthog = usePostHog();
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
-  console.log(`SwapData ${JSON.stringify(swapData.target_token)}`);
 
   // Calculate swap duration if we have timestamps
   const swapDurationSeconds = swapData.created_at
@@ -240,33 +239,33 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
   const targetAmount = config.targetAmount;
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+    <div className="border-border/50 bg-card/80 overflow-hidden rounded-2xl border shadow-xl backdrop-blur-sm">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-border/50 bg-muted/30">
+      <div className="border-border/50 bg-muted/30 flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-2">
           {/* Source token */}
           <div className="relative">
-            <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
-              <div className="w-5 h-5 flex items-center justify-center">
+            <div className="bg-muted border-border flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border">
+              <div className="flex h-5 w-5 items-center justify-center">
                 {getTokenIcon(swapData.source_token)}
               </div>
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
-              <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+            <div className="bg-background absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full p-[1px]">
+              <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
                 {getTokenNetworkIcon(swapData.source_token)}
               </div>
             </div>
           </div>
-          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+          <ArrowRight className="text-muted-foreground h-3.5 w-3.5" />
           {/* Target token */}
           <div className="relative">
-            <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
-              <div className="w-5 h-5 flex items-center justify-center">
+            <div className="bg-muted border-border flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border">
+              <div className="flex h-5 w-5 items-center justify-center">
                 {getTokenIcon(swapData.target_token)}
               </div>
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
-              <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+            <div className="bg-background absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full p-[1px]">
+              <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
                 {getTokenNetworkIcon(swapData.target_token)}
               </div>
             </div>
@@ -279,10 +278,10 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
           <button
             type="button"
             onClick={() => handleCopyAddress(swapId)}
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            className="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 transition-colors"
             title="Copy Swap ID"
           >
-            <code className="text-[10px] font-mono">{swapId.slice(0, 8)}…</code>
+            <code className="font-mono text-[10px]">{swapId.slice(0, 8)}…</code>
             {copiedAddress === swapId ? (
               <CheckCheck className="h-3 w-3 text-green-500" />
             ) : (
@@ -304,8 +303,8 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
           {/* Success Message */}
           <div className="space-y-2 text-center">
             {isValidSpeedWalletContext() ? (
-              <h3 className="text-2xl font-semibold flex items-center justify-center gap-2">
-                Speed <Heart className="h-6 w-6 text-red-500 fill-red-500" />{" "}
+              <h3 className="flex items-center justify-center gap-2 text-2xl font-semibold">
+                Speed <Heart className="h-6 w-6 fill-red-500 text-red-500" />{" "}
                 LendaSwap
               </h3>
             ) : (
@@ -439,7 +438,7 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
           {isArkadeTarget && !hasVtxo && (
             <div className="w-full max-w-md space-y-3">
               <div className="rounded-lg border border-amber-500 bg-amber-50 p-4 dark:bg-amber-950/20">
-                <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300 mb-1">
+                <div className="mb-1 flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   Funds not yet received on Arkade
                 </div>
@@ -470,7 +469,7 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-3 w-full max-w-md">
+          <div className="flex w-full max-w-md flex-col gap-3">
             <Button
               className="h-12 w-full text-base font-semibold"
               onClick={handleStartNewSwap}
