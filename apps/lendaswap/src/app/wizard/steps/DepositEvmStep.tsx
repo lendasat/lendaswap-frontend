@@ -18,11 +18,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  type Account,
-  type Transport,
-  type Chain as ViemChain,
-  type WalletClient,
+import type {
+  Account,
+  Transport,
+  Chain as ViemChain,
+  WalletClient,
 } from "viem";
 import { useAccount, useSwitchChain, useWalletClient } from "wagmi";
 import { Button } from "#/components/ui/button";

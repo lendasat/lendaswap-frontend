@@ -295,12 +295,30 @@ export const api = {
     );
   },
 
+  async refundEvmWithSigner(
+    swapId: string,
+    signer: EvmSigner,
+    mode: "swap-back" | "direct" = "swap-back",
+  ): Promise<{ txHash: string }> {
+    const client = await getClients();
+    return await client.refundEvmWithSigner(swapId, signer, mode);
+  },
+
   async collabRefundEvmSwap(
     swapId: string,
     settlement: "swap-back" | "direct" = "direct",
   ): Promise<{ id: string; txHash: string; message: string }> {
     const client = await getClients();
     return await client.collabRefundEvmSwap(swapId, settlement);
+  },
+
+  async collabRefundEvmWithSigner(
+    swapId: string,
+    signer: EvmSigner,
+    settlement: "swap-back" | "direct" = "direct",
+  ): Promise<{ txHash: string }> {
+    const client = await getClients();
+    return await client.collabRefundEvmWithSigner(swapId, signer, settlement);
   },
 
   async buildCollabRefundEvmTypedData(

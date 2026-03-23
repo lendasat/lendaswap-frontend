@@ -2,10 +2,10 @@ import type { EvmSigner } from "@lendasat/lendaswap-sdk-pure";
 import {
   type Account,
   type Chain,
-  type Transport,
-  type WalletClient,
   createPublicClient,
   http,
+  type Transport,
+  type WalletClient,
 } from "viem";
 
 /**
