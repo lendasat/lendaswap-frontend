@@ -1,5 +1,6 @@
 // Re-export types from SDK - single source of truth
 import {
+  type Asset,
   type BtcToArkadeSwapResponse,
   type Chain,
   type ClaimResult,
@@ -183,8 +184,10 @@ export const api = {
   },
 
   async createSwap(request: {
-    sourceAsset: TokenInfo;
-    targetAsset: TokenInfo;
+    source?: Asset;
+    target?: Asset;
+    sourceAsset?: TokenInfo;
+    targetAsset?: TokenInfo;
     sourceAmount?: number;
     targetAmount?: number;
     targetAddress: string;
@@ -194,6 +197,8 @@ export const api = {
     const referralCode = getReferralCode();
     const client = await getClients();
     const result = await client.createSwap({
+      source: request.source,
+      target: request.target,
       sourceAsset: request.sourceAsset,
       targetAsset: request.targetAsset,
       sourceAmount: request.sourceAmount,
