@@ -43,8 +43,8 @@ export function buildEvmSigner(
         chain,
         gas: tx.gas,
       }),
-    getTransactionReceipt: async (hash) => {
-      const receipt = await publicClient.getTransactionReceipt({
+    waitForReceipt: async (hash) => {
+      const receipt = await publicClient.waitForTransactionReceipt({
         hash: hash as `0x${string}`,
       });
       return {
