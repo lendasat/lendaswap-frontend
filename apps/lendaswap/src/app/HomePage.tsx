@@ -1,5 +1,4 @@
 import {
-  getBridgeTargetChain,
   getCctpBridgeTokens,
   isArkade,
   isBridgeOnlyChain,
@@ -8,7 +7,6 @@ import {
   isLightning,
   type TokenInfo,
   toChainName,
-  USDC_ADDRESSES,
 } from "@lendasat/lendaswap-sdk-pure";
 import { useAppKit } from "@reown/appkit/react";
 import { ArrowDown, ChevronDown, Loader } from "lucide-react";
@@ -544,40 +542,16 @@ export function HomePage() {
         selectedTargetAmount = targetAmount;
       }
 
-      // If target is USDC on a bridge-only chain, determine bridge params.
-      // The swap executes on a source chain (e.g. Arbitrum) and CCTP bridges
-      // the USDC to the destination chain (e.g. Base).
-      const bridgeTargetChain = getBridgeTargetChain(targetAsset);
-      const bridgeParams = bridgeTargetChain
-        ? {
-            targetChain: bridgeTargetChain,
-            targetTokenAddress: USDC_ADDRESSES[bridgeTargetChain],
-          }
-        : undefined;
-
-      // For bridge swaps, remap targetAsset to USDC on Arbitrum (the source chain
-      // where the DEX swap will run). The backend needs a real token + chain it
-      // knows about. The bridge_target_chain field tells it to bridge after.
-      let effectiveTargetAsset = targetAsset;
-      if (bridgeParams) {
-        const sourceEvmTokens = maybeAvailableTokens?.evm_tokens || [];
-        const sourceUsdc = sourceEvmTokens.find(
-          (t) => t.symbol === "USDC" && t.chain === "42161",
-        );
-        if (sourceUsdc) {
-          effectiveTargetAsset = sourceUsdc;
-        }
-      }
-
+      // Bridge-only chain remapping (e.g. USDC on Base → Arbitrum USDC + CCTP bridge)
+      // is handled automatically by the SDK's createSwap method.
       const swap = await api.createSwap({
         sourceAsset,
-        targetAsset: effectiveTargetAsset,
+        targetAsset,
         sourceAmount: selectedSourceAmount,
         targetAmount: selectedTargetAmount,
         targetAddress,
         userAddress: connectedAddress,
         gasless: gaslessEnabled,
-        bridgeParams,
       });
       navigate(`/swap/${swap.id}/wizard`);
     } catch (e) {
