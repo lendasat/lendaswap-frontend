@@ -887,8 +887,8 @@ export function HomePage() {
                       )}
                       {quote?.bridge_fee != null && (
                         <div>
-                          Bridge Fee (est.): ~
-                          {(quote.bridge_fee / 1e6).toFixed(4)} USDC
+                          Max Bridge Fee: ~{(quote.bridge_fee / 1e6).toFixed(4)}{" "}
+                          USDC
                         </div>
                       )}
                     </>
