@@ -3,10 +3,10 @@ import {
   type Account,
   type Chain,
   createPublicClient,
-  http,
   type Transport,
   type WalletClient,
 } from "viem";
+import { buildTransport } from "./evmTransport";
 
 /**
  * Build an {@link EvmSigner} from a wagmi/viem `WalletClient`.
@@ -18,11 +18,10 @@ export function buildEvmSigner(
   walletClient: WalletClient<Transport, Chain, Account>,
   chain: Chain,
 ): EvmSigner {
-  const rpcUrl =
-    import.meta.env.VITE_RPC_OVERRIDE_CHAIN_ID === String(chain.id)
-      ? import.meta.env.VITE_RPC_OVERRIDE_URL
-      : undefined;
-  const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+  const publicClient = createPublicClient({
+    chain,
+    transport: buildTransport(chain),
+  });
 
   return {
     address: walletClient.account.address,

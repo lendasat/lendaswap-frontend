@@ -10,10 +10,11 @@ import {
 import { AlertCircle, Check, Clock, Loader } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { createPublicClient, erc20Abi, http } from "viem";
+import { createPublicClient, erc20Abi } from "viem";
 import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
+import { buildTransport } from "../../utils/evmTransport";
 import {
   getBlockexplorerAddressLink,
   getTargetChainDisplayName,
@@ -53,11 +54,7 @@ export function DepositEvmGaslessStep({
 
   const rpcClient = useMemo(() => {
     if (!chain) return null;
-    const rpcUrl =
-      import.meta.env.VITE_RPC_OVERRIDE_CHAIN_ID === String(chain.id)
-        ? import.meta.env.VITE_RPC_OVERRIDE_URL
-        : undefined;
-    return createPublicClient({ chain, transport: http(rpcUrl) });
+    return createPublicClient({ chain, transport: buildTransport(chain) });
   }, [chain]);
 
   const [balance, setBalance] = useState<bigint | null>(null);
