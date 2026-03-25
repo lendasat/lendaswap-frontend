@@ -27,15 +27,19 @@ export function ReferralCodeDialog({
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = () => {
-    const trimmedCode = code.trim().toUpperCase();
+    const trimmedCode = code.trim();
+    // Legacy HMAC codes are uppercase; reflink codes preserve case
+    const normalizedCode = trimmedCode.startsWith("lnds_")
+      ? trimmedCode
+      : trimmedCode.toUpperCase();
 
-    if (!trimmedCode) {
+    if (!normalizedCode) {
       setError("Please enter a code");
       return;
     }
 
     // Save code to localStorage
-    setReferralCode(trimmedCode);
+    setReferralCode(normalizedCode);
 
     // Clear form and close
     setCode("");
@@ -50,8 +54,7 @@ export function ReferralCodeDialog({
         <DialogHeader>
           <DialogTitle>Add Your Referral Code</DialogTitle>
           <DialogDescription>
-            Enter the 15-character code we sent you via DM to activate no-fee
-            swaps.
+            Enter your referral code to activate custom swap fees.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -59,14 +62,12 @@ export function ReferralCodeDialog({
             <Label htmlFor="code">Referral Code</Label>
             <Input
               id="code"
-              placeholder="ABCDEFGHIJK1234"
+              placeholder="lnds_myorg_abc123"
               value={code}
               onChange={(e) => {
                 setCode(e.target.value);
                 setError(null);
               }}
-              maxLength={15}
-              className="uppercase"
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
