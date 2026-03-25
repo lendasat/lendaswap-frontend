@@ -148,19 +148,19 @@ export function SupportErrorBanner({
                 Send Email
               </Button>
             </a>
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={() => {
-                setSupportDialogOpen(false);
-                if (window.$chatwoot) {
-                  window.$chatwoot.toggle("open");
-                }
-              }}
-            >
-              <MessageCircle className="h-4 w-4" />
-              Chat with Support
-            </Button>
+            {window.$chatwoot && (
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => {
+                  setSupportDialogOpen(false);
+                  window.$chatwoot?.toggle("open");
+                }}
+              >
+                <MessageCircle className="h-4 w-4" />
+                Chat with Support
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
