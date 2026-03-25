@@ -648,10 +648,7 @@ export function HomePage() {
     (!sourceAmount && !targetAmount);
 
   const gaslessFeeEstimate =
-    gaslessFeatureEnabled &&
-    quote &&
-    quote.gasless_network_fee > 0 &&
-    gaslessFeeBtc(quote);
+    gaslessFeatureEnabled && quote && gaslessFeeBtc(quote);
   const totalFee = quote && totalFeeBtc(btcAmountSats, quote, gaslessEnabled);
   const networkFee = quote && serverNetworkFeeBtc(quote);
   const protocolFee = quote && protocolFeeBtc(btcAmountSats, quote);
