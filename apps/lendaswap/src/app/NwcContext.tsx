@@ -77,7 +77,7 @@ function parseNwcUri(uri: string): {
  * Minimal NWC client using nostr-tools (already a transitive dep).
  *
  * We avoid pulling in @getalby/sdk to keep the bundle small —
- * nostr-tools is already in the workspace via @frontend/nostr-chat.
+ * nostr-tools is a direct dependency used for NWC relay communication.
  */
 class NwcClient {
   private walletPubkey: string;

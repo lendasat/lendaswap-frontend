@@ -1,5 +1,4 @@
-import { type AgentConfig, ChatWidget } from "@frontend/nostr-chat";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Navigate,
   Route,
@@ -14,6 +13,7 @@ import isValidSpeedWalletContext from "../utils/speedWallet";
 import { api } from "./api";
 import { AppHeader } from "./components/AppHeader";
 import { BackupMnemonicDialog } from "./components/BackupMnemonicDialog";
+import { ChatwootWidget } from "./components/ChatwootWidget";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
 import { LandingSection } from "./components/LandingSection";
@@ -86,16 +86,6 @@ export default function App() {
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [hasCode, setHasCode] = useState(hasReferralCode());
-  const [nostrKey, setNostrKey] = useState<string | undefined>();
-  const [supportAgents, setSupportAgents] = useState<AgentConfig[]>([]);
-
-  useEffect(() => {
-    api.getNostrKeyHex().then(setNostrKey).catch(console.error);
-    api
-      .getSupportAgents()
-      .then((agents) => setSupportAgents(agents.map((a) => ({ npub: a.npub }))))
-      .catch(console.error);
-  }, []);
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
   const isHomePage =
@@ -299,10 +289,7 @@ export default function App() {
         />
       </div>
 
-      {/* Nostr Support Chat */}
-      {nostrKey && supportAgents.length > 0 && (
-        <ChatWidget privateKeyHex={nostrKey} agents={supportAgents} />
-      )}
+      <ChatwootWidget />
     </div>
   );
 }

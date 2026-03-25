@@ -1,4 +1,3 @@
-import { openSupportChat } from "@frontend/nostr-chat";
 import { AlertCircle, ChevronDown, Mail, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
@@ -154,13 +153,9 @@ export function SupportErrorBanner({
               className="w-full gap-2"
               onClick={() => {
                 setSupportDialogOpen(false);
-                const chatMessage = [
-                  swapId && `Swap ID: ${swapId}`,
-                  `Error: ${error}`,
-                ]
-                  .filter(Boolean)
-                  .join("\n");
-                openSupportChat(chatMessage);
+                if (window.$chatwoot) {
+                  window.$chatwoot.toggle("open");
+                }
               }}
             >
               <MessageCircle className="h-4 w-4" />

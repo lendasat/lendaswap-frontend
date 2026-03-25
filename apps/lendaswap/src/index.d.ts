@@ -36,4 +36,15 @@ interface Window {
   Android?: SpeedWalletAndroid;
   /** Speed Wallet iOS bridge */
   webkit?: SpeedWalletWebkit;
+  /** Chatwoot live chat SDK */
+  $chatwoot?: {
+    toggle(state: "open" | "close"): void;
+    setUser(id: string, attrs?: Record<string, unknown>): void;
+    setCustomAttributes(attrs: Record<string, unknown>): void;
+    reset(): void;
+  };
+  /** Chatwoot SDK loader */
+  chatwootSDK?: {
+    run(config: { websiteToken: string; baseUrl: string }): void;
+  };
 }

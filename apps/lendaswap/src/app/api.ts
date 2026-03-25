@@ -13,7 +13,6 @@ import {
   type RefundResult,
   Client as SdkClient,
   type StoredSwap,
-  type SupportAgentInfo,
   type SwapStatus,
   type TokenId,
   type TokenInfo,
@@ -31,7 +30,6 @@ export type {
   QuoteResponse,
   RefundResult,
   StoredSwap,
-  SupportAgentInfo,
   SwapStatus,
   TokenId,
   TokenInfo,
@@ -356,11 +354,6 @@ export const api = {
     return await client.getVersion();
   },
 
-  async getSupportAgents(): Promise<SupportAgentInfo[]> {
-    const client = await getClients();
-    return await client.getSupportAgents();
-  },
-
   async recoverSwaps(): Promise<StoredSwap[]> {
     const client = await getClients();
     return await client.recoverSwaps();
@@ -369,11 +362,6 @@ export const api = {
   async getMnemonic(): Promise<string> {
     const client = await getClients();
     return client.getMnemonic();
-  },
-
-  async getNostrKeyHex(): Promise<string> {
-    const client = await getClients();
-    return client.getNostrKeyHex();
   },
 
   async getUserIdXpub() {
