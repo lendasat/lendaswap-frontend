@@ -27,11 +27,7 @@ export function ReferralCodeDialog({
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = () => {
-    const trimmedCode = code.trim();
-    // Legacy HMAC codes are uppercase; reflink codes preserve case
-    const normalizedCode = trimmedCode.startsWith("lnds_")
-      ? trimmedCode
-      : trimmedCode.toUpperCase();
+    const normalizedCode = code.trim();
 
     if (!normalizedCode) {
       setError("Please enter a code");
@@ -54,7 +50,7 @@ export function ReferralCodeDialog({
         <DialogHeader>
           <DialogTitle>Add Your Referral Code</DialogTitle>
           <DialogDescription>
-            Enter your referral code to activate custom swap fees.
+            Enter your referral code to link your swaps.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
