@@ -41,6 +41,7 @@ interface Window {
     toggle(state: "open" | "close"): void;
     setUser(id: string, attrs?: Record<string, unknown>): void;
     setCustomAttributes(attrs: Record<string, unknown>): void;
+    setConversationCustomAttributes(attrs: Record<string, unknown>): void;
     reset(): void;
   };
   /** Chatwoot SDK loader */

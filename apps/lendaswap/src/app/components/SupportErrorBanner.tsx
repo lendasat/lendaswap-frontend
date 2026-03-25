@@ -154,6 +154,10 @@ export function SupportErrorBanner({
                 className="w-full gap-2"
                 onClick={() => {
                   setSupportDialogOpen(false);
+                  window.$chatwoot?.setConversationCustomAttributes({
+                    ...(swapId && { swapId }),
+                    error,
+                  });
                   window.$chatwoot?.toggle("open");
                 }}
               >
