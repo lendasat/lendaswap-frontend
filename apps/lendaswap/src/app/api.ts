@@ -127,6 +127,8 @@ const ARK_SERVER_URL =
 const ESPLORA_URL =
   import.meta.env.VITE_ESPLORA_URL || "https://mempool.space/api";
 
+const API_KEY = import.meta.env.VITE_API_KEY || "";
+
 // Lazy-initialized SDK clients
 let sdkClient: SdkClient | null = null;
 
@@ -139,6 +141,7 @@ async function getClients(): Promise<SdkClient> {
       .withSignerStorage(walletStorage)
       .withArkadeServerUrl(ARK_SERVER_URL)
       .withSwapStorage(new IdbSwapStorage())
+      .withApiKey(API_KEY)
       .build();
 
     // If wallet was migrated from v2 (legacy WASM SDK), recover swaps from server
