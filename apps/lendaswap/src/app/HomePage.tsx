@@ -35,7 +35,7 @@ import {
   serverNetworkFeeBtc,
   totalFeeBtc,
 } from "./utils/quoteUtils";
-import { setReferralCode, validateReferralCode } from "./utils/referralCode";
+import { getReferralCode, setReferralCode } from "./utils/referralCode";
 import { formatTokenUrl, isEvmToken, parseUrlToken } from "./utils/tokenUtils";
 import { useWalletBridge } from "./WalletBridgeContext";
 
@@ -176,13 +176,17 @@ export function HomePage() {
     }
   }, [urlAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Persist referral code from URL (?ref=...) to localStorage
-  const urlRef = searchParams.get("ref");
-  useEffect(() => {
-    if (urlRef && validateReferralCode(urlRef)) {
-      setReferralCode(urlRef);
+  // Persist referral code: URL param takes priority, then fall back to localStorage.
+  // useState initializer runs synchronously on mount so the code is available
+  // in localStorage before any swap can be triggered (unlike useEffect which is async).
+  const [_referralCode] = useState(() => {
+    const urlCode = searchParams.get("ref");
+    if (urlCode) {
+      setReferralCode(urlCode);
+      return urlCode;
     }
-  }, [urlRef]);
+    return getReferralCode();
+  });
 
   const {
     value: maybeAvailableTokens,
