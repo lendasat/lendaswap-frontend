@@ -32,7 +32,6 @@ import { useWalletBridge } from "../WalletBridgeContext";
 import { NwcConnectDialog } from "./NwcConnectDialog";
 
 interface AppHeaderProps {
-  hasCode: boolean;
   onBackupOpen: () => void;
   onImportOpen: () => void;
   onDownloadSeedphrase: () => void;

@@ -20,7 +20,6 @@ import { LandingSection } from "./components/LandingSection";
 import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { HomePage } from "./HomePage";
 import { RefundPage, SwapsPage, TermsOfServicePage } from "./pages";
-import { hasReferralCode } from "./utils/referralCode";
 import { SwapWizardPage } from "./wizard";
 
 /** Redirect `/` to the default pair, preserving query params like `?ref=`. */
@@ -96,7 +95,6 @@ export default function App() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [hasCode, setHasCode] = useState(hasReferralCode());
 
   // Check if on home page (token pair route like /btc_lightning/usdc_pol)
   const isHomePage =
@@ -172,7 +170,6 @@ export default function App() {
       {/* Content */}
       <div className="relative z-10">
         <AppHeader
-          hasCode={hasCode}
           onBackupOpen={() => setBackupDialogOpen(true)}
           onImportOpen={() => setImportDialogOpen(true)}
           onDownloadSeedphrase={handleDownloadSeedphrase}
@@ -277,7 +274,7 @@ export default function App() {
         <ReferralCodeDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          onCodeAdded={() => setHasCode(true)}
+          onCodeAdded={() => {}}
         />
 
         {/* Wallet Management Dialogs */}
