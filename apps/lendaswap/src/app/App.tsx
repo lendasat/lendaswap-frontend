@@ -26,10 +26,7 @@ import { SwapWizardPage } from "./wizard";
 function DefaultRedirect() {
   const location = useLocation();
   return (
-    <Navigate
-      to={`/lightning:BTC/polygon:USDC${location.search}`}
-      replace
-    />
+    <Navigate to={`/lightning:BTC/polygon:USDC${location.search}`} replace />
   );
 }
 
@@ -226,10 +223,7 @@ export default function App() {
                         <div className="group-hover:via-orange-400/8 absolute -inset-1 rounded-[28px] bg-gradient-to-br from-orange-500/0 via-orange-500/0 to-orange-500/0 opacity-0 blur-xl transition-all duration-500 group-hover:from-orange-500/10 group-hover:to-orange-500/10 group-hover:opacity-100" />
                         <Card className="border-border from-card via-card relative !gap-0 rounded-3xl border bg-gradient-to-br to-orange-500/5 !py-0 shadow-sm">
                           <Routes>
-                            <Route
-                              path="/"
-                              element={<DefaultRedirect />}
-                            />
+                            <Route path="/" element={<DefaultRedirect />} />
                             <Route
                               path="/:sourceToken/:targetToken"
                               element={<HomePage />}
