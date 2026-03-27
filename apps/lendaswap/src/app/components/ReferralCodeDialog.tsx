@@ -10,7 +10,7 @@ import {
 } from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { setReferralCode, validateReferralCode } from "../utils/referralCode";
+import { setReferralCode } from "../utils/referralCode";
 
 interface ReferralCodeDialogProps {
   open: boolean;
@@ -31,11 +31,6 @@ export function ReferralCodeDialog({
 
     if (!trimmedCode) {
       setError("Please enter a code");
-      return;
-    }
-
-    if (!validateReferralCode(trimmedCode)) {
-      setError("Invalid code. Must be exactly 15 characters (letters/numbers)");
       return;
     }
 

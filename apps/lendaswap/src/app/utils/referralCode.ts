@@ -15,8 +15,3 @@ export function hasReferralCode(): boolean {
 export function clearReferralCode(): void {
   localStorage.removeItem(REFERRAL_CODE_KEY);
 }
-
-export function validateReferralCode(code: string): boolean {
-  // Must be exactly 15 characters (letters and numbers)
-  return /^[A-Za-z0-9]{15}$/.test(code);
-}

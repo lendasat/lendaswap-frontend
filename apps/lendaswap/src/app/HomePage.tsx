@@ -177,16 +177,22 @@ export function HomePage() {
   }, [urlAddress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Persist referral code: URL param takes priority, then fall back to localStorage.
-  // useState initializer runs synchronously on mount so the code is available
-  // in localStorage before any swap can be triggered (unlike useEffect which is async).
+  // The initializer ensures localStorage is populated synchronously on first mount
+  // (before any swap can be triggered). The useEffect handles subsequent in-app
+  // navigation that changes ?ref= without a full page reload.
+  const urlRef = searchParams.get("ref");
   const [_referralCode] = useState(() => {
-    const urlCode = searchParams.get("ref");
-    if (urlCode) {
-      setReferralCode(urlCode);
-      return urlCode;
+    if (urlRef) {
+      setReferralCode(urlRef);
+      return urlRef;
     }
     return getReferralCode();
   });
+  useEffect(() => {
+    if (urlRef) {
+      setReferralCode(urlRef);
+    }
+  }, [urlRef]);
 
   const {
     value: maybeAvailableTokens,
@@ -609,36 +615,36 @@ export function HomePage() {
   // Skeleton loader for initial loading state
   if (isInitialLoading) {
     return (
-      <div className="flex flex-col p-3 animate-pulse">
+      <div className="flex animate-pulse flex-col p-3">
         {/* Sell skeleton */}
-        <div className="rounded-2xl bg-muted p-4 pb-5">
-          <div className="h-4 w-8 bg-muted-foreground/20 rounded mb-3" />
+        <div className="bg-muted rounded-2xl p-4 pb-5">
+          <div className="bg-muted-foreground/20 mb-3 h-4 w-8 rounded" />
           <div className="flex items-center justify-between gap-4">
-            <div className="h-10 flex-1 bg-muted-foreground/20 rounded-lg" />
-            <div className="h-10 w-28 bg-muted-foreground/20 rounded-full" />
+            <div className="bg-muted-foreground/20 h-10 flex-1 rounded-lg" />
+            <div className="bg-muted-foreground/20 h-10 w-28 rounded-full" />
           </div>
         </div>
         {/* Arrow skeleton */}
-        <div className="flex justify-center -my-3 relative z-10">
-          <div className="w-10 h-10 bg-background rounded-xl p-1">
-            <div className="w-full h-full bg-muted rounded-lg" />
+        <div className="relative z-10 -my-3 flex justify-center">
+          <div className="bg-background h-10 w-10 rounded-xl p-1">
+            <div className="bg-muted h-full w-full rounded-lg" />
           </div>
         </div>
         {/* Buy skeleton */}
-        <div className="rounded-2xl bg-muted p-4 pt-5">
-          <div className="h-4 w-8 bg-muted-foreground/20 rounded mb-3" />
+        <div className="bg-muted rounded-2xl p-4 pt-5">
+          <div className="bg-muted-foreground/20 mb-3 h-4 w-8 rounded" />
           <div className="flex items-center justify-between gap-4">
-            <div className="h-10 flex-1 bg-muted-foreground/20 rounded-lg" />
-            <div className="h-10 w-28 bg-muted-foreground/20 rounded-full" />
+            <div className="bg-muted-foreground/20 h-10 flex-1 rounded-lg" />
+            <div className="bg-muted-foreground/20 h-10 w-28 rounded-full" />
           </div>
         </div>
         {/* Address skeleton */}
-        <div className="mt-3 rounded-2xl bg-muted p-4">
-          <div className="h-4 w-32 bg-muted-foreground/20 rounded mb-3" />
-          <div className="h-12 w-full bg-muted-foreground/20 rounded-xl" />
+        <div className="bg-muted mt-3 rounded-2xl p-4">
+          <div className="bg-muted-foreground/20 mb-3 h-4 w-32 rounded" />
+          <div className="bg-muted-foreground/20 h-12 w-full rounded-xl" />
         </div>
         {/* Button skeleton */}
-        <div className="mt-3 h-14 w-full bg-muted-foreground/20 rounded-2xl" />
+        <div className="bg-muted-foreground/20 mt-3 h-14 w-full rounded-2xl" />
       </div>
     );
   }
@@ -662,11 +668,11 @@ export function HomePage() {
       {/* Sell/Buy container with arrow */}
       <div className="relative">
         {/* Sell */}
-        <div className="rounded-2xl bg-muted p-4 pb-5 overflow-hidden group/sell">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-muted-foreground">Sell</div>
+        <div className="bg-muted group/sell overflow-hidden rounded-2xl p-4 pb-5">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-muted-foreground text-sm">Sell</div>
             {sourceBalance !== undefined && sourceAsset && (
-              <div className="flex gap-1 opacity-0 group-hover/sell:opacity-100 transition-opacity">
+              <div className="flex gap-1 opacity-0 transition-opacity group-hover/sell:opacity-100">
                 {([25, 50, 75, 100] as const).map((pct) => (
                   <button
                     key={pct}
@@ -676,7 +682,7 @@ export function HomePage() {
                       const amt = (sourceBalance * BigInt(pct)) / 100n;
                       setSourceAmountState(Number(amt));
                     }}
-                    className="px-2 py-0.5 text-xs rounded-full bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 transition-colors"
+                    className="bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 rounded-full px-2 py-0.5 text-xs transition-colors"
                   >
                     {pct === 100 ? "Max" : `${pct}%`}
                   </button>
@@ -719,7 +725,7 @@ export function HomePage() {
               />
             </div>
           </div>
-          <div className="flex justify-end mt-1.5">
+          <div className="mt-1.5 flex justify-end">
             <span
               className={`text-xs ${insufficientBalance ? "text-destructive" : "text-muted-foreground"}`}
             >
@@ -751,18 +757,18 @@ export function HomePage() {
               "",
             );
           }}
-          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 group/swap ${!sourceAsset || isBtcOnchain(sourceAsset) ? "opacity-50 cursor-not-allowed" : ""}`}
+          className={`group/swap absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 ${!sourceAsset || isBtcOnchain(sourceAsset) ? "cursor-not-allowed opacity-50" : ""}`}
         >
           <div className="bg-background rounded-xl p-1 transition-transform duration-200 ease-out group-hover/swap:scale-110 group-active/swap:scale-125">
-            <div className="bg-muted rounded-lg p-1.5 transition-colors group-hover/swap:bg-muted/80">
-              <ArrowDown className="h-5 w-5 text-muted-foreground" />
+            <div className="bg-muted group-hover/swap:bg-muted/80 rounded-lg p-1.5 transition-colors">
+              <ArrowDown className="text-muted-foreground h-5 w-5" />
             </div>
           </div>
         </button>
 
         {/* Buy */}
-        <div className="rounded-2xl bg-muted p-4 pt-5 mt-1 overflow-hidden">
-          <div className="text-sm text-muted-foreground mb-2">Buy</div>
+        <div className="bg-muted mt-1 overflow-hidden rounded-2xl p-4 pt-5">
+          <div className="text-muted-foreground mb-2 text-sm">Buy</div>
           <div className="flex items-center justify-between gap-4">
             <AmountInput
               value={targetAmount}
@@ -795,8 +801,8 @@ export function HomePage() {
               />
             </div>
           </div>
-          <div className="flex justify-end mt-1.5">
-            <span className="text-xs text-muted-foreground">
+          <div className="mt-1.5 flex justify-end">
+            <span className="text-muted-foreground text-xs">
               {targetAsset && targetBalance !== undefined
                 ? `${formatBalance(targetBalance, targetAsset)} ${targetAsset.symbol}`
                 : "\u00A0"}
@@ -826,7 +832,7 @@ export function HomePage() {
         />
         {/*Fees - below inputs, above Continue button*/}
         {(isLoadingQuote || quote) && (
-          <div className="text-xs text-muted-foreground/70 pt-2 space-y-1">
+          <div className="text-muted-foreground/70 space-y-1 pt-2 text-xs">
             {!isLoadingQuote && isBelowMin && (
               <div className="text-destructive">
                 Amount too low — minimum is {quote.min_amount.toLocaleString()}{" "}
@@ -839,34 +845,34 @@ export function HomePage() {
                 sats
               </div>
             )}
-            <div className="space-y-1 flex flex-col items-end">
+            <div className="flex flex-col items-end space-y-1">
               <button
                 type="button"
-                className="flex items-center gap-0.5 hover:text-muted-foreground transition-colors"
+                className="hover:text-muted-foreground flex items-center gap-0.5 transition-colors"
                 onClick={() => setFeeExpanded((v) => !v)}
               >
                 Total Fee:{" "}
                 {isLoadingQuote ? (
-                  <Skeleton className="h-3 w-20 inline-block" />
+                  <Skeleton className="inline-block h-3 w-20" />
                 ) : (
                   <>{totalFee} BTC</>
                 )}
                 <ChevronDown
-                  className={`w-3 h-3 transition-transform ${feeExpanded ? "rotate-180" : ""}`}
+                  className={`h-3 w-3 transition-transform ${feeExpanded ? "rotate-180" : ""}`}
                 />
               </button>
               {feeExpanded && (
                 <div className="text-muted-foreground/50 space-y-0.5 text-right">
                   {isLoadingQuote ? (
                     <>
-                      <Skeleton className="h-3 w-32 ml-auto" />
-                      <Skeleton className="h-3 w-28 ml-auto" />
+                      <Skeleton className="ml-auto h-3 w-32" />
+                      <Skeleton className="ml-auto h-3 w-28" />
                     </>
                   ) : (
                     <>
                       <div>Network Fee: {networkFee} BTC</div>
                       {isSourceEvm && gaslessFeeEstimate && (
-                        <div className="flex items-center gap-1.5 justify-end">
+                        <div className="flex items-center justify-end gap-1.5">
                           <span>
                             Gasless Fee:{" "}
                             {gaslessEnabled ? gaslessFeeEstimate : "0.00000000"}{" "}
@@ -903,28 +909,28 @@ export function HomePage() {
           {isConnectionStillNeeded ? (
             <Button
               onClick={() => openConnectModal().catch(console.error)}
-              className="w-full h-12"
+              className="h-12 w-full"
             >
               Connect Wallet
             </Button>
           ) : isWrongChain && chainSwitchFailed ? (
-            <Button onClick={requestChainSwitch} className="w-full h-12">
+            <Button onClick={requestChainSwitch} className="h-12 w-full">
               Switch to {requiredChainName}
             </Button>
           ) : isWrongChain ? (
-            <Button disabled className="w-full h-12">
-              <Loader className="animate-spin h-4 w-4" />
+            <Button disabled className="h-12 w-full">
+              <Loader className="h-4 w-4 animate-spin" />
               Switching Network...
             </Button>
           ) : (
             <Button
               onClick={createSwap}
               disabled={buttonDisabled}
-              className="w-full h-12"
+              className="h-12 w-full"
             >
               {isCreatingSwap ? (
                 <>
-                  <Loader className="animate-spin h-4 w-4" />
+                  <Loader className="h-4 w-4 animate-spin" />
                   Please Wait
                 </>
               ) : insufficientBalance && sourceAsset ? (
