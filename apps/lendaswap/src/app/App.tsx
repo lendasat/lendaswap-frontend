@@ -23,6 +23,17 @@ import { RefundPage, SwapsPage, TermsOfServicePage } from "./pages";
 import { hasReferralCode } from "./utils/referralCode";
 import { SwapWizardPage } from "./wizard";
 
+/** Redirect `/` to the default pair, preserving query params like `?ref=`. */
+function DefaultRedirect() {
+  const location = useLocation();
+  return (
+    <Navigate
+      to={`/lightning:BTC/polygon:USDC${location.search}`}
+      replace
+    />
+  );
+}
+
 // Get step title and description based on current route
 function useStepInfo() {
   const location = useLocation();
@@ -220,12 +231,7 @@ export default function App() {
                           <Routes>
                             <Route
                               path="/"
-                              element={
-                                <Navigate
-                                  to="/lightning:BTC/polygon:USDC"
-                                  replace
-                                />
-                              }
+                              element={<DefaultRedirect />}
                             />
                             <Route
                               path="/:sourceToken/:targetToken"
