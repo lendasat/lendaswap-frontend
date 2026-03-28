@@ -17,7 +17,6 @@ import { ChatwootWidget } from "./components/ChatwootWidget";
 import { DebugNavigation } from "./components/DebugNavigation";
 import { ImportMnemonicDialog } from "./components/ImportMnemonicDialog";
 import { LandingSection } from "./components/LandingSection";
-import { ReferralCodeDialog } from "./components/ReferralCodeDialog";
 import { HomePage } from "./HomePage";
 import { RefundPage, SwapsPage, TermsOfServicePage } from "./pages";
 import { SwapWizardPage } from "./wizard";
@@ -89,7 +88,6 @@ export default function App() {
   const stepInfo = useStepInfo();
   const location = useLocation();
   const navigate = useNavigate();
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
@@ -263,13 +261,6 @@ export default function App() {
             </div>
           </div>
         </footer>
-
-        {/* Referral Code Dialog */}
-        <ReferralCodeDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          onCodeAdded={() => {}}
-        />
 
         {/* Wallet Management Dialogs */}
         <BackupMnemonicDialog
