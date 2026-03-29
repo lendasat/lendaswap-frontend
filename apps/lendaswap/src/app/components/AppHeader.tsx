@@ -1,7 +1,6 @@
 import { useAppKit } from "@reown/appkit/react";
 import {
   ArrowLeftRight,
-  Check,
   Download,
   Eye,
   Github,
@@ -40,7 +39,6 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({
-  hasCode,
   onBackupOpen,
   onImportOpen,
   onDownloadSeedphrase,
@@ -80,10 +78,10 @@ export function AppHeader({
               href="https://github.com/lendasat"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+              className="hover:bg-muted/50 text-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
               aria-label="Visit us on GitHub"
             >
-              <Github className="w-5 h-5" />
+              <Github className="h-5 w-5" />
             </a>
 
             {/* X/Twitter Link */}
@@ -91,10 +89,10 @@ export function AppHeader({
               href="https://x.com/lendasat"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+              className="hover:bg-muted/50 text-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
               aria-label="Follow us on X"
             >
-              <XLogo className="w-4 h-4 fill-current" />
+              <XLogo className="h-4 w-4 fill-current" />
             </a>
 
             {/* Lendasat Website Link */}
@@ -102,10 +100,10 @@ export function AppHeader({
               href="https://lendasat.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-muted/50 transition-colors text-foreground hover:text-foreground"
+              className="hover:bg-muted/50 text-foreground hover:text-foreground flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
               aria-label="Visit lendasat.com"
             >
-              <Globe className="w-[18px] h-[18px]" />
+              <Globe className="h-[18px] w-[18px]" />
             </a>
           </div>
 
@@ -119,15 +117,6 @@ export function AppHeader({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {hasCode && (
-                    <DropdownMenuItem disabled className="gap-2">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <span className="text-green-600 dark:text-green-400 font-bold">
-                        NO-FEE
-                      </span>
-                    </DropdownMenuItem>
-                  )}
-
                   <DropdownMenuItem
                     onClick={() => navigate("/swaps")}
                     className="gap-2"
@@ -164,7 +153,7 @@ export function AppHeader({
                       trigger={
                         <button
                           type="button"
-                          className="hover:bg-gray-200 focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center gap-2 rounded-lg px-2 py-1.5 text-sm outline-hidden select-none"
+                          className="focus:bg-accent focus:text-accent-foreground outline-hidden relative flex w-full cursor-default select-none items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-gray-200"
                         >
                           <Zap
                             className={`h-4 w-4 shrink-0 ${isNwcConnected ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"}`}
@@ -184,7 +173,7 @@ export function AppHeader({
                     <DropdownMenuItem
                       onClick={() => open().catch(console.error)}
                     >
-                      <Wallet className="w-4 h-4" />
+                      <Wallet className="h-4 w-4" />
                       {isConnected ? truncatedAddress : "Connect"}
                     </DropdownMenuItem>
                   )}
@@ -199,15 +188,7 @@ export function AppHeader({
             </div>
 
             {/* Desktop Buttons */}
-            <div className="hidden md:flex items-center gap-3">
-              {hasCode && (
-                <div className="flex items-center gap-2 rounded-lg bg-green-500/10 px-2 py-1.5 sm:px-3">
-                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="text-sm font-bold text-green-600 dark:text-green-400">
-                    NO-FEE
-                  </span>
-                </div>
-              )}
+            <div className="hidden items-center gap-3 md:flex">
               <Button
                 variant="ghost"
                 size="sm"
@@ -257,7 +238,7 @@ export function AppHeader({
                   onClick={() => open().catch(console.error)}
                   className="h-9"
                 >
-                  <Wallet className="w-3.5 h-3.5 mr-1.5" />
+                  <Wallet className="mr-1.5 h-3.5 w-3.5" />
                   {isConnected ? truncatedAddress : "Connect"}
                 </Button>
               )}
