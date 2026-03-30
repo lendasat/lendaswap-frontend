@@ -40,6 +40,11 @@ const KNOWN_ERROR_PATTERNS: Array<{ pattern: RegExp; action: string }> = [
     pattern: /please refresh and try again/i,
     action: "Please refresh the page and try again.",
   },
+  {
+    pattern: /a swap with this invoice exists already/i,
+    action:
+      "This Lightning invoice has already been used for another swap. Please generate a new invoice and try again.",
+  },
 ];
 
 function getKnownAction(error: string): string | null {
