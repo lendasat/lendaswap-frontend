@@ -8,12 +8,15 @@ import {
   isLineaToken,
   isOptimismToken,
   isPolygonToken,
+  isSonicToken,
   type TokenInfo,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
 import NetworkAvalanche from "@web3icons/react/icons/networks/NetworkAvalanche";
 import NetworkBase from "@web3icons/react/icons/networks/NetworkBase";
+import NetworkLinea from "@web3icons/react/icons/networks/NetworkLinea";
 import NetworkOptimism from "@web3icons/react/icons/networks/NetworkOptimism";
+import NetworkSonic from "@web3icons/react/icons/networks/NetworkSonic";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -34,6 +37,8 @@ import { ReactComponent as ArbitrumIcon } from "../../assets/arbitrum.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as EthereumIcon } from "../../assets/eth.svg";
 import { ReactComponent as PolygonIcon } from "../../assets/polygon.svg";
+import { ReactComponent as UsdcIcon } from "../../assets/usdc.svg";
+import { ReactComponent as UsdtIcon } from "../../assets/usdt.svg";
 import { getTokenIcon } from "../api";
 import { getTokenNetworkIcon } from "../utils/tokenUtils";
 
@@ -53,6 +58,8 @@ function useIsMobile() {
 
 type NetworkTabId =
   | "all"
+  | "usdc"
+  | "usdt"
   | "bitcoin"
   | "ethereum"
   | "arbitrum"
@@ -60,6 +67,8 @@ type NetworkTabId =
   | "base"
   | "optimism"
   | "avalanche"
+  | "linea"
+  | "sonic"
   | "other";
 
 const networkTabs: {
@@ -69,6 +78,18 @@ const networkTabs: {
   filter?: (asset: TokenInfo) => boolean;
 }[] = [
   { id: "all", label: "All", icon: null },
+  {
+    id: "usdc",
+    label: "USDC",
+    icon: <UsdcIcon width={14} height={14} />,
+    filter: (a) => a.symbol === "USDC",
+  },
+  {
+    id: "usdt",
+    label: "USDT",
+    icon: <UsdtIcon width={14} height={14} />,
+    filter: (a) => a.symbol === "USDT" || a.symbol === "USDT0",
+  },
   {
     id: "bitcoin",
     label: "Bitcoin",
@@ -112,6 +133,18 @@ const networkTabs: {
     filter: (a) => isAvalancheToken(a.chain),
   },
   {
+    id: "linea",
+    label: "Linea",
+    icon: <NetworkLinea variant="branded" size={14} />,
+    filter: (a) => isLineaToken(a.chain),
+  },
+  {
+    id: "sonic",
+    label: "Sonic",
+    icon: <NetworkSonic variant="branded" size={14} />,
+    filter: (a) => isSonicToken(a.chain),
+  },
+  {
     id: "other",
     label: "Other",
     icon: null,
@@ -120,7 +153,8 @@ const networkTabs: {
       !isBaseToken(a.chain) &&
       !isOptimismToken(a.chain) &&
       !isAvalancheToken(a.chain) &&
-      !isLineaToken(a.chain),
+      !isLineaToken(a.chain) &&
+      !isSonicToken(a.chain),
   },
 ];
 

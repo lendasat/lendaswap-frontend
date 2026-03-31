@@ -1,5 +1,6 @@
 import {
   getCctpBridgeTokens,
+  getUsdt0BridgeTokens,
   isArkade,
   isBridgeOnlyChain,
   isBtc,
@@ -210,8 +211,10 @@ export function HomePage() {
     const btc = maybeAvailableTokens?.btc_tokens || [];
     const evm = maybeAvailableTokens?.evm_tokens || [];
     // Add USDC on all CCTP bridge destination chains (Base, Optimism, etc.)
-    const bridgeTokens = getCctpBridgeTokens();
-    return [...btc, ...evm, ...bridgeTokens];
+    const cctpBridgeTokens = getCctpBridgeTokens();
+    // Add USDT0 on all LayerZero OFT bridge destination chains
+    const usdt0BridgeTokens = getUsdt0BridgeTokens();
+    return [...btc, ...evm, ...cctpBridgeTokens, ...usdt0BridgeTokens];
   }, [maybeAvailableTokens]);
 
   const sourceAsset = allAvailableTokens.find(

@@ -1,4 +1,11 @@
-import { toChainName } from "@lendasat/lendaswap-sdk-pure";
+import {
+  getLzExplorerUrl,
+  type LayerZeroMessageStatus,
+  toChain,
+  toChainName,
+  trackLzMessage,
+  USDT0_ADDRESSES,
+} from "@lendasat/lendaswap-sdk-pure";
 import {
   AlertCircle,
   ArrowRight,
@@ -7,6 +14,7 @@ import {
   Copy,
   ExternalLink,
   Heart,
+  Loader2,
 } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
@@ -96,6 +104,60 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
   const handleStartNewSwap = () => {
     navigate("/", { replace: true });
   };
+
+  // -- USDT0 cross-chain bridge tracking --
+  const bridgeInfo = (() => {
+    switch (swapData.direction) {
+      case "arkade_to_evm":
+      case "bitcoin_to_evm":
+      case "lightning_to_evm":
+        return {
+          bridgeTargetChain: swapData.bridge_target_chain,
+          claimTxHash: swapData.evm_claim_txid,
+        };
+      default:
+        return { bridgeTargetChain: null, claimTxHash: null };
+    }
+  })();
+  const isUsdt0Bridge =
+    !!bridgeInfo.bridgeTargetChain &&
+    Object.values(USDT0_ADDRESSES).some(
+      (addr) =>
+        addr.toLowerCase() === swapData.target_token.token_id.toLowerCase(),
+    );
+  const bridgeTxHash = bridgeInfo.claimTxHash;
+
+  const [bridgeStatus, setBridgeStatus] =
+    useState<LayerZeroMessageStatus | null>(null);
+  const [bridgeDstTxHash, setBridgeDstTxHash] = useState<string | null>(null);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isUsdt0Bridge || !bridgeTxHash) return;
+    let cancelled = false;
+
+    trackLzMessage({
+      txHash: bridgeTxHash,
+      pollIntervalMs: 5_000,
+      timeoutMs: 600_000,
+      onStatusChange: (status) => {
+        if (!cancelled) setBridgeStatus(status);
+      },
+    })
+      .then((result) => {
+        if (!cancelled) {
+          setBridgeStatus("DELIVERED");
+          setBridgeDstTxHash(result.dstTxHash ?? null);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setBridgeError(String(err));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isUsdt0Bridge, bridgeTxHash]);
 
   const sourceSymbol = swapData.source_token.symbol;
   const targetSymbol = swapData.target_token.symbol;
@@ -347,7 +409,7 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
                     </span>
                   ) : (
                     <a
-                      href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.targetAddress)}`}
+                      href={`${getBlockexplorerAddressLink(isUsdt0Bridge ? toChain(targetNetwork) : swapData.target_token.chain, config.targetAddress)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 break-all font-mono text-xs hover:underline"
@@ -378,7 +440,7 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
                         className="h-8 w-8"
                       >
                         <a
-                          href={`${getBlockexplorerAddressLink(swapData.target_token.chain, config.targetAddress)}`}
+                          href={`${getBlockexplorerAddressLink(isUsdt0Bridge ? toChain(targetNetwork) : swapData.target_token.chain, config.targetAddress)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
@@ -434,6 +496,105 @@ export function SuccessStep({ swapData }: SuccessStepProps) {
               </div>
             )}
           </div>
+
+          {/* USDT0 cross-chain bridge status */}
+          {isUsdt0Bridge && bridgeTxHash && (
+            <div className="w-full max-w-md">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    Cross-chain Bridge
+                  </span>
+                  {bridgeStatus === "DELIVERED" ? (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400">
+                      <Check className="h-3.5 w-3.5" />
+                      Delivered
+                    </span>
+                  ) : bridgeError ? (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      Error
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {bridgeStatus === "CONFIRMING"
+                        ? "Confirming..."
+                        : `Bridging to ${targetNetwork}...`}
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-xs text-muted-foreground">
+                  {bridgeStatus === "DELIVERED" ? (
+                    <>
+                      Your {targetSymbol} has arrived on {targetNetwork}.
+                      {bridgeDstTxHash && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className="text-muted-foreground">
+                            Dest tx:
+                          </span>
+                          <a
+                            href={getBlockexplorerTxLink(
+                              toChain(targetNetwork),
+                              bridgeDstTxHash,
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono hover:underline break-all"
+                          >
+                            {bridgeDstTxHash.slice(0, 10)}...
+                            {bridgeDstTxHash.slice(-8)}
+                          </a>
+                          <a
+                            href={getBlockexplorerTxLink(
+                              toChain(targetNetwork),
+                              bridgeDstTxHash,
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                          </a>
+                        </div>
+                      )}
+                    </>
+                  ) : bridgeError ? (
+                    <p>
+                      Bridge tracking failed. Your funds are safe — check{" "}
+                      <a
+                        href={getLzExplorerUrl(bridgeTxHash)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        LayerZero Scan
+                      </a>{" "}
+                      for delivery status.
+                    </p>
+                  ) : (
+                    <p>
+                      Your {targetSymbol} is being bridged from Arbitrum to{" "}
+                      {targetNetwork} via LayerZero. This usually takes 30-60
+                      seconds.
+                    </p>
+                  )}
+                </div>
+
+                <div className="border-border border-t pt-2">
+                  <a
+                    href={getLzExplorerUrl(bridgeTxHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                  >
+                    View on LayerZero Scan
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Recovery warning for Arkade swaps */}
           {isArkadeTarget && !hasVtxo && (

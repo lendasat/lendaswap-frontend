@@ -43,10 +43,6 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
     10 ** swapData.target_token.decimals
   ).toFixed(swapData.target_token.decimals);
 
-  console.log(`Decimals amount: ${swapData.target_token.decimals}`);
-  console.log(`Token amount: ${tokenAmount}`);
-  console.log(`Target amount: ${swapData.target_amount}`);
-
   const tokenSymbol = swapData.target_token.symbol;
 
   const isSpeedWallet = isValidSpeedWalletContext();

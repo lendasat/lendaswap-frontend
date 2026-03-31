@@ -8,15 +8,27 @@ import { TokenBTC } from "@web3icons/react";
 import { NetworkIcon, TokenIcon } from "@web3icons/react/dynamic";
 import NetworkAvalanche from "@web3icons/react/icons/networks/NetworkAvalanche";
 import NetworkBase from "@web3icons/react/icons/networks/NetworkBase";
+import NetworkBerachain from "@web3icons/react/icons/networks/NetworkBerachain";
+import NetworkConflux from "@web3icons/react/icons/networks/NetworkConflux";
+import NetworkCorn from "@web3icons/react/icons/networks/NetworkCorn";
+import NetworkFlare from "@web3icons/react/icons/networks/NetworkFlare";
+import NetworkHederaHashgraph from "@web3icons/react/icons/networks/NetworkHederaHashgraph";
 import NetworkHyperEvm from "@web3icons/react/icons/networks/NetworkHyperEvm";
 import NetworkInk from "@web3icons/react/icons/networks/NetworkInk";
 import NetworkLinea from "@web3icons/react/icons/networks/NetworkLinea";
+import NetworkMantle from "@web3icons/react/icons/networks/NetworkMantle";
+import NetworkMegaEth from "@web3icons/react/icons/networks/NetworkMegaEth";
 import NetworkMonad from "@web3icons/react/icons/networks/NetworkMonad";
 import NetworkOptimism from "@web3icons/react/icons/networks/NetworkOptimism";
+import NetworkPlasma from "@web3icons/react/icons/networks/NetworkPlasma";
+import NetworkRootstock from "@web3icons/react/icons/networks/NetworkRootstock";
 import NetworkSeiNetwork from "@web3icons/react/icons/networks/NetworkSeiNetwork";
 import NetworkSonic from "@web3icons/react/icons/networks/NetworkSonic";
+import NetworkStable from "@web3icons/react/icons/networks/NetworkStable";
+import NetworkTempo from "@web3icons/react/icons/networks/NetworkTempo";
 import NetworkUnichain from "@web3icons/react/icons/networks/NetworkUnichain";
 import NetworkWorld from "@web3icons/react/icons/networks/NetworkWorld";
+import NetworkXLayer from "@web3icons/react/icons/networks/NetworkXLayer";
 import type { ReactElement } from "react";
 import {
   arbitrum,
@@ -103,9 +115,11 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
   }
 
   const chainIcons: Record<string, ReactElement> = {
+    // Source chains
     "1": <Ethereum width={8} height={8} />,
     "137": <Polygon width={8} height={8} />,
     "42161": <Arbitrum width={8} height={8} />,
+    // CCTP bridge chains
     "8453": <NetworkBase variant="branded" size={16} />,
     "10": <NetworkOptimism variant="branded" size={16} />,
     "43114": <NetworkAvalanche variant="branded" size={16} />,
@@ -117,6 +131,19 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
     "1329": <NetworkSeiNetwork variant="branded" size={16} />,
     "999": <NetworkHyperEvm variant="branded" size={16} />,
     "10143": <NetworkMonad variant="branded" size={16} />,
+    // USDT0 bridge chains
+    "80094": <NetworkBerachain variant="branded" size={16} />,
+    "1030": <NetworkConflux variant="branded" size={16} />,
+    "21000000": <NetworkCorn variant="branded" size={16} />,
+    "14": <NetworkFlare variant="branded" size={16} />,
+    "295": <NetworkHederaHashgraph variant="branded" size={16} />,
+    "5000": <NetworkMantle variant="branded" size={16} />,
+    "4326": <NetworkMegaEth variant="branded" size={16} />,
+    "9745": <NetworkPlasma variant="branded" size={16} />,
+    "30": <NetworkRootstock variant="branded" size={16} />,
+    "988": <NetworkStable variant="branded" size={16} />,
+    "4217": <NetworkTempo variant="branded" size={16} />,
+    "196": <NetworkXLayer variant="branded" size={16} />,
   };
 
   if (chainIcons[tokenId.chain]) {
@@ -184,54 +211,57 @@ export function getTargetChainDisplayName(swapData: {
   return toChainName(swapData.target_token.chain);
 }
 
+/** Block explorer base URLs by chain ID. */
+const BLOCK_EXPLORERS: Record<string, string> = {
+  // Source chains
+  "1": "https://etherscan.io",
+  "137": "https://polygonscan.com",
+  "42161": "https://arbiscan.io",
+  // CCTP bridge chains
+  "10": "https://optimistic.etherscan.io",
+  "8453": "https://basescan.org",
+  "43114": "https://snowtrace.io",
+  "59144": "https://lineascan.build",
+  "130": "https://uniscan.xyz",
+  "146": "https://sonicscan.org",
+  "480": "https://worldscan.org",
+  "57073": "https://explorer.inkonchain.com",
+  "1329": "https://seitrace.com",
+  // USDT0 bridge chains
+  "80094": "https://berascan.com",
+  "1030": "https://evm.confluxscan.io",
+  "21000000": "https://cornscan.io",
+  "14": "https://flarescan.com",
+  "295": "https://hashscan.io/mainnet",
+  "5000": "https://mantlescan.xyz",
+  "4326": "https://megaexplorer.xyz",
+  "2818": "https://explorer.morphl2.io",
+  "9745": "https://plasma-explorer.com",
+  "30": "https://rootstock.blockscout.com",
+  "988": "https://stable-explorer.com",
+  "196": "https://www.okx.com/web3/explorer/xlayer",
+  // Non-EVM
+  Bitcoin: "https://mempool.space",
+  Arkade: "https://arkade.space",
+  Lightning: "https://arkade.space",
+};
+
 export function getBlockexplorerTxLink(
-  chaub: Chain,
+  chain: string,
   txid?: string | null,
 ): string {
-  if (!txid) {
-    return "";
-  }
-  switch (chaub) {
-    case "137":
-      return `https://polygonscan.com/tx/${txid}`;
-    case "42161":
-      return `https://arbiscan.io/tx/${txid}`;
-    case "1":
-      return `https://etherscan.com/tx/${txid}`;
-    case "Bitcoin":
-      return `https://mempool.space/tx/${txid}`;
-    case "Arkade":
-      return `https://arkade.space/tx/${txid}`;
-    case "Lightning":
-      return `https://arkade.space/tx/${txid}`;
-    default:
-      return txid;
-  }
+  if (!txid) return "";
+  const base = BLOCK_EXPLORERS[chain];
+  return base ? `${base}/tx/${txid}` : txid;
 }
 
 export function getBlockexplorerAddressLink(
-  chain: Chain,
+  chain: string,
   address?: string | null,
 ): string {
-  if (!address) {
-    return "";
-  }
-  switch (chain) {
-    case "137":
-      return `https://polygonscan.com/address/${address}`;
-    case "42161":
-      return `https://arbiscan.io/address/${address}`;
-    case "1":
-      return `https://etherscan.com/address/${address}`;
-    case "Bitcoin":
-      return `https://mempool.space/address/${address}`;
-    case "Arkade":
-      return `https://arkade.space/address/${address}`;
-    case "Lightning":
-      return `https://arkade.space/address/${address}`;
-    default:
-      return address;
-  }
+  if (!address) return "";
+  const base = BLOCK_EXPLORERS[chain];
+  return base ? `${base}/address/${address}` : address;
 }
 
 // ---------------------------------------------------------------------------
