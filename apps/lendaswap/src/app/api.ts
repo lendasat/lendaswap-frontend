@@ -180,8 +180,12 @@ export const api = {
     sourceAmount?: number;
     targetAmount?: number;
   }): Promise<QuoteResponse> {
+    const referralCode = getReferralCode();
     const client = await getClients();
-    return await client.getQuote(request);
+    return await client.getQuote({
+      ...request,
+      referralCode: referralCode || undefined,
+    });
   },
 
   async createSwap(request: {
