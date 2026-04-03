@@ -115,7 +115,7 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
   }
 
   const chainIcons: Record<string, ReactElement> = {
-    // Source chains
+    // Directly supported chains
     "1": <Ethereum width={8} height={8} />,
     "137": <Polygon width={8} height={8} />,
     "42161": <Arbitrum width={8} height={8} />,
