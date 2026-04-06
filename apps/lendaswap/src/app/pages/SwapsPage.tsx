@@ -1,4 +1,8 @@
-import type { StoredSwap, SwapStatus } from "@lendasat/lendaswap-sdk-pure";
+import {
+  type StoredSwap,
+  type SwapStatus,
+  toChain,
+} from "@lendasat/lendaswap-sdk-pure";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   Check,
@@ -31,6 +35,10 @@ import {
 import { Input } from "#/components/ui/input";
 import { api, getTokenIcon } from "../api";
 import { VersionFooter } from "../components/VersionFooter";
+import {
+  getTargetChainDisplayName,
+  getTokenNetworkIcon,
+} from "../utils/tokenUtils";
 
 // Get status display info
 function getStatusInfo(status: SwapStatus): {
@@ -336,15 +344,39 @@ export function SwapsPage() {
                     {/* Overlapping Token Icons */}
                     <div className="relative flex-shrink-0 w-10 h-7 sm:w-12 sm:h-8">
                       {/* Source token (front) */}
-                      <div className="absolute left-0 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden z-10 shadow-sm">
-                        <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {getTokenIcon(swap.response.source_token)}
+                      <div className="absolute left-0 top-0 z-10">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
+                          <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
+                            {getTokenIcon(swap.response.source_token)}
+                          </div>
+                        </div>
+                        <div className="bg-background absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full p-[1px]">
+                          <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
+                            {getTokenNetworkIcon(swap.response.source_token)}
+                          </div>
                         </div>
                       </div>
                       {/* Target token (behind) */}
-                      <div className="absolute left-3.5 sm:left-4 top-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
-                        <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
-                          {getTokenIcon(swap.response.target_token)}
+                      <div className="absolute left-3.5 sm:left-4 top-0">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-background border-2 border-background flex items-center justify-center overflow-hidden shadow-sm">
+                          <div className="w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center">
+                            {getTokenIcon(swap.response.target_token)}
+                          </div>
+                        </div>
+                        <div className="bg-background absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full p-[1px]">
+                          <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
+                            {getTokenNetworkIcon(
+                              "bridge_target_chain" in swap.response &&
+                                swap.response.bridge_target_chain
+                                ? {
+                                    ...swap.response.target_token,
+                                    chain: toChain(
+                                      getTargetChainDisplayName(swap.response),
+                                    ),
+                                  }
+                                : swap.response.target_token,
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
