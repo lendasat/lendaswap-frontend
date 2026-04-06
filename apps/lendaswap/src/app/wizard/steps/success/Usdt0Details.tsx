@@ -83,13 +83,13 @@ export function Usdt0Details({ swapData }: { swapData: GetSwapResponse }) {
       : `Bridging to ${targetNetwork}...`;
 
   const description =
-    bridgeStatus === "DELIVERED" ? (
+    bridgeStatus === "DELIVERED" || !bridgeTxHash ? (
       <>Arrived on {targetNetwork} via LayerZero.</>
     ) : bridgeError ? (
       <>
         Tracking failed. Your funds are safe — check{" "}
         <a
-          href={getLzExplorerUrl(bridgeTxHash!)}
+          href={getLzExplorerUrl(bridgeTxHash)}
           target="_blank"
           rel="noopener noreferrer"
           className="underline"

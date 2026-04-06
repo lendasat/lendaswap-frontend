@@ -103,7 +103,11 @@ export function SuccessLayout({
               <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
                 {getTokenNetworkIcon(
                   targetChainOverride
-                    ? { ...swapData.target_token, chain: targetChainOverride }
+                    ? {
+                        ...swapData.target_token,
+                        chain:
+                          targetChainOverride as typeof swapData.target_token.chain,
+                      }
                     : swapData.target_token,
                 )}
               </div>
