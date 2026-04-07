@@ -41,6 +41,7 @@ import { ReactComponent as ArkadeIcon } from "../../assets/arkade.svg";
 import { ReactComponent as BitcoinIcon } from "../../assets/bitcoin.svg";
 import { ReactComponent as BitcoinLightningIcon } from "../../assets/bitcoin_lightning.svg";
 import { ReactComponent as Ethereum } from "../../assets/eth.svg";
+import { ReactComponent as Eurc } from "../../assets/eurc.svg";
 import { ReactComponent as Polygon } from "../../assets/polygon.svg";
 import { ReactComponent as Tbtc } from "../../assets/tbtc.svg";
 import { ReactComponent as Usdc } from "../../assets/usdc.svg";
@@ -73,6 +74,9 @@ export function getTokenIcon(
   }
   if (tokenId.symbol.toLowerCase() === "usdc") {
     return <Usdc width={64} height={64} />;
+  }
+  if (tokenId.symbol.toLowerCase() === "eurc") {
+    return <Eurc width={64} height={64} />;
   }
   if (tokenId.symbol.toLowerCase() === "usdt0") {
     return <Usdt0 width={64} height={64} />;
