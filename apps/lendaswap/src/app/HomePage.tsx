@@ -18,7 +18,7 @@ import { useAccount, useSwitchChain } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Switch } from "#/components/ui/switch";
-import { isLightningAddress } from "../utils/lightningAddress";
+import { isLightningAddress, isLnurl } from "../utils/lightningAddress";
 import { api, type QuoteResponse } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
@@ -544,12 +544,12 @@ export function HomePage() {
         selectedTargetAmount = targetAmount;
       }
 
-      // Lightning addresses (user@domain) are resolved server-side via LNURL-pay
-      // and require targetAmount (sats). The quote already computed it, so
-      // always pass it through — same pattern as BTC→Arkade above.
+      // Lightning addresses (user@domain) and LNURLs are resolved server-side
+      // via LNURL-pay and require targetAmount (sats). The quote already
+      // computed it, so always pass it through.
       if (
         isLightning(targetAsset) &&
-        isLightningAddress(targetAddress) &&
+        (isLightningAddress(targetAddress) || isLnurl(targetAddress)) &&
         selectedTargetAmount == null
       ) {
         selectedTargetAmount = targetAmount;
