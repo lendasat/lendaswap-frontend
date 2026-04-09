@@ -22,3 +22,15 @@ export function isBolt11Invoice(invoice: string): boolean {
   // BOLT11 invoices start with ln + network prefix (bc, tb, bcrt)
   return /^ln(bc|tb|bcrt)[0-9][a-z0-9]+$/i.test(invoice);
 }
+
+/**
+ * Checks if a string is an LNURL (bech32-encoded Lightning URL)
+ * @param value - String to validate
+ * @returns true if valid LNURL format
+ */
+export function isLnurl(value: string): boolean {
+  if (!value || typeof value !== "string") return false;
+
+  // LNURL is bech32-encoded, starts with "lnurl1"
+  return /^lnurl1[a-z0-9]+$/i.test(value);
+}

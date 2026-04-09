@@ -14,9 +14,11 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
+import { isSupportedUri, parseUri } from "../../utils/bip321";
 import {
   isBolt11Invoice,
   isLightningAddress,
+  isLnurl,
 } from "../../utils/lightningAddress";
 import isValidSpeedWalletContext from "../../utils/speedWallet";
 import { useNwc } from "../NwcContext";
@@ -61,6 +63,39 @@ export function AddressInput({
     isLightningTarget &&
     !disabled;
 
+  const handleInputChange = (raw: string) => {
+    if (isSupportedUri(raw)) {
+      try {
+        const parsed = parseUri(raw);
+
+        // If URI contains an amount (BTC), convert to sats
+        if (parsed.amount !== undefined && parsed.amount > 0) {
+          setBitcoinAmount(parsed.amount * 100_000_000);
+        }
+
+        // Pick the best address based on the target token type:
+        // - unified bitcoin: URI may carry lightning= and ark= params
+        // - standalone lightning: or ark: URIs carry just the address
+        let resolvedAddress = parsed.address;
+
+        if (targetToken) {
+          if (isLightning(targetToken) && parsed.lightning) {
+            resolvedAddress = parsed.lightning;
+          } else if (isArkade(targetToken) && parsed.ark) {
+            resolvedAddress = parsed.ark;
+          }
+          // For BTC onchain or if no matching param, use the main address
+        }
+
+        onChange(resolvedAddress);
+        return;
+      } catch {
+        // Fall through — let normal validation handle it
+      }
+    }
+    onChange(raw);
+  };
+
   const handleGenerateInvoice = async () => {
     if (!targetAmountSats || targetAmountSats <= 0) return;
     setIsGeneratingInvoice(true);
@@ -95,8 +130,8 @@ export function AddressInput({
       }
     } else if (isLightning(targetToken)) {
       // Accept both Lightning addresses and BOLT11 invoices
-      if (isLightningAddress(value)) {
-        // Valid Lightning address (will be resolved to invoice later)
+      if (isLightningAddress(value) || isLnurl(value)) {
+        // Valid Lightning address or LNURL (will be resolved to invoice later)
         setValidationError("");
         setAddressIsValid(true);
       } else if (isBolt11Invoice(value)) {
@@ -125,7 +160,9 @@ export function AddressInput({
           setAddressIsValid(false);
         }
       } else {
-        setValidationError("Invalid BOLT11 invoice. Expected format: lnbc...");
+        setValidationError(
+          "Invalid Lightning input. Expected: BOLT11 invoice, Lightning address, or LNURL",
+        );
         setAddressIsValid(false);
       }
     } else if (isArkade(targetToken)) {
@@ -167,7 +204,7 @@ export function AddressInput({
           type="text"
           placeholder={getPlaceholder()}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           disabled={disabled}
           className={`px-3 py-2 min-h-[2.75rem] bg-background border-0 rounded-xl text-sm font-mono placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-ring ${
             isEvmTarget ? "pr-28" : ""
