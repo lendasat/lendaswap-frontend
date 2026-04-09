@@ -582,7 +582,7 @@ export function SwapProcessingStep({
                         ? "Claiming the Bitcoin VHTLC and publishing the transaction..."
                         : isEthereumToken(swapData.target_token.chain)
                           ? "Claiming tokens via your Ethereum wallet (you pay gas)..."
-                          : "Submitting claim request via Gelato Relay..."
+                          : "Submitting claim request..."
                       : isEvmToBtc
                         ? "The VHTLC has been funded. Preparing to claim your sats..."
                         : "The HTLC has been funded. Preparing to claim your tokens..."}
@@ -614,7 +614,7 @@ export function SwapProcessingStep({
                     <p className="text-muted-foreground text-xs">
                       {isEthereumToken(swapData.target_token.chain)
                         ? "You will need ETH in your wallet to pay for gas fees to claim your tokens."
-                        : "Gas fees fully sponsored via Gelato Relay - no fees for you!"}
+                        : "Gas fees fully sponsored"}
                     </p>
                   )}
                 </div>
