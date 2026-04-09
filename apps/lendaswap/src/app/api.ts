@@ -129,20 +129,28 @@ const ESPLORA_URL =
 
 const ORG_CODE = import.meta.env.VITE_ORG_CODE || "";
 
+const CLIENT_ID = import.meta.env.VITE_CLIENT_ID?.trim() || "";
+
 // Lazy-initialized SDK clients
 let sdkClient: SdkClient | null = null;
 
 async function getClients(): Promise<SdkClient> {
   if (!sdkClient) {
     const walletStorage = new IdbWalletStorage();
-    sdkClient = await SdkClient.builder()
+
+    let builder = SdkClient.builder()
       .withBaseUrl(API_BASE_URL)
       .withEsploraUrl(ESPLORA_URL)
       .withSignerStorage(walletStorage)
       .withArkadeServerUrl(ARK_SERVER_URL)
       .withSwapStorage(new IdbSwapStorage())
-      .withOrgCode(ORG_CODE)
-      .build();
+      .withOrgCode(ORG_CODE);
+
+    if (CLIENT_ID) {
+      builder = builder.withDefaultHeaders({ "X-Client-Id": CLIENT_ID });
+    }
+
+    sdkClient = await builder.build();
 
     // If wallet was migrated from v2 (legacy WASM SDK), recover swaps from server
     if (walletStorage.migratedFromLegacy) {
