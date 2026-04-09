@@ -273,42 +273,6 @@ export function SwapWizardPage() {
 
     return () => clearInterval(pollInterval);
   }, [swapId, retry, displaySwapData, swapData]);
-  //
-  // const { value: maybeTokens, error: loadingTokensError } = useAsync(
-  //   async () => {
-  //     return await api.getTokens();
-  //   },
-  // );
-  // if (loadingTokensError) {
-  //   console.error("Failed loading tokens", loadingTokensError);
-  // }
-  //
-  // const tokens = maybeTokens || [];
-  // let targetTokenInfo: TokenInfo | undefined;
-  //
-  // if (swapData && isEvmToken(swapData.response.target_token)) {
-  //   targetTokenInfo = tokens.find(
-  //     (t) => t.token_id === swapData.response.target_token,
-  //   );
-  // } else {
-  //   targetTokenInfo = tokens.find(
-  //     (t) => t.token_id === swapData?.response.source_token,
-  //   );
-  // }
-  //
-  // // In debug mode, provide mock token info if API didn't return tokens
-  // if (isDebugMode() && !targetTokenInfo && swapData) {
-  //   const tokenId = isEvmToken(swapData.response.target_token)
-  //     ? swapData.response.target_token
-  //     : swapData.response.source_token;
-  //   targetTokenInfo = {
-  //     token_id: tokenId,
-  //     symbol: tokenId.split("_")[0]?.toUpperCase() ?? "MOCK",
-  //     name: tokenId,
-  //     decimals: tokenId.startsWith("btc") ? 8 : 6,
-  //     chain: "polygon",
-  //   } as TokenInfo;
-  // }
 
   return (
     <>
