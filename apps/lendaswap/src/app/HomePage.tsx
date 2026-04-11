@@ -898,7 +898,7 @@ export function HomePage() {
                       {quote?.bridge_fee != null && (
                         <div>
                           Max Bridge Fee: ~{(quote.bridge_fee / 1e6).toFixed(4)}{" "}
-                          USDC
+                          USDC (deducted from received amount)
                         </div>
                       )}
                     </>
