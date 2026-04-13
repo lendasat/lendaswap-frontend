@@ -19,18 +19,16 @@ import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
 import { Switch } from "#/components/ui/switch";
 import { isLightningAddress, isLnurl } from "../utils/lightningAddress";
-import { api, type QuoteResponse } from "./api";
+import { api } from "./api";
 import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { SupportErrorBanner } from "./components/SupportErrorBanner";
 import { useGaslessFeature } from "./hooks/useGaslessFeature";
+import { type RefreshArgs, useQuote } from "./hooks/useQuote";
 import { useTokenBalance } from "./hooks/useTokenBalance";
 import {
-  deriveSourceAmount,
-  deriveTargetAmount,
   evmSmallestToSats,
-  extractFees,
   gaslessFeeBtc,
   protocolFeeBtc,
   serverNetworkFeeBtc,
@@ -281,9 +279,6 @@ export function HomePage() {
     sourceAsset,
   );
 
-  // Fetch a baseline quote whenever the asset pair changes (1000 source units)
-  const [quote, setQuote] = useState<QuoteResponse | undefined>();
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [feeExpanded, setFeeExpanded] = useState(false);
 
   const sourceTokenId = sourceAsset?.token_id;
@@ -299,113 +294,76 @@ export function HomePage() {
 
   const targetTokenId = targetAsset?.token_id;
   const targetChain = targetAsset?.chain;
-  const targetDecimals = targetAsset?.decimals;
 
+  const {
+    quote,
+    isLoading: isLoadingQuote,
+    refresh: refreshQuote,
+  } = useQuote({
+    sourceChain,
+    sourceToken: sourceTokenId,
+    targetChain,
+    targetToken: targetTokenId,
+  });
+
+  // Debounced quote fetch — fires 800ms after the last amount change.
+  // Uses the user's actual amount so amount-dependent fees (like CCTP bridge
+  // fee) are accurate. When the quote resolves, sync the non-pinned side
+  // from the authoritative response in the same promise chain so there's no
+  // flicker from stale quotes.
   useEffect(() => {
-    if (!sourceTokenId || !sourceChain || !targetTokenId || !targetChain) {
-      setQuote(undefined);
-      return;
+    // Determine which side is pinned and what to send.
+    // If neither side has a value, fetch with a small default just to
+    // populate the fees/limits panel (skip syncing the opposite side).
+    let args: RefreshArgs;
+    let syncSide: "source" | "target" | "none";
+    if (lastEditedField === "sourceAsset" && sourceAmount && sourceAmount > 0) {
+      args = { sourceAmount };
+      syncSide = "target";
+    } else if (
+      lastEditedField === "targetAsset" &&
+      targetAmount &&
+      targetAmount > 0
+    ) {
+      args = { targetAmount };
+      syncSide = "source";
+    } else {
+      args = {
+        sourceAmount: isSourceBtc ? 10_000 : 10 ** (sourceDecimals ?? 0),
+      };
+      syncSide = "none";
     }
 
-    // BTC: 0.1 BTC = 10_000_000 sats; everything else: 1 display unit (e.g. 1_000_000 for USDC)
-    const quoteAmount = isSourceBtc ? 10_000_000 : 10 ** (sourceDecimals ?? 0);
-
-    setIsLoadingQuote(true);
-    const aborted = { current: false };
-
-    api
-      .getQuote({
-        sourceChain,
-        sourceToken: sourceTokenId,
-        targetChain,
-        targetToken: targetTokenId,
-        sourceAmount: quoteAmount,
-      })
-      .then((q) => {
-        if (!aborted.current) setQuote(q);
-      })
-      .catch((err) => {
-        if (!aborted.current) {
-          console.error("Quote fetch failed:", err);
-          setQuote(undefined);
+    let cancelled = false;
+    // refresh price after this timer
+    const timer = window.setTimeout(() => {
+      refreshQuote(args).then((q) => {
+        if (cancelled || !q) return;
+        if (syncSide === "target") {
+          const tgt = Number(q.net_target_amount);
+          if (Number.isFinite(tgt)) {
+            setTargetAmountState(tgt);
+          }
+        } else if (syncSide === "source") {
+          const src = Number(q.net_source_amount);
+          if (Number.isFinite(src)) {
+            setSourceAmountState(src);
+          }
         }
-      })
-      .finally(() => {
-        if (!aborted.current) setIsLoadingQuote(false);
       });
+    }, 300);
 
     return () => {
-      aborted.current = true;
+      cancelled = true;
+      clearTimeout(timer);
     };
   }, [
-    sourceTokenId,
-    sourceChain,
-    targetTokenId,
-    targetChain,
-    isSourceBtc,
-    sourceDecimals,
-  ]);
-
-  // Source edited → derive target (fees deducted from target side)
-  useEffect(() => {
-    if (
-      !quote ||
-      lastEditedField !== "sourceAsset" ||
-      sourceAmount === undefined
-    ) {
-      return;
-    }
-    const exchangeRate = Number(quote.exchange_rate);
-    if (exchangeRate === 0) return;
-    const evmDecimals = (isSourceBtc ? targetDecimals : sourceDecimals) ?? 0;
-    setTargetAmountState(
-      deriveTargetAmount({
-        amount: sourceAmount,
-        exchangeRate,
-        evmDecimals,
-        isSourceBtc,
-        fees: extractFees(quote, gaslessEnabled),
-      }),
-    );
-  }, [
     sourceAmount,
-    quote,
-    lastEditedField,
-    isSourceBtc,
-    sourceDecimals,
-    targetDecimals,
-    gaslessEnabled,
-  ]);
-
-  // Target edited → derive source (fees added to source side)
-  useEffect(() => {
-    if (
-      !quote ||
-      lastEditedField !== "targetAsset" ||
-      targetAmount === undefined
-    ) {
-      return;
-    }
-    const exchangeRate = Number(quote.exchange_rate);
-    if (exchangeRate === 0) return;
-    const evmDecimals = (isSourceBtc ? targetDecimals : sourceDecimals) ?? 0;
-    setSourceAmountState(
-      deriveSourceAmount({
-        amount: targetAmount,
-        exchangeRate,
-        evmDecimals,
-        isSourceBtc,
-        fees: extractFees(quote, gaslessEnabled),
-      }),
-    );
-  }, [
     targetAmount,
-    quote,
     lastEditedField,
     isSourceBtc,
     sourceDecimals,
-    targetDecimals,
-    gaslessEnabled,
+    refreshQuote,
   ]);
 
   // Debounced sync of amounts + address to URL (avoids navigating on every keystroke)
