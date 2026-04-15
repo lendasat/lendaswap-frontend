@@ -318,14 +318,20 @@ export function SwapProcessingStep({
           step1IsEvm: true,
           step2LabelActive: "Server Funding",
           step2LabelComplete: "Server Funded",
-          step2TxId: swapData.evm_claim_txid,
-          step2IsEvm: true,
+          step2TxId: swapData.lightning_paid
+            ? swapData.client_lightning_invoice
+            : null,
+          step2IsEvm: false,
           step3Label: "Lightning Payment",
-          step3TxId: swapData.lightning_paid ? "paid" : null,
+          step3TxId: swapData.lightning_paid
+            ? swapData.client_lightning_invoice
+            : null,
           step3IsEvm: false,
           step4Label: "Complete",
-          step4TxId: swapData.lightning_paid ? "paid" : null,
-          step4IsEvm: false,
+          step4TxId: swapData.lightning_paid
+            ? swapData.client_lightning_invoice
+            : null,
+          step4IsEvm: true,
         };
       case "arkade_to_lightning":
         return {
@@ -364,6 +370,7 @@ export function SwapProcessingStep({
 
   const isBtcToEvm = isBtcToEvmDirection(swapData.direction);
   const isEvmToBtc = isEvmToBtcDirection(swapData.direction);
+  const isLightning = swapData.direction === "evm_to_lightning";
 
   return (
     <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
@@ -558,7 +565,7 @@ export function SwapProcessingStep({
                 </div>
               )}
               {/* Show claiming status inline when server is funded */}
-              {swapData.status === "serverfunded" && (
+              {swapData.status === "serverfunded" && !isLightning && (
                 <div className="from-primary/5 to-card mt-2 space-y-2 rounded-lg border bg-gradient-to-t p-4">
                   <p className="text-sm font-medium">
                     {isClaiming

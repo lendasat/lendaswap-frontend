@@ -140,7 +140,6 @@ function determineStepFromStatus(
     case "serverfunded":
       return "server-depositing";
     case "serverredeemed":
-      return "success";
     case "clientredeeming":
     case "clientredeemed":
       return "success";
@@ -208,17 +207,7 @@ export function SwapWizardPage() {
   }, [swapData, displaySwapData]);
   //
   const swapDirectionValue = displaySwapData?.direction;
-  //
-  // // Track wizard step views for conversion funnel
-  // useEffect(() => {
-  //   if (!currentStep || !displaySwapData) return;
-  //   posthog?.capture("swap_step_viewed", {
-  //     swap_id: displaySwapData.id,
-  //     step: currentStep,
-  //     swap_direction: swapDirectionValue,
-  //   });
-  // }, [currentStep, displaySwapData, posthog?.capture, swapDirectionValue]);
-  //
+
   // Poll swap status every 2 seconds in the background
   useEffect(() => {
     if (!swapId) {
