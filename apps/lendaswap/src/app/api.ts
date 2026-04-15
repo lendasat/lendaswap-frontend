@@ -129,7 +129,7 @@ const ESPLORA_URL =
 
 const ORG_CODE = import.meta.env.VITE_ORG_CODE || "";
 
-const CLIENT_ID = import.meta.env.VITE_CLIENT_ID?.trim() || "";
+const REQUEST_SOURCE = import.meta.env.VITE_REQUEST_SOURCE?.trim() || "";
 
 // Lazy-initialized SDK clients
 let sdkClient: SdkClient | null = null;
@@ -146,8 +146,10 @@ async function getClients(): Promise<SdkClient> {
       .withSwapStorage(new IdbSwapStorage())
       .withOrgCode(ORG_CODE);
 
-    if (CLIENT_ID) {
-      builder = builder.withDefaultHeaders({ "X-Client-Id": CLIENT_ID });
+    if (REQUEST_SOURCE) {
+      builder = builder.withDefaultHeaders({
+        "X-Request-Source": REQUEST_SOURCE,
+      });
     }
 
     sdkClient = await builder.build();
