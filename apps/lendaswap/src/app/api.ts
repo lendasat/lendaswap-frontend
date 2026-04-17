@@ -14,6 +14,7 @@ import {
   Client as SdkClient,
   type StoredSwap,
   type SwapStatus,
+  type SwapStatusHandler,
   type TokenId,
   type TokenInfo,
   type TokenInfos,
@@ -241,6 +242,15 @@ export const api = {
       throw new Error("Swap not found");
     }
     return stored;
+  },
+
+  subscribeToSwaps(
+    ids: string[],
+    onUpdate: SwapStatusHandler,
+  ): Promise<() => void> {
+    return getClients().then((client) =>
+      client.subscribeToSwaps(ids, onUpdate),
+    );
   },
 
   async listAllSwaps(): Promise<StoredSwap[]> {

@@ -208,17 +208,10 @@ export function SwapWizardPage() {
   //
   const swapDirectionValue = displaySwapData?.direction;
 
-  // Poll swap status every 2 seconds in the background
+  // Subscribe to swap status updates via WebSocket (replaces 2s polling).
   useEffect(() => {
-    if (!swapId) {
-      return;
-    }
-    if (!swapData) {
-      // swap was not found, so no need to poll
-      return;
-    }
+    if (!swapId || !swapData) return;
 
-    // Stop polling if we've reached a terminal state
     const terminalStates: SwapStatus[] = [
       "serverredeemed",
       "expired",
@@ -226,41 +219,35 @@ export function SwapWizardPage() {
       "clientrefundedserverrefunded",
       "clientrefunded",
     ];
-
     if (displaySwapData && terminalStates.includes(displaySwapData.status)) {
-      console.log(
-        `Polling stopped: swap reached terminal state '${displaySwapData.status}'`,
-      );
       return;
     }
 
-    const pollInterval = setInterval(async () => {
-      try {
-        // Fetch latest swap data from API
-        const updatedSwap = await api.getSwap(swapId);
-        console.log(
-          `Polled swap status from API... ${updatedSwap.response.status}`,
-        );
+    let unsubscribe: (() => void) | null = null;
+    let cancelled = false;
 
-        // check if we can refund already
-        const possibleNextStep = determineStepFromStatus(updatedSwap.response);
-
-        // Check if anything has changed
-        if (
-          displaySwapData &&
-          updatedSwap.response.status !== displaySwapData.status
-        ) {
-          // Trigger a re-fetch to update the UI
+    api
+      .subscribeToSwaps([swapId], (_id, status) => {
+        console.log(`ws status update: ${status}`);
+        if (!displaySwapData || status !== displaySwapData.status) {
           retry();
-        } else if (possibleNextStep && possibleNextStep === "refundable") {
-          retry();
+          return;
         }
-      } catch (error) {
-        console.error("Failed to poll swap status:", error);
-      }
-    }, 2000);
+        const next = determineStepFromStatus({ ...displaySwapData, status });
+        if (next === "refundable") retry();
+      })
+      .then((unsub) => {
+        if (cancelled) unsub();
+        else unsubscribe = unsub;
+      })
+      .catch((err) =>
+        console.error("Failed to subscribe to swap status:", err),
+      );
 
-    return () => clearInterval(pollInterval);
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [swapId, retry, displaySwapData, swapData]);
 
   return (
