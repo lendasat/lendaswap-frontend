@@ -39,6 +39,12 @@ export function useQuote(params: UseQuoteParams): UseQuoteResult {
   // a duplicate API call when the effect re-runs with identical args
   // (e.g. React StrictMode dev double-invoke).
   const lastRequestKeyRef = useRef<string | null>(null);
+  // Mirror of the latest successful quote, readable inside `refresh`.
+  // Needed so dedupe-hit callers get the cached response back rather than
+  // `undefined`, which would otherwise lose the caller's follow-up state
+  // sync if an earlier in-flight request was cancelled between
+  // fetch-started and fetch-settled.
+  const quoteRef = useRef<QuoteResponse | undefined>(undefined);
 
   // Reset state when the asset pair changes so a stale quote from the previous
   // pair doesn't leak through.
@@ -48,6 +54,7 @@ export function useQuote(params: UseQuoteParams): UseQuoteResult {
     }
     abortRef.current?.abort();
     lastRequestKeyRef.current = null;
+    quoteRef.current = undefined;
     setQuote(undefined);
     setIsLoading(false);
   }, [sourceChain, sourceToken, targetChain, targetToken]);
@@ -61,10 +68,14 @@ export function useQuote(params: UseQuoteParams): UseQuoteResult {
         return undefined;
       }
 
-      // Dedupe: skip if the last request was for the same args and pair.
+      // Dedupe: skip the network call if the last request was for the
+      // same args and pair. Return the cached quote (not undefined) so
+      // callers re-invoking after a cancelled in-flight request still
+      // get the response back and can run their follow-up side-effects
+      // (e.g. syncing the opposite amount into UI state).
       const key = `${sourceChain}|${sourceToken}|${targetChain}|${targetToken}|s=${args.sourceAmount ?? ""}|t=${args.targetAmount ?? ""}`;
       if (lastRequestKeyRef.current === key) {
-        return undefined;
+        return quoteRef.current;
       }
       lastRequestKeyRef.current = key;
 
@@ -85,6 +96,7 @@ export function useQuote(params: UseQuoteParams): UseQuoteResult {
         if (abort.signal.aborted) {
           return undefined;
         }
+        quoteRef.current = q;
         setQuote(q);
         return q;
       } catch (err) {

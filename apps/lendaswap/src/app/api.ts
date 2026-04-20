@@ -411,6 +411,43 @@ export const api = {
     return await client.fundSwapGasless(swapId);
   },
 
+  async getSwapAndLockUseropCalldata(swapId: string): Promise<{
+    coordinator_address: string;
+    permit2_address: string;
+    source_token_address: string;
+    source_amount: string;
+    lock_token_address: string;
+    preimage_hash: string;
+    claim_address: string;
+    timelock: number;
+    calls: Array<{ target: string; value: string; call_data: string }>;
+    calls_hash: string;
+    relay_fee?: string;
+    aa: {
+      entry_point: string;
+      account_factory: string;
+      account_impl: string;
+      salt: string;
+    };
+  }> {
+    const resp = await fetch(
+      `${API_BASE_URL}/swap/${swapId}/swap-and-lock-calldata-userop`,
+    );
+    if (!resp.ok) {
+      throw new Error(
+        `Failed to get userop calldata: ${resp.status} ${await resp.text()}`,
+      );
+    }
+    return resp.json();
+  },
+
+  async getSwapDepositorKey(
+    swapId: string,
+  ): Promise<{ privateKey: string; address: string }> {
+    const client = await getClients();
+    return await client.getSwapDepositorKey(swapId);
+  },
+
   async hasReceivedVtxo(swapId: string): Promise<boolean> {
     const client = await getClients();
     return await client.hasReceivedVtxo(swapId);

@@ -1,11 +1,15 @@
 import {
+  type Asset,
+  CCTP_DOMAINS,
   getCctpBridgeTokens,
   getUsdt0BridgeTokens,
   isArkade,
   isBridgeOnlyChain,
   isBtc,
   isBtcOnchain,
+  isCctpUsdc,
   isLightning,
+  isSourceEvmChain,
   type TokenInfo,
   toChainName,
 } from "@lendasat/lendaswap-sdk-pure";
@@ -24,6 +28,7 @@ import { AddressInput } from "./components/AddressInput";
 import { AmountInput } from "./components/AmountInput";
 import { AssetDropDown } from "./components/AssetDropDown";
 import { SupportErrorBanner } from "./components/SupportErrorBanner";
+import { upsertCctpInboundSession } from "./db";
 import { useGaslessFeature } from "./hooks/useGaslessFeature";
 import { type RefreshArgs, useQuote } from "./hooks/useQuote";
 import { useTokenBalance } from "./hooks/useTokenBalance";
@@ -281,11 +286,21 @@ export function HomePage() {
 
   const [feeExpanded, setFeeExpanded] = useState(false);
 
+  // CCTP-only source detection is now handled entirely inside the SDK:
+  // `Client.getQuote` rewrites the chain/token + pads or nets amounts
+  // by the CCTPv2 fast-transfer fee, and surfaces the fee via the
+  // `quote.bridge_fee` field. We pass the user's actual source asset
+  // straight through.
   const sourceTokenId = sourceAsset?.token_id;
   const sourceChain = sourceAsset?.chain;
   const sourceDecimals = sourceAsset?.decimals;
   const isSourceBtc = sourceAsset ? isBtc(sourceAsset) : false;
   const isSourceEvm = sourceAsset ? isEvmToken(sourceAsset.chain) : false;
+  // `needsCctpQuoteRewrite` kept for the `createSwap` branch below,
+  // which still builds its own Arbitrum-side call + CCTP session.
+  const needsCctpQuoteRewrite = sourceAsset
+    ? isCctpUsdc(sourceAsset) && !isSourceEvmChain(sourceAsset.chain)
+    : false;
 
   // Reset gasless toggle when source is not EVM
   useEffect(() => {
@@ -481,6 +496,85 @@ export function HomePage() {
     if (!sourceAsset || !targetAsset) {
       return;
     }
+
+    // CCTP-inbound source (USDC on Base / Optimism / Linea / etc.): the
+    // backend doesn't accept these as source chains, so the SDK auto-remaps
+    // to Arbitrum USDC and populates `bridge_source_chain` on our behalf.
+    // We still persist a local session (swap_id + source chain) for the
+    // wizard's BridgingCctpStep — the stored swap now reports the gross
+    // burn on the source chain directly via `source_amount`.
+    if (
+      isCctpUsdc(sourceAsset) &&
+      !isSourceEvmChain(sourceAsset.chain) &&
+      sourceAmount != null
+    ) {
+      try {
+        setIsCreatingSwap(true);
+        setSwapError("");
+        const sourceChainName = toChainName(sourceAsset.chain);
+        const sourceDomain =
+          CCTP_DOMAINS[sourceChainName as keyof typeof CCTP_DOMAINS];
+        if (sourceDomain === undefined) {
+          throw new Error(`No CCTP domain for source chain ${sourceChainName}`);
+        }
+
+        // Target is BTC on the user's chosen BTC variant (tokenId "btc").
+        const backendTarget: Asset = {
+          chain: targetAsset.chain,
+          tokenId: "btc",
+        };
+
+        // Lightning addresses / LNURLs are resolved server-side via
+        // LNURL-pay and require `targetAmount` (sats). Arkade / onchain
+        // BTC swaps keep using the user's source-chain USDC amount.
+        const useTargetAmount =
+          isLightning(targetAsset) &&
+          (isLightningAddress(targetAddress) || isLnurl(targetAddress)) &&
+          targetAmount != null;
+
+        const swap = await api.createSwap({
+          // `api.createSwap` accepts either `Asset` or `TokenInfo` via
+          // `sourceAsset`; we pass the legacy shape so the SDK auto-detects
+          // the CCTP-only source and populates `inboundBridgeParams`.
+          sourceAsset,
+          target: backendTarget,
+          ...(useTargetAmount
+            ? { targetAmount: Number(targetAmount) }
+            : { sourceAmount: Number(sourceAmount) }),
+          targetAddress,
+          gasless: true,
+        });
+
+        // The backend now returns `source_amount` as the gross burn on the
+        // source chain (CCTP fee already baked in). Persist it verbatim.
+        const burnAmountUsdc = BigInt(swap.source_amount);
+        if (burnAmountUsdc <= 0n) {
+          throw new Error(
+            `Amount too small to cover CCTP fee (burn=${burnAmountUsdc}).`,
+          );
+        }
+
+        await upsertCctpInboundSession({
+          swap_id: swap.id,
+          source_chain: sourceChainName,
+          source_domain: sourceDomain,
+          source_amount: burnAmountUsdc.toString(),
+          source_token: formatTokenUrl(sourceAsset),
+          target_token: formatTokenUrl(targetAsset),
+          target_address: targetAddress,
+          phase: "swap_created",
+        });
+
+        navigate(`/swap/${swap.id}/wizard`);
+      } catch (e) {
+        console.error("CCTP-inbound swap creation failed:", e);
+        setSwapError(String(e));
+      } finally {
+        setIsCreatingSwap(false);
+      }
+      return;
+    }
+
     try {
       setIsCreatingSwap(true);
 
@@ -667,7 +761,7 @@ export function HomePage() {
               <AssetDropDown
                 value={sourceAsset}
                 availableAssets={allAvailableTokens.filter(
-                  (t) => !isBridgeOnlyChain(t.chain),
+                  (t) => !isBridgeOnlyChain(t.chain) || isCctpUsdc(t),
                 )}
                 label="sell"
                 onChange={(asset) => {
@@ -853,12 +947,19 @@ export function HomePage() {
                           %): {protocolFee} BTC
                         </div>
                       )}
-                      {quote?.bridge_fee != null && (
-                        <div>
-                          Max Bridge Fee: ~{(quote.bridge_fee / 1e6).toFixed(4)}{" "}
-                          USDC (deducted from received amount)
-                        </div>
-                      )}
+                      {quote?.bridge_fee != null &&
+                        (needsCctpQuoteRewrite ? (
+                          <div>
+                            CCTP Fee: ~{(quote.bridge_fee / 1e6).toFixed(4)}{" "}
+                            USDC (deducted from source amount)
+                          </div>
+                        ) : (
+                          <div>
+                            Max Bridge Fee: ~
+                            {(quote.bridge_fee / 1e6).toFixed(4)} USDC (deducted
+                            from received amount)
+                          </div>
+                        ))}
                     </>
                   )}
                 </div>

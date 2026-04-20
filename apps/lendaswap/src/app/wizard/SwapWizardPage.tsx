@@ -11,12 +11,14 @@ import type {
   LightningToEvmSwapResponse,
   SwapStatus,
 } from "@lendasat/lendaswap-sdk-pure";
+import { useLiveQuery } from "dexie-react-hooks";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAsyncRetry } from "react-use";
 import { api } from "../api";
 import { SupportErrorBanner } from "../components/SupportErrorBanner";
+import { db } from "../db";
 import {
   DepositArkadeStep,
   DepositBitcoinStep,
@@ -30,6 +32,7 @@ import {
   SuccessStep,
   SwapProcessingStep,
 } from "./steps";
+import { BridgingCctpStep } from "./steps/BridgingCctpStep";
 import { DepositLightningStep } from "./steps/DepositLightningStep";
 
 export type SwapDirection =
@@ -165,6 +168,19 @@ export function SwapWizardPage() {
   useEffect(() => {
     document.title = "Swap in Progress | LendaSwap";
   }, []);
+
+  // Reactively watch for an in-flight CCTP-inbound bridging session on this
+  // swap. If one exists and isn't done, the wizard renders BridgingCctpStep
+  // in place of the normal deposit step. Deletion inside the step triggers
+  // a re-render and the standard flow takes over.
+  const cctpSession = useLiveQuery(
+    () => (swapId ? db.cctpInboundSessions.get(swapId) : undefined),
+    [swapId],
+  );
+  const hasActiveCctpSession =
+    !!cctpSession &&
+    cctpSession.phase !== "done" &&
+    cctpSession.phase !== "submitted";
 
   const lastStatusRef = useRef<SwapStatus | null>(null);
   const [displaySwapData, setDisplaySwapData] =
@@ -352,7 +368,18 @@ export function SwapWizardPage() {
       {/* Step-specific content */}
       {displaySwapData && !error && (
         <>
-          {currentStep === "user-deposit" && (
+          {currentStep === "user-deposit" && hasActiveCctpSession && (
+            <BridgingCctpStep
+              swapId={displaySwapData.id}
+              swapData={
+                displaySwapData as
+                  | EvmToArkadeSwapResponse
+                  | EvmToBitcoinSwapResponse
+                  | EvmToLightningSwapResponse
+              }
+            />
+          )}
+          {currentStep === "user-deposit" && !hasActiveCctpSession && (
             <>
               {(swapDirectionValue === "arkade_to_evm" ||
                 swapDirectionValue === "arkade_to_lightning") && (

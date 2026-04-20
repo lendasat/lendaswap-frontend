@@ -21,9 +21,47 @@ export interface StoredSwapExtras {
  */
 export type StoredSwap = GetSwapResponse & StoredSwapExtras;
 
+/**
+ * CCTP-inbound bridging session stored locally so a tab close / reload
+ * between the source-chain burn and the Arbitrum multicall submission
+ * doesn't strand the user. Keyed by `swap_id` so the wizard can look it
+ * up to decide whether to redirect into the bridging page.
+ */
+export interface CctpInboundSession {
+  swap_id: string;
+  /** SDK chain name (e.g. "Base", "Optimism"). */
+  source_chain: string;
+  /** CCTPv2 domain ID of the source chain. */
+  source_domain: number;
+  /** Amount user chose to burn, in USDC smallest units (6 decimals). */
+  source_amount: string;
+  /** URL-format source token (e.g. "base:USDC"). Used to resume the page URL. */
+  source_token: string;
+  /** URL-format target token (e.g. "lightning:BTC"). */
+  target_token: string;
+  /** BTC destination (Lightning invoice / onchain address / Arkade address). */
+  target_address: string;
+  /** Set once the user signs the burn on source. */
+  burn_tx_hash?: string;
+  /**
+   * Stage reached. `done` rows are deletable — the standard wizard
+   * continues from `clientfundingseen` once the multicall mines.
+   */
+  phase:
+    | "ready"
+    | "swap_created"
+    | "burn_signed"
+    | "attestation_pending"
+    | "submitted"
+    | "done";
+  created_at: number;
+  updated_at: number;
+}
+
 // Define the database schema
 export class LendaswapDatabase extends Dexie {
   swaps!: EntityTable<StoredSwap, "id">;
+  cctpInboundSessions!: EntityTable<CctpInboundSession, "swap_id">;
 
   constructor() {
     super("lendaswap-v1-do-not-use");
@@ -76,6 +114,12 @@ export class LendaswapDatabase extends Dexie {
             }
           });
       });
+
+    // Version 3: add cctp_inbound_sessions table for CCTP source-side flow.
+    this.version(3).stores({
+      swaps: "id, status, created_at, direction",
+      cctpInboundSessions: "swap_id, phase, updated_at",
+    });
   }
 }
 
@@ -167,4 +211,35 @@ export async function clearAllSwaps(): Promise<void> {
  */
 export async function getSwapCount(): Promise<number> {
   return db.swaps.count();
+}
+
+// ── CCTP-inbound session persistence ────────────────────────────────────────
+
+/**
+ * Insert or update a CCTP-inbound bridging session. Refreshes `updated_at`
+ * automatically; preserves `created_at` on update.
+ */
+export async function upsertCctpInboundSession(
+  session: Omit<CctpInboundSession, "created_at" | "updated_at"> &
+    Partial<Pick<CctpInboundSession, "created_at" | "updated_at">>,
+): Promise<string> {
+  const now = Date.now();
+  const existing = await db.cctpInboundSessions.get(session.swap_id);
+  const record: CctpInboundSession = {
+    ...session,
+    created_at: existing?.created_at ?? session.created_at ?? now,
+    updated_at: now,
+  };
+  await db.cctpInboundSessions.put(record);
+  return session.swap_id;
+}
+
+export async function getCctpInboundSession(
+  swapId: string,
+): Promise<CctpInboundSession | undefined> {
+  return db.cctpInboundSessions.get(swapId);
+}
+
+export async function deleteCctpInboundSession(swapId: string): Promise<void> {
+  await db.cctpInboundSessions.delete(swapId);
 }

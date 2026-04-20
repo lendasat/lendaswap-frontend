@@ -22,6 +22,8 @@ interface SuccessLayoutProps {
   targetSymbol: string;
   /** Override target token chain for the network icon (for cross-chain bridges). */
   targetChainOverride?: string;
+  /** Override source token chain for the network icon (for CCTP-inbound). */
+  sourceChainOverride?: string;
   children: ReactNode;
 }
 
@@ -32,6 +34,7 @@ export function SuccessLayout({
   sourceSymbol,
   targetSymbol,
   targetChainOverride,
+  sourceChainOverride,
   children,
 }: SuccessLayoutProps) {
   const navigate = useNavigate();
@@ -88,7 +91,15 @@ export function SuccessLayout({
             </div>
             <div className="bg-background absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full p-[1px]">
               <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
-                {getTokenNetworkIcon(swapData.source_token)}
+                {getTokenNetworkIcon(
+                  sourceChainOverride
+                    ? {
+                        ...swapData.source_token,
+                        chain:
+                          sourceChainOverride as typeof swapData.source_token.chain,
+                      }
+                    : swapData.source_token,
+                )}
               </div>
             </div>
           </div>

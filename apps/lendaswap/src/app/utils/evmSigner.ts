@@ -35,6 +35,14 @@ export function buildEvmSigner(
         },
         account: walletClient.account,
       }),
+    // Required for the CCTP-inbound flow — Kernel's ECDSA validator
+    // signs the UserOp hash via personal_sign on the owner. Direct
+    // Permit2 swaps don't reach this code path.
+    signMessage: ({ raw }) =>
+      walletClient.signMessage({
+        account: walletClient.account,
+        message: { raw: raw as `0x${string}` },
+      }),
     sendTransaction: (tx: { to: string; data: string; gas?: bigint }) =>
       walletClient.sendTransaction({
         to: tx.to as `0x${string}`,

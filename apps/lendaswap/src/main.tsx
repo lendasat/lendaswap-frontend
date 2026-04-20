@@ -3,7 +3,22 @@ import * as ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
-import { arbitrum, mainnet, polygon } from "@reown/appkit/networks";
+import {
+  arbitrum,
+  avalanche,
+  base,
+  hyperEvm,
+  ink,
+  linea,
+  mainnet,
+  monad,
+  optimism,
+  polygon,
+  sei,
+  sonic,
+  unichain,
+  worldchain,
+} from "@reown/appkit/networks";
 import { createAppKit } from "@reown/appkit/react";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -24,7 +39,25 @@ getSpeedWalletParams();
 
 // Allow overriding the RPC URL for a specific chain via env variable.
 // e.g. VITE_RPC_OVERRIDE_CHAIN_ID=137 VITE_RPC_OVERRIDE_URL=http://localhost:8545
-const networks = [mainnet, polygon, arbitrum];
+// Native source chains (Ethereum/Polygon/Arbitrum) first; the rest are
+// CCTPv2-only source chains enabled for the any-chain-USDC → BTC flow so
+// wagmi can both read USDC balances and drive depositForBurn txs there.
+const networks = [
+  mainnet,
+  polygon,
+  arbitrum,
+  base,
+  optimism,
+  linea,
+  avalanche,
+  unichain,
+  worldchain,
+  sonic,
+  ink,
+  sei,
+  hyperEvm,
+  monad,
+];
 const projectId = "a15c535db177c184c98bdbdc5ff12590";
 const rpcOverrideChainId = import.meta.env.VITE_RPC_OVERRIDE_CHAIN_ID;
 const rpcOverrideUrl = import.meta.env.VITE_RPC_OVERRIDE_URL;
