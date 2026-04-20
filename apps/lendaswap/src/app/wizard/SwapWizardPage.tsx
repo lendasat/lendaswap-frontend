@@ -250,11 +250,35 @@ export function SwapWizardPage() {
     };
   }, [swapId, retry, displaySwapData, swapData]);
 
+  // Locktime-based refundability can flip without a status change, so the
+  // WS subscription above won't catch it.  Re-evaluate the step from local
+  // data every 30s and trigger a refresh when it transitions to refundable.
+  useEffect(() => {
+    if (!displaySwapData) return;
+
+    const terminalStates: SwapStatus[] = [
+      "clientredeemed",
+      "serverredeemed",
+      "expired",
+      "clientrefundedserverfunded",
+      "clientrefundedserverrefunded",
+      "clientrefunded",
+    ];
+    if (terminalStates.includes(displaySwapData.status)) return;
+
+    const id = setInterval(() => {
+      if (determineStepFromStatus(displaySwapData) === "refundable") {
+        retry();
+      }
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [displaySwapData, retry]);
+
   return (
     <>
       {/* Error State */}
       {error && (
-        <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-xl backdrop-blur-sm">
           <div className="space-y-4 px-6 py-6">
             <SupportErrorBanner
               message="Failed to load swap"
@@ -283,15 +307,15 @@ export function SwapWizardPage() {
 
       {/* Swap Not Found State */}
       {!isLoading && !error && !swapData && swapId && (
-        <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-          <div className="space-y-4 px-6 py-6 bg-warning/10">
+        <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-xl backdrop-blur-sm">
+          <div className="bg-warning/10 space-y-4 px-6 py-6">
             <div className="flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-warning" />
+              <AlertCircle className="text-warning h-6 w-6" />
               <h3 className="text-xl font-semibold">Swap Not Found</h3>
             </div>
             <p className="text-muted-foreground">
               The swap with ID{" "}
-              <code className="px-2 py-1 bg-muted rounded text-sm font-mono">
+              <code className="rounded bg-muted px-2 py-1 font-mono text-sm">
                 {swapId}
               </code>{" "}
               could not be found.
@@ -318,9 +342,9 @@ export function SwapWizardPage() {
 
       {/* Loading State */}
       {isLoading && !displaySwapData && (
-        <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl">
+        <div className="rounded-2xl border border-border/50 bg-card/80 shadow-xl backdrop-blur-sm">
           <div className="flex items-center justify-center py-12">
-            <div className="border-muted border-t-foreground h-16 w-16 animate-spin rounded-full border-4" />
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-muted border-t-foreground" />
           </div>
         </div>
       )}
@@ -394,15 +418,15 @@ export function SwapWizardPage() {
           )}
 
           {currentStep === "server-deposit" && (
-            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-              <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+            <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-xl backdrop-blur-sm">
+              <div className="flex items-center gap-3 border-b border-border/50 bg-muted/30 px-6 py-4">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Swap ID:
                 </p>
-                <code className="text-xs font-mono text-foreground flex-1">
+                <code className="flex-1 font-mono text-xs text-foreground">
                   {displaySwapData.id}
                 </code>
-                <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-primary/50" />
               </div>
 
               <div className="space-y-4 p-6">
@@ -412,7 +436,7 @@ export function SwapWizardPage() {
                   swap...
                 </p>
                 <div className="flex items-center justify-center py-12">
-                  <div className="border-muted border-t-primary h-16 w-16 animate-spin rounded-full border-4" />
+                  <div className="h-16 w-16 animate-spin rounded-full border-4 border-muted border-t-primary" />
                 </div>
               </div>
             </div>
@@ -428,15 +452,15 @@ export function SwapWizardPage() {
             )}
 
           {currentStep === "expired" && (
-            <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
-              <div className="px-6 py-4 flex items-center gap-3 border-b border-border/50 bg-muted/30">
+            <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-xl backdrop-blur-sm">
+              <div className="flex items-center gap-3 border-b border-border/50 bg-muted/30 px-6 py-4">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Swap ID:
                 </p>
-                <code className="text-xs font-mono text-foreground flex-1">
+                <code className="flex-1 font-mono text-xs text-foreground">
                   {displaySwapData.id}
                 </code>
-                <div className="h-2 w-2 rounded-full bg-primary/50 animate-pulse" />
+                <div className="h-2 w-2 animate-pulse rounded-full bg-primary/50" />
               </div>
 
               <div className="space-y-4 p-6">
