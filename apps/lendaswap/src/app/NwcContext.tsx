@@ -88,10 +88,11 @@ class NwcClient {
     const { walletPubkey, relayUrl, secret } = parseNwcUri(uri);
     this.walletPubkey = walletPubkey;
     this.relayUrl = relayUrl;
-    // Convert hex secret to Uint8Array
-    this.secretKey = new Uint8Array(
-      secret.match(/.{2}/g)?.map((b) => parseInt(b, 16)),
-    );
+    const bytes = secret.match(/.{2}/g);
+    if (!bytes) {
+      throw new Error("NWC URI contains an invalid hex secret");
+    }
+    this.secretKey = new Uint8Array(bytes.map((b) => parseInt(b, 16)));
   }
 
   async init(): Promise<void> {
