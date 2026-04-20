@@ -84,8 +84,15 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
         return swapData.btc_claim_txid ?? null;
       case "bitcoin_to_evm":
         return swapData.btc_claim_txid ?? null;
+      case "lightning_to_arkade":
+        return swapData.arkade_claim_txid ?? null;
       case "lightning_to_evm":
         return null;
+      case "arkade_to_lightning":
+        return swapData.arkade_claim_txid ?? null;
+      default: {
+        return swapData;
+      }
     }
   };
 
@@ -96,19 +103,19 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
   const refundTxId = getRefundTxId();
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm shadow-xl overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-xl backdrop-blur-sm">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-border/50 bg-muted/30">
+      <div className="flex items-center justify-between border-b border-border/50 bg-muted/30 px-6 py-4">
         <div className="flex items-center gap-2">
           {/* Source token */}
           <div className="relative">
-            <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
-              <div className="w-5 h-5 flex items-center justify-center">
+            <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
+              <div className="flex h-5 w-5 items-center justify-center">
                 {getTokenIcon(swapData.source_token)}
               </div>
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
-              <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+            <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-background p-[1px]">
+              <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
                 {getTokenNetworkIcon(swapData.source_token)}
               </div>
             </div>
@@ -116,13 +123,13 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
           <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
           {/* Target token */}
           <div className="relative">
-            <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-muted border border-border">
-              <div className="w-5 h-5 flex items-center justify-center">
+            <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
+              <div className="flex h-5 w-5 items-center justify-center">
                 {getTokenIcon(swapData.target_token)}
               </div>
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-background p-[1px] flex items-center justify-center">
-              <div className="w-full h-full rounded-full flex items-center justify-center [&_svg]:w-full [&_svg]:h-full">
+            <div className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-background p-[1px]">
+              <div className="flex h-full w-full items-center justify-center rounded-full [&_svg]:h-full [&_svg]:w-full">
                 {getTokenNetworkIcon(swapData.target_token)}
               </div>
             </div>
@@ -132,7 +139,7 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <code className="text-[10px] font-mono text-muted-foreground">
+          <code className="font-mono text-[10px] text-muted-foreground">
             {swapData.id.slice(0, 8)}…
           </code>
           <div className="h-2 w-2 rounded-full bg-muted-foreground" />
@@ -143,20 +150,20 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
       <div className="p-6">
         <div className="flex flex-col items-center space-y-6">
           {/* Refunded Icon */}
-          <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-full">
-            <RotateCcw className="text-muted-foreground h-8 w-8" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+            <RotateCcw className="h-8 w-8 text-muted-foreground" />
           </div>
 
           {/* Refunded Message */}
           <div className="space-y-2 text-center">
             <h3 className="text-2xl font-semibold">Swap Refunded</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Your {sourceSymbol} has been refunded
             </p>
           </div>
 
           {/* Transaction Details */}
-          <div className="bg-muted/50 w-full max-w-md space-y-3 rounded-lg p-4">
+          <div className="w-full max-w-md space-y-3 rounded-lg bg-muted/50 p-4">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount Refunded</span>
               <span className="font-medium">
@@ -166,7 +173,7 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
               </span>
             </div>
             {refundAddress && (
-              <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
+              <div className="flex flex-col gap-2 border-t border-border pt-2 text-sm">
                 <span className="text-muted-foreground">HTLC Address</span>
                 <div className="flex items-center gap-2">
                   <a
@@ -217,7 +224,7 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
               </div>
             )}
             {refundTxId && (
-              <div className="border-border flex flex-col gap-2 border-t pt-2 text-sm">
+              <div className="flex flex-col gap-2 border-t border-border pt-2 text-sm">
                 <span className="text-muted-foreground">
                   Refund Transaction
                 </span>
