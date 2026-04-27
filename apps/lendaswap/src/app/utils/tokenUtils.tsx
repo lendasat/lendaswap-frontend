@@ -138,7 +138,7 @@ export function getTokenNetworkIcon(tokenId: TokenInfo): ReactElement {
     "57073": <NetworkInk variant="branded" size={16} />,
     "1329": <NetworkSeiNetwork variant="branded" size={16} />,
     "999": <NetworkHyperEvm variant="branded" size={16} />,
-    "10143": <NetworkMonad variant="branded" size={16} />,
+    "143": <NetworkMonad variant="branded" size={16} />,
     // USDT0 bridge chains
     "80094": <NetworkBerachain variant="branded" size={16} />,
     "1030": <NetworkConflux variant="branded" size={16} />,
