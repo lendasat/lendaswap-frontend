@@ -518,10 +518,11 @@ export function HomePage() {
           throw new Error(`No CCTP domain for source chain ${sourceChainName}`);
         }
 
-        // Target is BTC on the user's chosen BTC variant (tokenId "btc").
+        // The BTC variants (Lightning / Arkade / on-chain) all use the literal
+        // "btc" token id; reuse `targetAsset.token_id` instead of hard-coding.
         const backendTarget: Asset = {
           chain: targetAsset.chain,
-          tokenId: "btc",
+          tokenId: targetAsset.token_id,
         };
 
         // Lightning addresses / LNURLs are resolved server-side via
