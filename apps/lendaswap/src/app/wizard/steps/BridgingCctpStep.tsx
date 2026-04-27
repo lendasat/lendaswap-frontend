@@ -30,6 +30,7 @@ import {
   fetchAttestation,
   fetchCctpFee,
   getCctpViemChainByName,
+  simulateBatchCalls,
   TOKEN_MESSENGER_V2,
   type TokenInfo,
   USDC_ADDRESSES,
@@ -69,7 +70,6 @@ import {
 } from "#/components/ui/tooltip";
 import {
   addressToBytes32Hex,
-  type BatchCall,
   buildCctpInboundBatch,
   type UseropCalldataResponse,
 } from "../../aa/buildCctpInboundUserOp";
@@ -113,75 +113,6 @@ interface BridgingCctpStepProps {
     | EvmToArkadeSwapResponse
     | EvmToBitcoinSwapResponse
     | EvmToLightningSwapResponse;
-}
-
-/**
- * Run each batched call in isolation via `eth_call` with the smart
- * account as the `from`. The bundler aggregates per-call reverts into a
- * single "execution reverted for an unknown reason" — this pre-flight
- * pins down which call fails and surfaces the underlying revert data.
- *
- * Limitation: any call that re-enters the smart account (e.g. Permit2
- * invoking `IERC1271.isValidSignature`) will revert differently here
- * than in a real UserOp, since the account isn't deployed yet at
- * simulation time. Those reverts still tell us *which* call triggers
- * the reentry, which is what we actually need.
- */
-/** Walk a viem error chain and surface any RPC-level `data` blob
- *  (revert selector + encoded args). viem buries this under `cause`. */
-function extractRevertData(err: unknown): string | undefined {
-  let cur: unknown = err;
-  for (let depth = 0; depth < 10 && cur; depth++) {
-    const anyCur = cur as {
-      data?: unknown;
-      cause?: unknown;
-      metaMessages?: string[];
-      details?: string;
-    };
-    if (typeof anyCur.data === "string" && anyCur.data.startsWith("0x")) {
-      return anyCur.data;
-    }
-    if (typeof anyCur.data === "object" && anyCur.data !== null) {
-      const nestedData = (anyCur.data as { data?: string }).data;
-      if (nestedData?.startsWith("0x")) {
-        return nestedData;
-      }
-    }
-    cur = anyCur.cause;
-  }
-  return undefined;
-}
-
-async function simulateBatchCalls(args: {
-  calls: BatchCall[];
-  smartAccount: `0x${string}`;
-  publicClient: ReturnType<typeof createPublicClient>;
-}) {
-  const { calls, smartAccount, publicClient } = args;
-  for (let i = 0; i < calls.length; i++) {
-    const call = calls[i];
-    const label = `[simulate] call ${i + 1}/${calls.length} to ${call.to}`;
-    try {
-      await publicClient.call({
-        account: smartAccount,
-        to: call.to,
-        data: call.data,
-        value: call.value,
-      });
-      console.log(`${label} OK`);
-    } catch (err) {
-      const revertData = extractRevertData(err);
-      // Any call that re-enters the smart account (e.g. Permit2 calling
-      // `isValidSignature` on an undeployed Kernel account) will revert
-      // here but succeed once factoryData deploys the account during
-      // the real UserOp. Log and continue rather than aborting — the
-      // bundler's real-execution sim is the authoritative check.
-      console.warn(`${label} reverted in pre-flight (may be OK at send)`, {
-        revertData: revertData ?? "(none)",
-        error: err,
-      });
-    }
-  }
 }
 
 export function BridgingCctpStep({ swapId, swapData }: BridgingCctpStepProps) {
