@@ -29,6 +29,7 @@ import {
   encodeDepositForBurn,
   fetchAttestation,
   fetchCctpFee,
+  getCctpViemChainByName,
   TOKEN_MESSENGER_V2,
   type TokenInfo,
   USDC_ADDRESSES,
@@ -44,24 +45,14 @@ import {
   Loader,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPublicClient, erc20Abi, http, maxUint256 } from "viem";
 import {
-  arbitrum,
-  avalanche,
-  base,
-  hyperEvm,
-  ink,
-  linea,
-  mainnet,
-  monad,
-  optimism,
-  polygon,
-  sei,
-  sonic,
-  unichain,
+  createPublicClient,
+  erc20Abi,
+  http,
+  maxUint256,
   type Chain as ViemChain,
-  worldchain,
-} from "viem/chains";
+} from "viem";
+import { arbitrum } from "viem/chains";
 import {
   useAccount,
   useSwitchChain,
@@ -100,28 +91,6 @@ function formatUsdc(amount: bigint): string {
     maximumFractionDigits: 6,
   });
 }
-
-// CCTPv2 mainnet EVM source chains, mapped from SDK chain name → viem chain.
-// Kept in sync with `CHAIN_ID_TO_CCTP_NAME` in the SDK and `SUPPORTED_CHAINS`
-// in `useBridgeKitAdapter`. If this map drops a chain that bridge-kit /
-// wagmi advertises, the wizard aborts with "CCTP session is missing
-// required fields" instead of driving the burn.
-const VIEM_CHAINS_BY_NAME: Record<string, ViemChain> = {
-  Ethereum: mainnet,
-  Polygon: polygon,
-  Arbitrum: arbitrum,
-  Optimism: optimism,
-  Base: base,
-  Avalanche: avalanche,
-  Linea: linea,
-  Unichain: unichain,
-  "World Chain": worldchain,
-  Sonic: sonic,
-  Ink: ink,
-  Sei: sei,
-  HyperEVM: hyperEvm,
-  Monad: monad,
-};
 
 type Phase =
   | "loading_session"
@@ -174,7 +143,7 @@ function extractRevertData(err: unknown): string | undefined {
     }
     if (typeof anyCur.data === "object" && anyCur.data !== null) {
       const nestedData = (anyCur.data as { data?: string }).data;
-      if (typeof nestedData === "string" && nestedData.startsWith("0x")) {
+      if (nestedData?.startsWith("0x")) {
         return nestedData;
       }
     }
@@ -242,8 +211,12 @@ export function BridgingCctpStep({ swapId, swapData }: BridgingCctpStepProps) {
   const [smartAccountCopied, setSmartAccountCopied] = useState(false);
 
   const sourceChainName = session?.source_chain ?? "";
-  const sourceChainViem: ViemChain | undefined =
-    VIEM_CHAINS_BY_NAME[sourceChainName];
+  // Cast: SDK's bundled viem and the frontend's viem are different instances
+  // (separate node_modules), so their `Chain` types are nominally distinct
+  // even though structurally identical. Safe — same chain definitions.
+  const sourceChainViem = getCctpViemChainByName(sourceChainName) as
+    | ViemChain
+    | undefined;
   const sourceDomain = session?.source_domain;
 
   const sourceAmountUsdc = useMemo<bigint | undefined>(() => {
