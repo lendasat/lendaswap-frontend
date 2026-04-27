@@ -55,12 +55,21 @@ importers:
       '@scure/btc-signer':
         specifier: ^2.0.1
         version: 2.0.1
+      '@zerodev/ecdsa-validator':
+        specifier: ^5.4.0
+        version: 5.4.9(@zerodev/sdk@5.5.10(viem@2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67)))(viem@2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67))
+      '@zerodev/sdk':
+        specifier: ^5.5.0
+        version: 5.5.10(viem@2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67))
       dexie:
         specifier: ^4.4.2
         version: 4.4.2
       openapi-fetch:
         specifier: ^0.17.0
         version: 0.17.0
+      viem:
+        specifier: ^2.30.0
+        version: 2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.15
@@ -77,21 +86,12 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.7.5
-      '@zerodev/ecdsa-validator':
-        specifier: ^5.4.9
-        version: 5.4.9(@zerodev/sdk@5.5.10(viem@2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67)))(viem@2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67))
-      '@zerodev/sdk':
-        specifier: ^5.5.10
-        version: 5.5.10(viem@2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67))
       openapi-typescript:
         specifier: ^7.10.1
         version: 7.10.1(typescript@5.7.3)
       typescript:
         specifier: ^5.7.0
         version: 5.7.3
-      viem:
-        specifier: ^2.30.0
-        version: 2.46.3(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@6.0.6)(zod@3.25.67)
       vitest:
         specifier: ^3.0.0
         version: 3.2.4(@types/debug@4.1.12)(@types/node@22.7.5)
