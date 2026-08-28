@@ -12,6 +12,7 @@ import {
   IdbSwapStorage,
   IdbWalletStorage,
   type LightningSendQuote,
+  type LightningSendSourceChain,
   type TokenInfo as PureTokenInfo,
   type QuoteResponse,
   type RecoverAllSwapsResult,
@@ -306,15 +307,18 @@ export const api = {
   },
 
   /**
-   * Exact Arkade → Lightning quote from a concrete destination — prices
+   * Exact Arkade/EVM → Lightning quote from a concrete destination — prices
    * the swap with the provider's real Lightning send fee, unlike
-   * `getQuote`, whose network fee for this route is an estimate.
+   * `getQuote`, whose network fee for these routes is an estimate.
    */
   async getLightningSendQuote(request: {
+    sourceChain?: LightningSendSourceChain;
+    sourceToken?: string;
     lightningInvoice?: string;
     lightningAddress?: string;
     lnurl?: string;
-    sourceAmountSats?: number;
+    /** Source token's smallest unit: sats for Arkade, token units for EVM. */
+    sourceAmount?: bigint | number | string;
     targetAmountSats?: number;
   }): Promise<LightningSendQuote> {
     const referralCode = getReferralCode();

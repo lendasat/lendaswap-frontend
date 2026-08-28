@@ -126,6 +126,18 @@ export function getDirectionConfig(swapData: GetSwapResponse): DirectionConfig {
         swapTxId: swapData.arkade_claim_txid,
         tweetText: makeTweet(sent, received),
       };
+    case "evm_to_lightning":
+      return {
+        sourceAmount: sent,
+        targetAmount: received,
+        // The payout lands on the user's Lightning invoice — no address
+        // to render or link.
+        targetAddress: null,
+        isLightning: true,
+        noAddressLink: true,
+        swapTxId: swapData.evm_claim_txid,
+        tweetText: makeTweet(sent, received),
+      };
   }
 }
 

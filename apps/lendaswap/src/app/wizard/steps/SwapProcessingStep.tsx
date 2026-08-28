@@ -35,7 +35,11 @@ function isBtcToEvmDirection(direction: GetSwapResponse["direction"]): boolean {
 
 /** Directions where the user sends EVM and receives BTC */
 function isEvmToBtcDirection(direction: GetSwapResponse["direction"]): boolean {
-  return direction === "evm_to_arkade" || direction === "evm_to_bitcoin";
+  return (
+    direction === "evm_to_arkade" ||
+    direction === "evm_to_bitcoin" ||
+    direction === "evm_to_lightning"
+  );
 }
 
 interface ConfirmingDepositStepProps {
@@ -431,6 +435,24 @@ export function SwapProcessingStep({
           step4TxId: null,
           step4IsEvm: false,
         };
+      case "evm_to_lightning":
+        return {
+          step1Label: "User Funded",
+          step1TxId: swapData.evm_fund_txid,
+          step1IsEvm: true,
+          step2LabelActive: "Paying Invoice",
+          step2LabelComplete: "Invoice Paid",
+          // The server pays via Lightning — no on-chain txid; step2Done
+          // falls back to the swap status below.
+          step2TxId: null,
+          step2IsEvm: false,
+          step3Label: "Server Claiming",
+          step3TxId: swapData.evm_claim_txid,
+          step3IsEvm: true,
+          step4Label: "Complete",
+          step4TxId: null,
+          step4IsEvm: false,
+        };
     }
   };
 
@@ -452,7 +474,8 @@ export function SwapProcessingStep({
   // (it may still be in flight, waiting for the recipient to claim);
   // `serverredeemed` is the first status that proves it settled.
   const arkadeToLightningComplete =
-    swapData.direction === "arkade_to_lightning" &&
+    (swapData.direction === "arkade_to_lightning" ||
+      swapData.direction === "evm_to_lightning") &&
     swapData.status === "serverredeemed";
   const arkadeToLightningInvoicePaid = arkadeToLightningComplete;
   // Lightning→EVM's final step (settling the held payment) is off-chain —

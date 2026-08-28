@@ -57,7 +57,8 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
   );
   if (
     swapData.direction === "evm_to_arkade" ||
-    swapData.direction === "evm_to_bitcoin"
+    swapData.direction === "evm_to_bitcoin" ||
+    swapData.direction === "evm_to_lightning"
   ) {
     const isPolygon = swapData.source_token.chain === "137";
     refundedSymbol = isPolygon ? "WBTC" : "tBTC";
@@ -78,6 +79,7 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
         return swapData.arkade_vhtlc_address ?? null;
       case "evm_to_arkade":
       case "evm_to_bitcoin":
+      case "evm_to_lightning":
         return swapData.evm_htlc_address ?? null;
       case "btc_to_arkade":
       case "bitcoin_to_evm":
@@ -104,6 +106,7 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
         return swapData.arkade_claim_txid ?? null;
       case "evm_to_arkade":
       case "evm_to_bitcoin":
+      case "evm_to_lightning":
         return swapData.evm_claim_txid ?? null;
       case "btc_to_arkade":
       case "bitcoin_to_evm":
