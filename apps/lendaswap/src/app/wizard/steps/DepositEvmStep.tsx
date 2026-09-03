@@ -6,6 +6,7 @@ import {
   isBtcOnchain,
   isLightning,
   isUserRejection,
+  SimulationRevertError,
   toChainName,
 } from "@satora/swap";
 import {
@@ -109,6 +110,12 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [userRejected, setUserRejected] = useState(false);
   const [fundError, setFundError] = useState<string | null>(null);
+  // The source amount the server quoted for the current funding attempt. A
+  // swap paying out over Lightning is priced afresh on each attempt (the
+  // payout is fixed, so the source follows the live rate); until the user
+  // funds, the amount shown is the one from create.
+  const [liveSourceUnits, setLiveSourceUnits] = useState<bigint | null>(null);
+  const [rateMoved, setRateMoved] = useState(false);
 
   // Open wallet connect dialog if not connected
   useEffect(() => {
@@ -130,10 +137,12 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
 
   const tokenSymbol = swapData.source_token.symbol;
   const sourceDecimals = swapData.source_token.decimals;
-  const sourceAmount = (
-    Number(swapData.source_amount) /
-    10 ** sourceDecimals
-  ).toFixed(sourceDecimals);
+  const formatSource = (units: bigint) =>
+    (Number(units) / 10 ** sourceDecimals).toFixed(sourceDecimals);
+  const quotedSourceUnits = BigInt(swapData.source_amount);
+  const sourceAmount = formatSource(liveSourceUnits ?? quotedSourceUnits);
+  const sourceRequoted =
+    liveSourceUnits !== null && liveSourceUnits !== quotedSourceUnits;
 
   const targetDecimals = swapData.target_token.decimals;
   const targetAmount = (
@@ -159,6 +168,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
     setIsRunning(true);
     setUserRejected(false);
     setFundError(null);
+    setRateMoved(false);
 
     const updateStep = (key: string, state: StepState) => {
       setSteps((prev) => ({ ...prev, [key]: state }));
@@ -178,7 +188,9 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         walletClient as WalletClient<Transport, ViemChain, Account>,
         chain,
       );
-      await api.fundSwap(swapId, signer);
+      await api.fundSwap(swapId, signer, {
+        onQuote: ({ sourceAmount }) => setLiveSourceUnits(sourceAmount),
+      });
       updateStep("fund", { status: "completed" });
 
       // Wizard polling will detect the status change and advance
@@ -196,6 +208,13 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           }
           return updated;
         });
+      } else if (err instanceof SimulationRevertError) {
+        // Caught before sending — no gas spent. On a funding the usual cause
+        // is the DEX rate moving past the swap's min-out between quote and
+        // signature; retrying re-quotes at the current rate.
+        setRateMoved(true);
+        setFundError(err.reason);
+        updateStep("fund", { status: "error", error: err.reason });
       } else {
         const msg = err instanceof Error ? err.message : "Transaction failed";
         setFundError(msg);
@@ -230,6 +249,12 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
           label="You Send"
           value={`${sourceAmount} ${tokenSymbol} on ${toChainName(swapData.source_token.chain)}`}
         />
+        {sourceRequoted && (
+          <p className="text-muted-foreground text-xs">
+            Priced at the live rate for this funding; quoted at{" "}
+            {formatSource(quotedSourceUnits)} {tokenSymbol}.
+          </p>
+        )}
         <AmountRow
           label={receiveLabel}
           value={`~${targetAmount} ${swapData.target_token.symbol} on ${getTargetChainDisplayName(swapData)}`}
@@ -296,7 +321,20 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
             );
           })}
           {/* Show error message below the failed step */}
-          {fundError && (
+          {fundError && rateMoved && (
+            <div className="ml-7 space-y-2">
+              <div className="rounded-lg border border-lime-400 bg-lime-50 p-2 text-xs text-lime-600 dark:bg-lime-950/20">
+                The rate moved before your transaction could land, so it was not
+                sent and no gas was spent. Retry to fund at the current rate.
+              </div>
+              <SupportErrorBanner
+                message="Funding would have reverted"
+                error={fundError}
+                swapId={swapId}
+              />
+            </div>
+          )}
+          {fundError && !rateMoved && (
             <div className="ml-7">
               <SupportErrorBanner
                 message="Funding transaction failed"

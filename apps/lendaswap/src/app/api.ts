@@ -505,9 +505,13 @@ export const api = {
   async fundSwap(
     swapId: string,
     signer: EvmSigner,
+    options?: {
+      /** The source amount the server quoted for this attempt. */
+      onQuote?: (quote: { sourceAmount: bigint }) => void;
+    },
   ): Promise<{ txHash: string }> {
     const client = await getClients();
-    return await client.fundSwap(swapId, signer);
+    return await client.fundSwap(swapId, signer, options);
   },
 
   async refundEvmSwap(
