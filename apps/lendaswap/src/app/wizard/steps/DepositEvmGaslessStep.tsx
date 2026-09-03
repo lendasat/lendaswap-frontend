@@ -1,6 +1,7 @@
 import {
   type EvmToArkadeSwapResponse,
   type EvmToBitcoinSwapResponse,
+  type EvmToLightningSwapResponse,
   isArkade,
   isBtcOnchain,
   isLightning,
@@ -28,7 +29,10 @@ import {
 } from "../components";
 
 interface EvmDepositGaslessStepProps {
-  swapData: EvmToArkadeSwapResponse | EvmToBitcoinSwapResponse;
+  swapData:
+    | EvmToArkadeSwapResponse
+    | EvmToBitcoinSwapResponse
+    | EvmToLightningSwapResponse;
   swapId: string;
 }
 
@@ -85,9 +89,13 @@ export function DepositEvmGaslessStep({
   }, [rpcClient, tokenAddress, depositAddress, funded]);
 
   // ── Expiry countdown ──────────────────────────────────────────────────
-  const refundLocktime = isBtcOnchain(swapData.target_token)
-    ? ((swapData as EvmToBitcoinSwapResponse).btc_refund_locktime ?? 0)
-    : ((swapData as EvmToArkadeSwapResponse).vhtlc_refund_locktime ?? 0);
+  // For a Lightning target the invoice expiry is the deadline: the server
+  // pays it once the deposit is final, so funding after expiry only refunds.
+  const refundLocktime = isLightning(swapData.target_token)
+    ? ((swapData as EvmToLightningSwapResponse).invoice_expires_at ?? 0)
+    : isBtcOnchain(swapData.target_token)
+      ? ((swapData as EvmToBitcoinSwapResponse).btc_refund_locktime ?? 0)
+      : ((swapData as EvmToArkadeSwapResponse).vhtlc_refund_locktime ?? 0);
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
   useEffect(() => {
     if (!refundLocktime) return;

@@ -727,13 +727,14 @@ export function SwapProcessingStep({
                 </div>
               )}
               {/* Show claiming status inline when server is funded.
-                  Arkade→Lightning has no client claim — `serverfunded`
+                  Lightning-target swaps have no client claim — `serverfunded`
                   there means the outgoing payment is in flight. */}
               {(derivedRecommended === "claim" ||
                 isClaiming ||
                 (serverObs === undefined &&
                   swapData.status === "serverfunded" &&
-                  swapData.direction !== "arkade_to_lightning")) && (
+                  swapData.direction !== "arkade_to_lightning" &&
+                  swapData.direction !== "evm_to_lightning")) && (
                 <div className="mt-2 space-y-2 rounded-lg border bg-gradient-to-t from-primary/5 to-card p-4">
                   <p className="text-sm font-medium">
                     {isClaiming

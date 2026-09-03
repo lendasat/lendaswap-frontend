@@ -5,6 +5,7 @@ import type {
   BtcToArkadeSwapResponse,
   EvmToArkadeSwapResponse,
   EvmToBitcoinSwapResponse,
+  EvmToLightningSwapResponse,
   GetSwapResponse,
   LightningToArkadeSwapResponse,
   LightningToEvmSwapResponse,
@@ -76,6 +77,8 @@ function determineStepFromStatus(
       case "evm_to_arkade":
         return swapData.evm_refund_locktime;
       case "evm_to_bitcoin":
+        return swapData.evm_refund_locktime;
+      case "evm_to_lightning":
         return swapData.evm_refund_locktime;
       case "lightning_to_arkade":
         return swapData.vhtlc_refund_locktime;
@@ -471,17 +474,20 @@ export function SwapWizardPage() {
                 />
               )}
               {(swapDirectionValue === "evm_to_arkade" ||
-                swapDirectionValue === "evm_to_bitcoin") &&
+                swapDirectionValue === "evm_to_bitcoin" ||
+                swapDirectionValue === "evm_to_lightning") &&
                 ((
                   displaySwapData as
                     | EvmToArkadeSwapResponse
                     | EvmToBitcoinSwapResponse
+                    | EvmToLightningSwapResponse
                 ).gasless ? (
                   <DepositEvmGaslessStep
                     swapData={
                       displaySwapData as
                         | EvmToArkadeSwapResponse
                         | EvmToBitcoinSwapResponse
+                        | EvmToLightningSwapResponse
                     }
                     swapId={displaySwapData.id}
                   />
@@ -491,6 +497,7 @@ export function SwapWizardPage() {
                       displaySwapData as
                         | EvmToArkadeSwapResponse
                         | EvmToBitcoinSwapResponse
+                        | EvmToLightningSwapResponse
                     }
                     swapId={displaySwapData.id}
                   />
@@ -579,12 +586,14 @@ export function SwapWizardPage() {
               )}
 
               {(swapDirectionValue === "evm_to_bitcoin" ||
-                swapDirectionValue === "evm_to_arkade") && (
+                swapDirectionValue === "evm_to_arkade" ||
+                swapDirectionValue === "evm_to_lightning") && (
                 <RefundEvmStep
                   swapData={
                     displaySwapData as
                       | EvmToBitcoinSwapResponse
                       | EvmToArkadeSwapResponse
+                      | EvmToLightningSwapResponse
                   }
                 />
               )}

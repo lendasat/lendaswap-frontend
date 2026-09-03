@@ -129,7 +129,8 @@ export function RefundedStep({ swapData }: RefundedStepProps) {
   const refundTxId = getRefundTxId();
   const canContinueFromRefund =
     swapData.direction === "evm_to_arkade" ||
-    swapData.direction === "evm_to_bitcoin";
+    swapData.direction === "evm_to_bitcoin" ||
+    swapData.direction === "evm_to_lightning";
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/50 bg-card/80 shadow-xl backdrop-blur-sm">

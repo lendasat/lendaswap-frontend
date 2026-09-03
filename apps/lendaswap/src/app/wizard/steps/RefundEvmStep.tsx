@@ -2,6 +2,7 @@ import { useAppKit } from "@reown/appkit/react";
 import {
   type EvmToArkadeSwapResponse,
   type EvmToBitcoinSwapResponse,
+  type EvmToLightningSwapResponse,
   isEvmToken,
   toChainName,
 } from "@satora/swap";
@@ -28,7 +29,10 @@ import { getViemChain } from "../../utils/tokenUtils";
 import { DepositCard } from "../components";
 
 interface RefundEvmStepProps {
-  swapData: EvmToBitcoinSwapResponse | EvmToArkadeSwapResponse;
+  swapData:
+    | EvmToBitcoinSwapResponse
+    | EvmToArkadeSwapResponse
+    | EvmToLightningSwapResponse;
 }
 
 // Kill switch for the signature-based collaborative refund (refundBySig on-chain).
