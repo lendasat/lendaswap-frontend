@@ -30,6 +30,7 @@ import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { buildEvmSigner } from "../../utils/evmSigner";
+import { totalFeeSats } from "../../utils/feeUtils";
 import {
   getTargetChainDisplayName,
   getViemChain,
@@ -261,7 +262,7 @@ export function DepositEvmStep({ swapData, swapId }: EvmDepositStepProps) {
         />
         <AmountRow
           label="Fee"
-          value={`${swapData.fee_sats.toLocaleString()} sats`}
+          value={`${totalFeeSats(swapData).toLocaleString()} sats`}
         />
       </AmountSummary>
 

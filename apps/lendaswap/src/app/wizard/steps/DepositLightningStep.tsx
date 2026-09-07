@@ -11,6 +11,7 @@ import isValidSpeedWalletContext, {
 } from "../../../utils/speedWallet";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { useNwc } from "../../NwcContext";
+import { totalFeeSats } from "../../utils/feeUtils";
 import { getTargetChainDisplayName } from "../../utils/tokenUtils";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import {
@@ -70,7 +71,7 @@ export function DepositLightningStep({ swapData }: SendLightningStepProps) {
   const sourceAmountBtc = (Number(swapData.source_amount) / 100000000).toFixed(
     8,
   );
-  const feeBtc = (Number(swapData.fee_sats) / 100000000).toFixed(8);
+  const feeBtc = (totalFeeSats(swapData) / 100000000).toFixed(8);
 
   const handleSendFromWallet = async () => {
     if (!client) return;

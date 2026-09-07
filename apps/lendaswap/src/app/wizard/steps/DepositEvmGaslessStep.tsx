@@ -15,6 +15,7 @@ import { Button } from "#/components/ui/button";
 import { api } from "../../api";
 import { SupportErrorBanner } from "../../components/SupportErrorBanner";
 import { buildTransport } from "../../utils/evmTransport";
+import { totalFeeSats } from "../../utils/feeUtils";
 import {
   getBlockexplorerAddressLink,
   getTargetChainDisplayName,
@@ -206,7 +207,7 @@ export function DepositEvmGaslessStep({
         />
         <AmountRow
           label="Fee"
-          value={`${swapData.fee_sats.toLocaleString()} sats`}
+          value={`${totalFeeSats(swapData).toLocaleString()} sats`}
         />
         {timeRemaining && (
           <div className="flex justify-between text-sm pt-1 border-t border-border/50">

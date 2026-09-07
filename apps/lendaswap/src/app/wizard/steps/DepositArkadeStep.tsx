@@ -4,6 +4,7 @@ import type {
 } from "@satora/swap";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { totalFeeSats } from "../../utils/feeUtils";
 import { useWalletBridge } from "../../WalletBridgeContext";
 import {
   AddressDisplay,
@@ -77,7 +78,7 @@ export function DepositArkadeStep({ swapData }: DepositArkadeStepProps) {
         />
         <AmountRow
           label="Fee"
-          value={`${swapData.fee_sats.toLocaleString()} sats`}
+          value={`${totalFeeSats(swapData).toLocaleString()} sats`}
         />
       </AmountSummary>
       <DepositActions
